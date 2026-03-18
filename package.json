@@ -1,4 +1,8 @@
 {
+  "name": "vercel-ai-bot",
+  "version": "1.0.0",
+  "description": "AI Chatbot using Groq",
+  "main": "api/chat.js",
   "dependencies": {
     "openai": "^4.0.0"
   }
