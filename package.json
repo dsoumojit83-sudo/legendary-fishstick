@@ -1,8 +1,5 @@
 {
-  "name": "zyroeditz-portfolio",
-  "version": "1.0.0",
-  "description": "ZyroEditz Portfolio Website",
   "dependencies": {
-    "@google/generative-ai": "latest"
+    "openai": "^4.0.0"
   }
 }
