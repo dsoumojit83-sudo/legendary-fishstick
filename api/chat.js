@@ -36,7 +36,7 @@ module.exports = async function(req, res) {
           content: userMessage 
         }
       ],
-      model: 'llama3-8b-8192', 
+      model: 'model: 'llama-3.1-8b-instant',', 
       temperature: 0.6, // Keeps it professional and consistent
     });
 
