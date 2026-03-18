@@ -317,12 +317,12 @@
 
         .red-divider { display:block;height:1px;background:linear-gradient(90deg,transparent,rgba(255,26,26,0.35),transparent); }
 
-        /* Chatbot Custom Styles */
+        /* Chatbot Custom Styles - FIXED LINE BREAKS HERE */
         #chatbotMessages::-webkit-scrollbar { width: 4px; }
         #chatbotMessages::-webkit-scrollbar-track { background: transparent; }
         #chatbotMessages::-webkit-scrollbar-thumb { background: rgba(255,26,26,0.3); border-radius: 2px; }
-        .chat-bot-msg { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem 1rem 1rem 0.25rem; padding: 0.6rem 1rem; color: #d1d5db; font-size: 0.875rem; max-width: 85%; line-height: 1.4; }
-        .chat-user-msg { background: rgba(255,26,26,0.15); border: 1px solid rgba(255,26,26,0.3); border-radius: 1rem 1rem 0.25rem 1rem; padding: 0.6rem 1rem; color: #fff; font-size: 0.875rem; max-width: 85%; margin-left: auto; line-height: 1.4; }
+        .chat-bot-msg { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem 1rem 1rem 0.25rem; padding: 0.6rem 1rem; color: #d1d5db; font-size: 0.875rem; max-width: 85%; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
+        .chat-user-msg { background: rgba(255,26,26,0.15); border: 1px solid rgba(255,26,26,0.3); border-radius: 1rem 1rem 0.25rem 1rem; padding: 0.6rem 1rem; color: #fff; font-size: 0.875rem; max-width: 85%; margin-left: auto; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
     </style>
 </head>
 <body class="antialiased">
@@ -1596,12 +1596,15 @@
                     const msgDiv = document.createElement('div');
                     msgDiv.className = 'flex gap-2 ' + (isUser ? 'justify-end' : '');
                     
+                    // FORMATTING FIX: Parse bold text sent from the AI
+                    const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                    
                     let html = '';
                     if (!isUser) {
                         html += `<div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div>`;
-                        html += `<div class="chat-bot-msg">${text}</div>`;
+                        html += `<div class="chat-bot-msg">${formattedText}</div>`;
                     } else {
-                        html += `<div class="chat-user-msg">${text}</div>`;
+                        html += `<div class="chat-user-msg">${formattedText}</div>`;
                     }
                     
                     msgDiv.innerHTML = html;
