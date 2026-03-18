@@ -28,8 +28,8 @@ TONE: Professional, premium, and polite. Never be rude, aggressive, or robotic. 
 
 FORMATTING RULES:
 1. Keep answers concise (1-3 sentences maximum).
-2. Use DOUBLE LINE BREAKS (\\n\\n) between separate points for clean spacing.
-3. Do NOT use random brackets or weird punctuation. Keep text clean and simple.
+2. Press "Enter" twice between separate points to create clean paragraph spacing.
+3. Do NOT type literal "\\n" characters, random brackets, or weird punctuation. Keep text clean and simple.
 
 BUSINESS KNOWLEDGE:
 - PRICING: Short Form Editing (Reels/Shorts): ₹200. Long Form Editing (YouTube): ₹500. Motion Graphics: ₹400. Thumbnail Design: ₹100.
@@ -62,6 +62,9 @@ Example: "Excellent! I'll get started right away. [PAY_SHORT]"
     
     let reply = chatCompletion.choices[0].message.content;
     let paymentUrl = null;
+
+    // Safety net: Force any literal '\n' text into actual line breaks
+    reply = reply.replace(/\\n/g, '\n');
 
     // Detect the tag, assign the link, and hide the tag from the customer
     if (reply.includes("[PAY_THUMBNAIL]")) {
