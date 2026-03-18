@@ -17,7 +17,6 @@ module.exports = async function(req, res) {
       messages: [
         { 
           role: 'system', 
-          // YOUR EXACT SYSTEM PROMPT PRESERVED HERE:
           content: `
             You are the Zyro Assistant, an AI customer service rep for ZyroEditz, a video editing and motion graphics studio. 
             Your tone is professional, cinematic, and highly helpful. Keep answers concise (1-3 sentences maximum).
@@ -36,13 +35,11 @@ module.exports = async function(req, res) {
           content: userMessage 
         }
       ],
-      model: 'model: 'llama-3.1-8b-instant',', 
-      temperature: 0.6, // Keeps it professional and consistent
+      model: 'llama-3.1-8b-instant', 
+      temperature: 0.6,
     });
 
     const text = chatCompletion.choices[0].message.content;
-
-    // Send the response back in the same format your HTML expects
     res.status(200).json({ reply: text });
 
   } catch (error) {
