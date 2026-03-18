@@ -6,19 +6,47 @@ const groq = new OpenAI({
 });
 
 module.exports = async function(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
   try {
+    const userMessage = req.body.message || "";
+
     const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: req.body.message || "Hello" }],
-      model: 'llama3-8b-8192', // This is a very fast, smart model
+      messages: [
+        { 
+          role: 'system', 
+          // YOUR EXACT SYSTEM PROMPT PRESERVED HERE:
+          content: `
+            You are the Zyro Assistant, an AI customer service rep for ZyroEditz, a video editing and motion graphics studio. 
+            Your tone is professional, cinematic, and highly helpful. Keep answers concise (1-3 sentences maximum).
+            
+            Here is the studio's pricing information in INR:
+            - Short-form Editing (Reels, Shorts, TikTok): ₹300 - ₹600 per video.
+            - Long-form Editing (YouTube): ₹1,000 - ₹2,500 per video depending on raw footage length.
+            - Custom Motion Graphics: ₹500 - ₹1,200 per project.
+            - Custom Thumbnails: ₹150 - ₹300 per thumbnail.
+            
+            If a user asks to hire Zyro, negotiate a custom package, or asks a question you don't know the answer to, tell them to fill out the contact form on the website or email zyroeditz.official@gmail.com directly.
+          ` 
+        },
+        { 
+          role: 'user', 
+          content: userMessage 
+        }
+      ],
+      model: 'llama3-8b-8192', 
+      temperature: 0.6, // Keeps it professional and consistent
     });
 
-    const reply = chatCompletion.choices[0].message.content;
-    res.status(200).json({ reply: reply });
+    const text = chatCompletion.choices[0].message.content;
+
+    // Send the response back in the same format your HTML expects
+    res.status(200).json({ reply: text });
 
   } catch (error) {
-    console.error("Groq Error:", error.message);
-    res.status(500).json({ error: "Something went wrong with the AI." });
+    console.error("AI Error:", error);
+    res.status(500).json({ error: 'System offline. Please email Zyro directly!' });
   }
 };
