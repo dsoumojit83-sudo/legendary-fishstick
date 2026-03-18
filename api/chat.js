@@ -1,6 +1,17 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 module.exports = async function(req, res) {
+  // DEBUG: This will print the first 4 characters of your key to the logs
+  // so we can see if Vercel is actually loading it.
+  const keyCheck = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.substring(0, 4) : "NOT FOUND";
+  console.log("DEBUG: Key starts with:", keyCheck);
+
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  
+  // Rest of your code...
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+module.exports = async function(req, res) {
   // Only allow POST requests from your chat window
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
