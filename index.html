@@ -317,7 +317,7 @@
 
         .red-divider { display:block;height:1px;background:linear-gradient(90deg,transparent,rgba(255,26,26,0.35),transparent); }
 
-        /* Chatbot Custom Styles - FIXED LINE BREAKS HERE */
+        /* Chatbot Custom Styles */
         #chatbotMessages::-webkit-scrollbar { width: 4px; }
         #chatbotMessages::-webkit-scrollbar-track { background: transparent; }
         #chatbotMessages::-webkit-scrollbar-thumb { background: rgba(255,26,26,0.3); border-radius: 2px; }
@@ -812,9 +812,21 @@
         <div class="max-w-6xl mx-auto mt-6 text-center text-gray-600 text-xs">&copy; <span id="year"></span> ZyroEditz. All rights reserved.</div>
     </footer>
 
-    <button id="chatbotToggle" class="fixed bottom-8 left-8 w-14 h-14 bg-[#ff1a1a] text-black rounded-full shadow-lg shadow-[#ff1a1a]/25 flex items-center justify-center z-50 transition-transform duration-300 hover:scale-110 hover:bg-white" aria-label="Toggle Chat">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-    </button>
+    <div class="fixed bottom-8 left-8 z-50 flex items-center gap-3">
+        <button id="chatbotToggle" class="relative w-14 h-14 bg-[#ff1a1a] text-black rounded-full shadow-lg shadow-[#ff1a1a]/25 flex items-center justify-center transition-transform duration-300 hover:scale-110 hover:bg-white" aria-label="Toggle Chat">
+            
+            <span id="chatNotificationDot" class="absolute top-0 right-0 flex h-3.5 w-3.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-white border-2 border-[#ff1a1a]"></span>
+            </span>
+
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+        </button>
+
+        <div id="chatTooltip" class="bg-black/80 backdrop-blur-md border border-[#ff1a1a]/30 text-white text-xs px-4 py-2 rounded-xl shadow-xl cursor-pointer animate-pulse hover:bg-[#ff1a1a]/10 transition-colors">
+            <span class="font-bold text-[#ff1a1a]">1 New Message</span>
+        </div>
+    </div>
 
     <div id="chatbotWindow" class="fixed bottom-28 left-8 w-80 max-w-[calc(100vw-4rem)] bg-[#050505] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 opacity-0 translate-y-4 pointer-events-none" style="height: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,26,26,0.1);">
         <div class="bg-gradient-to-r from-[#ff1a1a]/20 to-transparent p-4 border-b border-white/10 flex justify-between items-center backdrop-blur-md">
@@ -1376,6 +1388,9 @@
                                 statusEl.textContent = 'Message sent successfully!';
                                 statusEl.className = 'text-xs tracking-widest text-green-400';
                                 form.reset();
+                                
+                                // NEW: Tell the website the form was submitted
+                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: name } }));
 
                                 setTimeout(() => {
                                     submitBtn.disabled = false;
@@ -1579,10 +1594,19 @@
 
                 function toggleChat() {
                     isOpen = !isOpen;
+                    
+                    // NEW: Grab the notification elements
+                    const dot = document.getElementById('chatNotificationDot');
+                    const tooltip = document.getElementById('chatTooltip');
+
                     if (isOpen) {
                         windowEl.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
                         windowEl.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
                         input.focus();
+                        
+                        // NEW: Hide the notifications permanently once opened
+                        if (dot) dot.style.display = 'none';
+                        if (tooltip) tooltip.style.display = 'none';
                     } else {
                         windowEl.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
                         windowEl.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
@@ -1591,6 +1615,12 @@
 
                 toggleBtn.addEventListener('click', toggleChat);
                 closeBtn.addEventListener('click', toggleChat);
+                
+                // NEW: Make clicking the tooltip also open the chat
+                const tooltipBtn = document.getElementById('chatTooltip');
+                if (tooltipBtn) {
+                    tooltipBtn.addEventListener('click', toggleChat);
+                }
 
                 function addMessage(text, isUser = false) {
                     const msgDiv = document.createElement('div');
@@ -1658,6 +1688,21 @@
                         if(typingEl) typingEl.remove();
                         addMessage("Network error. Please try reaching out via the contact form below.", false);
                     }
+                });
+
+                // NEW: Listen for the form submission
+                window.addEventListener('projectFormSubmitted', (e) => {
+                    const clientName = e.detail.clientName || 'there';
+                    
+                    // Automatically open the chat window if it's closed
+                    if (!isOpen) {
+                        toggleChat();
+                    }
+
+                    // Have the bot send a smart, personalized confirmation message
+                    setTimeout(() => {
+                        addMessage(`I just saw your project inquiry come through, ${clientName}! Zyro will review your brief and get back to you within 24 hours. Keep an eye on your inbox. 🎬`, false);
+                    }, 1000); // 1-second delay makes it feel natural
                 });
             }
             
