@@ -1583,10 +1583,9 @@
 
             // ==================== SECURE AI CHATBOT LOGIC ====================
             function initChatbot() {
-                // NEW: Generate or retrieve the user's unique ID
+                // 1. Persistent ID Tracking
                 let clientId = localStorage.getItem('zyro_client_id');
                 if (!clientId) {
-                    // Creates a random ID like "NEW_xy3k19d"
                     clientId = 'NEW_' + Math.random().toString(36).substr(2, 9);
                     localStorage.setItem('zyro_client_id', clientId);
                 }
@@ -1597,22 +1596,19 @@
                 const form = document.getElementById('chatbotForm');
                 const input = document.getElementById('chatbotInput');
                 const messages = document.getElementById('chatbotMessages');
+                const dot = document.getElementById('chatNotificationDot');
+                const tooltip = document.getElementById('chatTooltip');
 
                 let isOpen = false;
 
                 function toggleChat() {
                     isOpen = !isOpen;
-                    
-                    // NEW: Grab the notification elements
-                    const dot = document.getElementById('chatNotificationDot');
-                    const tooltip = document.getElementById('chatTooltip');
-
                     if (isOpen) {
                         windowEl.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
                         windowEl.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
                         input.focus();
                         
-                        // NEW: Hide the notifications permanently once opened
+                        // 2. Psychological Triggers: Disappear dot permanently once opened
                         if (dot) dot.style.display = 'none';
                         if (tooltip) tooltip.style.display = 'none';
                     } else {
@@ -1623,18 +1619,13 @@
 
                 toggleBtn.addEventListener('click', toggleChat);
                 closeBtn.addEventListener('click', toggleChat);
-                
-                // NEW: Make clicking the tooltip also open the chat
-                const tooltipBtn = document.getElementById('chatTooltip');
-                if (tooltipBtn) {
-                    tooltipBtn.addEventListener('click', toggleChat);
-                }
+                if (tooltip) tooltip.addEventListener('click', toggleChat);
 
                 function addMessage(text, isUser = false) {
                     const msgDiv = document.createElement('div');
                     msgDiv.className = 'flex gap-2 ' + (isUser ? 'justify-end' : '');
                     
-                    // FORMATTING FIX: Parse bold text sent from the AI
+                    // Format bold text received from the backend
                     const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
                     
                     let html = '';
@@ -1650,17 +1641,30 @@
                     messages.scrollTop = messages.scrollHeight;
                 }
 
-                // SECURE FETCH TO VERCEL BACKEND
+                // 3. Dynamic Checkout Buttons
+                function renderPaymentButton(url) {
+                    const btnContainer = document.createElement('div');
+                    btnContainer.className = 'flex gap-2 mt-2';
+                    btnContainer.innerHTML = `
+                        <div class="w-6 h-6 shrink-0 mt-1"></div>
+                        <a href="${url}" target="_blank" class="flex items-center justify-center gap-2 px-4 py-2 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-full max-w-[85%]">
+                            Secure Spot via Razorpay
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                        </a>
+                    `;
+                    messages.appendChild(btnContainer);
+                    messages.scrollTop = messages.scrollHeight;
+                }
+
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     const text = input.value.trim();
                     if (!text) return;
 
-                    // 1. Show user message
                     addMessage(text, true);
                     input.value = '';
 
-                    // 2. Show a temporary "typing..." indicator
+                    // Typing Indicator
                     const typingId = 'typing-' + Date.now();
                     const typingDiv = document.createElement('div');
                     typingDiv.id = typingId;
@@ -1672,7 +1676,6 @@
                     messages.appendChild(typingDiv);
                     messages.scrollTop = messages.scrollHeight;
 
-                    // 3. Send message to your secure Vercel backend API
                     try {
                         const response = await fetch('/api/chat', {
                             method: 'POST',
@@ -1682,12 +1685,15 @@
                         
                         const data = await response.json();
                         
-                        // Remove typing indicator
                         const typingEl = document.getElementById(typingId);
                         if(typingEl) typingEl.remove();
 
                         if (response.ok) {
                             addMessage(data.reply, false);
+                            // Only render button if backend returns a URL
+                            if (data.paymentUrl) {
+                                renderPaymentButton(data.paymentUrl);
+                            }
                         } else {
                             addMessage("Sorry, my systems are updating right now. Please email Zyro directly at zyroeditz.official@gmail.com!", false);
                         }
@@ -1698,19 +1704,17 @@
                     }
                 });
 
-                // NEW: Listen for the form submission
+                // 4. Form Webhook Synergy
                 window.addEventListener('projectFormSubmitted', (e) => {
                     const clientName = e.detail.clientName || 'there';
                     
-                    // Automatically open the chat window if it's closed
                     if (!isOpen) {
                         toggleChat();
                     }
 
-                    // Have the bot send a smart, personalized confirmation message
                     setTimeout(() => {
                         addMessage(`I just saw your project inquiry come through, ${clientName}! Zyro will review your brief and get back to you within 24 hours. Keep an eye on your inbox. 🎬`, false);
-                    }, 1000); // 1-second delay makes it feel natural
+                    }, 1000);
                 });
             }
             
@@ -1723,7 +1727,7 @@
             initPerformance();
             initCanvasBackground(); 
             initPreloader();
-            initChatbot(); // Initialize the Secure AI chatbot
+            initChatbot(); 
         });
     </script>
 </body>
