@@ -11,7 +11,7 @@ const chatMemory = {};
 const generateUpiData = (amount) => {
     const upiId = "7602679995-5@ybl";
     const name = "Soumojit Das"; 
-    const transactionNote = "ZyroEditz Payment - Indusind Bank";
+    const transactionNote = "ZyroEditz 50% Advance Payment"; 
     
     const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&tn=${encodeURIComponent(transactionNote)}&am=${amount}&cu=INR`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}`;
@@ -26,32 +26,34 @@ module.exports = async function(req, res) {
         const { message: userMessage, clientId = "default_user" } = req.body;
         const isNewUser = clientId?.startsWith('NEW_');
 
-        // THE BRAIN: Dynamic UPI Links & QR Codes based on User Status
+        // THE BRAIN: UPI Links now only charge the 50% UPFRONT DEPOSIT
         const paymentData = isNewUser ? {
-            thumbnail: generateUpiData(50),
-            motion: generateUpiData(200),
-            short: generateUpiData(100),
-            long: generateUpiData(250)
+            // NEW USERS (50% off total, then 50% of that as advance)
+            thumbnail: generateUpiData(25),   // Total is 50 -> Advance is 25
+            motion: generateUpiData(100),     // Total is 200 -> Advance is 100
+            short: generateUpiData(50),       // Total is 100 -> Advance is 50
+            long: generateUpiData(125)        // Total is 250 -> Advance is 125
         } : {
-            thumbnail: generateUpiData(100),
-            motion: generateUpiData(400),
-            short: generateUpiData(200),
-            long: generateUpiData(500)
+            // OLD USERS (Standard total, then 50% of that as advance)
+            thumbnail: generateUpiData(50),   // Total is 100 -> Advance is 50
+            motion: generateUpiData(200),     // Total is 400 -> Advance is 200
+            short: generateUpiData(100),      // Total is 200 -> Advance is 100
+            long: generateUpiData(250)        // Total is 500 -> Advance is 250
         };
 
-        // PRE-CALCULATED PRICING SHEET (No-Math Rule)
+        // PRE-CALCULATED PRICING SHEET (Tells the AI both the Total and the Advance)
         const pricingData = isNewUser ? {
-            status: "NEW CLIENT PROMO ACTIVE (FINAL PRICES)",
-            reels: "₹100",
-            youtube: "₹250",
-            motion: "₹200",
-            thumbnail: "₹50"
+            status: "NEW CLIENT (MUST announce they get a 50% welcome discount on their first order!)",
+            reels: "Discounted Total: ₹100 (Upfront Deposit: ₹50)",
+            youtube: "Discounted Total: ₹250 (Upfront Deposit: ₹125)",
+            motion: "Discounted Total: ₹200 (Upfront Deposit: ₹100)",
+            thumbnail: "Discounted Total: ₹50 (Upfront Deposit: ₹25)"
         } : {
             status: "STANDARD RATES",
-            reels: "₹200",
-            youtube: "₹500",
-            motion: "₹400",
-            thumbnail: "₹100"
+            reels: "Total: ₹200 (Upfront Deposit: ₹100)",
+            youtube: "Total: ₹500 (Upfront Deposit: ₹250)",
+            motion: "Total: ₹400 (Upfront Deposit: ₹200)",
+            thumbnail: "Total: ₹100 (Upfront Deposit: ₹50)"
         };
 
         const systemPrompt = `
@@ -66,9 +68,9 @@ Client Status: ${pricingData.status}
 
 CONVERSATION FLOW RULES:
 1. GREETING: IF the user just greets you (e.g., "Hi"): Greet them back and ask what kind of editing they are looking for. DO NOT pitch prices yet.
-2. PITCH: ONCE they tell you what they need: Pitch that specific service, give them the price, and ask: "Are you ready to secure your spot?"
-3. CHECKOUT: ONLY if the user agrees to pay, append the correct tag: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL].
-4. PAYMENT COMPLETED: If a user says "done", "paid", or claims they completed a payment, DO NOT generate another payment link. Say EXACTLY: "Awesome! To finalize your booking, please take a screenshot of your successful payment and upload it using the Contact Form just below this chat, along with your project details. Zyro will verify it and get started!"
+2. PITCH: ONCE they tell you what they need: Pitch that specific service. IF they are a NEW CLIENT, enthusiastically tell them they get a 50% discount on this first order! Tell them the TOTAL price, and explicitly explain that Zyro only requires a 50% upfront deposit to begin work, with the rest due after delivery. Ask: "Are you ready to secure your spot by paying the upfront deposit?"
+3. CHECKOUT: ONLY if the user agrees to pay the deposit, append the correct tag: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL].
+4. PAYMENT COMPLETED: If a user says "done", "paid", or claims they completed a payment, DO NOT generate another payment link. Say EXACTLY: "Awesome! To finalize your booking, please take a screenshot of your successful advance payment and upload it using the Contact Form just below this chat, along with your project details. Zyro will verify it and get started!"
 5. FORM CONFIRMATION: If the user claims they already filled out the form/email, say EXACTLY: "If your inquiry went through successfully, my automated system will alert me here. If you don't see a confirmation soon, please double-check that you hit send!"
 
 CONSTRAINTS:
