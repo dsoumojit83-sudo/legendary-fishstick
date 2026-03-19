@@ -4,22 +4,6 @@ const groq = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1" 
 });
 
-// LINK MAPPING FOR NON-DISCOUNTED USERS
-const STANDARD_LINKS = {
-    "thumbnail": "https://rzp.io/rzp/bHAbZoh",      // ₹100
-    "motion_graphic": "https://rzp.io/rzp/kdE5KohQ", // ₹400
-    "short_form": "https://rzp.io/rzp/YVxVRMgA",    // ₹200
-    "long_form": "https://rzp.io/rzp/rK3UnkW"       // ₹500
-};
-
-// LINK MAPPING FOR DISCOUNTED USERS
-const DISCOUNT_LINKS = {
-    "thumbnail": "https://rzp.io/rzp/Vp5EEtkP",      // ₹50
-    "motion_graphic": "https://rzp.io/rzp/vC6eCvWp", // ₹200
-    "short_form": "https://rzp.io/rzp/NZSjgn4U",    // ₹100
-    "long_form": "https://rzp.io/rzp/YVxVRMgA"      // ₹250
-};
-
 module.exports = async function(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
     
@@ -27,10 +11,20 @@ module.exports = async function(req, res) {
         const { message: userMessage, clientId } = req.body;
         const isNewUser = clientId?.startsWith('NEW_');
 
-        // Select correct link set and pricing based on user status
-        const activeLinks = isNewUser ? DISCOUNT_LINKS : STANDARD_LINKS;
-        
-        // PRE-CALCULATED PRICING SHEET (Matches your provided links)
+        // THE BRAIN: Dynamic Link Library based on User Status
+        const activeLinks = isNewUser ? {
+            thumbnail: "https://rzp.io/rzp/Vp5EEtkP",      // ₹50
+            motion: "https://rzp.io/rzp/vC6eCvWp",         // ₹200
+            short: "https://rzp.io/rzp/NZSjgn4U",          // ₹100
+            long: "https://rzp.io/rzp/YVxVRMgA"            // ₹250
+        } : {
+            thumbnail: "https://rzp.io/rzp/bHAbZoh",       // ₹100
+            motion: "https://rzp.io/rzp/kdE5KohQ",         // ₹400
+            short: "https://rzp.io/rzp/YVxVRMgA",          // ₹200
+            long: "https://rzp.io/rzp/rK3UnkW"             // ₹500
+        };
+
+        // PRE-CALCULATED PRICING SHEET (No-Math Rule)
         const pricingData = isNewUser ? {
             status: "50% NEW CLIENT DISCOUNT APPLIED",
             reels: "₹100",
@@ -78,19 +72,19 @@ MANDATORY OVERRIDES:
         let reply = chatCompletion.choices[0].message.content;
         let paymentUrl = null;
 
-        // Tag Interception using the contextually active links
+        // Tag Interception: Maps the AI's tag to the correct link from the chosen set
         const tags = {
             "[PAY_THUMBNAIL]": activeLinks.thumbnail,
-            "[PAY_LONG]": activeLinks.long_form,
-            "[PAY_SHORT]": activeLinks.short_form,
-            "[PAY_MOTION]": activeLinks.motion_graphic
+            "[PAY_LONG]": activeLinks.long,
+            "[PAY_SHORT]": activeLinks.short,
+            "[PAY_MOTION]": activeLinks.motion
         };
 
         for (const [tag, url] of Object.entries(tags)) {
             if (reply.includes(tag)) {
                 paymentUrl = url;
                 reply = reply.replace(tag, "").trim();
-                break; // Stop after finding the first tag
+                break; // Ensure only one link is sent per interaction
             }
         }
 
