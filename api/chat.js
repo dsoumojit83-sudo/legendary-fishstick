@@ -4,6 +4,18 @@ const groq = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1" 
 });
 
+// HELPER: Generates both the clickable UPI link and a scannable QR code image URL
+const generateUpiData = (amount) => {
+    const upiId = "7602679995-5@ybl";
+    const name = "ZyroEditz";
+    const upiString = `upi://pay?pa=${upiId}&pn=${name}&am=${amount}&cu=INR`;
+    
+    // Uses a free, fast API to instantly generate a 250x250 QR code from the UPI string
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}`;
+    
+    return { upiString, qrUrl };
+};
+
 module.exports = async function(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
     
@@ -11,20 +23,20 @@ module.exports = async function(req, res) {
         const { message: userMessage, clientId } = req.body;
         const isNewUser = clientId?.startsWith('NEW_');
 
-        // THE BRAIN: Dynamic Link Library based on User Status
-        const activeLinks = isNewUser ? {
-            thumbnail: "https://rzp.io/rzp/Vp5EEtkP",      // ₹50
-            motion: "https://rzp.io/rzp/vC6eCvWp",         // ₹200
-            short: "https://rzp.io/rzp/NZSjgn4U",          // ₹100
-            long: "https://rzp.io/rzp/YVxVRMgA"            // ₹250
+        // THE BRAIN: Dynamic UPI Links & QR Codes based on User Status
+        const paymentData = isNewUser ? {
+            thumbnail: generateUpiData(50),
+            motion: generateUpiData(200),
+            short: generateUpiData(100),
+            long: generateUpiData(250)
         } : {
-            thumbnail: "https://rzp.io/rzp/bHAbZoh",       // ₹100
-            motion: "https://rzp.io/rzp/kdE5KohQ",         // ₹400
-            short: "https://rzp.io/rzp/YVxVRMgA",          // ₹200
-            long: "https://rzp.io/rzp/rK3UnkW"             // ₹500
+            thumbnail: generateUpiData(100),
+            motion: generateUpiData(400),
+            short: generateUpiData(200),
+            long: generateUpiData(500)
         };
 
-        // PRE-CALCULATED PRICING SHEET (No-Math Rule)
+        // PRE-CALCULATED PRICING SHEET
         const pricingData = isNewUser ? {
             status: "50% NEW CLIENT DISCOUNT APPLIED",
             reels: "₹100",
@@ -70,25 +82,31 @@ MANDATORY OVERRIDES:
         });
 
         let reply = chatCompletion.choices[0].message.content;
-        let paymentUrl = null;
+        let finalPaymentData = null;
 
-        // Tag Interception: Maps the AI's tag to the correct link from the chosen set
+        // Tag Interception: Maps the AI's tag to the correct UPI data
         const tags = {
-            "[PAY_THUMBNAIL]": activeLinks.thumbnail,
-            "[PAY_LONG]": activeLinks.long,
-            "[PAY_SHORT]": activeLinks.short,
-            "[PAY_MOTION]": activeLinks.motion
+            "[PAY_THUMBNAIL]": paymentData.thumbnail,
+            "[PAY_LONG]": paymentData.long,
+            "[PAY_SHORT]": paymentData.short,
+            "[PAY_MOTION]": paymentData.motion
         };
 
-        for (const [tag, url] of Object.entries(tags)) {
+        for (const [tag, data] of Object.entries(tags)) {
             if (reply.includes(tag)) {
-                paymentUrl = url;
+                finalPaymentData = data;
                 reply = reply.replace(tag, "").trim();
-                break; // Ensure only one link is sent per interaction
+                break; // Ensure only one payment option is sent per interaction
             }
         }
 
-        res.status(200).json({ reply, paymentUrl });
+        // Return the reply, the clickable link, AND the QR code image URL
+        res.status(200).json({ 
+            reply, 
+            paymentUrl: finalPaymentData?.upiString || null,
+            qrUrl: finalPaymentData?.qrUrl || null
+        });
+
     } catch (error) {
         console.error("Backend Error:", error);
         res.status(500).json({ error: "Internal Server Error" });
