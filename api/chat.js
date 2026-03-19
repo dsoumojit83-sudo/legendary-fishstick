@@ -28,47 +28,47 @@ module.exports = async function(req, res) {
 
         // THE BRAIN: UPI Links now only charge the 50% UPFRONT DEPOSIT
         const paymentData = isNewUser ? {
-            // NEW USERS (50% off total, then 50% of that as advance)
-            thumbnail: generateUpiData(25),   // Total is 50 -> Advance is 25
-            motion: generateUpiData(100),     // Total is 200 -> Advance is 100
-            short: generateUpiData(50),       // Total is 100 -> Advance is 50
-            long: generateUpiData(125)        // Total is 250 -> Advance is 125
+            thumbnail: generateUpiData(25),
+            motion: generateUpiData(100),
+            short: generateUpiData(50),
+            long: generateUpiData(125)
         } : {
-            // OLD USERS (Standard total, then 50% of that as advance)
-            thumbnail: generateUpiData(50),   // Total is 100 -> Advance is 50
-            motion: generateUpiData(200),     // Total is 400 -> Advance is 200
-            short: generateUpiData(100),      // Total is 200 -> Advance is 100
-            long: generateUpiData(250)        // Total is 500 -> Advance is 250
+            thumbnail: generateUpiData(50),
+            motion: generateUpiData(200),
+            short: generateUpiData(100),
+            long: generateUpiData(250)
         };
 
-        // PRE-CALCULATED PRICING SHEET (Tells the AI both the Total and the Advance)
+        // PRE-CALCULATED PRICING SHEET (Idiot-proofed so the AI does ZERO math)
         const pricingData = isNewUser ? {
-            status: "NEW CLIENT (MUST announce they get a 50% welcome discount on their first order!)",
-            reels: "Discounted Total: ₹100 (Upfront Deposit: ₹50)",
-            youtube: "Discounted Total: ₹250 (Upfront Deposit: ₹125)",
-            motion: "Discounted Total: ₹200 (Upfront Deposit: ₹100)",
-            thumbnail: "Discounted Total: ₹50 (Upfront Deposit: ₹25)"
+            status: "NEW CLIENT (Announce their 50% welcome discount!)",
+            reels: "Regular: ₹200 | Your Discounted Total: ₹100 | Required Deposit Today: ₹50",
+            youtube: "Regular: ₹500 | Your Discounted Total: ₹250 | Required Deposit Today: ₹125",
+            motion: "Regular: ₹400 | Your Discounted Total: ₹200 | Required Deposit Today: ₹100",
+            thumbnail: "Regular: ₹100 | Your Discounted Total: ₹50 | Required Deposit Today: ₹25"
         } : {
             status: "STANDARD RATES",
-            reels: "Total: ₹200 (Upfront Deposit: ₹100)",
-            youtube: "Total: ₹500 (Upfront Deposit: ₹250)",
-            motion: "Total: ₹400 (Upfront Deposit: ₹200)",
-            thumbnail: "Total: ₹100 (Upfront Deposit: ₹50)"
+            reels: "Total: ₹200 | Required Deposit Today: ₹100",
+            youtube: "Total: ₹500 | Required Deposit Today: ₹250",
+            motion: "Total: ₹400 | Required Deposit Today: ₹200",
+            thumbnail: "Total: ₹100 | Required Deposit Today: ₹50"
         };
 
         const systemPrompt = `
 You are the AI Sales Agent for ZyroEditz. Your goal is to figure out what the client needs and close deals.
 
-PRICING SHEET (THESE ARE FINAL PRICES, DO NOT DO ANY MATH):
+PRICING SHEET:
 - Short Form (Reels/Shorts): ${pricingData.reels}
 - Long Form (YouTube): ${pricingData.youtube}
 - Motion Graphics: ${pricingData.motion}
 - Thumbnail Design: ${pricingData.thumbnail}
 Client Status: ${pricingData.status}
 
+CRITICAL RULE: DO NOT DO ANY MATH. Read the EXACT numbers from the Pricing Sheet above. DO NOT apply any extra discounts to the numbers provided.
+
 CONVERSATION FLOW RULES:
 1. GREETING: IF the user just greets you (e.g., "Hi"): Greet them back and ask what kind of editing they are looking for. DO NOT pitch prices yet.
-2. PITCH: ONCE they tell you what they need: Pitch that specific service. IF they are a NEW CLIENT, enthusiastically tell them they get a 50% discount on this first order! Tell them the TOTAL price, and explicitly explain that Zyro only requires a 50% upfront deposit to begin work, with the rest due after delivery. Ask: "Are you ready to secure your spot by paying the upfront deposit?"
+2. PITCH: ONCE they tell you what they need: Pitch that specific service. IF they are a NEW CLIENT, enthusiastically tell them they get a 50% discount! State their EXACT "Discounted Total" from the sheet. Then, explicitly state the EXACT "Required Deposit Today" to begin work, explaining the rest is due after delivery. Ask: "Are you ready to secure your spot by paying the upfront deposit?"
 3. CHECKOUT: ONLY if the user agrees to pay the deposit, append the correct tag: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL].
 4. PAYMENT COMPLETED: If a user says "done", "paid", or claims they completed a payment, DO NOT generate another payment link. Say EXACTLY: "Awesome! To finalize your booking, please take a screenshot of your successful advance payment and upload it using the Contact Form just below this chat, along with your project details. Zyro will verify it and get started!"
 5. FORM CONFIRMATION: If the user claims they already filled out the form/email, say EXACTLY: "If your inquiry went through successfully, my automated system will alert me here. If you don't see a confirmation soon, please double-check that you hit send!"
@@ -98,7 +98,7 @@ CONSTRAINTS:
         const chatCompletion = await groq.chat.completions.create({
             messages: chatMemory[clientId], // Sending full context so bot remembers
             model: 'llama-3.3-70b-versatile',
-            temperature: 0.2,
+            temperature: 0.1, // Lowered temperature so the AI is less likely to improvise math
             max_tokens: 150,
         });
 
