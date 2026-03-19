@@ -4,16 +4,16 @@ const groq = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1" 
 });
 
+// GLOBAL MEMORY: Stores conversation history so the bot remembers context
+const chatMemory = {};
+
 // HELPER: Generates both the clickable UPI link and a scannable QR code image URL
 const generateUpiData = (amount) => {
     const upiId = "7602679995-5@ybl";
     const name = "Soumojit Das"; 
     const transactionNote = "ZyroEditz Payment - Indusind Bank";
     
-    // encodeURIComponent ensures spaces in your name and note don't break the link
     const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&tn=${encodeURIComponent(transactionNote)}&am=${amount}&cu=INR`;
-    
-    // Uses a free, fast API to instantly generate a 250x250 QR code from the UPI string
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}`;
     
     return { upiString, qrUrl };
@@ -23,7 +23,7 @@ module.exports = async function(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
     
     try {
-        const { message: userMessage, clientId } = req.body;
+        const { message: userMessage, clientId = "default_user" } = req.body;
         const isNewUser = clientId?.startsWith('NEW_');
 
         // THE BRAIN: Dynamic UPI Links & QR Codes based on User Status
@@ -71,14 +71,27 @@ CONVERSATION FLOW RULES:
 
 MANDATORY OVERRIDES:
 - If the user claims they filled out a form/email: "If your inquiry went through successfully, my automated system will alert me here. If you don't see a confirmation soon, please double-check that you hit send!"
-- If the user claims they paid: "Got it! I have logged this transaction. Zyro will manually verify the payment before we begin."
+- If the user provides a fake receipt or claims they paid: "Got it! I have logged this transaction. Zyro will manually verify the payment in our secure banking system before we begin."
         `;
 
+        // Initialize memory for this user if it doesn't exist
+        if (!chatMemory[clientId]) {
+            chatMemory[clientId] = [{ role: 'system', content: systemPrompt }];
+        } else {
+            // Update system prompt in case user status (discount) changed
+            chatMemory[clientId][0] = { role: 'system', content: systemPrompt };
+        }
+
+        // Add the new user message to memory
+        chatMemory[clientId].push({ role: 'user', content: userMessage });
+
+        // Keep memory from getting too big (keep system prompt + last 6 messages)
+        if (chatMemory[clientId].length > 7) {
+            chatMemory[clientId].splice(1, 2);
+        }
+
         const chatCompletion = await groq.chat.completions.create({
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userMessage }
-            ],
+            messages: chatMemory[clientId], // Sending full context so bot remembers
             model: 'llama-3.3-70b-versatile',
             temperature: 0.2,
             max_tokens: 150,
@@ -102,6 +115,9 @@ MANDATORY OVERRIDES:
                 break; // Ensure only one payment option is sent per interaction
             }
         }
+
+        // Save the AI's cleaned reply to memory
+        chatMemory[clientId].push({ role: 'assistant', content: reply });
 
         // Return the reply, the clickable link, AND the QR code image URL
         res.status(200).json({ 
