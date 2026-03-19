@@ -7,7 +7,7 @@ const groq = new OpenAI({
 // HELPER: Generates both the clickable UPI link and a scannable QR code image URL
 const generateUpiData = (amount) => {
     const upiId = "7602679995-5@ybl";
-    const name = "ZyroEditz";
+    const name = "Soumojit_Das";
     const upiString = `upi://pay?pa=${upiId}&pn=${name}&am=${amount}&cu=INR`;
     
     // Uses a free, fast API to instantly generate a 250x250 QR code from the UPI string
