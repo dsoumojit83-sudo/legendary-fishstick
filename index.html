@@ -735,6 +735,17 @@
                                 <div class="text-white text-sm group-hover:text-[#ff1a1a] transition-colors">@zyroeditz.clips</div>
                             </div>
                         </a>
+                        
+                        <div class="flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
+                            <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-[#ff1a1a]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            </div>
+                            <div>
+                                <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">Phone (Mon-Fri, 9am-5pm)</div>
+                                <div class="text-white text-sm">+91 7602679995</div>
+                            </div>
+                        </div>
+
                         <div class="flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
                             <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0">
                                 <svg class="w-5 h-5 text-[#ff1a1a]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -749,11 +760,7 @@
 
                 <div class="reveal">
                     <div class="p-8 md:p-10 border border-white/10 bg-white/5 backdrop-blur-md">
-                        <form id="contactForm" action="https://formsubmit.co/zyroeditz.official@gmail.com" method="POST">
-                            <input type="hidden" name="_template" value="table">
-                            <input type="hidden" name="_subject" value="New project inquiry from ZyroEditz site">
-                            <input type="hidden" name="_captcha" value="false">
-                            <input type="text" name="_honey" style="display:none;" tabindex="-1" autocomplete="off" aria-hidden="true">
+                        <form id="contactForm">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="name">Name</label>
@@ -769,25 +776,27 @@
                                 <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="subject">Project Type</label>
                                 <select class="input-field w-full px-4 py-3" id="subject" name="subject" required>
                                     <option value="" selected disabled>Select an option</option>
-                                    <option value="Video Editing">Video Editing</option>
-                                    <option value="Motion Graphics">Motion Graphics</option>
-                                    <option value="Sound + Rhythm">Sound + Rhythm</option>
                                     <option value="Short-form Editing">Short-form Editing</option>
                                     <option value="Long-form Editing">Long-form Editing</option>
-                                    <option value="Color Correction & Grade">Color Correction & Grade</option>
-                                    <option value="Sound Design">Sound Design</option>
+                                    <option value="Motion Graphics">Motion Graphics</option>
                                     <option value="Thumbnail/Export Support">Thumbnail/Export Support</option>
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
 
                             <div class="mt-5">
-                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message</label>
+                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="paymentProof">Payment Proof (JPG/PNG, Max 1MB)</label>
+                                <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png">
+                                <p id="fileError" class="text-xs text-red-400 mt-2 hidden">File size must be under 1MB.</p>
+                            </div>
+
+                            <div class="mt-5">
+                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message / Project Brief</label>
                                 <textarea class="input-field w-full px-4 py-3 min-h-[140px] resize-y" id="message" name="message" required placeholder="Tell me about your project, deadline, and references..."></textarea>
                             </div>
 
                             <div class="mt-7 flex flex-col sm:flex-row sm:items-center gap-4">
-                                <button class="btn-shine px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn min-h-[44px] min-w-[44px] flex items-center justify-center" type="submit" id="contactSubmit">Send Message</button>
+                                <button class="btn-shine px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn min-h-[44px] min-w-[44px] flex items-center justify-center" type="submit" id="contactSubmit">Submit to Zyro</button>
                                 <div class="text-xs tracking-widest text-gray-500" id="contactStatus" aria-live="polite" aria-atomic="true"></div>
                             </div>
                         </form>
@@ -1339,72 +1348,73 @@
                 const form = document.getElementById('contactForm');
                 const statusEl = document.getElementById('contactStatus');
                 const submitBtn = document.getElementById('contactSubmit');
+                const fileInput = document.getElementById('paymentProof');
+                const fileError = document.getElementById('fileError');
                 
-                function escapeHtml(text) {
-                    const div = document.createElement('div');
-                    div.textContent = text;
-                    return div.innerHTML;
-                }
-                
+                // Active Google Web App URL
+                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyXiGjgwTlvvsqZR_WPTYIknDt_ATMxz4jkzJhA872E5wElV6SwUSIsnjFo8o6JmXT/exec'; 
+
                 if (form && statusEl && submitBtn) {
+                    if (fileInput) {
+                        fileInput.addEventListener('change', function() {
+                            if (this.files[0] && this.files[0].size > 1048576) { // 1MB Check
+                                fileError.classList.remove('hidden');
+                                this.value = ''; 
+                            } else {
+                                if (fileError) fileError.classList.add('hidden');
+                            }
+                        });
+                    }
+
                     form.addEventListener('submit', async function (e) {
                         e.preventDefault();
                         
-                        const formData = new FormData(form);
-                        const name = escapeHtml(String(formData.get('name') || '').trim());
-                        const email = escapeHtml(String(formData.get('email') || '').trim());
-                        const subject = escapeHtml(String(formData.get('subject') || '').trim());
-                        const message = escapeHtml(String(formData.get('message') || '').trim());
-
-                        const honey = String(formData.get('_honey') || '').trim();
-                        if (honey) {
-                            statusEl.textContent = 'Error: Invalid submission.';
-                            statusEl.className = 'text-xs tracking-widest text-red-400';
-                            return;
-                        }
-
-                        const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-                        if (!name || !emailOk || !subject || !message) {
-                            statusEl.textContent = 'Please fill all fields with a valid email.';
-                            statusEl.className = 'text-xs tracking-widest text-red-400';
-                            return;
-                        }
-
                         submitBtn.disabled = true;
                         submitBtn.classList.add('opacity-70');
-                        statusEl.textContent = 'Sending...';
-                        statusEl.className = 'text-xs tracking-widest text-green-400';
+                        statusEl.textContent = 'Uploading securely...';
+                        statusEl.className = 'text-xs tracking-widest text-[#ff1a1a]';
 
-                        try {
-                            const response = await fetch(form.action, {
+                        const formData = {
+                            name: document.getElementById('name').value,
+                            email: document.getElementById('email').value,
+                            subject: document.getElementById('subject').value,
+                            message: document.getElementById('message').value
+                        };
+
+                        const file = fileInput ? fileInput.files[0] : null;
+                        
+                        const sendData = (payload) => {
+                            fetch(GOOGLE_SCRIPT_URL, {
                                 method: 'POST',
-                                body: formData,
-                                headers: {
-                                    'Accept': 'application/json'
-                                }
-                            });
-
-                            if (response.ok) {
-                                statusEl.textContent = 'Message sent successfully!';
+                                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                body: JSON.stringify(payload)
+                            })
+                            .then(response => {
+                                statusEl.textContent = 'Received! You will get your bill shortly.';
                                 statusEl.className = 'text-xs tracking-widest text-green-400';
                                 form.reset();
-                                
-                                // NEW: Tell the website the form was submitted
-                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: name } }));
+                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: formData.name } }));
+                                setTimeout(() => { submitBtn.disabled = false; submitBtn.classList.remove('opacity-70'); statusEl.textContent = ''; }, 4000);
+                            })
+                            .catch(error => {
+                                statusEl.textContent = 'Connection Error. Reach out via WhatsApp.';
+                                statusEl.className = 'text-xs tracking-widest text-red-400';
+                                submitBtn.disabled = false;
+                                submitBtn.classList.remove('opacity-70');
+                            });
+                        };
 
-                                setTimeout(() => {
-                                    submitBtn.disabled = false;
-                                    submitBtn.classList.remove('opacity-70');
-                                    statusEl.textContent = '';
-                                }, 3000);
-                            } else {
-                                throw new Error('Form submission failed');
-                            }
-                        } catch (error) {
-                            statusEl.textContent = 'Error sending message. Please try again.';
-                            statusEl.className = 'text-xs tracking-widest text-red-400';
-                            submitBtn.disabled = false;
-                            submitBtn.classList.remove('opacity-70');
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(event) {
+                                formData.fileData = event.target.result.split(',')[1];
+                                formData.fileName = file.name;
+                                formData.mimeType = file.type;
+                                sendData(formData);
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            sendData(formData);
                         }
                     });
                 }
