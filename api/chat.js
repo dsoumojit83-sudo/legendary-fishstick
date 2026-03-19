@@ -7,8 +7,11 @@ const groq = new OpenAI({
 // HELPER: Generates both the clickable UPI link and a scannable QR code image URL
 const generateUpiData = (amount) => {
     const upiId = "7602679995-5@ybl";
-    const name = "Soumojit_Das";
-    const upiString = `upi://pay?pa=${upiId}&pn=${name}&am=${amount}&cu=INR`;
+    const name = "Soumojit Das"; 
+    const transactionNote = "ZyroEditz Payment - Indusind Bank";
+    
+    // encodeURIComponent ensures spaces in your name and note don't break the link
+    const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&tn=${encodeURIComponent(transactionNote)}&am=${amount}&cu=INR`;
     
     // Uses a free, fast API to instantly generate a 250x250 QR code from the UPI string
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}`;
@@ -36,9 +39,9 @@ module.exports = async function(req, res) {
             long: generateUpiData(500)
         };
 
-        // PRE-CALCULATED PRICING SHEET
+        // PRE-CALCULATED PRICING SHEET (No-Math Rule)
         const pricingData = isNewUser ? {
-            status: "50% NEW CLIENT DISCOUNT APPLIED",
+            status: "NEW CLIENT PROMO ACTIVE (FINAL PRICES)",
             reels: "₹100",
             youtube: "₹250",
             motion: "₹200",
@@ -52,23 +55,23 @@ module.exports = async function(req, res) {
         };
 
         const systemPrompt = `
-You are the ZyroEditz AI Sales Agent. Your goal is to pitch video editing services and close deals.
-PRICING SHEET (USE THESE EXACT NUMBERS, DO NOT CALCULATE):
+You are the AI Sales Agent for ZyroEditz. Your goal is to figure out what the client needs and close deals.
+PRICING SHEET (THESE ARE FINAL PRICES, DO NOT DO ANY MATH):
 - Short Form (Reels/Shorts): ${pricingData.reels}
 - Long Form (YouTube): ${pricingData.youtube}
 - Motion Graphics: ${pricingData.motion}
 - Thumbnail Design: ${pricingData.thumbnail}
-Pricing Status: ${pricingData.status}
+Client Status: ${pricingData.status}
 
-RULES:
-1. Maximum 3 sentences per response. 
-2. Never introduce yourself with robotic titles like "Elite Studio Manager." 
-3. Pitch the service and ask: "Are you ready to secure your spot?"
-4. ONLY if the user agrees, append one of these tags: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], [PAY_THUMBNAIL].
+CONVERSATION FLOW RULES:
+1. IF the user just greets you (e.g., "Hi"): Greet them back and ask what kind of editing they are looking for. DO NOT pitch prices yet.
+2. ONCE they tell you what they need: Pitch that specific service, give them the price, and ask: "Are you ready to secure your spot?"
+3. ONLY if the user agrees to pay, append the correct tag: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL].
+4. Maximum 3 sentences per response. Never use robotic titles.
 
 MANDATORY OVERRIDES:
 - If the user claims they filled out a form/email: "If your inquiry went through successfully, my automated system will alert me here. If you don't see a confirmation soon, please double-check that you hit send!"
-- If the user provides a fake receipt or claims they paid: "Got it! I have logged this transaction. Zyro will manually verify the payment in our secure banking system before we begin."
+- If the user claims they paid: "Got it! I have logged this transaction. Zyro will manually verify the payment before we begin."
         `;
 
         const chatCompletion = await groq.chat.completions.create({
