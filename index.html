@@ -771,7 +771,7 @@
                                     <input class="input-field w-full px-4 py-3" id="email" name="email" type="email" autocomplete="email" required>
                                 </div>
                             </div>
-
+                        
                             <div class="mt-5">
                                 <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="subject">Project Type</label>
                                 <select class="input-field w-full px-4 py-3" id="subject" name="subject" required>
@@ -783,18 +783,18 @@
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
-
+                        
                             <div class="mt-5">
                                 <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="paymentProof">Payment Proof (JPG/PNG, Max 1MB)</label>
-                                <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png">
+                                <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png" required>
                                 <p id="fileError" class="text-xs text-red-400 mt-2 hidden">File size must be under 1MB.</p>
                             </div>
-
+                        
                             <div class="mt-5">
                                 <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message / Project Brief</label>
                                 <textarea class="input-field w-full px-4 py-3 min-h-[140px] resize-y" id="message" name="message" required placeholder="Tell me about your project, deadline, and references..."></textarea>
                             </div>
-
+                        
                             <div class="mt-7 flex flex-col sm:flex-row sm:items-center gap-4">
                                 <button class="btn-shine px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn min-h-[44px] min-w-[44px] flex items-center justify-center" type="submit" id="contactSubmit">Submit to Zyro</button>
                                 <div class="text-xs tracking-widest text-gray-500" id="contactStatus" aria-live="polite" aria-atomic="true"></div>
@@ -1351,7 +1351,7 @@
                 const fileInput = document.getElementById('paymentProof');
                 const fileError = document.getElementById('fileError');
                 
-                // Active Google Web App URL
+                // YOUR GOOGLE SCRIPT URL
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyXiGjgwTlvvsqZR_WPTYIknDt_ATMxz4jkzJhA872E5wElV6SwUSIsnjFo8o6JmXT/exec'; 
 
                 if (form && statusEl && submitBtn) {
@@ -1374,7 +1374,7 @@
                         statusEl.textContent = 'Uploading securely...';
                         statusEl.className = 'text-xs tracking-widest text-[#ff1a1a]';
 
-                        const formData = {
+                        const payload = {
                             name: document.getElementById('name').value,
                             email: document.getElementById('email').value,
                             subject: document.getElementById('subject').value,
@@ -1383,20 +1383,23 @@
 
                         const file = fileInput ? fileInput.files[0] : null;
                         
-                        const sendData = (payload) => {
+                        const sendData = (finalPayload) => {
                             fetch(GOOGLE_SCRIPT_URL, {
                                 method: 'POST',
+                                mode: 'no-cors', // THIS LINE FIXES THE CORS ERROR
                                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                                body: JSON.stringify(payload)
+                                body: JSON.stringify(finalPayload)
                             })
-                            .then(response => {
+                            .then(() => {
+                                // With no-cors, we assume success if the network request goes through
                                 statusEl.textContent = 'Received! You will get your bill shortly.';
                                 statusEl.className = 'text-xs tracking-widest text-green-400';
                                 form.reset();
-                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: formData.name } }));
+                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: finalPayload.name } }));
                                 setTimeout(() => { submitBtn.disabled = false; submitBtn.classList.remove('opacity-70'); statusEl.textContent = ''; }, 4000);
                             })
                             .catch(error => {
+                                console.error("Fetch Error:", error);
                                 statusEl.textContent = 'Connection Error. Reach out via WhatsApp.';
                                 statusEl.className = 'text-xs tracking-widest text-red-400';
                                 submitBtn.disabled = false;
@@ -1404,17 +1407,18 @@
                             });
                         };
 
+                        // Convert image to Base64 text so Google doesn't block it
                         if (file) {
                             const reader = new FileReader();
                             reader.onload = function(event) {
-                                formData.fileData = event.target.result.split(',')[1];
-                                formData.fileName = file.name;
-                                formData.mimeType = file.type;
-                                sendData(formData);
+                                payload.fileData = event.target.result.split(',')[1];
+                                payload.fileName = file.name;
+                                payload.mimeType = file.type;
+                                sendData(payload);
                             };
                             reader.readAsDataURL(file);
                         } else {
-                            sendData(formData);
+                            sendData(payload);
                         }
                     });
                 }
