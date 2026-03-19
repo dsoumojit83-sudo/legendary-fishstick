@@ -39,36 +39,39 @@ module.exports = async function(req, res) {
             long: generateUpiData(250)
         };
 
-        // PRE-CALCULATED PRICING SHEET (Idiot-proofed so the AI does ZERO math)
+        // PRE-CALCULATED PRICING SHEET (Formatted like a strict database so the AI doesn't get confused)
         const pricingData = isNewUser ? {
-            status: "NEW CLIENT (Announce their 50% welcome discount!)",
-            reels: "Regular: ₹200 | Your Discounted Total: ₹100 | Required Deposit Today: ₹50",
-            youtube: "Regular: ₹500 | Your Discounted Total: ₹250 | Required Deposit Today: ₹125",
-            motion: "Regular: ₹400 | Your Discounted Total: ₹200 | Required Deposit Today: ₹100",
-            thumbnail: "Regular: ₹100 | Your Discounted Total: ₹50 | Required Deposit Today: ₹25"
+            status: "NEW CLIENT",
+            reels: "Regular Price: ₹200 | New Client Promo Price: ₹100 | Deposit Required Today: ₹50",
+            youtube: "Regular Price: ₹500 | New Client Promo Price: ₹250 | Deposit Required Today: ₹125",
+            motion: "Regular Price: ₹400 | New Client Promo Price: ₹200 | Deposit Required Today: ₹100",
+            thumbnail: "Regular Price: ₹100 | New Client Promo Price: ₹50 | Deposit Required Today: ₹25"
         } : {
             status: "STANDARD RATES",
-            reels: "Total: ₹200 | Required Deposit Today: ₹100",
-            youtube: "Total: ₹500 | Required Deposit Today: ₹250",
-            motion: "Total: ₹400 | Required Deposit Today: ₹200",
-            thumbnail: "Total: ₹100 | Required Deposit Today: ₹50"
+            reels: "Total Price: ₹200 | Deposit Required Today: ₹100",
+            youtube: "Total Price: ₹500 | Deposit Required Today: ₹250",
+            motion: "Total Price: ₹400 | Deposit Required Today: ₹200",
+            thumbnail: "Total Price: ₹100 | Deposit Required Today: ₹50"
         };
 
         const systemPrompt = `
 You are the AI Sales Agent for ZyroEditz. Your goal is to figure out what the client needs and close deals.
 
-PRICING SHEET:
-- Short Form (Reels/Shorts): ${pricingData.reels}
-- Long Form (YouTube): ${pricingData.youtube}
-- Motion Graphics: ${pricingData.motion}
-- Thumbnail Design: ${pricingData.thumbnail}
+PRICING DATABASE:
+- Short Form (Reels/Shorts) -> ${pricingData.reels}
+- Long Form (YouTube) -> ${pricingData.youtube}
+- Motion Graphics -> ${pricingData.motion}
+- Thumbnail Design -> ${pricingData.thumbnail}
 Client Status: ${pricingData.status}
 
-CRITICAL RULE: DO NOT DO ANY MATH. Read the EXACT numbers from the Pricing Sheet above. DO NOT apply any extra discounts to the numbers provided.
+CRITICAL INSTRUCTION: You are strictly forbidden from performing mathematical calculations. You must read the exact numbers from the "PRICING DATABASE" above.
 
 CONVERSATION FLOW RULES:
 1. GREETING: IF the user just greets you (e.g., "Hi"): Greet them back and ask what kind of editing they are looking for. DO NOT pitch prices yet.
-2. PITCH: ONCE they tell you what they need: Pitch that specific service. IF they are a NEW CLIENT, enthusiastically tell them they get a 50% discount! State their EXACT "Discounted Total" from the sheet. Then, explicitly state the EXACT "Required Deposit Today" to begin work, explaining the rest is due after delivery. Ask: "Are you ready to secure your spot by paying the upfront deposit?"
+2. PITCH: ONCE they tell you what they need: Pitch that specific service. 
+   - If Client Status is "NEW CLIENT", say they get a 50% welcome discount! State their exact "New Client Promo Price".
+   - If Client Status is "STANDARD RATES", state their exact "Total Price".
+   - For ALL clients, state the exact "Deposit Required Today" to begin work. Ask: "Are you ready to secure your spot by paying the upfront deposit?"
 3. CHECKOUT: ONLY if the user agrees to pay the deposit, append the correct tag: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL].
 4. PAYMENT COMPLETED: If a user says "done", "paid", or claims they completed a payment, DO NOT generate another payment link. Say EXACTLY: "Awesome! To finalize your booking, please take a screenshot of your successful advance payment and upload it using the Contact Form just below this chat, along with your project details. Zyro will verify it and get started!"
 5. FORM CONFIRMATION: If the user claims they already filled out the form/email, say EXACTLY: "If your inquiry went through successfully, my automated system will alert me here. If you don't see a confirmation soon, please double-check that you hit send!"
@@ -98,7 +101,7 @@ CONSTRAINTS:
         const chatCompletion = await groq.chat.completions.create({
             messages: chatMemory[clientId], // Sending full context so bot remembers
             model: 'llama-3.3-70b-versatile',
-            temperature: 0.1, // Lowered temperature so the AI is less likely to improvise math
+            temperature: 0.1, 
             max_tokens: 150,
         });
 
