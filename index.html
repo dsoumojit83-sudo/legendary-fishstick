@@ -1583,6 +1583,14 @@
 
             // ==================== SECURE AI CHATBOT LOGIC ====================
             function initChatbot() {
+                // NEW: Generate or retrieve the user's unique ID
+                let clientId = localStorage.getItem('zyro_client_id');
+                if (!clientId) {
+                    // Creates a random ID like "NEW_xy3k19d"
+                    clientId = 'NEW_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('zyro_client_id', clientId);
+                }
+
                 const toggleBtn = document.getElementById('chatbotToggle');
                 const closeBtn = document.getElementById('chatbotClose');
                 const windowEl = document.getElementById('chatbotWindow');
@@ -1669,7 +1677,7 @@
                         const response = await fetch('/api/chat', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: text })
+                            body: JSON.stringify({ message: text, clientId: clientId })
                         });
                         
                         const data = await response.json();
