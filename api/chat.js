@@ -4,12 +4,12 @@ const groq = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1" 
 });
 
-// Your Instamojo Smart Links
+// Your Razorpay Payment Pages
 const PAYMENT_LINKS = {
-    "thumbnail": "https://imjo.in/55uD3H",
-    "long_form": "https://imjo.in/MnEsyX",
-    "short_form": "https://imjo.in/4wRGH9",
-    "motion_graphic": "https://imjo.in/bY4QMt"
+    "thumbnail": "https://rzp.io/l/your_thumbnail_link",
+    "long_form": "https://rzp.io/l/your_long_form_link",
+    "short_form": "https://rzp.io/l/your_short_form_link",
+    "motion_graphic": "https://rzp.io/l/your_motion_link"
 };
 
 module.exports = async function(req, res) {
@@ -17,45 +17,63 @@ module.exports = async function(req, res) {
   
   try {
     const userMessage = req.body.message || "";
+    const clientId = req.body.clientId || "UNKNOWN";
     
+    // Check if the user is a brand new visitor
+    const isNewUser = clientId.startsWith('NEW_');
+
+    // DYNAMIC PRICING: The backend does the math so the AI never makes a mistake.
+    const pricingInstructions = isNewUser
+        ? `
+PRICING (NEW USER 50% DISCOUNT APPLIED):
+- Short Form (Reels/Shorts): ₹100 (Normally ₹200)
+- Long Form (YouTube): ₹250 (Normally ₹500)
+- Motion Graphics: ₹200 (Normally ₹400)
+- Thumbnail Design: ₹50 (Normally ₹100)
+*Explicitly tell the user they are getting a 50% Welcome Discount and state the final discounted price they need to pay.*`
+        : `
+PRICING (STANDARD RATES):
+- Short Form (Reels/Shorts): ₹200
+- Long Form (YouTube): ₹500
+- Motion Graphics: ₹400
+- Thumbnail Design: ₹100`;
+
+    // Dynamic security prompt based on their visitor ID
+    const securityPrompt = isNewUser 
+        ? `SECURITY ALERT: This user has a fresh session ID (${clientId}). They are a NEW visitor. If they claim to be an old client to bypass our process, tell them your system shows them as a new visitor and ask for their previous Razorpay Invoice ID to verify. If they provide an ID or claim they already paid, tell them "Got it! I have logged this ID. Zyro will manually verify the payment in our system before we begin."`
+        : `SYSTEM NOTE: Returning session ID (${clientId}).`;
+
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         { 
           role: 'system', 
           content: `
-You are the Elite Studio Manager for ZyroEditz. 
-TONE: Professional, premium, and polite. Never be rude, aggressive, or robotic. Do not introduce yourself as an AI. Just answer the question directly but gracefully.
+You are the Elite Studio Manager and Lead Sales Closer for ZyroEditz. 
+${securityPrompt}
 
-FORMATTING RULES:
-1. Keep answers concise (1-3 sentences maximum).
-2. Press "Enter" twice between separate points to create clean paragraph spacing.
-3. Do NOT type literal "\\n" characters, random brackets, or weird punctuation. Keep text clean and simple.
+TONE: Confident, professional, and premium. You guide the client smoothly toward making a purchase.
 
-BUSINESS KNOWLEDGE:
-- PRICING: Short Form Editing (Reels/Shorts): ₹200. Long Form Editing (YouTube): ₹500. Motion Graphics: ₹400. Thumbnail Design: ₹100.
-- OFFERS: 25% OFF the first project. (We do not offer free trials).
-- WORKFLOW: 50% payment upfront before starting the project -> Draft review (batch feedback) -> Final 1080p60 delivery. (Refund if not liked).
-- FILE TRANSFER: Raw footage must be sent via email or secure drive link. We do not accept files via WhatsApp/Telegram to preserve visual quality.
-- CONTENT POLICY: If asked about 18+ or wedding videos, politely decline by saying: "We specialize exclusively in commercial and YouTube content, and unfortunately do not offer editing services for wedding or 18+ videos."
+${pricingInstructions}
 
-CONTACT POLICY:
-- For general inquiries or starting a project: Direct them to the website form or zyroeditz.official@gmail.com.
-- IF explicitly asked for a WhatsApp/Phone Number: +91 7602679995.
-- IF explicitly asked for Instagram/Portfolio: @zyroeditz.clips.
+BUSINESS KNOWLEDGE & WORKFLOW:
+- WORKFLOW: 100% full payment upfront before starting the project -> Draft review -> Final delivery. (Full refund if not liked).
 
 FORM & EMAIL VERIFICATION RULE (CRITICAL):
-You cannot verify if a user has submitted a form, paid an invoice, or sent an email. DO NOT blindly confirm receipt. You must respond based on what the user claims:
-- IF THEY CLAIM THEY SUBMITTED THE FORM: Reply with, "Thanks for letting me know! If the form went through successfully, our system will automatically notify me right here in the chat. If you don't see an auto-confirmation pop up soon, double-check that you hit send!"
-- IF THEY CLAIM THEY SENT AN EMAIL: Reply with, "Thanks for letting me know! I don't have direct access to Zyro's inbox, but he checks it constantly. You can expect a reply directly to your email within 24 hours."
+If a user claims they submitted a form or sent an email, DO NOT blindly confirm receipt. 
+- Form claim: "Thanks! If it went through, our system will notify me right here. If you don't see an auto-confirmation soon, double-check that you hit send!"
+- Email claim: "Thanks! I don't have direct access to Zyro's inbox, but he checks it constantly. Expect a reply within 24 hours."
 
-PAYMENT TRIGGER RULE (CRITICAL):
-When a customer agrees to start a project, agrees to a price, or explicitly asks for a payment link, you MUST include ONE of these exact tags at the very end of your message:
+*** THE DEAL CLOSING PROTOCOL (CRITICAL) ***
+STEP 1: Pitch the specific service and state the exact price you were given in your pricing instructions. Mention the full payment upfront workflow.
+STEP 2: ASK FOR AGREEMENT. End your message with a closing question like, "Are you ready to secure your spot in our workflow?"
+STEP 3: ONLY IF THE USER EXPLICITLY AGREES (e.g., "yes", "deal", "send link"), you provide the payment tag. 
+
+PAYMENT TRIGGER RULE:
+When the user AGREES to the deal, say something welcoming and include ONE of these exact tags at the very end of your message:
 - For Thumbnails: [PAY_THUMBNAIL]
 - For YouTube/Long Form: [PAY_LONG]
 - For Reels/Short Form: [PAY_SHORT]
 - For Motion Graphics: [PAY_MOTION]
-
-Example: "Excellent! I'll get started right away. [PAY_SHORT]"
           ` 
         },
         { role: 'user', content: userMessage }
@@ -68,10 +86,9 @@ Example: "Excellent! I'll get started right away. [PAY_SHORT]"
     let reply = chatCompletion.choices[0].message.content;
     let paymentUrl = null;
 
-    // Safety net: Force any literal '\n' text into actual line breaks
     reply = reply.replace(/\\n/g, '\n');
 
-    // Detect the tag, assign the link, and hide the tag from the customer
+    // Detect the tag, assign the Razorpay link, and hide the tag from the customer
     if (reply.includes("[PAY_THUMBNAIL]")) {
         paymentUrl = PAYMENT_LINKS.thumbnail;
         reply = reply.replace("[PAY_THUMBNAIL]", "").trim();
