@@ -78,7 +78,7 @@ When the user AGREES to the deal, say something welcoming and include ONE of the
         },
         { role: 'user', content: userMessage }
       ],
-      model: 'llama-3.1-8b-instant', 
+      model: 'llama-3.3-70b-versatile', 
       temperature: 0.1, 
       max_tokens: 150,
     });
