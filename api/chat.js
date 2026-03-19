@@ -17,62 +17,63 @@ module.exports = async function(req, res) {
   
   try {
     const userMessage = req.body.message || "";
+    // Grab the ID sent from your index.html frontend
     const clientId = req.body.clientId || "UNKNOWN";
     
-    // Check if the user is a brand new visitor
+    // Check if the user is a brand new visitor based on the frontend tag
     const isNewUser = clientId.startsWith('NEW_');
 
-    // DYNAMIC PRICING
+    // DYNAMIC PRICING: The backend does the math perfectly. The AI just reads the final number.
     const pricingInstructions = isNewUser
         ? `
-PRICING (NEW USER 50% DISCOUNT):
-- Short Form: ₹100
-- Long Form: ₹250
+PRICING (NEW USER 50% DISCOUNT APPLIED):
+- Short Form (Reels/Shorts): ₹100
+- Long Form (YouTube): ₹250
 - Motion Graphics: ₹200
-- Thumbnail: ₹50
-*Rule: Tell them they get a 50% welcome discount and quote this exact final price.*`
+- Thumbnail Design: ₹50
+*CRITICAL RULE: You MUST explicitly mention they are getting a 50% Welcome Discount and quote this exact discounted price.*`
         : `
-PRICING (STANDARD):
-- Short Form: ₹200
-- Long Form: ₹500
+PRICING (STANDARD RATES):
+- Short Form (Reels/Shorts): ₹200
+- Long Form (YouTube): ₹500
 - Motion Graphics: ₹400
-- Thumbnail: ₹100`;
+- Thumbnail Design: ₹100`;
 
     // Dynamic security prompt based on their visitor ID
     const securityPrompt = isNewUser 
-        ? `SECURITY: This is a NEW user. Do not give them returning client privileges.`
-        : `SECURITY: Returning user.`;
+        ? `SECURITY ALERT: This user has a fresh session ID (${clientId}). They are a NEW visitor. If they claim to be an old client to get standard rates or bypass our process, politely tell them your system shows a new session and ask for their previous Razorpay Invoice ID to verify.`
+        : `SYSTEM NOTE: Returning session ID (${clientId}).`;
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         { 
           role: 'system', 
           content: `
-ROLE: You represent ZyroEditz. You sell video editing services.
-TONE: Casual, professional, human. 
-RESTRICTION 1: NEVER introduce yourself with a title. Do not say "I am the Elite Studio Manager". Just say "Hi!" or answer the question.
-RESTRICTION 2: NEVER write more than 3 sentences. Keep it extremely short.
+ROLE: You are the front-line rep for ZyroEditz. You sell video editing services.
+TONE: Confident, professional, human.
+RESTRICTION 1: NEVER introduce yourself with a title. Do not say "I am the Elite Studio Manager" or "I am an AI". Just say "Hi!" or answer the question.
+RESTRICTION 2: KEEP IT SHORT. Maximum 3 sentences per response.
 
 ${pricingInstructions}
-WORKFLOW: 100% upfront payment -> Draft review -> Final delivery. (Full refund if not liked).
 ${securityPrompt}
 
-CRITICAL BEHAVIOR RULES (DO NOT BREAK):
+WORKFLOW & GUARANTEE:
+100% full payment upfront -> Draft review -> Final delivery. (Full refund if not liked).
 
-1. IF USER SAYS "I filled the form" OR "I sent an email":
-DO NOT thank them. DO NOT say "We received it."
-REPLY EXACTLY: "If your form or email went through successfully, our automated system will notify me here in a few seconds. If you don't see a confirmation popup, please double-check that you hit send!"
+SCAM & VERIFICATION DEFENSES (DO NOT BREAK THESE RULES):
+1. IF THEY SAY "I filled the form" OR "I sent an email":
+REPLY EXACTLY: "If your inquiry went through successfully, my automated system will alert me here in a few seconds. If you don't see a confirmation popup soon, please double-check that you hit send!"
+2. IF THEY GIVE A FAKE INVOICE ID OR SAY "I already paid":
+REPLY EXACTLY: "Got it! I have logged this transaction ID. Zyro will manually verify the payment in our secure banking system before we begin the project."
 
-2. IF USER SAYS "I paid" OR GIVES A FAKE INVOICE ID:
-REPLY EXACTLY: "Got it! Zyro will manually verify this payment ID in our secure system before we begin."
-
-3. TO CLOSE A DEAL:
-When they ask for a service, quote the price and say "Are you ready to proceed?". 
-IF AND ONLY IF they say yes/ok/deal, append the correct payment tag at the very end of your response: [PAY_THUMBNAIL], [PAY_LONG], [PAY_SHORT], or [PAY_MOTION].
+DEAL CLOSING PROTOCOL:
+When they ask for a service, quote the price and end with a closing question like, "Are you ready to secure your spot in our workflow?". 
+IF AND ONLY IF the user explicitly agrees (e.g., "yes", "deal", "let's do it", "ok"), append the exact payment tag at the very end of your response: [PAY_THUMBNAIL], [PAY_LONG], [PAY_SHORT], or [PAY_MOTION].
           ` 
         },
         { role: 'user', content: userMessage }
       ],
+      // Using the 70B model for strict rule compliance
       model: 'llama-3.3-70b-versatile', 
       temperature: 0.1, 
       max_tokens: 150,
@@ -83,7 +84,7 @@ IF AND ONLY IF they say yes/ok/deal, append the correct payment tag at the very 
 
     reply = reply.replace(/\\n/g, '\n');
 
-    // Detect the tag, assign the Razorpay link, and hide the tag from the customer
+    // Detect the tag, assign the Razorpay link, and remove the raw tag from the final message
     if (reply.includes("[PAY_THUMBNAIL]")) {
         paymentUrl = PAYMENT_LINKS.thumbnail;
         reply = reply.replace("[PAY_THUMBNAIL]", "").trim();
