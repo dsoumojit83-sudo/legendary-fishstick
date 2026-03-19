@@ -771,7 +771,7 @@
                                     <input class="input-field w-full px-4 py-3" id="email" name="email" type="email" autocomplete="email" required>
                                 </div>
                             </div>
-                        
+
                             <div class="mt-5">
                                 <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="subject">Project Type</label>
                                 <select class="input-field w-full px-4 py-3" id="subject" name="subject" required>
@@ -783,21 +783,21 @@
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
-                        
+
                             <div class="mt-5">
                                 <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="paymentProof">Payment Proof (JPG/PNG, Max 1MB)</label>
-                                <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png" required>
+                                <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png">
                                 <p id="fileError" class="text-xs text-red-400 mt-2 hidden">File size must be under 1MB.</p>
                             </div>
-                        
+
                             <div class="mt-5">
                                 <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message / Project Brief</label>
                                 <textarea class="input-field w-full px-4 py-3 min-h-[140px] resize-y" id="message" name="message" required placeholder="Tell me about your project, deadline, and references..."></textarea>
                             </div>
-                        
+
                             <div class="mt-7 flex flex-col sm:flex-row sm:items-center gap-4">
                                 <button class="btn-shine px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn min-h-[44px] min-w-[44px] flex items-center justify-center" type="submit" id="contactSubmit">Send to ZyroEditz</button>
-                                <div class="text-xs tracking-widest text-gray-500" id="contactStatus" aria-live="polite" aria-atomic="true"></div>
+                                <div class="text-xs tracking-widest" id="contactStatus" aria-live="polite" aria-atomic="true"></div>
                             </div>
                         </form>
                     </div>
@@ -1373,10 +1373,24 @@
                         submitBtn.classList.add('opacity-70');
                         statusEl.className = 'text-xs tracking-widest text-[#ff1a1a]';
                         
-                        // New Animated Loading State
-                        statusEl.innerHTML = `<span class="flex items-center gap-1.5"><svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Uploading securely<span class="animate-pulse">...</span></span>`;
+                        // New Animated Loading State (Spinning SVG + Typing Dots)
+                        statusEl.innerHTML = `<span class="flex items-center gap-1.5">
+                            <svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Uploading securely<span id="loadingDots" class="inline-block w-3 text-left"></span>
+                        </span>`;
 
-                        const payload = {
+                        // JS Interval to make dots type 1 by 1 and disappear
+                        let dotCount = 0;
+                        const loadingDots = document.getElementById('loadingDots');
+                        const dotInterval = setInterval(() => {
+                            dotCount = (dotCount + 1) % 4; 
+                            if(loadingDots) loadingDots.textContent = '.'.repeat(dotCount);
+                        }, 400);
+
+                        const formData = {
                             name: document.getElementById('name').value,
                             email: document.getElementById('email').value,
                             subject: document.getElementById('subject').value,
@@ -1385,22 +1399,23 @@
 
                         const file = fileInput ? fileInput.files[0] : null;
                         
-                        const sendData = (finalPayload) => {
+                        const sendData = (payload) => {
                             fetch(GOOGLE_SCRIPT_URL, {
                                 method: 'POST',
                                 mode: 'no-cors', 
                                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                                body: JSON.stringify(finalPayload)
+                                body: JSON.stringify(payload)
                             })
-                            .then(() => {
+                            .then(response => {
+                                clearInterval(dotInterval); // Stop dot animation
                                 statusEl.innerHTML = 'Received! You will get your bill shortly.';
                                 statusEl.className = 'text-xs tracking-widest text-green-400';
                                 form.reset();
-                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: finalPayload.name } }));
+                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: formData.name } }));
                                 setTimeout(() => { submitBtn.disabled = false; submitBtn.classList.remove('opacity-70'); statusEl.innerHTML = ''; }, 4000);
                             })
                             .catch(error => {
-                                console.error("Fetch Error:", error);
+                                clearInterval(dotInterval); // Stop dot animation
                                 statusEl.innerHTML = 'Connection Error. Reach out via WhatsApp.';
                                 statusEl.className = 'text-xs tracking-widest text-red-400';
                                 submitBtn.disabled = false;
@@ -1411,14 +1426,14 @@
                         if (file) {
                             const reader = new FileReader();
                             reader.onload = function(event) {
-                                payload.fileData = event.target.result.split(',')[1];
-                                payload.fileName = file.name;
-                                payload.mimeType = file.type;
-                                sendData(payload);
+                                formData.fileData = event.target.result.split(',')[1];
+                                formData.fileName = file.name;
+                                formData.mimeType = file.type;
+                                sendData(formData);
                             };
                             reader.readAsDataURL(file);
                         } else {
-                            sendData(payload);
+                            sendData(formData);
                         }
                     });
                 }
@@ -1671,7 +1686,7 @@
                         </div>`;
                     }
 
-                    // Add the clickable deep link (Now hidden on Desktop!)
+                    // Add the clickable deep link (Now hidden on Desktop via md:hidden)
                     if (upiUrl) {
                         html += `
                         <a href="${upiUrl}" class="flex md:hidden items-center justify-center gap-2 px-4 py-3 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-fit">
