@@ -1641,17 +1641,32 @@
                     messages.scrollTop = messages.scrollHeight;
                 }
 
-                // 3. Dynamic Checkout Buttons
-                function renderPaymentButton(url) {
+                // 3. Dynamic UPI & QR Checkout UI
+                function renderPaymentUI(upiUrl, qrUrl) {
                     const btnContainer = document.createElement('div');
-                    btnContainer.className = 'flex gap-2 mt-2';
-                    btnContainer.innerHTML = `
-                        <div class="w-6 h-6 shrink-0 mt-1"></div>
-                        <a href="${url}" target="_blank" class="flex items-center justify-center gap-2 px-4 py-2 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-full max-w-[85%]">
-                            Secure Spot via Razorpay
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                        </a>
-                    `;
+                    btnContainer.className = 'flex flex-col gap-3 mt-3 ml-8 w-full max-w-[85%]';
+                    
+                    let html = '';
+
+                    // Add the QR Code image if available
+                    if (qrUrl) {
+                        html += `
+                        <div class="bg-white p-2 rounded-xl w-fit border border-white/20 shadow-lg shadow-[#ff1a1a]/20 transition-transform duration-300 hover:scale-105">
+                            <img src="${qrUrl}" alt="Scan to Pay" class="w-40 h-40 object-cover rounded-lg mix-blend-multiply">
+                            <p class="text-center text-black text-[10px] font-bold mt-1.5 uppercase tracking-wider">Scan & Pay</p>
+                        </div>`;
+                    }
+
+                    // Add the clickable deep link
+                    if (upiUrl) {
+                        html += `
+                        <a href="${upiUrl}" class="flex items-center justify-center gap-2 px-4 py-3 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-fit">
+                            Pay via UPI App
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </a>`;
+                    }
+
+                    btnContainer.innerHTML = html;
                     messages.appendChild(btnContainer);
                     messages.scrollTop = messages.scrollHeight;
                 }
@@ -1690,9 +1705,9 @@
 
                         if (response.ok) {
                             addMessage(data.reply, false);
-                            // Only render button if backend returns a URL
-                            if (data.paymentUrl) {
-                                renderPaymentButton(data.paymentUrl);
+                            // Only render payment UI if backend returns a URL
+                            if (data.paymentUrl || data.qrUrl) {
+                                renderPaymentUI(data.paymentUrl, data.qrUrl);
                             }
                         } else {
                             addMessage("Sorry, my systems are updating right now. Please email Zyro directly at zyroeditz.official@gmail.com!", false);
