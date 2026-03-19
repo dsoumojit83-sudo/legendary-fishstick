@@ -4,11 +4,20 @@ const groq = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1" 
 });
 
-const PAYMENT_LINKS = {
-    "thumbnail": "https://rzp.io/l/your_thumbnail_link",
-    "long_form": "https://rzp.io/l/your_long_form_link",
-    "short_form": "https://rzp.io/l/your_short_form_link",
-    "motion_graphic": "https://rzp.io/l/your_motion_link"
+// LINK MAPPING FOR NON-DISCOUNTED USERS
+const STANDARD_LINKS = {
+    "thumbnail": "https://rzp.io/rzp/bHAbZoh",      // ₹100
+    "motion_graphic": "https://rzp.io/rzp/kdE5KohQ", // ₹400
+    "short_form": "https://rzp.io/rzp/YVxVRMgA",    // ₹200
+    "long_form": "https://rzp.io/rzp/rK3UnkW"       // ₹500
+};
+
+// LINK MAPPING FOR DISCOUNTED USERS
+const DISCOUNT_LINKS = {
+    "thumbnail": "https://rzp.io/rzp/Vp5EEtkP",      // ₹50
+    "motion_graphic": "https://rzp.io/rzp/vC6eCvWp", // ₹200
+    "short_form": "https://rzp.io/rzp/NZSjgn4U",    // ₹100
+    "long_form": "https://rzp.io/rzp/YVxVRMgA"      // ₹250
 };
 
 module.exports = async function(req, res) {
@@ -18,7 +27,10 @@ module.exports = async function(req, res) {
         const { message: userMessage, clientId } = req.body;
         const isNewUser = clientId?.startsWith('NEW_');
 
-        // PRE-CALCULATED PRICING SHEET (No-Math Rule)
+        // Select correct link set and pricing based on user status
+        const activeLinks = isNewUser ? DISCOUNT_LINKS : STANDARD_LINKS;
+        
+        // PRE-CALCULATED PRICING SHEET (Matches your provided links)
         const pricingData = isNewUser ? {
             status: "50% NEW CLIENT DISCOUNT APPLIED",
             reels: "₹100",
@@ -66,18 +78,19 @@ MANDATORY OVERRIDES:
         let reply = chatCompletion.choices[0].message.content;
         let paymentUrl = null;
 
-        // Tag Interception & Sanitization
+        // Tag Interception using the contextually active links
         const tags = {
-            "[PAY_THUMBNAIL]": PAYMENT_LINKS.thumbnail,
-            "[PAY_LONG]": PAYMENT_LINKS.long_form,
-            "[PAY_SHORT]": PAYMENT_LINKS.short_form,
-            "[PAY_MOTION]": PAYMENT_LINKS.motion_graphic
+            "[PAY_THUMBNAIL]": activeLinks.thumbnail,
+            "[PAY_LONG]": activeLinks.long_form,
+            "[PAY_SHORT]": activeLinks.short_form,
+            "[PAY_MOTION]": activeLinks.motion_graphic
         };
 
         for (const [tag, url] of Object.entries(tags)) {
             if (reply.includes(tag)) {
                 paymentUrl = url;
                 reply = reply.replace(tag, "").trim();
+                break; // Stop after finding the first tag
             }
         }
 
