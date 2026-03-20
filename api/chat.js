@@ -1,4 +1,3 @@
-// No 'require' needed for AI libraries! We use the built-in 'fetch'
 const chatMemory = {};
 
 const generateUpiData = (amount) => {
@@ -17,25 +16,17 @@ module.exports = async function(req, res) {
         const { message: userMessage, clientId = "default_user" } = req.body;
         const isNewUser = clientId?.startsWith('NEW_');
 
-        // Pricing logic for ZyroEditz
-        const pricing = isNewUser ? {
-            reels: "₹100", youtube: "₹250", motion: "₹200", thumbnail: "₹50",
-            adv: { short: 50, long: 125, motion: 100, thumb: 25 }
-        } : {
-            reels: "₹200", youtube: "₹500", motion: "₹400", thumbnail: "₹100",
-            adv: { short: 100, long: 250, motion: 200, thumb: 50 }
-        };
+        const pricing = isNewUser ? 
+            { r: "₹100", y: "₹250", m: "₹200", t: "₹50", adv: { s: 50, l: 125, m: 100, t: 25 } } : 
+            { r: "₹200", y: "₹500", m: "₹400", t: "₹100", adv: { s: 100, l: 250, m: 200, t: 50 } };
 
         const systemPrompt = `You are the AI for ZyroEditz. 
-        CONTACT: WhatsApp +91 7602679995 or Email zyroeditz.official@gmail.com.
-        PRICING: Reels (${pricing.reels}), YT (${pricing.youtube}), Motion (${pricing.motion}), Thumbnails (${pricing.thumbnail}).
-        RULES: 50% advance to start. Use [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL] only if they agree to pay.`;
+        Contact: WhatsApp +91 7602679995. 
+        Prices: Reels (${pricing.r}), YT (${pricing.y}), Motion (${pricing.m}), Thumbnails (${pricing.t}). 
+        Use tags [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL] for payment.`;
 
-        // The URL using your GEMINI_API_KEY environment variable
-        const apiKey = process.env.GEMINI_API_KEY;
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-        
-        const response = await fetch(apiUrl, {
+        // We use fetch so we don't need to install '@google/generative-ai'
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -44,21 +35,14 @@ module.exports = async function(req, res) {
         });
 
         const data = await response.json();
-        
-        // Error handling if the API Key is missing or invalid
-        if (data.error) {
-            return res.status(500).json({ error: "Gemini API Error", details: data.error.message });
-        }
-
         let reply = data.candidates[0].content.parts[0].text;
 
-        // Map tags to UPI data
         let finalPaymentData = null;
         const tags = {
-            "[PAY_SHORT]": generateUpiData(pricing.adv.short),
-            "[PAY_LONG]": generateUpiData(pricing.adv.long),
-            "[PAY_MOTION]": generateUpiData(pricing.adv.motion),
-            "[PAY_THUMBNAIL]": generateUpiData(pricing.adv.thumb)
+            "[PAY_SHORT]": generateUpiData(pricing.adv.s),
+            "[PAY_LONG]": generateUpiData(pricing.adv.l),
+            "[PAY_MOTION]": generateUpiData(pricing.adv.m),
+            "[PAY_THUMBNAIL]": generateUpiData(pricing.adv.t)
         };
 
         for (const [tag, payment] of Object.entries(tags)) {
@@ -69,14 +53,9 @@ module.exports = async function(req, res) {
             }
         }
 
-        res.status(200).json({ 
-            reply, 
-            paymentUrl: finalPaymentData?.upiString || null,
-            qrUrl: finalPaymentData?.qrUrl || null
-        });
+        res.status(200).json({ reply, paymentUrl: finalPaymentData?.upiString || null, qrUrl: finalPaymentData?.qrUrl || null });
 
     } catch (error) {
-        console.error("Server Error:", error);
-        res.status(500).json({ error: "Check Vercel Environment Variables for GEMINI_API_KEY" });
+        res.status(500).json({ error: "Check GEMINI_API_KEY in Vercel" });
     }
 };
