@@ -1,4 +1,4 @@
-// No libraries needed! Using standard fetch to stay "No-Install"
+// No 'require' needed for AI libraries! We use the built-in 'fetch'
 const chatMemory = {};
 
 const generateUpiData = (amount) => {
@@ -17,24 +17,23 @@ module.exports = async function(req, res) {
         const { message: userMessage, clientId = "default_user" } = req.body;
         const isNewUser = clientId?.startsWith('NEW_');
 
-        // Pricing logic from your provided file
-        const pricingData = isNewUser ? {
-            status: "NEW CLIENT PROMO ACTIVE",
+        // Pricing logic for ZyroEditz
+        const pricing = isNewUser ? {
             reels: "₹100", youtube: "₹250", motion: "₹200", thumbnail: "₹50",
-            pay: { short: 50, long: 125, motion: 100, thumb: 25 }
+            adv: { short: 50, long: 125, motion: 100, thumb: 25 }
         } : {
-            status: "STANDARD RATES",
             reels: "₹200", youtube: "₹500", motion: "₹400", thumbnail: "₹100",
-            pay: { short: 100, long: 250, motion: 200, thumb: 50 }
+            adv: { short: 100, long: 250, motion: 200, thumb: 50 }
         };
 
-        const systemPrompt = `You are the AI Sales Agent for ZyroEditz. 
+        const systemPrompt = `You are the AI for ZyroEditz. 
         CONTACT: WhatsApp +91 7602679995 or Email zyroeditz.official@gmail.com.
-        PRICING: Reels (${pricingData.reels}), YT (${pricingData.youtube}), Motion (${pricingData.motion}), Thumbnails (${pricingData.thumbnail}).
-        RULES: 1. Greet. 2. Pitch price/time. 3. If they say "yes/ok", use [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL]. 4. After "done", tell them to send raw files via WhatsApp/Email.`;
+        PRICING: Reels (${pricing.reels}), YT (${pricing.youtube}), Motion (${pricing.motion}), Thumbnails (${pricing.thumbnail}).
+        RULES: 50% advance to start. Use [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL] only if they agree to pay.`;
 
-        // Prepare the payload for Gemini API
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+        // The URL using your GEMINI_API_KEY environment variable
+        const apiKey = process.env.GEMINI_API_KEY;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
         const response = await fetch(apiUrl, {
             method: 'POST',
@@ -45,18 +44,24 @@ module.exports = async function(req, res) {
         });
 
         const data = await response.json();
+        
+        // Error handling if the API Key is missing or invalid
+        if (data.error) {
+            return res.status(500).json({ error: "Gemini API Error", details: data.error.message });
+        }
+
         let reply = data.candidates[0].content.parts[0].text;
 
-        // Payment Tag Interception
+        // Map tags to UPI data
         let finalPaymentData = null;
-        const upiMap = {
-            "[PAY_SHORT]": generateUpiData(pricingData.pay.short),
-            "[PAY_LONG]": generateUpiData(pricingData.pay.long),
-            "[PAY_MOTION]": generateUpiData(pricingData.pay.motion),
-            "[PAY_THUMBNAIL]": generateUpiData(pricingData.pay.thumb)
+        const tags = {
+            "[PAY_SHORT]": generateUpiData(pricing.adv.short),
+            "[PAY_LONG]": generateUpiData(pricing.adv.long),
+            "[PAY_MOTION]": generateUpiData(pricing.adv.motion),
+            "[PAY_THUMBNAIL]": generateUpiData(pricing.adv.thumb)
         };
 
-        for (const [tag, payment] of Object.entries(upiMap)) {
+        for (const [tag, payment] of Object.entries(tags)) {
             if (reply.includes(tag)) {
                 finalPaymentData = payment;
                 reply = reply.replace(tag, "").trim();
@@ -71,7 +76,7 @@ module.exports = async function(req, res) {
         });
 
     } catch (error) {
-        console.error("Error:", error);
-        res.status(500).json({ error: "Check your GEMINI_API_KEY in Vercel settings." });
+        console.error("Server Error:", error);
+        res.status(500).json({ error: "Check Vercel Environment Variables for GEMINI_API_KEY" });
     }
 };
