@@ -1,4 +1,6 @@
-const chatMemory = {};
+const { GoogleGenAI } = require('@google/genai');
+
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const generateUpiData = (amount) => {
     const upiId = "7602679995-5@ybl";
@@ -23,29 +25,15 @@ module.exports = async function(req, res) {
         const systemPrompt = `You are the AI for ZyroEditz. 
         Contact: WhatsApp +91 7602679995. 
         Prices: Reels (₹${pricing.r}), YT (₹${pricing.y}), Motion (₹${pricing.m}), Thumbnails (₹${pricing.t}). 
-        Rules: 50% advance to start. Use tags [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL] only if they agree to pay.`;
+        Use tags [PAY_SHORT], [PAY_LONG], [PAY_MOTION], [PAY_THUMBNAIL] only if they agree to pay.`;
 
-        // MODEL UPDATE: Gemini 2.5 Pro (Standard Stable)
-        const apiKey = process.env.GEMINI_API_KEY;
-        const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=${apiKey}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: `${systemPrompt}\n\nUser: ${userMessage}` }] }]
-            })
+        // Using the new Gemini 3 Flash model (Stable & Free)
+        const response = await genAI.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nUser: ${userMessage}` }] }]
         });
 
-        const data = await response.json();
-
-        if (data.error) {
-            // Log the error to Vercel console so you can see it
-            console.error("Gemini API Error:", data.error.message);
-            return res.status(data.error.code || 500).json({ error: data.error.message });
-        }
-
-        let reply = data.candidates[0].content.parts[0].text;
+        let reply = response.text;
 
         let finalPaymentData = null;
         const tags = {
@@ -70,7 +58,7 @@ module.exports = async function(req, res) {
         });
 
     } catch (error) {
-        console.error("Backend Crash:", error);
-        res.status(500).json({ error: "Check GEMINI_API_KEY in Vercel Settings" });
+        console.error("SDK Error:", error);
+        res.status(500).json({ error: "Check GEMINI_API_KEY and Node version in Vercel." });
     }
 };
