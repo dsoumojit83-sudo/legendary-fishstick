@@ -1,7 +1,7 @@
 {
-  "name": "vercel-ai-bot",
+  "name": "zyroeditz-ai-bot",
   "version": "1.0.0",
-  "description": "AI Chatbot for ZyroEditz using Gemini 3 Flash",
+  "description": "AI Chatbot for ZyroEditz using Gemini",
   "main": "api/chat.js",
   "dependencies": {
     "@google/generative-ai": "^0.21.0"
