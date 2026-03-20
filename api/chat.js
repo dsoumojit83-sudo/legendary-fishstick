@@ -38,6 +38,37 @@ module.exports = async function(req, res) {
             long: generateUpiData(250)         
         };          
 
+        // Define your models in order of preference
+const PRIMARY_MODEL = "gemini-3.0-flash";
+const FALLBACK_MODEL = "gemini-2.5-flash";
+
+async function getChatResponse(userPrompt) {
+  const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL];
+
+  for (const modelId of modelsToTry) {
+    try {
+      console.log(`Attempting request with: ${modelId}`);
+      
+      const model = genAI.getGenerativeModel({ model: modelId });
+      
+      // Your existing generation logic
+      const result = await model.generateContent(userPrompt);
+      const response = await result.response;
+      return response.text();
+
+    } catch (error) {
+      // Check for the 429 "Too Many Requests" error
+      if (error.status === 429 && modelId === PRIMARY_MODEL) {
+        console.warn(`[ZyroEditz AI] ${PRIMARY_MODEL} limit reached. Switching to ${FALLBACK_MODEL}...`);
+        continue; // This jumps to the next iteration (FALLBACK_MODEL)
+      }
+
+      // If it's a different error (network, safety, etc.), or if both failed
+      console.error("API Error:", error);
+      return "Sorry, I'm having trouble connecting right now. Please try again later.";
+    }
+  }
+}
         // PRE-CALCULATED PRICING SHEET         
         const pricingData = isNewUser ? {             
             reels: "Total Price: ₹100 (50% Promo Applied) | Advance Deposit: ₹50 | Turnaround: 1 Day",             
