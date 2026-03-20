@@ -117,7 +117,8 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
         for (const [tag, data] of Object.entries(tags)) {             
             if (reply.includes(tag)) {                 
                 finalPaymentData = data;                 
-                reply = reply.replace(tag, "").trim();                 
+                // THE FIX: Replaces the hidden tag with a natural sentence ending!
+                reply = reply.replace(tag, "options below! 👇").trim();                 
                 break;             
             }         
         }          
