@@ -1,3 +1,4 @@
+// No dependencies needed. Works out of the box with Node 18+ on Vercel.
 const chatMemory = {};
 
 const generateUpiData = (amount) => {
@@ -16,17 +17,21 @@ module.exports = async function(req, res) {
         const { message: userMessage, clientId = "default_user" } = req.body;
         const isNewUser = clientId?.startsWith('NEW_');
 
+        // Professional Pricing Logic
         const pricing = isNewUser ? 
             { r: "₹100", y: "₹250", m: "₹200", t: "₹50", adv: { s: 50, l: 125, m: 100, t: 25 } } : 
             { r: "₹200", y: "₹500", m: "₹400", t: "₹100", adv: { s: 100, l: 250, m: 200, t: 50 } };
 
-        const systemPrompt = `You are the AI for ZyroEditz. 
+        const systemPrompt = `You are the AI Sales Agent for ZyroEditz. 
         Contact: WhatsApp +91 7602679995. 
-        Prices: Reels (${pricing.r}), YT (${pricing.y}), Motion (${pricing.m}), Thumbnails (${pricing.t}). 
-        Use tags [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL] for payment.`;
+        Pricing: Reels (${pricing.r}), YouTube (${pricing.y}), Motion Graphics (${pricing.m}), Thumbnails (${pricing.t}). 
+        Rules: 50% advance required. Use [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL] tags only when they agree to pay.`;
 
-        // We use fetch so we don't need to install '@google/generative-ai'
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        // FIXED URL: Using v1 stable and gemini-3-flash-preview
+        const apiKey = process.env.GEMINI_API_KEY;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -35,8 +40,16 @@ module.exports = async function(req, res) {
         });
 
         const data = await response.json();
+
+        // Handle possible 404 or Key errors from Google
+        if (data.error) {
+            console.error("Gemini Error:", data.error);
+            return res.status(data.error.code || 500).json({ error: data.error.message });
+        }
+
         let reply = data.candidates[0].content.parts[0].text;
 
+        // Payment Tag Logic
         let finalPaymentData = null;
         const tags = {
             "[PAY_SHORT]": generateUpiData(pricing.adv.s),
@@ -53,9 +66,14 @@ module.exports = async function(req, res) {
             }
         }
 
-        res.status(200).json({ reply, paymentUrl: finalPaymentData?.upiString || null, qrUrl: finalPaymentData?.qrUrl || null });
+        res.status(200).json({ 
+            reply, 
+            paymentUrl: finalPaymentData?.upiString || null, 
+            qrUrl: finalPaymentData?.qrUrl || null 
+        });
 
     } catch (error) {
-        res.status(500).json({ error: "Check GEMINI_API_KEY in Vercel" });
+        console.error("Server Error:", error);
+        res.status(500).json({ error: "Check your GEMINI_API_KEY in Vercel settings." });
     }
 };
