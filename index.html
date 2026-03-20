@@ -317,6 +317,18 @@
 
         .red-divider { display:block;height:1px;background:linear-gradient(90deg,transparent,rgba(255,26,26,0.35),transparent); }
 
+        /* YouTube Style Spinner Animation */
+        @keyframes yt-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .yt-spinner { 
+            animation: yt-spin 0.8s linear infinite; 
+            border: 3px solid rgba(255, 26, 26, 0.2); 
+            border-top-color: #ff1a1a; 
+            border-radius: 50%; 
+            width: 18px; 
+            height: 18px; 
+            display: inline-block; 
+        }
+
         /* Chatbot Custom Styles */
         #chatbotMessages::-webkit-scrollbar { width: 4px; }
         #chatbotMessages::-webkit-scrollbar-track { background: transparent; }
@@ -759,7 +771,7 @@
                 </div>
 
                 <div class="reveal">
-                    <div class="p-8 md:p-10 border border-white/10 bg-white/5 backdrop-blur-md">
+                    <div class="p-8 md:p-10 border border-white/10 bg-white/5 backdrop-blur-md rounded-2xl">
                         <form id="contactForm">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
@@ -772,22 +784,29 @@
                                 </div>
                             </div>
 
-                            <div class="mt-5">
-                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="subject">Project Type</label>
-                                <select class="input-field w-full px-4 py-3" id="subject" name="subject" required>
-                                    <option value="" selected disabled>Select an option</option>
-                                    <option value="Short-form Editing">Short-form Editing</option>
-                                    <option value="Long-form Editing">Long-form Editing</option>
-                                    <option value="Motion Graphics">Motion Graphics</option>
-                                    <option value="Thumbnail/Export Support">Thumbnail/Export Support</option>
-                                    <option value="Other">Other</option>
-                                </select>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                                <div>
+                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="subject">Project Type</label>
+                                    <select class="input-field w-full px-4 py-3" id="subject" name="subject" required>
+                                        <option value="" selected disabled>Select an option</option>
+                                        <option value="Short-form Editing">Short-form Editing</option>
+                                        <option value="Long-form Editing">Long-form Editing</option>
+                                        <option value="Motion Graphics">Motion Graphics</option>
+                                        <option value="Thumbnail/Export Support">Thumbnail/Export Support</option>
+                                        <option value="Remaining Payment">Remaining Payment</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="referralCode">Referral Code (Optional)</label>
+                                    <input class="input-field w-full px-4 py-3 text-[#ff1a1a]" id="referralCode" name="referralCode" type="text" placeholder="e.g. SAVE10">
+                                </div>
                             </div>
 
-                            <div class="mt-5">
-                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="paymentProof">Payment Proof (JPG/PNG, Max 1MB)</label>
-                                <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png">
-                                <p id="fileError" class="text-xs text-red-400 mt-2 hidden">File size must be under 1MB.</p>
+                            <div class="mt-5 bg-[#ff1a1a]/5 border border-[#ff1a1a]/20 p-4 rounded-xl">
+                                <label class="block text-xs uppercase tracking-widest text-white mb-2" for="paymentProof">Payment Proof <span class="text-[#ff1a1a]">*Required</span></label>
+                                <p class="text-[10px] text-gray-400 mb-3">Only JPG/PNG. Max size: 2MB.</p>
+                                <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png" required>
+                                <p id="fileError" class="text-xs text-[#ff1a1a] mt-2 hidden font-bold tracking-wide"></p>
                             </div>
 
                             <div class="mt-5">
@@ -796,8 +815,8 @@
                             </div>
 
                             <div class="mt-7 flex flex-col sm:flex-row sm:items-center gap-4">
-                                <button class="btn-shine px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn min-h-[44px] min-w-[44px] flex items-center justify-center" type="submit" id="contactSubmit">Send to ZyroEditz</button>
-                                <div class="text-xs tracking-widest" id="contactStatus" aria-live="polite" aria-atomic="true"></div>
+                                <button class="btn-shine px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg" type="submit" id="contactSubmit">Send to ZyroEditz</button>
+                                <div class="text-xs tracking-widest font-medium" id="contactStatus" aria-live="polite" aria-atomic="true"></div>
                             </div>
                         </form>
                     </div>
@@ -1355,34 +1374,48 @@
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyXiGjgwTlvvsqZR_WPTYIknDt_ATMxz4jkzJhA872E5wElV6SwUSIsnjFo8o6JmXT/exec'; 
 
                 if (form && statusEl && submitBtn) {
+                    // FILE VALIDATOR: 2MB limit, JPG/PNG only
                     if (fileInput) {
                         fileInput.addEventListener('change', function() {
-                            if (this.files[0] && this.files[0].size > 1048576) { // 1MB Check
-                                fileError.classList.remove('hidden');
-                                this.value = ''; 
+                            const file = this.files[0];
+                            if (file) {
+                                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                                if (!validTypes.includes(file.type)) {
+                                    fileError.textContent = 'ERROR: Only JPG, JPEG, or PNG formats are allowed.';
+                                    fileError.classList.remove('hidden');
+                                    this.value = ''; 
+                                    submitBtn.disabled = true;
+                                } else if (file.size > 2 * 1024 * 1024) { // 2MB Check
+                                    fileError.textContent = 'ERROR: Image size too large. Must be under 2MB.';
+                                    fileError.classList.remove('hidden');
+                                    this.value = ''; 
+                                    submitBtn.disabled = true;
+                                } else {
+                                    fileError.classList.add('hidden');
+                                    submitBtn.disabled = false;
+                                }
                             } else {
-                                if (fileError) fileError.classList.add('hidden');
+                                fileError.classList.add('hidden');
+                                submitBtn.disabled = false;
                             }
                         });
                     }
 
-                    form.addEventListener('submit', async function (e) {
+                    form.addEventListener('submit', function (e) {
                         e.preventDefault();
                         
                         submitBtn.disabled = true;
                         submitBtn.classList.add('opacity-70');
-                        statusEl.className = 'text-xs tracking-widest text-[#ff1a1a]';
+                        statusEl.className = 'text-xs tracking-widest text-white';
                         
-                        // New Animated Loading State (Spinning SVG + Typing Dots)
-                        statusEl.innerHTML = `<span class="flex items-center gap-1.5">
-                            <svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Uploading securely<span id="loadingDots" class="inline-block w-3 text-left"></span>
-                        </span>`;
+                        // YouTube Style Buffer/Spinner UI
+                        statusEl.innerHTML = `
+                            <span class="flex items-center gap-2">
+                                <span class="yt-spinner"></span>
+                                Uploading securely<span id="loadingDots" class="inline-block w-4 text-left"></span>
+                            </span>`;
 
-                        // JS Interval to make dots type 1 by 1 and disappear
+                        // JS Interval to make dots type 1 by 1
                         let dotCount = 0;
                         const loadingDots = document.getElementById('loadingDots');
                         const dotInterval = setInterval(() => {
@@ -1394,6 +1427,7 @@
                             name: document.getElementById('name').value,
                             email: document.getElementById('email').value,
                             subject: document.getElementById('subject').value,
+                            referralCode: document.getElementById('referralCode') ? document.getElementById('referralCode').value : '',
                             message: document.getElementById('message').value
                         };
 
@@ -1407,17 +1441,17 @@
                                 body: JSON.stringify(payload)
                             })
                             .then(response => {
-                                clearInterval(dotInterval); // Stop dot animation
-                                statusEl.innerHTML = 'Received! You will get your bill shortly.';
-                                statusEl.className = 'text-xs tracking-widest text-green-400';
+                                clearInterval(dotInterval); // Stop animation
+                                statusEl.innerHTML = 'Received! Zyro is reviewing your project.';
+                                statusEl.className = 'text-xs tracking-widest text-green-400 font-bold';
                                 form.reset();
                                 window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: formData.name } }));
                                 setTimeout(() => { submitBtn.disabled = false; submitBtn.classList.remove('opacity-70'); statusEl.innerHTML = ''; }, 4000);
                             })
                             .catch(error => {
-                                clearInterval(dotInterval); // Stop dot animation
+                                clearInterval(dotInterval); // Stop animation
                                 statusEl.innerHTML = 'Connection Error. Reach out via WhatsApp.';
-                                statusEl.className = 'text-xs tracking-widest text-red-400';
+                                statusEl.className = 'text-xs tracking-widest text-red-400 font-bold';
                                 submitBtn.disabled = false;
                                 submitBtn.classList.remove('opacity-70');
                             });
@@ -1433,6 +1467,7 @@
                             };
                             reader.readAsDataURL(file);
                         } else {
+                            // Backup execution though file is marked required in HTML
                             sendData(formData);
                         }
                     });
@@ -1681,12 +1716,12 @@
                     if (qrUrl) {
                         html += `
                         <div class="bg-white p-2 rounded-xl w-fit border border-white/20 shadow-lg shadow-[#ff1a1a]/20 transition-transform duration-300 hover:scale-105">
-                            <img src="${qrUrl}" alt="Scan to Pay" class="w-40 h-40 object-cover rounded-lg mix-blend-multiply">
+                            <img src="${qrUrl}" alt="Scan to Pay" class="w-40 h-40 object-cover rounded-lg mix-blend-multiply qr-img">
                             <p class="text-center text-black text-[10px] font-bold mt-1.5 uppercase tracking-wider">Scan & Pay</p>
                         </div>`;
                     }
 
-                    // Add the clickable deep link (Now hidden on Desktop via md:hidden)
+                    // Add the clickable deep link
                     if (upiUrl) {
                         html += `
                         <a href="${upiUrl}" class="flex md:hidden items-center justify-center gap-2 px-4 py-3 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-fit">
@@ -1697,7 +1732,16 @@
 
                     btnContainer.innerHTML = html;
                     messages.appendChild(btnContainer);
-                    messages.scrollTop = messages.scrollHeight;
+                    
+                    // FIX: QR CODE NOT SHOWING (Ensures scroll down happens AFTER image loads)
+                    const imgNode = btnContainer.querySelector('.qr-img');
+                    if (imgNode) {
+                        imgNode.onload = () => {
+                            messages.scrollTop = messages.scrollHeight;
+                        };
+                    } else {
+                        messages.scrollTop = messages.scrollHeight;
+                    }
                 }
 
                 form.addEventListener('submit', async (e) => {
