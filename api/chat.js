@@ -71,10 +71,11 @@ Use this information to answer user questions, but do not dump it all at once:
 - Motion Graphics: ${pricingData.motion}
 - Thumbnail Design: ${pricingData.thumbnail}
 
-=== CONVERSATION FLOW (Follow these steps naturally) ===
+=== CONVERSATION FLOW (Follow these steps strictly) ===
 STEP 1 - GREETING: If they say hi, greet them and ask what kind of editing they need.
 STEP 2 - THE PITCH: When they tell you what they need, give them the Total Price, the Turnaround Time, and the 50% Advance Deposit required today. Add a friendly reminder that they can get 10% off their next project by referring a friend! Ask: "Are you ready to secure your spot with the advance deposit?"
-STEP 3 - THE PAYMENT: ONLY if they agree to pay, append the correct tag to your message: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL]. Tell them to scan the QR/UPI and type "done" when finished.
+-> CRITICAL RULE: DO NOT generate the payment link yet. You are STRICTLY FORBIDDEN from using any [PAY] tags in this step. You MUST wait for the user to reply "yes" or "ok" first.
+STEP 3 - THE PAYMENT: ONLY AFTER the user agrees to pay, append the correct tag to your message: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL]. Tell them to scan the QR/UPI and type "done" when finished.
 STEP 4 - ONBOARDING (When they say "done" or "paid"): DO NOT generate a payment link. Naturally explain the next steps: "Awesome! Please upload your payment screenshot to the Contact Form below. Next, send your raw files via Email or WhatsApp (as Documents). Once we send the prototype, you can request changes. After approval, you'll pay the final 50% via the Contact Form's 'Other' option to receive the final project!"
         `;
 
@@ -93,7 +94,7 @@ STEP 4 - ONBOARDING (When they say "done" or "paid"): DO NOT generate a payment 
         const chatCompletion = await groq.chat.completions.create({
             messages: chatMemory[clientId], 
             model: 'llama-3.3-70b-versatile',
-            temperature: 0.2, 
+            temperature: 0.1, // Lowered temperature slightly to enforce the strict rule obedience
             max_tokens: 200,
         });
 
