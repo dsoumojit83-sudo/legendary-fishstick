@@ -5,7 +5,7 @@ const groq = new OpenAI({
     apiKey: process.env.GROQ_API_KEY 
 });
 
-// Memory stores
+// Memory
 const chatMemory = {};
 const userState = {};
 
@@ -56,25 +56,34 @@ module.exports = async function(req, res) {
         const state = userState[clientId];
 
         // -----------------------------
-        // 1. GREETING HANDLER
+        // LOCK AFTER COMPLETION
+        // -----------------------------
+        if (state.step === "completed") {
+            return res.json({
+                reply: "Thanks for choosing us to serve you. We really appreciate your patience."
+            });
+        }
+
+        // -----------------------------
+        // GREETING
         // -----------------------------
         if (["hi", "hello", "hii", "hey"].some(w => msg.includes(w))) {
             return res.json({
-                reply: "Hey! What service do you need? (Reels / YouTube / Motion / Thumbnails)"
+                reply: "Hey! What service do you need? (Reels / YouTube / Motion Graphics / Thumbnails)"
             });
         }
 
         // -----------------------------
-        // 2. PRICING REQUEST
+        // PRICING
         // -----------------------------
         if (msg.includes("price")) {
             return res.json({
-                reply: `Pricing:\nReels ₹${pricingData.reels.full}\nYouTube ₹${pricingData.youtube.full}\nMotion ₹${pricingData.motion.full}\nThumbnails ₹${pricingData.thumbnail.full}`
+                reply: `Pricing:\nReels ₹${pricingData.reels.full}\nYouTube ₹${pricingData.youtube.full}\nMotion Graphics ₹${pricingData.motion.full}\nThumbnails ₹${pricingData.thumbnail.full}`
             });
         }
 
         // -----------------------------
-        // 3. SERVICE SELECTION
+        // SERVICE DETECTION
         // -----------------------------
         if (msg.includes("thumbnail")) {
             state.service = "thumbnail";
@@ -83,13 +92,21 @@ module.exports = async function(req, res) {
         } else if (msg.includes("youtube")) {
             state.service = "youtube";
         } else if (msg.includes("motion")) {
-            state.service = "motion";
+            state.service = "motion graphics";
         }
 
+        // Map for pricing
+        const keyMap = {
+            "motion graphics": "motion"
+        };
+
+        // -----------------------------
+        // SERVICE SELECTED
+        // -----------------------------
         if (state.service && state.step === "start") {
             state.step = "selected";
 
-            const data = pricingData[state.service];
+            const data = pricingData[keyMap[state.service] || state.service];
 
             return res.json({
                 reply: `You've selected ${state.service}. Price ₹${data.full}, Advance ₹${data.advance}. Type "pay" to proceed.`
@@ -97,23 +114,23 @@ module.exports = async function(req, res) {
         }
 
         // -----------------------------
-        // 4. PAYMENT STEP
+        // PAYMENT STEP
         // -----------------------------
         if (msg.includes("pay") && state.step === "selected") {
             state.step = "payment";
 
-            const advanceAmount = pricingData[state.service].advance;
-            const payment = generateUpiData(advanceAmount);
+            const data = pricingData[keyMap[state.service] || state.service];
+            const payment = generateUpiData(data.advance);
 
             return res.json({
-                reply: `Pay ₹${advanceAmount} advance using the options below 👇`,
+                reply: `Pay ₹${data.advance} advance using the options below 👇 and send screenshot after payment.`,
                 paymentUrl: payment.upiString,
                 qrUrl: payment.qrUrl
             });
         }
 
         // -----------------------------
-        // 5. AFTER PAYMENT
+        // AFTER PAYMENT
         // -----------------------------
         if (
             ["done", "paid", "payment done", "what next"].some(w => msg.includes(w)) &&
@@ -122,18 +139,18 @@ module.exports = async function(req, res) {
             state.step = "completed";
 
             return res.json({
-                reply: `Upload your screenshot to the Contact Form. Send raw files as DOCUMENTS to WhatsApp: 7602679995 AND Email: zyroeditz@gmail.com.\n\nDelivery: Same day (Thumbnails) / 24–48h others.\nOne revision allowed.`
+                reply: `Upload your screenshot to the Contact Form. Send raw files as DOCUMENTS to WhatsApp: 7602679995 OR Email: zyroeditz@gmail.com.\n\nDelivery: Same day (Thumbnails) / 24–48h others.\nOne revision allowed.\n\nThanks for choosing us to serve you. We really appreciate your patience.`
             });
         }
 
         // -----------------------------
-        // 6. FALLBACK → AI RESPONSE
+        // FALLBACK AI
         // -----------------------------
         if (!chatMemory[clientId]) {
             chatMemory[clientId] = [
                 {
                     role: "system",
-                    content: `You are a friendly assistant for ZyroEditz. Keep replies under 2 sentences. Do not repeat pricing unless asked.`
+                    content: "You are a helpful assistant for ZyroEditz. Keep replies short and natural."
                 }
             ];
         }
@@ -151,7 +168,7 @@ module.exports = async function(req, res) {
 
         chatMemory[clientId].push({ role: "assistant", content: reply });
 
-        // Trim memory safely
+        // Trim memory
         if (chatMemory[clientId].length > 10) {
             chatMemory[clientId] = [
                 chatMemory[clientId][0],
