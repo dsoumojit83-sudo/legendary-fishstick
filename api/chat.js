@@ -69,11 +69,17 @@ module.exports = async function(req, res) {
 
         const state = userState[clientId];
 
-        // 🛠 MEMORY WIPE: If they finished an order and come back to chat again later
+        // 🛠 MEMORY WIPE & RESTART: If they finished an order and come back to chat again later
         if (state.step === "done" && message !== "FINAL_PAYMENT_DONE") {
             state.step = "start";
             state.service = null;
             state.orderId = generateOrderId();
+            
+            // Sends the clearHistory flag to the frontend to wipe the local storage
+            return res.json({
+                reply: `Hey! 👋 What kind of project can I help you with today? We handle Video Editing, Thumbnails, Motion Graphics, and Sound Design!\n\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade`,
+                clearHistory: true
+            });
         }
 
         // 🔥 SECURITY LOCK: Final Payment can ONLY be triggered if they are in the "upload" step
@@ -81,7 +87,8 @@ module.exports = async function(req, res) {
             if (state.step === "upload") {
                 state.step = "done";
                 return res.json({
-                    reply: `Order ID: ${state.orderId}\n\nThanks for fulfilling the payment and giving us a chance to serve you 🙌\n\nYour final bill will be emailed shortly.`
+                    reply: `Order ID: ${state.orderId}\n\nThanks for fulfilling the payment and giving us a chance to serve you 🙌\n\nYour final bill will be emailed shortly.`,
+                    clearHistory: true // Wipes their chat so they can start a new order next time
                 });
             } else {
                 return res.json({
@@ -99,7 +106,8 @@ module.exports = async function(req, res) {
         if (["no", "cancel", "don't", "dont", "not interested", "stop"].some(w => msg.includes(w)) && state.step !== "upload" && state.step !== "form") {
             state.step = "done";
             return res.json({
-                reply: `I’m a bit sad we couldn’t create something this time 😔\nFeel free to come back anytime when you're ready.`
+                reply: `I’m a bit sad we couldn’t create something this time 😔\nFeel free to come back anytime when you're ready.`,
+                clearHistory: true
             });
         }
 
