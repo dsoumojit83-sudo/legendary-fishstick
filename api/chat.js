@@ -1,9 +1,9 @@
 const OpenAI = require('openai');
 
-// Connect to OpenRouter
+// Connect to OpenRouter but look for the DEEPSEEK_API_KEY name!
 const openai = new OpenAI({
     baseURL: 'https://openrouter.ai/api/v1',
-    apiKey: process.env.OPENROUTER_API_KEY 
+    apiKey: process.env.DEEPSEEK_API_KEY 
 });
 
 const chatMemory = {};  
@@ -74,4 +74,57 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
             chatMemory[clientId][0] = { role: 'system', content: systemPrompt };         
         }          
 
-        chatMemory[clientId].push({ role: 'user', content: userMessage });
+        chatMemory[clientId].push({ role: 'user', content: userMessage });          
+
+        if (chatMemory[clientId].length > 7) {             
+            chatMemory[clientId].splice(1, 2);         
+        }          
+
+        // Connecting strictly to DeepSeek V3 (Chat) Free Node via OpenRouter
+        const completion = await openai.chat.completions.create({             
+            model: 'deepseek/deepseek-chat:free', 
+            messages: chatMemory[clientId],             
+            temperature: 0.1,             
+            max_tokens: 250         
+        });          
+
+        let reply = completion.choices[0].message.content;         
+        let finalPaymentData = null;          
+
+        const tags = {             
+            "[PAY_THUMBNAIL]": paymentData.thumbnail,             
+            "[PAY_LONG]": paymentData.long,             
+            "[PAY_SHORT]": paymentData.short,             
+            "[PAY_MOTION]": paymentData.motion         
+        };          
+
+        for (const [tag, data] of Object.entries(tags)) {             
+            if (reply.includes(tag)) {                 
+                finalPaymentData = data;                 
+                reply = reply.replace(tag, "options below! 👇").trim();                 
+                break;             
+            }         
+        }          
+
+        chatMemory[clientId].push({ role: 'assistant', content: reply });          
+
+        res.status(200).json({             
+            reply,             
+            paymentUrl: finalPaymentData?.upiString || null,             
+            qrUrl: finalPaymentData?.qrUrl || null         
+        });     
+        
+    } catch (error) {         
+        console.error("OpenRouter API Error:", error);
+        
+        // THE SAFETY NET: Catches 404 (Server Full), 402 (No Credits), and 429 (Rate Limit)
+        if (error.status === 402 || error.status === 429 || error.status === 404) {
+            return res.status(200).json({ 
+                reply: "Our AI agent is currently assisting other clients. Please reach out to us via the contact form or WhatsApp so we can get your edit started.",
+                paymentUrl: null, qrUrl: null
+            });
+        }
+                 
+        res.status(500).json({ error: "Internal Server Error" });     
+    } 
+};
