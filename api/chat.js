@@ -208,6 +208,8 @@ Email: zyroeditz.official@gmail.com
 📸 Attach payment screenshot  
 
 📞 Support:
+PHONE: +917602679995
+EMAIL: zyroeditz.official@gmail.com
 Mon–Fri, 9 AM – 5 PM`
             });
         }
