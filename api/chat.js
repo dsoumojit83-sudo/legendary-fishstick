@@ -83,7 +83,7 @@ Feel free to come back anytime when you're ready.`
             });
         }
 
-        // STEP 1
+        // STEP 1 - OPTIONS
         if (state.step === "start") {
             state.step = "select";
 
@@ -99,7 +99,7 @@ Feel free to come back anytime when you're ready.`
             });
         }
 
-        // STEP 2
+        // STEP 2 - SELECTION
         if (state.step === "select") {
 
             if (msg.includes("short")) state.service = "short";
@@ -134,9 +134,13 @@ ${isNewUser ? "🎉 New user discount applied\n" : ""}
 Type "pay" to proceed.`
                 });
             }
+
+            return res.json({
+                reply: "Please choose a service from the options above to continue."
+            });
         }
 
-        // STEP 3 PAYMENT
+        // STEP 3 - PAYMENT INIT
         if (state.step === "confirm" && msg.includes("pay")) {
 
             state.step = "payment_pending";
@@ -149,13 +153,13 @@ Type "pay" to proceed.`
 
 Pay ₹${data.adv} advance 👇
 
-After payment, confirm here.`,
+After payment, please confirm here.`,
                 paymentUrl: payment.upiString,
                 qrUrl: payment.qrUrl
             });
         }
 
-        // CONFIRM PAYMENT
+        // STEP 3.5 - CONFIRM PAYMENT
         if (state.step === "payment_pending") {
 
             if (["yes", "done", "paid"].some(w => msg.includes(w))) {
@@ -168,7 +172,7 @@ Great! ✅
 
 📌 Fill the Contact Form  
 📸 Attach payment screenshot  
-🎟 Apply referral code (10% off on remaining)
+🎟 Apply referral code (10% off on remaining payment)
 
 🧾 Invoice will be sent to your email shortly.`
                 });
@@ -179,7 +183,7 @@ Great! ✅
             });
         }
 
-        // FORM LOOP
+        // STEP 4 - FORM LOOP
         if (state.step === "form") {
             if (message !== "FORM_SUBMITTED") {
                 return res.json({
@@ -194,21 +198,21 @@ Great! ✅
 
 Great! ✅
 
-📂 Send raw files as DOCUMENTS:
+📂 Send your raw files as DOCUMENTS:
 
 WhatsApp: 7602679995  
 OR  
 Email: zyroeditz.official@gmail.com  
 
-💰 Pay remaining amount  
-📸 Attach payment screenshot in the form and select "Remaining Payment" to fulfil your payment.
+💰 Pay remaining amount (remaining payment option)  
+📸 Attach payment screenshot  
 
 📞 Support:
 Mon–Fri, 9 AM – 5 PM`
             });
         }
 
-        // FINAL STEP
+        // STEP 5 - FINAL
         if (state.step === "upload") {
             state.step = "done";
 
@@ -220,7 +224,9 @@ We appreciate your patience.`
             });
         }
 
-        return res.json({ reply: "Please follow the steps." });
+        return res.json({
+            reply: "Please choose a service from the options above to continue."
+        });
 
     } catch (err) {
         console.error(err);
