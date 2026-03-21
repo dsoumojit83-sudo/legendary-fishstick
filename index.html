@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -327,8 +328,8 @@
         #chatbotMessages::-webkit-scrollbar { width: 4px; }
         #chatbotMessages::-webkit-scrollbar-track { background: transparent; }
         #chatbotMessages::-webkit-scrollbar-thumb { background: rgba(255,26,26,0.3); border-radius: 2px; }
-        .chat-bot-msg { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem 1rem 1rem 0.25rem; padding: 0.6rem 1rem; color: #d1d5db; font-size: 0.875rem; max-width: 85%; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
-        .chat-user-msg { background: rgba(255,26,26,0.15); border: 1px solid rgba(255,26,26,0.3); border-radius: 1rem 1rem 0.25rem 1rem; padding: 0.6rem 1rem; color: #fff; font-size: 0.875rem; max-width: 85%; margin-left: auto; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
+        .chat-bot-msg { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem 1rem 1rem 0.25rem; padding: 0.6rem 1rem; color: #d1d5db; font-size: 0.875rem; max-width: 85%; line-height: 1.4; word-wrap: break-word; }
+        .chat-user-msg { background: rgba(255,26,26,0.15); border: 1px solid rgba(255,26,26,0.3); border-radius: 1rem 1rem 0.25rem 1rem; padding: 0.6rem 1rem; color: #fff; font-size: 0.875rem; max-width: 85%; margin-left: auto; line-height: 1.4; word-wrap: break-word; }
     </style>
 </head>
 <body class="antialiased">
@@ -809,8 +810,8 @@
                             </div>
 
                             <div class="mt-5">
-                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message / Project Brief <span class="text-[#ff1a1a]">*</span></label>
-                                <textarea class="input-field w-full px-4 py-3 min-h-[140px] resize-y" id="message" name="message" required placeholder="Tell me about your project, deadline, and references..."></textarea>
+                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message / Project Brief <span class="text-[#ff1a1a]" id="messageAsterisk">*</span></label>
+                                <textarea class="input-field w-full px-4 py-3 min-h-[140px] resize-y" id="message" name="message" required placeholder="Tell me about your project, deadline, and references... *"></textarea>
                             </div>
 
                             <div class="mt-7 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -872,11 +873,7 @@
         </div>
         
         <div id="chatbotMessages" class="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
-            <div class="flex gap-2">
-                <div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div>
-                <div class="chat-bot-msg">Hey! 👋 What kind of editing or design project can I help you with today?</div>
             </div>
-        </div>
 
         <div class="p-3 border-t border-white/10 bg-black/60 backdrop-blur-md">
             <form id="chatbotForm" class="flex gap-2">
@@ -913,23 +910,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
     <script>
-        // GSAP Kill Switch for performance
-        if (window.gsap && window.ScrollTrigger) {
-            ScrollTrigger.config({ limitCallbacks: true });
-        }
-        
-        // Add reveal-loaded class after scripts are ready
+        if (window.gsap && window.ScrollTrigger) { ScrollTrigger.config({ limitCallbacks: true }); }
         document.body.classList.add('reveal-loaded');
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             
-            // Global variable to capture the unique Order ID from the chatbot
-            let activeOrderId = "ZYRO-" + Math.floor(Math.random() * 1000000); 
-            
             // ==================== INITIALIZATION FUNCTIONS ====================
-            
             function initCustomCursor() {
                 const cursor = document.getElementById('customCursor');
                 const cursorDot = document.getElementById('customCursorDot');
@@ -940,20 +928,15 @@
                 let cursorX = 0, cursorY = 0;
                 let dotX = 0, dotY = 0;
                 
-                document.addEventListener('mousemove', (e) => {
-                    mouseX = e.clientX;
-                    mouseY = e.clientY;
-                });
+                document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
                 
                 function animateCursor() {
                     cursorX += (mouseX - cursorX) * 0.1;
                     cursorY += (mouseY - cursorY) * 0.1;
                     dotX += (mouseX - dotX) * 0.5;
                     dotY += (mouseY - dotY) * 0.5;
-                    
                     cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
                     cursorDot.style.transform = `translate(${dotX}px, ${dotY}px) translate(-50%, -50%)`;
-                    
                     requestAnimationFrame(animateCursor);
                 }
                 animateCursor();
@@ -964,50 +947,26 @@
                     el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
                 });
                 
-                document.addEventListener('mouseleave', () => {
-                    cursor.style.opacity = '0';
-                    cursorDot.style.opacity = '0';
-                });
-                
-                document.addEventListener('mouseenter', () => {
-                    cursor.style.opacity = '1';
-                    cursorDot.style.opacity = '1';
-                });
+                document.addEventListener('mouseleave', () => { cursor.style.opacity = '0'; cursorDot.style.opacity = '0'; });
+                document.addEventListener('mouseenter', () => { cursor.style.opacity = '1'; cursorDot.style.opacity = '1'; });
             }
 
             function initGlobalParallax() {
                 if (prefersReducedMotion || !window.gsap) return;
-                
                 const orbs = document.querySelectorAll('.orb');
                 const grid = document.querySelector('.grid-bg');
                 
                 document.addEventListener('mousemove', (e) => {
                     const x = (e.clientX / window.innerWidth - 0.5) * 30; 
                     const y = (e.clientY / window.innerHeight - 0.5) * 30;
-                    
-                    gsap.to(orbs, {
-                        x: x,
-                        y: y,
-                        duration: 1.5,
-                        ease: 'power2.out',
-                        overwrite: 'auto'
-                    });
-                    
-                    gsap.to(grid, {
-                        x: x * 0.5,
-                        y: y * 0.5,
-                        duration: 1.5,
-                        ease: 'power2.out',
-                        overwrite: 'auto'
-                    });
+                    gsap.to(orbs, { x: x, y: y, duration: 1.5, ease: 'power2.out', overwrite: 'auto' });
+                    gsap.to(grid, { x: x * 0.5, y: y * 0.5, duration: 1.5, ease: 'power2.out', overwrite: 'auto' });
                 });
             }
             
             function initNavigation() {
                 const yearEl = document.getElementById('year');
-                if (yearEl) {
-                    yearEl.textContent = new Date().getFullYear();
-                }
+                if (yearEl) yearEl.textContent = new Date().getFullYear();
 
                 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
                 const mobileMenuClose = document.getElementById('mobileMenuClose');
@@ -1015,49 +974,29 @@
                 let focusableElements = [];
                 let lastFocusedElement = null;
                 
-                function getFocusableElements() {
-                    return mobileMenu.querySelectorAll(
-                        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                    );
-                }
+                function getFocusableElements() { return mobileMenu.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'); }
                 
                 function trapFocus(e) {
                     if (e.key === 'Tab') {
                         e.preventDefault();
                         focusableElements = getFocusableElements();
                         if (focusableElements.length === 0) return;
-                        
                         const firstElement = focusableElements[0];
                         const lastElement = focusableElements[focusableElements.length - 1];
                         
                         if (e.shiftKey) {
-                            if (document.activeElement === firstElement) {
-                                lastElement.focus();
-                            } else {
+                            if (document.activeElement === firstElement) { lastElement.focus(); } else {
                                 const currentIndex = Array.from(focusableElements).indexOf(document.activeElement);
-                                if (currentIndex > 0) {
-                                    focusableElements[currentIndex - 1].focus();
-                                } else {
-                                    lastElement.focus();
-                                }
+                                if (currentIndex > 0) focusableElements[currentIndex - 1].focus(); else lastElement.focus();
                             }
                         } else {
-                            if (document.activeElement === lastElement) {
-                                firstElement.focus();
-                            } else {
+                            if (document.activeElement === lastElement) { firstElement.focus(); } else {
                                 const currentIndex = Array.from(focusableElements).indexOf(document.activeElement);
-                                if (currentIndex >= 0 && currentIndex < focusableElements.length - 1) {
-                                    focusableElements[currentIndex + 1].focus();
-                                } else {
-                                    firstElement.focus();
-                                }
+                                if (currentIndex >= 0 && currentIndex < focusableElements.length - 1) focusableElements[currentIndex + 1].focus(); else firstElement.focus();
                             }
                         }
                     }
-                    
-                    if (e.key === 'Escape') {
-                        closeMobileMenu();
-                    }
+                    if (e.key === 'Escape') closeMobileMenu();
                 }
                 
                 function openMobileMenu() {
@@ -1065,9 +1004,7 @@
                     mobileMenuToggle.setAttribute('aria-expanded', 'true');
                     lastFocusedElement = document.activeElement;
                     focusableElements = getFocusableElements();
-                    if (focusableElements.length > 0) {
-                        focusableElements[0].focus();
-                    }
+                    if (focusableElements.length > 0) focusableElements[0].focus();
                     mobileMenu.addEventListener('keydown', trapFocus);
                 }
                 
@@ -1075,27 +1012,16 @@
                     mobileMenu.classList.add('hidden');
                     mobileMenuToggle.setAttribute('aria-expanded', 'false');
                     mobileMenu.removeEventListener('keydown', trapFocus);
-                    if (lastFocusedElement) {
-                        lastFocusedElement.focus();
-                    }
+                    if (lastFocusedElement) lastFocusedElement.focus();
                 }
                 
-                if (mobileMenuToggle && mobileMenu) {
-                    mobileMenuToggle.addEventListener('click', openMobileMenu);
-                }
-                
-                if (mobileMenuClose && mobileMenu) {
-                    mobileMenuClose.addEventListener('click', closeMobileMenu);
-                }
-                
-                mobileMenu?.querySelectorAll('a').forEach(link => {
-                    link.addEventListener('click', closeMobileMenu);
-                });
+                if (mobileMenuToggle && mobileMenu) mobileMenuToggle.addEventListener('click', openMobileMenu);
+                if (mobileMenuClose && mobileMenu) mobileMenuClose.addEventListener('click', closeMobileMenu);
+                mobileMenu?.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMobileMenu));
 
                 let ticking = false;
-                let lastScrollY = 0;
-                let lastProgressUpdate = 0;
                 let lastScrollPercent = 0;
+                let lastProgressUpdate = 0;
                 
                 function updateScroll() {
                     const nav = document.querySelector('nav');
@@ -1108,24 +1034,17 @@
                         if (window.scrollY > 100) {
                             nav.classList.add('bg-black/80', 'backdrop-blur-lg');
                             nav.classList.remove('bg-black/30');
-                            if (scrollIndicator) {
-                                scrollIndicator.style.opacity = '0';
-                                scrollIndicator.style.transform = 'translate(-50%, 20px)';
-                            }
+                            if (scrollIndicator) { scrollIndicator.style.opacity = '0'; scrollIndicator.style.transform = 'translate(-50%, 20px)'; }
                         } else {
                             nav.classList.add('bg-black/30');
                             nav.classList.remove('bg-black/80', 'backdrop-blur-lg');
-                            if (scrollIndicator) {
-                                scrollIndicator.style.opacity = '1';
-                                scrollIndicator.style.transform = 'translate(-50%, 0)';
-                            }
+                            if (scrollIndicator) { scrollIndicator.style.opacity = '1'; scrollIndicator.style.transform = 'translate(-50%, 0)'; }
                         }
                     }
                     
                     if (scrollProgress && (now - lastProgressUpdate > 16)) {
                         const scrollHeight = document.body.scrollHeight - window.innerHeight;
                         const scrollPercent = scrollHeight > 0 ? (Math.max(0, window.scrollY) / scrollHeight * 100).toFixed(2) : 0;
-                        
                         if (Math.abs(scrollPercent - lastScrollPercent) > 0.5) {
                             scrollProgress.style.width = scrollPercent + '%';
                             lastScrollPercent = parseFloat(scrollPercent);
@@ -1142,29 +1061,21 @@
                             scrollTopBtn.classList.remove('opacity-100', 'visible', 'pointer-events-auto');
                         }
                     }
-                    
                     ticking = false;
                 }
                 
                 window.addEventListener('scroll', function() {
-                    lastScrollY = window.scrollY;
-                    if (!ticking) {
-                        requestAnimationFrame(updateScroll);
-                        ticking = true;
-                    }
+                    if (!ticking) { requestAnimationFrame(updateScroll); ticking = true; }
                 }, { passive: true });
 
                 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
                     anchor.addEventListener('click', function (e) {
                         const href = this.getAttribute('href');
                         if (!href || href === '#') return;
-
                         const target = document.querySelector(href);
                         if (!target) return;
-
                         e.preventDefault();
                         closeMobileMenu();
-
                         const nav = document.querySelector('nav');
                         const navOffset = nav ? nav.getBoundingClientRect().height : 0;
                         const y = target.getBoundingClientRect().top + window.pageYOffset - navOffset;
@@ -1173,11 +1084,7 @@
                 });
 
                 const scrollTopBtn = document.getElementById('scrollTopBtn');
-                if (scrollTopBtn) {
-                    scrollTopBtn.addEventListener('click', function() {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    });
-                }
+                if (scrollTopBtn) scrollTopBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
                 (function(){
                     const ids = ['home', 'about', 'services', 'contact'];
@@ -1188,9 +1095,7 @@
                     const observer = new IntersectionObserver(function(entries) {
                         entries.forEach(entry => {
                             if (entry.isIntersecting) {
-                                links.forEach(link => {
-                                    link.classList.toggle('nav-active', link.getAttribute('href') === '#' + entry.target.id);
-                                });
+                                links.forEach(link => link.classList.toggle('nav-active', link.getAttribute('href') === '#' + entry.target.id));
                             }
                         });
                     }, { threshold: 0.4 });
@@ -1201,10 +1106,7 @@
             // ==================== ADVANCED GSAP ANIMATIONS ====================
             function initAnimations() {
                 if (!window.gsap) return;
-                
-                if (window.ScrollTrigger) {
-                    gsap.registerPlugin(ScrollTrigger);
-                }
+                if (window.ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
 
                 window.addEventListener('load', () => {
                     if (prefersReducedMotion) return;
@@ -1217,30 +1119,10 @@
                         const rect = btn.getBoundingClientRect();
                         const x = e.clientX - rect.left - rect.width / 2;
                         const y = e.clientY - rect.top - rect.height / 2;
-                        
-                        const rotX = (y / rect.height) * -20; 
-                        const rotY = (x / rect.width) * 20;
-                        
-                        gsap.to(btn, { 
-                            x: x * 0.25, 
-                            y: y * 0.25, 
-                            rotationX: rotX,
-                            rotationY: rotY,
-                            duration: 0.4, 
-                            ease: 'power2.out', 
-                            willChange: 'transform' 
-                        });
+                        gsap.to(btn, { x: x * 0.25, y: y * 0.25, rotationX: (y / rect.height) * -20, rotationY: (x / rect.width) * 20, duration: 0.4, ease: 'power2.out', willChange: 'transform' });
                     });
                     btn.addEventListener('mouseleave', () => {
-                        gsap.to(btn, { 
-                            x: 0, 
-                            y: 0, 
-                            rotationX: 0,
-                            rotationY: 0,
-                            duration: 0.9, 
-                            ease: 'elastic.out(1, 0.3)', 
-                            willChange: 'transform' 
-                        });
+                        gsap.to(btn, { x: 0, y: 0, rotationX: 0, rotationY: 0, duration: 0.9, ease: 'elastic.out(1, 0.3)', willChange: 'transform' });
                     });
                 });
 
@@ -1248,23 +1130,12 @@
                     gsap.to('#orb1', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: 600, x: 200, ease: 'none' });
                     gsap.to('#orb2', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -500, x: -300, ease: 'none' });
                     gsap.to('#orb3', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -550, x: -200, ease: 'none' });
-
                     gsap.to('#shape1', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.8 }, y: -350, rotation: 200, ease: 'none' });
                     gsap.to('#shape2', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.8 }, y: -250, rotation: 280, ease: 'none' });
                     gsap.to('#shape3', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.8 }, y: -400, rotation: -120, ease: 'none' });
                     
                     document.querySelectorAll('.group img').forEach((img, index) => {
-                        gsap.to(img, {
-                            scrollTrigger: {
-                                trigger: img,
-                                start: 'top bottom',
-                                end: 'bottom top',
-                                scrub: 2
-                            },
-                            y: -50 * (index + 1),
-                            scale: 1.05,
-                            ease: 'none'
-                        });
+                        gsap.to(img, { scrollTrigger: { trigger: img, start: 'top bottom', end: 'bottom top', scrub: 2 }, y: -50 * (index + 1), scale: 1.05, ease: 'none' });
                     });
                 }
 
@@ -1278,102 +1149,76 @@
                 gridContainers.forEach(container => {
                     const gridItems = container.querySelectorAll('.reveal');
                     if (gridItems.length > 0 && !prefersReducedMotion && window.ScrollTrigger) {
-                        gsap.fromTo(gridItems,
-                            { y: 60, opacity: 0, willChange: 'transform, opacity' },
-                            {
-                                y: 0,
-                                opacity: 1,
-                                duration: 0.8,
-                                ease: 'power4.out',
-                                stagger: 0.06,
-                                willChange: 'auto',
-                                onComplete: function() {
-                                    gridItems.forEach((el) => {
-                                        if (el.classList.contains('service-card')) {
-                                            el.classList.add('reveal-active');
-                                            gsap.set(el, { clearProps: "transform" });
-                                        }
-                                    });
-                                },
-                                scrollTrigger: {
-                                    trigger: container,
-                                    start: 'top 80%',
-                                    toggleActions: 'play none none reverse'
-                                }
-                            }
-                        );
+                        gsap.fromTo(gridItems, { y: 60, opacity: 0, willChange: 'transform, opacity' }, {
+                            y: 0, opacity: 1, duration: 0.8, ease: 'power4.out', stagger: 0.06, willChange: 'auto',
+                            onComplete: function() { gridItems.forEach((el) => { if (el.classList.contains('service-card')) { el.classList.add('reveal-active'); gsap.set(el, { clearProps: "transform" }); } }); },
+                            scrollTrigger: { trigger: container, start: 'top 80%', toggleActions: 'play none none reverse' }
+                        });
                     }
                 });
                 
                 const revealEls = gsap.utils.toArray('.reveal');
                 revealEls.forEach((el) => {
                     if (!(el instanceof Element)) return;
-                    if (prefersReducedMotion || !window.ScrollTrigger) {
-                        el.style.opacity = '1';
-                        el.style.transform = 'none';
-                        return;
-                    }
-
-                    gsap.fromTo(el,
-                        { y: 50, opacity: 0, willChange: 'transform, opacity' },
-                        {
-                            y: 0,
-                            opacity: 1,
-                            duration: 1.2,
-                            ease: 'power4.out',
-                            willChange: 'auto',
-                            scrollTrigger: {
-                                trigger: el,
-                                start: 'top 85%',
-                                toggleActions: 'play none none reverse'
-                            }
-                        }
-                    );
+                    if (prefersReducedMotion || !window.ScrollTrigger) { el.style.opacity = '1'; el.style.transform = 'none'; return; }
+                    gsap.fromTo(el, { y: 50, opacity: 0, willChange: 'transform, opacity' }, { y: 0, opacity: 1, duration: 1.2, ease: 'power4.out', willChange: 'auto', scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none reverse' } });
                 });
 
                 gsap.utils.toArray('[data-count]').forEach((el) => {
                     if (!(el instanceof Element)) return;
                     const target = Number(el.getAttribute('data-count') || '0');
                     if (!Number.isFinite(target)) return;
-
                     const obj = { val: 0 };
                     const update = () => { el.textContent = String(Math.round(obj.val)); };
-
-                    if (prefersReducedMotion || !window.ScrollTrigger) {
-                        el.textContent = String(target);
-                        return;
-                    }
-
+                    if (prefersReducedMotion || !window.ScrollTrigger) { el.textContent = String(target); return; }
                     if (window.ScrollTrigger) {
-                        ScrollTrigger.create({
-                            trigger: el,
-                            start: 'top 85%',
-                            once: true,
-                            onEnter: () => {
-                                gsap.to(obj, {
-                                    val: target,
-                                    duration: 2.5,
-                                    ease: 'power3.out',
-                                    onUpdate: update
-                                });
-                            }
-                        });
+                        ScrollTrigger.create({ trigger: el, start: 'top 85%', once: true, onEnter: () => { gsap.to(obj, { val: target, duration: 2.5, ease: 'power3.out', onUpdate: update }); } });
                     }
                 });
             }
             
-            // ==================== FORM HANDLING ====================
+            // ==================== FORM HANDLING & FRONTEND LOCK ====================
             function initForms() {
                 const form = document.getElementById('contactForm');
                 const statusEl = document.getElementById('contactStatus');
                 const submitBtn = document.getElementById('contactSubmit');
                 const fileInput = document.getElementById('paymentProof');
                 const fileError = document.getElementById('fileError');
+                const subjectDropdown = document.getElementById('subject');
+                const messageInput = document.getElementById('message');
+                const messageAsterisk = document.getElementById('messageAsterisk');
                 
-                // Active Google Web App URL
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyXiGjgwTlvvsqZR_WPTYIknDt_ATMxz4jkzJhA872E5wElV6SwUSIsnjFo8o6JmXT/exec'; 
 
                 if (form && statusEl && submitBtn) {
+                    
+                    // FRONTEND SECURITY LOCK + MESSAGE REQUIRED TOGGLE
+                    subjectDropdown.addEventListener('change', function() {
+                        const isActive = localStorage.getItem('zyro_active_project') === 'true';
+                        
+                        // Make Message not required for final payment
+                        if (this.value === 'Remaining Payment') {
+                            messageInput.removeAttribute('required');
+                            messageAsterisk.style.display = 'none';
+                            messageInput.placeholder = "Optional note for your final payment...";
+                        } else {
+                            messageInput.setAttribute('required', 'required');
+                            messageAsterisk.style.display = 'inline';
+                            messageInput.placeholder = "Tell me about your project, deadline, and references... *";
+                        }
+
+                        if (this.value === 'Remaining Payment' && !isActive) {
+                            submitBtn.disabled = true;
+                            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                            statusEl.innerHTML = '⚠️ Start an order in the chat first to make a final payment.';
+                            statusEl.className = 'text-xs tracking-widest text-red-400 font-bold';
+                        } else {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            statusEl.innerHTML = '';
+                        }
+                    });
+
                     if (fileInput) {
                         fileInput.addEventListener('change', function() {
                             const file = this.files[0];
@@ -1391,11 +1236,15 @@
                                     submitBtn.disabled = true;
                                 } else {
                                     fileError.classList.add('hidden');
-                                    submitBtn.disabled = false;
+                                    const isActive = localStorage.getItem('zyro_active_project') === 'true';
+                                    if (subjectDropdown.value === 'Remaining Payment' && !isActive) submitBtn.disabled = true;
+                                    else submitBtn.disabled = false;
                                 }
                             } else {
                                 fileError.classList.add('hidden');
-                                submitBtn.disabled = false;
+                                const isActive = localStorage.getItem('zyro_active_project') === 'true';
+                                if (subjectDropdown.value === 'Remaining Payment' && !isActive) submitBtn.disabled = true;
+                                else submitBtn.disabled = false;
                             }
                         });
                     }
@@ -1406,22 +1255,14 @@
                         submitBtn.disabled = true;
                         submitBtn.classList.add('opacity-70');
                         statusEl.className = 'text-xs tracking-widest text-white';
-                        
-                        statusEl.innerHTML = `
-                            <span class="flex items-center gap-2">
-                                <span class="yt-spinner"></span>
-                                Uploading securely<span id="loadingDots" class="inline-block w-4 text-left"></span>
-                            </span>`;
+                        statusEl.innerHTML = `<span class="flex items-center gap-2"><span class="yt-spinner"></span>Uploading securely<span id="loadingDots" class="inline-block w-4 text-left"></span></span>`;
 
                         let dotCount = 0;
                         const loadingDots = document.getElementById('loadingDots');
-                        const dotInterval = setInterval(() => {
-                            dotCount = (dotCount + 1) % 4; 
-                            if(loadingDots) loadingDots.textContent = '.'.repeat(dotCount);
-                        }, 400);
+                        const dotInterval = setInterval(() => { dotCount = (dotCount + 1) % 4; if(loadingDots) loadingDots.textContent = '.'.repeat(dotCount); }, 400);
 
-                        // Attach the scraped Order ID and generated 6-digit Referral code
                         const generatedReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                        const finalOrderId = localStorage.getItem('zyro_order_id') || "ZYRO-UNKNOWN";
 
                         const formData = {
                             name: document.getElementById('name').value,
@@ -1429,8 +1270,8 @@
                             subject: document.getElementById('subject').value,
                             couponCode: document.getElementById('couponCode') ? document.getElementById('couponCode').value : '',
                             message: document.getElementById('message').value,
-                            orderId: activeOrderId, // From the chatbot sync
-                            generatedReferralCode: generatedReferralCode // Sent to Google Sheets
+                            orderId: finalOrderId, // Persisted Order ID
+                            generatedReferralCode: generatedReferralCode 
                         };
 
                         const file = fileInput ? fileInput.files[0] : null;
@@ -1446,17 +1287,21 @@
                                 clearInterval(dotInterval); 
                                 statusEl.innerHTML = 'Received! Zyro is reviewing your project.';
                                 statusEl.className = 'text-xs tracking-widest text-green-400 font-bold';
+                                
+                                if (formData.subject === 'Remaining Payment') {
+                                    localStorage.removeItem('zyro_active_project');
+                                } else {
+                                    localStorage.setItem('zyro_active_project', 'true');
+                                }
+
                                 form.reset();
+                                messageInput.setAttribute('required', 'required');
+                                messageAsterisk.style.display = 'inline';
+                                messageInput.placeholder = "Tell me about your project, deadline, and references... *";
                                 
-                                // THE NEW AUTOMATION FIX: Send the subject along with the event
-                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { 
-                                    detail: { 
-                                        clientName: formData.name,
-                                        subject: formData.subject
-                                    } 
-                                }));
+                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: formData.name, subject: formData.subject } }));
                                 
-                                setTimeout(() => { submitBtn.disabled = false; submitBtn.classList.remove('opacity-70'); statusEl.innerHTML = ''; }, 4000);
+                                setTimeout(() => { submitBtn.disabled = false; submitBtn.classList.remove('opacity-70', 'cursor-not-allowed'); statusEl.innerHTML = ''; }, 4000);
                             })
                             .catch(error => {
                                 clearInterval(dotInterval); 
@@ -1496,9 +1341,7 @@
                     }
                     card.addEventListener('mousemove',function(e){
                         if(prefersReducedMotion)return;
-                        
                         card.style.transition = 'none';
-                        
                         if(card._ot===undefined)card._ot=card.style.transform||'';
                         var r=card.getBoundingClientRect();
                         var rx=-(((e.clientY-r.top)-r.height/2)/(r.height/2))*9;
@@ -1523,9 +1366,7 @@
                         card.style.boxShadow='';
                         card.style.borderColor='';
                         var shine=card.querySelector('.card-shine');
-                        if(shine){
-                            shine.style.opacity = '0';
-                        }
+                        if(shine){ shine.style.opacity = '0'; }
                     });
                 });
             }
@@ -1536,44 +1377,24 @@
                     try {
                         const pl = document.getElementById('preloader');
                         const fill = document.getElementById('preloaderFill');
-                        if (!pl || !fill) {
-                            if (pl) pl.style.display = 'none';
-                            return;
-                        }
-                        if (prefersReducedMotion) {
-                            pl.style.display = 'none';
-                            return;
-                        }
+                        if (!pl || !fill) { if (pl) pl.style.display = 'none'; return; }
+                        if (prefersReducedMotion) { pl.style.display = 'none'; return; }
                         let p = 0;
                         function step() {
                             try {
                                 p = Math.min(100, p + Math.random() * 18 + 4);
                                 if (fill) fill.style.width = p + '%';
-                                if (p < 100) {
-                                    setTimeout(step, 55 + Math.random() * 40);
-                                } else {
+                                if (p < 100) { setTimeout(step, 55 + Math.random() * 40); } else {
                                     setTimeout(function() {
                                         try {
-                                            if (window.gsap && typeof gsap.to === 'function') {
-                                                gsap.to(pl, { opacity: 0, duration: 0.55, ease: 'power2.inOut', onComplete: function() { pl.style.display = 'none'; } });
-                                            } else {
-                                                pl.style.display = 'none';
-                                            }
-                                        } catch (e) {
-                                            pl.style.display = 'none';
-                                        }
+                                            if (window.gsap && typeof gsap.to === 'function') { gsap.to(pl, { opacity: 0, duration: 0.55, ease: 'power2.inOut', onComplete: function() { pl.style.display = 'none'; } }); } else { pl.style.display = 'none'; }
+                                        } catch (e) { pl.style.display = 'none'; }
                                     }, 260);
                                 }
-                            } catch (e) {
-                                if (pl) pl.style.display = 'none';
-                            }
+                            } catch (e) { if (pl) pl.style.display = 'none'; }
                         }
                         setTimeout(step, 100);
-                    } catch (e) {
-                        console.error('Preloader error:', e);
-                        const pl = document.getElementById('preloader');
-                        if (pl) pl.style.display = 'none';
-                    }
+                    } catch (e) { console.error('Preloader error:', e); const pl = document.getElementById('preloader'); if (pl) pl.style.display = 'none'; }
                 })();
             }
 
@@ -1581,7 +1402,6 @@
             function initCanvasBackground() {
                 const canvas = document.getElementById('cinematicCanvas');
                 if (!canvas) return;
-                
                 const ctx = canvas.getContext('2d');
                 let width, height, particles;
 
@@ -1590,58 +1410,38 @@
                     height = canvas.height = window.innerHeight;
                     particles = [];
                     const particleCount = window.innerWidth < 768 ? 40 : 80;
-                    
-                    for (let i = 0; i < particleCount; i++) {
-                        particles.push(new Particle());
-                    }
+                    for (let i = 0; i < particleCount; i++) { particles.push(new Particle()); }
                 }
 
                 class Particle {
                     constructor() {
-                        this.x = Math.random() * width;
-                        this.y = Math.random() * height;
-                        this.vx = (Math.random() - 0.5) * 0.3;
-                        this.vy = (Math.random() - 0.5) * 0.3;
-                        this.size = Math.random() * 3 + 1.2;
-                        this.alpha = Math.random() * 0.7 + 0.3;
+                        this.x = Math.random() * width; this.y = Math.random() * height;
+                        this.vx = (Math.random() - 0.5) * 0.3; this.vy = (Math.random() - 0.5) * 0.3;
+                        this.size = Math.random() * 3 + 1.2; this.alpha = Math.random() * 0.7 + 0.3;
                     }
                     update() {
-                        this.x += this.vx;
-                        this.y += this.vy;
+                        this.x += this.vx; this.y += this.vy;
                         if (this.x < 0 || this.x > width) this.vx *= -1;
                         if (this.y < 0 || this.y > height) this.vy *= -1;
                     }
                     draw() {
-                        ctx.beginPath();
-                        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                        ctx.shadowBlur = 12;
-                        ctx.shadowColor = '#ff1a1a';
-                        ctx.fillStyle = `rgba(255, 26, 26, ${this.alpha})`;
-                        ctx.fill();
-                        ctx.shadowBlur = 0;
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                        ctx.shadowBlur = 12; ctx.shadowColor = '#ff1a1a';
+                        ctx.fillStyle = `rgba(255, 26, 26, ${this.alpha})`; ctx.fill(); ctx.shadowBlur = 0;
                     }
                 }
 
                 function animateCanvas() {
-                    ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
-                    ctx.fillRect(0, 0, width, height);
-                    
+                    ctx.fillStyle = 'rgba(5, 5, 5, 0.2)'; ctx.fillRect(0, 0, width, height);
                     for (let i = 0; i < particles.length; i++) {
-                        particles[i].update();
-                        particles[i].draw();
-                        
+                        particles[i].update(); particles[i].draw();
                         for (let j = i; j < particles.length; j++) {
-                            let dx = particles[i].x - particles[j].x;
-                            let dy = particles[i].y - particles[j].y;
+                            let dx = particles[i].x - particles[j].x; let dy = particles[i].y - particles[j].y;
                             let dist = Math.sqrt(dx * dx + dy * dy);
-                            
                             if (dist < 150) {
-                                ctx.beginPath();
-                                ctx.strokeStyle = `rgba(255, 26, 26, ${0.4 - (dist / 375)})`;
-                                ctx.lineWidth = 1.5;
-                                ctx.moveTo(particles[i].x, particles[i].y);
-                                ctx.lineTo(particles[j].x, particles[j].y);
-                                ctx.stroke();
+                                ctx.beginPath(); ctx.strokeStyle = `rgba(255, 26, 26, ${0.4 - (dist / 375)})`;
+                                ctx.lineWidth = 1.5; ctx.moveTo(particles[i].x, particles[i].y);
+                                ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
                             }
                         }
                     }
@@ -1649,16 +1449,26 @@
                 }
 
                 window.addEventListener('resize', initCanvas);
-                initCanvas();
-                animateCanvas();
+                initCanvas(); animateCanvas();
             }
 
-            // ==================== SECURE CHATBOT LOGIC ====================
+            // ==================== STATELESS CHATBOT LOGIC (THE ULTIMATE FIX) ====================
             function initChatbot() {
+                // 1. Ensure Persistent Client ID
                 let clientId = localStorage.getItem('zyro_client_id');
                 if (!clientId) {
                     clientId = 'NEW_' + Math.random().toString(36).substr(2, 9);
                     localStorage.setItem('zyro_client_id', clientId);
+                }
+
+                // 2. Load History & Order ID from Browser Memory
+                let chatHistory = JSON.parse(localStorage.getItem('zyro_chat_history') || '[]');
+                
+                // If this is their absolute first time, add the greeting to memory
+                if (chatHistory.length === 0) {
+                    const defaultGreeting = "Hey! 👋 What kind of project can I help you with today? We handle Video Editing, Thumbnails, Motion Graphics, and Sound Design!";
+                    chatHistory.push({ text: defaultGreeting, isUser: false });
+                    localStorage.setItem('zyro_chat_history', JSON.stringify(chatHistory));
                 }
 
                 const toggleBtn = document.getElementById('chatbotToggle');
@@ -1672,13 +1482,77 @@
 
                 let isOpen = false;
 
+                // 3. Render Memory to Screen
+                function renderHistory() {
+                    messages.innerHTML = ''; // Clear loading state
+                    chatHistory.forEach(msg => {
+                        if (msg.isPaymentUI) {
+                            renderPaymentUI(msg.upiUrl, msg.qrUrl, false); // false = don't re-save to memory
+                        } else {
+                            addMessageToDOM(msg.text, msg.isUser);
+                        }
+                    });
+                }
+
+                function addMessageToDOM(text, isUser) {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'flex gap-2 ' + (isUser ? 'justify-end' : '');
+                    
+                    // FIX: Strip leading spaces that cause weird gaps in HTML
+                    const cleanedText = text.split('\n').map(line => line.trim()).join('\n');
+                    const formattedText = cleanedText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\*(.*?)\*/g, '<b>$1</b>');
+                    
+                    let html = '';
+                    if (!isUser) {
+                        html += `<div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div>`;
+                        html += `<div class="chat-bot-msg whitespace-pre-wrap">${formattedText}</div>`;
+                    } else {
+                        html += `<div class="chat-user-msg whitespace-pre-wrap">${formattedText}</div>`;
+                    }
+                    
+                    msgDiv.innerHTML = html;
+                    messages.appendChild(msgDiv);
+                    messages.scrollTop = messages.scrollHeight;
+                }
+
+                // Saves to DOM and Memory
+                function addMessage(text, isUser = false) {
+                    addMessageToDOM(text, isUser);
+                    chatHistory.push({ text: text, isUser: isUser });
+                    localStorage.setItem('zyro_chat_history', JSON.stringify(chatHistory));
+                }
+
+                function renderPaymentUI(upiUrl, qrUrl, saveToHistory = true) {
+                    const btnContainer = document.createElement('div');
+                    btnContainer.className = 'flex flex-col gap-3 mt-3 ml-8 w-full max-w-[85%]';
+                    
+                    let html = '';
+                    if (qrUrl) {
+                        html += `<div class="bg-white p-2 rounded-xl w-fit border border-white/20 shadow-lg shadow-[#ff1a1a]/20 transition-transform duration-300 hover:scale-105"><img src="${qrUrl}" alt="Scan to Pay" class="w-40 h-40 object-cover rounded-lg mix-blend-multiply qr-img"><p class="text-center text-black text-[10px] font-bold mt-1.5 uppercase tracking-wider">Scan & Pay</p></div>`;
+                    }
+                    if (upiUrl) {
+                        html += `<a href="${upiUrl}" target="_top" rel="noopener noreferrer" class="flex md:hidden items-center justify-center gap-2 px-4 py-3 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-fit">Pay via UPI App<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></a>`;
+                    }
+
+                    btnContainer.innerHTML = html;
+                    messages.appendChild(btnContainer);
+                    
+                    const imgNode = btnContainer.querySelector('.qr-img');
+                    if (imgNode) { imgNode.onload = () => { messages.scrollTop = messages.scrollHeight; }; } 
+                    else { messages.scrollTop = messages.scrollHeight; }
+
+                    if (saveToHistory) {
+                        chatHistory.push({ isPaymentUI: true, upiUrl: upiUrl, qrUrl: qrUrl });
+                        localStorage.setItem('zyro_chat_history', JSON.stringify(chatHistory));
+                    }
+                }
+
                 function toggleChat() {
                     isOpen = !isOpen;
                     if (isOpen) {
                         windowEl.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
                         windowEl.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
                         input.focus();
-                        
                         if (dot) dot.style.display = 'none';
                         if (tooltip) tooltip.style.display = 'none';
                     } else {
@@ -1691,59 +1565,8 @@
                 closeBtn.addEventListener('click', toggleChat);
                 if (tooltip) tooltip.addEventListener('click', toggleChat);
 
-                function addMessage(text, isUser = false) {
-                    const msgDiv = document.createElement('div');
-                    msgDiv.className = 'flex gap-2 ' + (isUser ? 'justify-end' : '');
-                    
-                    const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-                    
-                    let html = '';
-                    if (!isUser) {
-                        html += `<div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div>`;
-                        html += `<div class="chat-bot-msg">${formattedText}</div>`;
-                    } else {
-                        html += `<div class="chat-user-msg">${formattedText}</div>`;
-                    }
-                    
-                    msgDiv.innerHTML = html;
-                    messages.appendChild(msgDiv);
-                    messages.scrollTop = messages.scrollHeight;
-                }
-
-                function renderPaymentUI(upiUrl, qrUrl) {
-                    const btnContainer = document.createElement('div');
-                    btnContainer.className = 'flex flex-col gap-3 mt-3 ml-8 w-full max-w-[85%]';
-                    
-                    let html = '';
-
-                    if (qrUrl) {
-                        html += `
-                        <div class="bg-white p-2 rounded-xl w-fit border border-white/20 shadow-lg shadow-[#ff1a1a]/20 transition-transform duration-300 hover:scale-105">
-                            <img src="${qrUrl}" alt="Scan to Pay" class="w-40 h-40 object-cover rounded-lg mix-blend-multiply qr-img">
-                            <p class="text-center text-black text-[10px] font-bold mt-1.5 uppercase tracking-wider">Scan & Pay</p>
-                        </div>`;
-                    }
-
-                    if (upiUrl) {
-                        html += `
-                        <a href="${upiUrl}" target="_top" rel="noopener noreferrer" class="flex md:hidden items-center justify-center gap-2 px-4 py-3 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-fit">
-                            Pay via UPI App
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        </a>`;
-                    }
-
-                    btnContainer.innerHTML = html;
-                    messages.appendChild(btnContainer);
-                    
-                    const imgNode = btnContainer.querySelector('.qr-img');
-                    if (imgNode) {
-                        imgNode.onload = () => {
-                            messages.scrollTop = messages.scrollHeight;
-                        };
-                    } else {
-                        messages.scrollTop = messages.scrollHeight;
-                    }
-                }
+                // Initial Render
+                renderHistory();
 
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
@@ -1764,10 +1587,7 @@
                     const typingDiv = document.createElement('div');
                     typingDiv.id = typingId;
                     typingDiv.className = 'flex gap-2';
-                    typingDiv.innerHTML = `
-                        <div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div>
-                        <div class="chat-bot-msg text-gray-500 animate-pulse">Typing...</div>
-                    `;
+                    typingDiv.innerHTML = `<div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div><div class="chat-bot-msg text-gray-500 animate-pulse">Typing...</div>`;
                     messages.appendChild(typingDiv);
                     messages.scrollTop = messages.scrollHeight;
 
@@ -1775,25 +1595,35 @@
                         const response = await fetch('/api/chat', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: text, clientId: clientId })
+                            // Passing step from local memory ensures the backend never "forgets"
+                            body: JSON.stringify({ 
+                                message: text, 
+                                clientId: clientId
+                            })
                         });
                         
                         const data = await response.json();
-                        
                         const typingEl = document.getElementById(typingId);
                         if(typingEl) typingEl.remove();
 
+                        // 4. Memory Wipe Command (Backend tells frontend to clear history)
+                        if (data.clearHistory) {
+                            chatHistory = [];
+                            localStorage.setItem('zyro_chat_history', '[]');
+                            messages.innerHTML = '';
+                        }
+
                         if (response.ok && data.reply !== "") {
-                            
+                            // Automatically scrape and save the Order ID locally
                             const orderMatch = data.reply.match(/Order ID:\s*(ZYRO[A-Z0-9]+)/i);
                             if (orderMatch && orderMatch[1]) {
-                                activeOrderId = orderMatch[1];
+                                localStorage.setItem('zyro_order_id', orderMatch[1]);
                             }
 
                             addMessage(data.reply, false);
                             
                             if (data.paymentUrl || data.qrUrl) {
-                                renderPaymentUI(data.paymentUrl, data.qrUrl);
+                                renderPaymentUI(data.paymentUrl, data.qrUrl, true);
                             }
                         } else if (!response.ok) {
                             addMessage("Sorry, my systems are updating right now. Please email Zyro directly at zyroeditz.official@gmail.com!", false);
@@ -1817,23 +1647,17 @@
                         localStorage.setItem('zyro_client_id', currentId.replace('NEW_', 'OLD_'));
                     }
                     
-                    if (!isOpen) {
-                        toggleChat();
-                    }
+                    if (!isOpen) toggleChat();
 
                     try {
                         const typingId = 'typing-' + Date.now();
                         const typingDiv = document.createElement('div');
                         typingDiv.id = typingId;
                         typingDiv.className = 'flex gap-2';
-                        typingDiv.innerHTML = `
-                            <div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div>
-                            <div class="chat-bot-msg text-gray-500 animate-pulse">Typing...</div>
-                        `;
+                        typingDiv.innerHTML = `<div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div><div class="chat-bot-msg text-gray-500 animate-pulse">Typing...</div>`;
                         messages.appendChild(typingDiv);
                         messages.scrollTop = messages.scrollHeight;
 
-                        // THE NEW AUTOMATION FIX: Direct message mapping based on what dropdown item they selected
                         const subject = e.detail.subject || "";
                         const messageToSend = (subject === "Remaining Payment") ? "FINAL_PAYMENT_DONE" : "FORM_SUBMITTED";
 
@@ -1846,6 +1670,13 @@
                         const data = await response.json();
                         const typingEl = document.getElementById(typingId);
                         if(typingEl) typingEl.remove();
+
+                        // Clear history if it's the final payment
+                        if (data.clearHistory) {
+                            chatHistory = [];
+                            localStorage.setItem('zyro_chat_history', '[]');
+                            messages.innerHTML = '';
+                        }
 
                         if (response.ok && data.reply) {
                             addMessage(data.reply, false);
