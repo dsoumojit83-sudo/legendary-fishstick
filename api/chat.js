@@ -34,13 +34,13 @@ module.exports = async function(req, res) {
 
         // Pricing
         const pricingData = isNewUser ? {             
-            reels: { full: 100, advance: 50 },
-            youtube: { full: 250, advance: 125 },
+            short: { full: 100, advance: 50 },
+            long: { full: 250, advance: 125 },
             motion: { full: 200, advance: 100 },
             thumbnail: { full: 50, advance: 25 }
         } : {             
-            reels: { full: 200, advance: 100 },
-            youtube: { full: 500, advance: 250 },
+            short: { full: 200, advance: 100 },
+            long: { full: 500, advance: 250 },
             motion: { full: 400, advance: 200 },
             thumbnail: { full: 100, advance: 50 }
         };
@@ -55,54 +55,44 @@ module.exports = async function(req, res) {
 
         const state = userState[clientId];
 
-        // -----------------------------
         // LOCK AFTER COMPLETION
-        // -----------------------------
         if (state.step === "completed") {
             return res.json({
                 reply: "Thanks for choosing us to serve you. We really appreciate your patience."
             });
         }
 
-        // -----------------------------
         // GREETING
-        // -----------------------------
         if (["hi", "hello", "hii", "hey"].some(w => msg.includes(w))) {
             return res.json({
-                reply: "Hey! What service do you need? (Reels / YouTube / Motion Graphics / Thumbnails)"
+                reply: "Hey! What service do you need? (Short Form / Long Form / Motion Graphics / Thumbnails)"
             });
         }
 
-        // -----------------------------
         // PRICING
-        // -----------------------------
         if (msg.includes("price")) {
             return res.json({
-                reply: `Pricing:\nReels ₹${pricingData.reels.full}\nYouTube ₹${pricingData.youtube.full}\nMotion Graphics ₹${pricingData.motion.full}\nThumbnails ₹${pricingData.thumbnail.full}`
+                reply: `Pricing:\nShort Form ₹${pricingData.short.full}\nLong Form ₹${pricingData.long.full}\nMotion Graphics ₹${pricingData.motion.full}\nThumbnails ₹${pricingData.thumbnail.full}`
             });
         }
 
-        // -----------------------------
         // SERVICE DETECTION
-        // -----------------------------
         if (msg.includes("thumbnail")) {
             state.service = "thumbnail";
-        } else if (msg.includes("reel")) {
-            state.service = "reels";
-        } else if (msg.includes("youtube")) {
-            state.service = "youtube";
+        } else if (msg.includes("short")) {
+            state.service = "short";
+        } else if (msg.includes("long")) {
+            state.service = "long";
         } else if (msg.includes("motion")) {
             state.service = "motion graphics";
         }
 
-        // Map for pricing
+        // Mapping
         const keyMap = {
             "motion graphics": "motion"
         };
 
-        // -----------------------------
         // SERVICE SELECTED
-        // -----------------------------
         if (state.service && state.step === "start") {
             state.step = "selected";
 
@@ -113,9 +103,7 @@ module.exports = async function(req, res) {
             });
         }
 
-        // -----------------------------
         // PAYMENT STEP
-        // -----------------------------
         if (msg.includes("pay") && state.step === "selected") {
             state.step = "payment";
 
@@ -129,9 +117,7 @@ module.exports = async function(req, res) {
             });
         }
 
-        // -----------------------------
         // AFTER PAYMENT
-        // -----------------------------
         if (
             ["done", "paid", "payment done", "what next"].some(w => msg.includes(w)) &&
             state.step === "payment"
@@ -139,13 +125,11 @@ module.exports = async function(req, res) {
             state.step = "completed";
 
             return res.json({
-                reply: `Upload your screenshot to the Contact Form. Send raw files as DOCUMENTS to WhatsApp: 7602679995 OR Email: zyroeditz@gmail.com.\n\nDelivery: Same day (Thumbnails) / 24–48h others.\nOne revision allowed.\n\nThanks for choosing us to serve you. We really appreciate your patience.`
+                reply: `Upload your screenshot to the Contact Form. Send raw files as DOCUMENTS to WhatsApp: 7602679995 OR Email: zyroeditz.official@gmail.com.\n\nDelivery: Same day (Thumbnails) / 24–48h others.\nOne revision allowed.\n\nReferral: Referral code will be applied on remaining payment and must be submitted in the form. Both users get 10%.\n\nThanks for choosing us to serve you. We really appreciate your patience.`
             });
         }
 
-        // -----------------------------
         // FALLBACK AI
-        // -----------------------------
         if (!chatMemory[clientId]) {
             chatMemory[clientId] = [
                 {
@@ -168,7 +152,6 @@ module.exports = async function(req, res) {
 
         chatMemory[clientId].push({ role: "assistant", content: reply });
 
-        // Trim memory
         if (chatMemory[clientId].length > 10) {
             chatMemory[clientId] = [
                 chatMemory[clientId][0],
