@@ -69,6 +69,19 @@ module.exports = async function(req, res) {
 
         const state = userState[clientId];
 
+        // 🔥 FINAL PAYMENT TRIGGER (NEW)
+        if (message === "FINAL_PAYMENT_DONE") {
+            state.step = "done";
+
+            return res.json({
+                reply: `Order ID: ${state.orderId}
+
+Thanks for fulfilling the payment and giving us a chance to serve you 🙌
+
+Your final bill will be emailed shortly.`
+            });
+        }
+
         // FINAL LOCK
         if (state.step === "done") {
             return res.json({ reply: "" });
@@ -83,7 +96,7 @@ Feel free to come back anytime when you're ready.`
             });
         }
 
-        // STEP 1 - OPTIONS
+        // STEP 1
         if (state.step === "start") {
             state.step = "select";
 
@@ -99,7 +112,7 @@ Feel free to come back anytime when you're ready.`
             });
         }
 
-        // STEP 2 - SELECTION
+        // STEP 2
         if (state.step === "select") {
 
             if (msg.includes("short")) state.service = "short";
@@ -140,7 +153,7 @@ Type "pay" to proceed.`
             });
         }
 
-        // STEP 3 - PAYMENT INIT
+        // STEP 3
         if (state.step === "confirm" && msg.includes("pay")) {
 
             state.step = "payment_pending";
@@ -159,7 +172,7 @@ After payment, please confirm here.`,
             });
         }
 
-        // STEP 3.5 - CONFIRM PAYMENT
+        // PAYMENT CONFIRM
         if (state.step === "payment_pending") {
 
             if (["yes", "done", "paid"].some(w => msg.includes(w))) {
@@ -183,7 +196,7 @@ Great! ✅
             });
         }
 
-        // STEP 4 - FORM LOOP
+        // FORM LOOP
         if (state.step === "form") {
             if (message !== "FORM_SUBMITTED") {
                 return res.json({
@@ -214,15 +227,10 @@ Mon–Fri, 9 AM – 5 PM`
             });
         }
 
-        // STEP 5 - FINAL
+        // STEP FINAL BEFORE PAYMENT COMPLETE
         if (state.step === "upload") {
-            state.step = "done";
-
             return res.json({
-                reply: `Order ID: ${state.orderId}
-
-Thank you for choosing us 🙌  
-We appreciate your patience.`
+                reply: "Please complete the remaining payment to finish your order."
             });
         }
 
