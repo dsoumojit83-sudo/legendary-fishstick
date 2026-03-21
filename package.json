@@ -1,7 +1,7 @@
 {
   "name": "zyroeditz-ai-bot",
   "version": "1.2.0",
-  "description": "AI Chatbot for ZyroEditz using DeepSeek",
+  "description": "AI Chatbot for ZyroEditz using OpenRouter Auto",
   "main": "api/chat.js",
   "dependencies": {
     "openai": "^4.28.0"
