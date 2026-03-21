@@ -21,12 +21,6 @@
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="ZyroEditz">
     
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="ZyroEditz | Professional Video Editing & Motion Graphics">
-    <meta name="twitter:description" content="Premium video editing and motion graphics studio for brands that demand excellence.">
-    <meta name="twitter:image" content="https://zyroeditz.com/og-image.jpg">
-    <meta name="twitter:image:alt" content="ZyroEditz - Professional Video Editing & Motion Graphics Studio">
-    
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -1453,7 +1447,15 @@
                                 statusEl.innerHTML = 'Received! Zyro is reviewing your project.';
                                 statusEl.className = 'text-xs tracking-widest text-green-400 font-bold';
                                 form.reset();
-                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: formData.name } }));
+                                
+                                // THE NEW AUTOMATION FIX: Send the subject along with the event
+                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { 
+                                    detail: { 
+                                        clientName: formData.name,
+                                        subject: formData.subject
+                                    } 
+                                }));
+                                
                                 setTimeout(() => { submitBtn.disabled = false; submitBtn.classList.remove('opacity-70'); statusEl.innerHTML = ''; }, 4000);
                             })
                             .catch(error => {
@@ -1783,7 +1785,6 @@
 
                         if (response.ok && data.reply !== "") {
                             
-                            // MAGIC EXTRACTOR: Listen for the Order ID and save it securely
                             const orderMatch = data.reply.match(/Order ID:\s*(ZYRO[A-Z0-9]+)/i);
                             if (orderMatch && orderMatch[1]) {
                                 activeOrderId = orderMatch[1];
@@ -1832,10 +1833,14 @@
                         messages.appendChild(typingDiv);
                         messages.scrollTop = messages.scrollHeight;
 
+                        // THE NEW AUTOMATION FIX: Direct message mapping based on what dropdown item they selected
+                        const subject = e.detail.subject || "";
+                        const messageToSend = (subject === "Remaining Payment") ? "FINAL_PAYMENT_DONE" : "FORM_SUBMITTED";
+
                         const response = await fetch('/api/chat', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: "FORM_SUBMITTED", clientId: currentId })
+                            body: JSON.stringify({ message: messageToSend, clientId: currentId })
                         });
                         
                         const data = await response.json();
