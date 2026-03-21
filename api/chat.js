@@ -1,14 +1,13 @@
-const { GoogleGenAI } = require('@google/genai');
+const OpenAI = require('openai');
 
-// Initialize the modern Gemini SDK
-const ai = new GoogleGenAI({ 
-    apiKey: process.env.GEMINI_API_KEY // MAKE SURE TO ADD THIS TO YOUR VERCEL ENV 
+// Pointing strictly to official DeepSeek servers
+const openai = new OpenAI({
+    baseURL: 'https://api.deepseek.com',
+    apiKey: process.env.DEEPSEEK_API_KEY 
 });
 
-// GLOBAL MEMORY: Stores conversation history so the bot remembers context 
 const chatMemory = {};  
 
-// HELPER: Generates both the clickable UPI link and a scannable QR code image URL 
 const generateUpiData = (amount) => {     
     const upiId = "7602679995-5@ybl";     
     const name = "Soumojit Das";      
@@ -25,7 +24,6 @@ module.exports = async function(req, res) {
         const { message: userMessage, clientId = "default_user" } = req.body;         
         const isNewUser = clientId?.startsWith('NEW_');          
 
-        // THE BRAIN: UPI Links now only charge the 50% UPFRONT DEPOSIT         
         const paymentData = isNewUser ? {             
             thumbnail: generateUpiData(25),             
             motion: generateUpiData(100),             
@@ -36,40 +34,8 @@ module.exports = async function(req, res) {
             motion: generateUpiData(200),             
             short: generateUpiData(100),             
             long: generateUpiData(250)         
-        };          
+        };  
 
-        // Define your models in order of preference
-const PRIMARY_MODEL = "gemini-3.0-flash";
-const FALLBACK_MODEL = "gemini-2.5-flash";
-
-async function getChatResponse(userPrompt) {
-  const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL];
-
-  for (const modelId of modelsToTry) {
-    try {
-      console.log(`Attempting request with: ${modelId}`);
-      
-      const model = genAI.getGenerativeModel({ model: modelId });
-      
-      // Your existing generation logic
-      const result = await model.generateContent(userPrompt);
-      const response = await result.response;
-      return response.text();
-
-    } catch (error) {
-      // Check for the 429 "Too Many Requests" error
-      if (error.status === 429 && modelId === PRIMARY_MODEL) {
-        console.warn(`[ZyroEditz AI] ${PRIMARY_MODEL} limit reached. Switching to ${FALLBACK_MODEL}...`);
-        continue; // This jumps to the next iteration (FALLBACK_MODEL)
-      }
-
-      // If it's a different error (network, safety, etc.), or if both failed
-      console.error("API Error:", error);
-      return "Sorry, I'm having trouble connecting right now. Please try again later.";
-    }
-  }
-}
-        // PRE-CALCULATED PRICING SHEET         
         const pricingData = isNewUser ? {             
             reels: "Total Price: ₹100 (50% Promo Applied) | Advance Deposit: ₹50 | Turnaround: 1 Day",             
             youtube: "Total Price: ₹250 (50% Promo Applied) | Advance Deposit: ₹125 | Turnaround: 2 Days",             
@@ -110,31 +76,19 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
 
         chatMemory[clientId].push({ role: 'user', content: userMessage });          
 
-        // Memory management: keep the system prompt [0] and drop the oldest Q&A pair [1, 2]
         if (chatMemory[clientId].length > 7) {             
             chatMemory[clientId].splice(1, 2);         
         }          
 
-        // TRANSLATOR: Convert your OpenAI memory array into Gemini's format
-        const geminiContents = chatMemory[clientId]
-            .filter(msg => msg.role !== 'system') // Remove system prompt from the flow
-            .map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : 'user', // Convert 'assistant' to 'model'
-                parts: [{ text: msg.content }]
-            }));
-
-        // Using Google's Gemini 3 Flash
-        const response = await ai.models.generateContent({             
-            model: 'gemini-3-flash-preview',
-            contents: geminiContents,             
-            config: {
-                systemInstruction: systemPrompt, // Injects the ZyroEditz brain here
-                temperature: 0.1,             
-                maxOutputTokens: 250
-            }         
+        // Official DeepSeek API call
+        const completion = await openai.chat.completions.create({             
+            model: 'deepseek-chat', 
+            messages: chatMemory[clientId],             
+            temperature: 0.1,             
+            max_tokens: 250         
         });          
 
-        let reply = response.text;         
+        let reply = completion.choices[0].message.content;         
         let finalPaymentData = null;          
 
         const tags = {             
@@ -144,17 +98,14 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
             "[PAY_MOTION]": paymentData.motion         
         };          
 
-        // Extract the tag and assign the payment data securely
         for (const [tag, data] of Object.entries(tags)) {             
             if (reply.includes(tag)) {                 
                 finalPaymentData = data;                 
-                // THE FIX: Replaces the hidden tag with a natural sentence ending!
                 reply = reply.replace(tag, "options below! 👇").trim();                 
                 break;             
             }         
         }          
 
-        // Store as 'assistant' so your array trimming logic keeps working perfectly
         chatMemory[clientId].push({ role: 'assistant', content: reply });          
 
         res.status(200).json({             
@@ -162,8 +113,18 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
             paymentUrl: finalPaymentData?.upiString || null,             
             qrUrl: finalPaymentData?.qrUrl || null         
         });     
+        
     } catch (error) {         
-        console.error("Backend Error:", error);         
+        console.error("DeepSeek API Error:", error);
+        
+        // Handles 402 (Out of credits) or 429 (Rate Limit) gracefully for your clients
+        if (error.status === 402 || error.status === 429) {
+            return res.status(200).json({ 
+                reply: "Our AI agent is currently offline. Please reach out to us via the contact form or WhatsApp so we can get your edit started.",
+                paymentUrl: null, qrUrl: null
+            });
+        }
+                 
         res.status(500).json({ error: "Internal Server Error" });     
     } 
 };
