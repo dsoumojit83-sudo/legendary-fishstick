@@ -1,9 +1,9 @@
 const OpenAI = require('openai');
 
-// Initialize OpenAI client pointing to OpenRouter
-const openai = new OpenAI({
-    baseURL: 'https://openrouter.ai/api/v1',
-    apiKey: process.env.OPENROUTER_API_KEY 
+// Directly connecting to Groq Cloud
+const groq = new OpenAI({
+    baseURL: 'https://api.groq.com/openai/v1',
+    apiKey: process.env.GROQ_API_KEY 
 });
 
 const chatMemory = {};  
@@ -24,46 +24,43 @@ module.exports = async function(req, res) {
         const { message: userMessage, clientId = "default_user" } = req.body;         
         const isNewUser = clientId?.startsWith('NEW_');          
 
+        // Pricing Logic
         const paymentData = isNewUser ? {             
-            thumbnail: generateUpiData(25),             
-            motion: generateUpiData(100),             
-            short: generateUpiData(50),             
-            long: generateUpiData(125)         
+            thumbnail: generateUpiData(25), motion: generateUpiData(100),             
+            short: generateUpiData(50), long: generateUpiData(125)         
         } : {             
-            thumbnail: generateUpiData(50),             
-            motion: generateUpiData(200),             
-            short: generateUpiData(100),             
-            long: generateUpiData(250)         
+            thumbnail: generateUpiData(50), motion: generateUpiData(200),             
+            short: generateUpiData(100), long: generateUpiData(250)         
         };          
 
         const pricingData = isNewUser ? {             
-            reels: "₹100 (50% Promo) | Advance: ₹50",             
-            youtube: "₹250 (50% Promo) | Advance: ₹125",             
-            motion: "₹200 (50% Promo) | Advance: ₹100",             
-            thumbnail: "₹50 (50% Promo) | Advance: ₹25"         
+            reels: "₹100 (50% Off) | Advance: ₹50", youtube: "₹250 (50% Off) | Advance: ₹125",             
+            motion: "₹200 (50% Off) | Advance: ₹100", thumbnail: "₹50 (50% Off) | Advance: ₹25"         
         } : {             
-            reels: "₹200 | Advance: ₹100",             
-            youtube: "₹500 | Advance: ₹250",             
-            motion: "₹400 | Advance: ₹200",             
-            thumbnail: "₹100 | Advance: ₹50"         
+            reels: "₹200 | Advance: ₹100", youtube: "₹500 | Advance: ₹250",             
+            motion: "₹400 | Advance: ₹200", thumbnail: "₹100 | Advance: ₹50"         
         };          
 
-        const systemPrompt = `You are the AI Sales Agent for ZyroEditz. Professional and concise. 
+        const systemPrompt = `You are the AI Sales Agent for ZyroEditz. Be ultra-concise (max 2 sentences).
         PRICING: Reels: ${pricingData.reels}, YouTube: ${pricingData.youtube}, Motion: ${pricingData.motion}, Thumbnails: ${pricingData.thumbnail}. 
-        FLOW: Greet -> Pitch -> When they agree to pay, provide instructions and end with the tag: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL].`;          
+        RULES: When a client is ready, end with: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL].`;          
 
         if (!chatMemory[clientId]) {             
             chatMemory[clientId] = [{ role: 'system', content: systemPrompt }];         
-        }          
+        } 
 
         chatMemory[clientId].push({ role: 'user', content: userMessage });          
 
-        // Calling the /auto router to guarantee uptime
-        const completion = await openai.chat.completions.create({             
-            model: 'openrouter/auto', 
+        // TOKEN OPTIMIZATION: Keep only the most recent 3 messages for 100+ clients/day
+        if (chatMemory[clientId].length > 4) {             
+            chatMemory[clientId].splice(1, 1);         
+        }          
+
+        const completion = await groq.chat.completions.create({             
+            model: 'llama-3.3-70b-versatile', 
             messages: chatMemory[clientId],             
             temperature: 0.1,             
-            max_tokens: 300
+            max_tokens: 100 // Minimal tokens to avoid rate limits
         });          
 
         let reply = completion.choices[0].message.content;
@@ -85,7 +82,6 @@ module.exports = async function(req, res) {
         }          
 
         chatMemory[clientId].push({ role: 'assistant', content: reply });          
-        if (chatMemory[clientId].length > 10) chatMemory[clientId].splice(1, 2);
 
         res.status(200).json({             
             reply,             
@@ -93,7 +89,15 @@ module.exports = async function(req, res) {
             qrUrl: finalPaymentData?.qrUrl || null         
         });     
     } catch (error) {         
-        console.error("Auto-Router Error:", error);         
-        res.status(500).json({ error: "Internal Server Error" });     
+        console.error("Groq Cloud Error:", error);
+        
+        // Handle Groq's specific Rate Limit (429)
+        if (error.status === 429) {
+            return res.status(200).json({ 
+                reply: "We are currently experiencing high traffic. Please try again in 1 minute or message us on WhatsApp!",
+                paymentUrl: null, qrUrl: null
+            });
+        }
+        res.status(500).json({ error: "Server busy." });     
     } 
 };
