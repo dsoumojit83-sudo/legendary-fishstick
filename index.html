@@ -716,7 +716,10 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
                 <div class="reveal">
                     <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">Contact</p>
-                    <h2 class="text-4xl md:text-6xl font-bold mb-8 leading-tight">Let’s build something <span class="text-[#ff1a1a]">cinematic</span></h2>
+                    <h2 class="text-4xl md:text-6xl font-bold mb-4 leading-tight">Let’s build something <span class="text-[#ff1a1a]">cinematic</span></h2>
+                    
+                    <div class="mt-2 mb-8 text-[#ff1a1a] text-sm font-bold tracking-widest uppercase">Save 50% on your 1st project!</div>
+                    
                     <p class="text-gray-400 text-base md:text-lg leading-relaxed max-w-xl">Send your brief and I’ll reply with next steps, timeline, and pricing options.</p>
 
                     <div class="mt-10 space-y-4">
@@ -773,20 +776,21 @@
                 <div class="reveal">
                     <div class="p-8 md:p-10 border border-white/10 bg-white/5 backdrop-blur-md rounded-2xl">
                         <form id="contactForm">
+                            <p class="text-xs text-gray-400 mb-5"><span class="text-[#ff1a1a] font-bold">*</span> fields are mandatory</p>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
-                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="name">Name</label>
+                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="name">Name <span class="text-[#ff1a1a]">*</span></label>
                                     <input class="input-field w-full px-4 py-3" id="name" name="name" type="text" autocomplete="name" required>
                                 </div>
                                 <div>
-                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="email">Email</label>
+                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="email">Email <span class="text-[#ff1a1a]">*</span></label>
                                     <input class="input-field w-full px-4 py-3" id="email" name="email" type="email" autocomplete="email" required>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
                                 <div>
-                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="subject">Project Type</label>
+                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="subject">Project Type <span class="text-[#ff1a1a]">*</span></label>
                                     <select class="input-field w-full px-4 py-3" id="subject" name="subject" required>
                                         <option value="" selected disabled>Select an option</option>
                                         <option value="Short-form Editing">Short-form Editing</option>
@@ -799,19 +803,19 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="referralCode">Referral Code (Optional)</label>
-                                    <input class="input-field w-full px-4 py-3 text-[#ff1a1a]" id="referralCode" name="referralCode" type="text" placeholder="e.g. SAVE10">
+                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="couponCode">Coupon Code (Optional)</label>
+                                    <input class="input-field w-full px-4 py-3 text-[#ff1a1a]" id="couponCode" name="couponCode" type="text" placeholder="e.g. SAVE10">
                                 </div>
                             </div>
 
                             <div class="mt-5">
-                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="paymentProof">Payment Proof (JPG/PNG, Max 2MB)</label>
+                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="paymentProof">Payment Proof (JPG/PNG, Max 2MB) <span class="text-[#ff1a1a]">*</span></label>
                                 <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png" required>
                                 <p id="fileError" class="text-xs text-red-400 mt-2 hidden font-bold tracking-wide"></p>
                             </div>
 
                             <div class="mt-5">
-                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message / Project Brief</label>
+                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message / Project Brief <span class="text-[#ff1a1a]">*</span></label>
                                 <textarea class="input-field w-full px-4 py-3 min-h-[140px] resize-y" id="message" name="message" required placeholder="Tell me about your project, deadline, and references..."></textarea>
                             </div>
 
@@ -876,9 +880,7 @@
         <div id="chatbotMessages" class="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
             <div class="flex gap-2">
                 <div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div>
-                <div class="chat-bot-msg">
-                    Hey! 👋 How can I help you with your video editing needs today?
-                </div>
+                <div class="chat-bot-msg">Hey! 👋 What kind of editing or design project can I help you with today?</div>
             </div>
         </div>
 
@@ -928,6 +930,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            
+            // Global variable to capture the unique Order ID from the chatbot
+            let activeOrderId = "ZYRO-" + Math.floor(Math.random() * 1000000); 
             
             // ==================== INITIALIZATION FUNCTIONS ====================
             
@@ -1375,7 +1380,6 @@
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyXiGjgwTlvvsqZR_WPTYIknDt_ATMxz4jkzJhA872E5wElV6SwUSIsnjFo8o6JmXT/exec'; 
 
                 if (form && statusEl && submitBtn) {
-                    // FILE VALIDATOR: 2MB limit, JPG/PNG only
                     if (fileInput) {
                         fileInput.addEventListener('change', function() {
                             const file = this.files[0];
@@ -1386,7 +1390,7 @@
                                     fileError.classList.remove('hidden');
                                     this.value = ''; 
                                     submitBtn.disabled = true;
-                                } else if (file.size > 2 * 1024 * 1024) { // 2MB Check
+                                } else if (file.size > 2 * 1024 * 1024) { 
                                     fileError.textContent = 'ERROR: Image size too large. Must be under 2MB.';
                                     fileError.classList.remove('hidden');
                                     this.value = ''; 
@@ -1409,14 +1413,12 @@
                         submitBtn.classList.add('opacity-70');
                         statusEl.className = 'text-xs tracking-widest text-white';
                         
-                        // YouTube Style Buffer/Spinner UI
                         statusEl.innerHTML = `
                             <span class="flex items-center gap-2">
                                 <span class="yt-spinner"></span>
                                 Uploading securely<span id="loadingDots" class="inline-block w-4 text-left"></span>
                             </span>`;
 
-                        // JS Interval to make dots type 1 by 1
                         let dotCount = 0;
                         const loadingDots = document.getElementById('loadingDots');
                         const dotInterval = setInterval(() => {
@@ -1424,12 +1426,17 @@
                             if(loadingDots) loadingDots.textContent = '.'.repeat(dotCount);
                         }, 400);
 
+                        // Attach the scraped Order ID and generated 6-digit Referral code
+                        const generatedReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
                         const formData = {
                             name: document.getElementById('name').value,
                             email: document.getElementById('email').value,
                             subject: document.getElementById('subject').value,
-                            referralCode: document.getElementById('referralCode') ? document.getElementById('referralCode').value : '',
-                            message: document.getElementById('message').value
+                            couponCode: document.getElementById('couponCode') ? document.getElementById('couponCode').value : '',
+                            message: document.getElementById('message').value,
+                            orderId: activeOrderId, // From the chatbot sync
+                            generatedReferralCode: generatedReferralCode // Sent to Google Sheets
                         };
 
                         const file = fileInput ? fileInput.files[0] : null;
@@ -1442,7 +1449,7 @@
                                 body: JSON.stringify(payload)
                             })
                             .then(response => {
-                                clearInterval(dotInterval); // Stop animation
+                                clearInterval(dotInterval); 
                                 statusEl.innerHTML = 'Received! Zyro is reviewing your project.';
                                 statusEl.className = 'text-xs tracking-widest text-green-400 font-bold';
                                 form.reset();
@@ -1450,7 +1457,7 @@
                                 setTimeout(() => { submitBtn.disabled = false; submitBtn.classList.remove('opacity-70'); statusEl.innerHTML = ''; }, 4000);
                             })
                             .catch(error => {
-                                clearInterval(dotInterval); // Stop animation
+                                clearInterval(dotInterval); 
                                 statusEl.innerHTML = 'Connection Error. Reach out via WhatsApp.';
                                 statusEl.className = 'text-xs tracking-widest text-red-400 font-bold';
                                 submitBtn.disabled = false;
@@ -1468,7 +1475,6 @@
                             };
                             reader.readAsDataURL(file);
                         } else {
-                            // Backup execution though file is marked required in HTML
                             sendData(formData);
                         }
                     });
@@ -1477,7 +1483,6 @@
             
             // ==================== PERFORMANCE & FALLBACKS ====================
             function initPerformance() {
-                // 3D card tilt
                 document.querySelectorAll('.service-card').forEach(function(card){
                     if(!card.querySelector('.card-shine')){
                         var sh=document.createElement('div');
@@ -1688,8 +1693,6 @@
                     const msgDiv = document.createElement('div');
                     msgDiv.className = 'flex gap-2 ' + (isUser ? 'justify-end' : '');
                     
-                    // Note: Your new backend uses line breaks (\n) which white-space: pre-wrap handles perfectly.
-                    // The old bold text replacement is left here just in case you ever add **bolding** to your backend strings.
                     const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
                     
                     let html = '';
@@ -1779,7 +1782,15 @@
                         if(typingEl) typingEl.remove();
 
                         if (response.ok && data.reply !== "") {
+                            
+                            // MAGIC EXTRACTOR: Listen for the Order ID and save it securely
+                            const orderMatch = data.reply.match(/Order ID:\s*(ZYRO[A-Z0-9]+)/i);
+                            if (orderMatch && orderMatch[1]) {
+                                activeOrderId = orderMatch[1];
+                            }
+
                             addMessage(data.reply, false);
+                            
                             if (data.paymentUrl || data.qrUrl) {
                                 renderPaymentUI(data.paymentUrl, data.qrUrl);
                             }
@@ -1799,11 +1810,7 @@
                     }
                 });
 
-                // ==========================================
-                // THE NEW FORM -> BOT SYNC LOGIC
-                // ==========================================
                 window.addEventListener('projectFormSubmitted', async (e) => {
-                    // 1. Upgrade User
                     let currentId = localStorage.getItem('zyro_client_id');
                     if (currentId && currentId.startsWith('NEW_')) {
                         localStorage.setItem('zyro_client_id', currentId.replace('NEW_', 'OLD_'));
@@ -1813,7 +1820,6 @@
                         toggleChat();
                     }
 
-                    // 2. Secretly Ping the backend with "FORM_SUBMITTED" so the step changes to "upload"
                     try {
                         const typingId = 'typing-' + Date.now();
                         const typingDiv = document.createElement('div');
@@ -1836,7 +1842,6 @@
                         const typingEl = document.getElementById(typingId);
                         if(typingEl) typingEl.remove();
 
-                        // 3. Print the backend's exact response ("Great! ✅ Send raw files as DOCUMENTS...")
                         if (response.ok && data.reply) {
                             addMessage(data.reply, false);
                         }
@@ -1846,7 +1851,6 @@
                 });
             }
             
-            // ==================== INIT ALL MODULES ====================
             initCustomCursor();
             initGlobalParallax();
             initNavigation();
