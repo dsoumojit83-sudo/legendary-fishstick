@@ -1,9 +1,9 @@
 const OpenAI = require('openai');
 
-// Connect to OpenRouter but look for the DEEPSEEK_API_KEY name!
+// Initialize OpenAI client pointing to OpenRouter
 const openai = new OpenAI({
     baseURL: 'https://openrouter.ai/api/v1',
-    apiKey: process.env.DEEPSEEK_API_KEY 
+    apiKey: process.env.OPENROUTER_API_KEY 
 });
 
 const chatMemory = {};  
@@ -34,7 +34,7 @@ module.exports = async function(req, res) {
             motion: generateUpiData(200),             
             short: generateUpiData(100),             
             long: generateUpiData(250)         
-        };  
+        };          
 
         const pricingData = isNewUser ? {             
             reels: "Total Price: ₹100 (50% Promo Applied) | Advance Deposit: ₹50 | Turnaround: 1 Day",             
@@ -80,17 +80,20 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
             chatMemory[clientId].splice(1, 2);         
         }          
 
-        // Connecting strictly to DeepSeek V3 (Chat) Free Node via OpenRouter
+        // Calling DeepSeek R1 Free via OpenRouter
         const completion = await openai.chat.completions.create({             
-            model: 'deepseek/deepseek-chat:free', 
+            model: 'deepseek/deepseek-r1:free',
             messages: chatMemory[clientId],             
             temperature: 0.1,             
-            max_tokens: 250         
+            max_tokens: 500 // R1 sometimes needs more tokens for reasoning
         });          
 
-        let reply = completion.choices[0].message.content;         
-        let finalPaymentData = null;          
+        let reply = completion.choices[0].message.content;
 
+        // Strip "thought" tags if R1 includes them in the output
+        reply = reply.replace(/<thought>[\s\S]*?<\/thought>/g, '').trim();
+
+        let finalPaymentData = null;          
         const tags = {             
             "[PAY_THUMBNAIL]": paymentData.thumbnail,             
             "[PAY_LONG]": paymentData.long,             
@@ -113,18 +116,8 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
             paymentUrl: finalPaymentData?.upiString || null,             
             qrUrl: finalPaymentData?.qrUrl || null         
         });     
-        
     } catch (error) {         
-        console.error("OpenRouter API Error:", error);
-        
-        // THE SAFETY NET: Catches 404 (Server Full), 402 (No Credits), and 429 (Rate Limit)
-        if (error.status === 402 || error.status === 429 || error.status === 404) {
-            return res.status(200).json({ 
-                reply: "Our AI agent is currently assisting other clients. Please reach out to us via the contact form or WhatsApp so we can get your edit started.",
-                paymentUrl: null, qrUrl: null
-            });
-        }
-                 
+        console.error("OpenRouter Error:", error);         
         res.status(500).json({ error: "Internal Server Error" });     
     } 
 };
