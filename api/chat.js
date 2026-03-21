@@ -1,9 +1,9 @@
 const OpenAI = require('openai');
 
-// Pointing strictly to official DeepSeek servers
+// Pointing strictly to OpenRouter's servers
 const openai = new OpenAI({
-    baseURL: 'https://api.deepseek.com',
-    apiKey: process.env.DEEPSEEK_API_KEY 
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY 
 });
 
 const chatMemory = {};  
@@ -80,9 +80,9 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
             chatMemory[clientId].splice(1, 2);         
         }          
 
-        // Official DeepSeek API call
+        // OpenRouter API call targeting the free DeepSeek model
         const completion = await openai.chat.completions.create({             
-            model: 'deepseek-chat', 
+            model: 'deepseek/deepseek-r1:free', 
             messages: chatMemory[clientId],             
             temperature: 0.1,             
             max_tokens: 250         
@@ -115,7 +115,7 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
         });     
         
     } catch (error) {         
-        console.error("DeepSeek API Error:", error);
+        console.error("OpenRouter API Error:", error);
         
         // Handles 402 (Out of credits) or 429 (Rate Limit) gracefully for your clients
         if (error.status === 402 || error.status === 429) {
