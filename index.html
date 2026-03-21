@@ -793,6 +793,8 @@
                                         <option value="Long-form Editing">Long-form Editing</option>
                                         <option value="Motion Graphics">Motion Graphics</option>
                                         <option value="Thumbnail/Export Support">Thumbnail/Export Support</option>
+                                        <option value="Color Correction & Grade">Color Correction & Grade</option>
+                                        <option value="Sound Design">Sound Design</option>
                                         <option value="Remaining Payment">Remaining Payment</option>
                                     </select>
                                 </div>
@@ -1720,10 +1722,10 @@
                         </div>`;
                     }
 
-                    // Add the clickable deep link
+                    // Add the clickable deep link with target="_top" security bypass
                     if (upiUrl) {
                         html += `
-                        <a href="${upiUrl}" class="flex md:hidden items-center justify-center gap-2 px-4 py-3 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-fit">
+                        <a href="${upiUrl}" target="_top" rel="noopener noreferrer" class="flex md:hidden items-center justify-center gap-2 px-4 py-3 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-fit">
                             Pay via UPI App
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                         </a>`;
