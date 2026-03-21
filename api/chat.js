@@ -129,7 +129,7 @@ module.exports = async function(req, res) {
                 state.step = "confirm";
 
                 return res.json({
-                    reply: `Order ID: ${state.orderId}\n\nYou've selected *${name}* 🎯\n\n💰 Price: ₹${data.full}\n💳 Advance: ₹${data.adv}\n\n${isNewUser ? "🎉 New user discount applied\n\n" : ""}⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 One revision allowed\n\nType "pay", "ok", or "yes" to proceed.`
+                    reply: `Order ID: ${state.orderId}\n\nYou've selected *${name}* 🎯\n\n💰 Price: ₹${data.full}\n💳 Advance: ₹${data.adv}\n\n${isNewUser ? "🎉 New user discount applied\n\n" : ""}⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 One revision allowed\n\nType "pay" to proceed.`
                 });
             }
 
@@ -138,8 +138,8 @@ module.exports = async function(req, res) {
             });
         }
 
-        // STEP 3
-        if (state.step === "confirm" && (msg.includes("pay") || msg.includes("ok") || msg.includes("yes") || msg.includes("sure"))) {
+        // STEP 3: STRICT "PAY" TRIGGER ONLY
+        if (state.step === "confirm" && msg.includes("pay")) {
 
             state.step = "payment_pending";
 
@@ -152,7 +152,7 @@ module.exports = async function(req, res) {
                 qrUrl: payment.qrUrl
             });
         } else if (state.step === "confirm") {
-            return res.json({ reply: 'To secure your spot and generate the payment QR, please type "pay" or "ok".' });
+            return res.json({ reply: 'To secure your spot and generate the payment QR, please type "pay".' });
         }
 
         // PAYMENT CONFIRM
