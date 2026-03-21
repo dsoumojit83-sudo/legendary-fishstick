@@ -95,13 +95,11 @@ Feel free to come back anytime when you're ready.`
 • Motion Graphics  
 • Thumbnails  
 • Sound Design  
-• Color Correction & Grade  
-
-Please choose one of the above options to continue. I’ll wait until you select a service before moving forward.`
+• Color Correction & Grade`
             });
         }
 
-        // STEP 2 (LOOP UNTIL VALID SERVICE)
+        // STEP 2
         if (state.step === "select") {
 
             if (msg.includes("short")) state.service = "short";
@@ -136,20 +134,6 @@ ${isNewUser ? "🎉 New user discount applied\n" : ""}
 Type "pay" to proceed.`
                 });
             }
-
-            // LOOP MESSAGE IF INVALID INPUT
-            return res.json({
-                reply: `Please select a valid service from the options below:
-
-• Short Form  
-• Long Form  
-• Motion Graphics  
-• Thumbnails  
-• Sound Design  
-• Color Correction & Grade  
-
-I’ll continue once you choose one of these.`
-            });
         }
 
         // STEP 3 PAYMENT
@@ -217,9 +201,9 @@ OR
 Email: zyroeditz.official@gmail.com  
 
 💰 Pay remaining amount  
-📸 Attach payment screenshot and fill the form to selecting "Remsining Payment" 
+📸 Attach payment screenshot in the form and select "Remaining Payment" to fulfil your payment.
 
-📞 Support: 
+📞 Support:
 Mon–Fri, 9 AM – 5 PM`
             });
         }
