@@ -39,7 +39,7 @@ module.exports = async function(req, res) {
 
     try {
         const { message, clientId = "default_user" } = req.body;
-        const msg = message.toLowerCase();
+        const msg = message.toLowerCase().trim();
 
         const isNewUser = clientId.startsWith("NEW_");
 
@@ -69,30 +69,37 @@ module.exports = async function(req, res) {
 
         const state = userState[clientId];
 
-        // 🔥 FINAL PAYMENT TRIGGER (NEW)
-        if (message === "FINAL_PAYMENT_DONE") {
-            state.step = "done";
-
-            return res.json({
-                reply: `Order ID: ${state.orderId}
-
-Thanks for fulfilling the payment and giving us a chance to serve you 🙌
-
-Your final bill will be emailed shortly.`
-            });
+        // 🛠 MEMORY WIPE: If they finished an order and come back to chat again later
+        if (state.step === "done" && message !== "FINAL_PAYMENT_DONE") {
+            state.step = "start";
+            state.service = null;
+            state.orderId = generateOrderId();
         }
 
-        // FINAL LOCK
+        // 🔥 SECURITY LOCK: Final Payment can ONLY be triggered if they are in the "upload" step
+        if (message === "FINAL_PAYMENT_DONE") {
+            if (state.step === "upload") {
+                state.step = "done";
+                return res.json({
+                    reply: `Order ID: ${state.orderId}\n\nThanks for fulfilling the payment and giving us a chance to serve you 🙌\n\nYour final bill will be emailed shortly.`
+                });
+            } else {
+                return res.json({
+                    reply: "You can only submit a remaining payment for an active order that is currently in progress."
+                });
+            }
+        }
+
+        // FINAL LOCK (Bot stays silent if order is complete and they haven't said a new greeting yet)
         if (state.step === "done") {
             return res.json({ reply: "" });
         }
 
-        // EXIT INTENT
-        if (["no", "cancel", "don't", "dont", "not interested"].some(w => msg.includes(w))) {
+        // EXIT INTENT (Prevent cancelling if they are currently uploading files or paying)
+        if (["no", "cancel", "don't", "dont", "not interested", "stop"].some(w => msg.includes(w)) && state.step !== "upload" && state.step !== "form") {
             state.step = "done";
             return res.json({
-                reply: `I’m a bit sad we couldn’t create something this time 😔  
-Feel free to come back anytime when you're ready.`
+                reply: `I’m a bit sad we couldn’t create something this time 😔\nFeel free to come back anytime when you're ready.`
             });
         }
 
@@ -101,14 +108,7 @@ Feel free to come back anytime when you're ready.`
             state.step = "select";
 
             return res.json({
-                reply: `Hey! 👋 What service do you need?
-
-• Short Form  
-• Long Form  
-• Motion Graphics  
-• Thumbnails  
-• Sound Design  
-• Color Correction & Grade`
+                reply: `Hey! 👋 What service do you need?\n\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade`
             });
         }
 
@@ -129,22 +129,7 @@ Feel free to come back anytime when you're ready.`
                 state.step = "confirm";
 
                 return res.json({
-                    reply: `Order ID: ${state.orderId}
-
-You've selected *${name}* 🎯
-
-💰 Price: ₹${data.full}
-💳 Advance: ₹${data.adv}
-
-${isNewUser ? "🎉 New user discount applied\n" : ""}
-
-⏱ Delivery:
-• Thumbnails – Same day  
-• Others – 24–48 hours  
-
-🔁 One revision allowed  
-
-Type "pay" to proceed.`
+                    reply: `Order ID: ${state.orderId}\n\nYou've selected *${name}* 🎯\n\n💰 Price: ₹${data.full}\n💳 Advance: ₹${data.adv}\n\n${isNewUser ? "🎉 New user discount applied\n\n" : ""}⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 One revision allowed\n\nType "pay", "ok", or "yes" to proceed.`
                 });
             }
 
@@ -154,7 +139,7 @@ Type "pay" to proceed.`
         }
 
         // STEP 3
-        if (state.step === "confirm" && msg.includes("pay")) {
+        if (state.step === "confirm" && (msg.includes("pay") || msg.includes("ok") || msg.includes("yes") || msg.includes("sure"))) {
 
             state.step = "payment_pending";
 
@@ -162,37 +147,27 @@ Type "pay" to proceed.`
             const payment = generateUpiData(data.adv);
 
             return res.json({
-                reply: `Order ID: ${state.orderId}
-
-Pay ₹${data.adv} advance 👇
-
-After payment, please confirm here.`,
+                reply: `Order ID: ${state.orderId}\n\nPay ₹${data.adv} advance 👇\n\nAfter payment, please type "done" or "paid" here.`,
                 paymentUrl: payment.upiString,
                 qrUrl: payment.qrUrl
             });
+        } else if (state.step === "confirm") {
+            return res.json({ reply: 'To secure your spot and generate the payment QR, please type "pay" or "ok".' });
         }
 
         // PAYMENT CONFIRM
         if (state.step === "payment_pending") {
 
-            if (["yes", "done", "paid"].some(w => msg.includes(w))) {
+            if (["yes", "done", "paid", "ok", "sent"].some(w => msg.includes(w))) {
                 state.step = "form";
 
                 return res.json({
-                    reply: `Order ID: ${state.orderId}
-
-Great! ✅
-
-📌 Fill the Contact Form  
-📸 Attach payment screenshot  
-🎟 Apply referral code (10% off on remaining payment)
-
-🧾 Invoice will be sent to your email shortly.`
+                    reply: `Order ID: ${state.orderId}\n\nGreat! ✅\n\n📌 Fill the Contact Form on the website\n📸 Attach payment screenshot\n🎟 Apply referral code (10% off on remaining payment)\n\n🧾 Invoice will be sent to your email shortly.`
                 });
             }
 
             return res.json({
-                reply: "Please complete the payment and confirm here."
+                reply: "Please complete the payment and confirm by typing 'done' here."
             });
         }
 
@@ -200,37 +175,22 @@ Great! ✅
         if (state.step === "form") {
             if (message !== "FORM_SUBMITTED") {
                 return res.json({
-                    reply: "Please submit the form to continue the process."
+                    reply: "Please submit the Contact Form on the website to continue the process."
                 });
             }
 
             state.step = "upload";
 
             return res.json({
-                reply: `Order ID: ${state.orderId}
-
-Great! ✅
-
-📂 Send your raw files as DOCUMENTS:
-
-WhatsApp: 7602679995  
-OR  
-Email: zyroeditz.official@gmail.com  
-
-💰 Pay remaining amount (remaining payment option)  
-📸 Attach payment screenshot  
-
-📞 Support:
-PHONE: +917602679995
-EMAIL: zyroeditz.official@gmail.com
-Mon–Fri, 9 AM – 5 PM`
+                reply: `Order ID: ${state.orderId}\n\nGreat! ✅\n\n📂 Send your raw files as DOCUMENTS:\n\nWhatsApp: 7602679995\nOR\nEmail: zyroeditz.official@gmail.com\n\n💰 When the project is complete, you can pay the remaining amount using the form's "Remaining Payment" option.\n\n📞 Support:\nPHONE: +917602679995\nEMAIL: zyroeditz.official@gmail.com\nMon–Fri, 9 AM – 5 PM`
             });
         }
 
         // STEP FINAL BEFORE PAYMENT COMPLETE
         if (state.step === "upload") {
+            if (message === "FORM_SUBMITTED") return res.json({ reply: "You've already submitted the details. Send your raw files to WhatsApp!" });
             return res.json({
-                reply: "Please complete the remaining payment to finish your order."
+                reply: "Your order is in progress! 🎬\n\nWhen you're ready to make the final payment, please select 'Remaining Payment' in the Contact Form."
             });
         }
 
