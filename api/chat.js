@@ -37,63 +37,38 @@ module.exports = async function(req, res) {
         };          
 
         const pricingData = isNewUser ? {             
-            reels: "Total Price: ₹100 (50% Promo Applied) | Advance Deposit: ₹50 | Turnaround: 1 Day",             
-            youtube: "Total Price: ₹250 (50% Promo Applied) | Advance Deposit: ₹125 | Turnaround: 2 Days",             
-            motion: "Total Price: ₹200 (50% Promo Applied) | Advance Deposit: ₹100 | Turnaround: 2 Days",             
-            thumbnail: "Total Price: ₹50 (50% Promo Applied) | Advance Deposit: ₹25 | Turnaround: Same Day"         
+            reels: "₹100 (50% Promo) | Advance: ₹50",             
+            youtube: "₹250 (50% Promo) | Advance: ₹125",             
+            motion: "₹200 (50% Promo) | Advance: ₹100",             
+            thumbnail: "₹50 (50% Promo) | Advance: ₹25"         
         } : {             
-            reels: "Total Price: ₹200 | Advance Deposit: ₹100 | Turnaround: 1 Day",             
-            youtube: "Total Price: ₹500 | Advance Deposit: ₹250 | Turnaround: 2 Days",             
-            motion: "Total Price: ₹400 | Advance Deposit: ₹200 | Turnaround: 2 Days",             
-            thumbnail: "Total Price: ₹100 | Advance Deposit: ₹50 | Turnaround: Same Day"         
+            reels: "₹200 | Advance: ₹100",             
+            youtube: "₹500 | Advance: ₹250",             
+            motion: "₹400 | Advance: ₹200",             
+            thumbnail: "₹100 | Advance: ₹50"         
         };          
 
-        const systemPrompt = `You are the AI Sales Agent for ZyroEditz. You are highly intelligent, friendly, and professional. Keep responses concise (under 4 sentences). DO NOT perform math.  
-
-=== KNOWLEDGE BASE === 
-- WORKFLOW & FILES: We take a 50% advance to start. Clients send raw files via Email/WhatsApp as Documents. 
-- PROTOTYPE & CHANGES: We deliver a prototype. ALL changes must be stated at once. 
-- FINAL PAYMENT: Remaining 50% is paid AFTER prototype approval. Client uses Contact Form's 'Remaining Payment' option. 
-- REFERRALS: Flat 10% discount for referring a friend! Enter the code in the 'Referral Code' box in the form.
-
-=== PRICING === 
-- Short Form (Reels/Shorts): ${pricingData.reels} 
-- Long Form (YouTube): ${pricingData.youtube} 
-- Motion Graphics: ${pricingData.motion} 
-- Thumbnail Design: ${pricingData.thumbnail}  
-
-=== CONVERSATION FLOW (Follow strictly) === 
-STEP 1 - GREETING: If they say hi, ask what editing they need. 
-STEP 2 - PITCH: Give Total Price, Turnaround, and 50% Advance. Ask: "Are you ready to secure your spot?" 
-STEP 3 - PAYMENT: ONLY AFTER they agree to pay, tell them to scan the QR/UPI and type "done". THEN, on a completely NEW BLANK LINE at the very end of your response, write the tag: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL].
-STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please upload your payment screenshot to the Contact Form below. Next, send your raw files via Email or WhatsApp. Once we send the prototype, you can request changes. After approval, you'll pay the final 50% via the Contact Form's 'Remaining Payment' option."`;          
+        const systemPrompt = `You are the AI Sales Agent for ZyroEditz. Professional and concise. 
+        PRICING: Reels: ${pricingData.reels}, YouTube: ${pricingData.youtube}, Motion: ${pricingData.motion}, Thumbnails: ${pricingData.thumbnail}. 
+        FLOW: Greet -> Pitch -> When they agree to pay, provide instructions and end with the tag: [PAY_SHORT], [PAY_LONG], [PAY_MOTION], or [PAY_THUMBNAIL].`;          
 
         if (!chatMemory[clientId]) {             
             chatMemory[clientId] = [{ role: 'system', content: systemPrompt }];         
-        } else {             
-            chatMemory[clientId][0] = { role: 'system', content: systemPrompt };         
         }          
 
         chatMemory[clientId].push({ role: 'user', content: userMessage });          
 
-        if (chatMemory[clientId].length > 7) {             
-            chatMemory[clientId].splice(1, 2);         
-        }          
-
-        // Calling DeepSeek R1 Free via OpenRouter
+        // Calling the /auto router to guarantee uptime
         const completion = await openai.chat.completions.create({             
-            model: 'deepseek/deepseek-r1:free',
+            model: 'openrouter/auto', 
             messages: chatMemory[clientId],             
             temperature: 0.1,             
-            max_tokens: 500 // R1 sometimes needs more tokens for reasoning
+            max_tokens: 300
         });          
 
         let reply = completion.choices[0].message.content;
-
-        // Strip "thought" tags if R1 includes them in the output
-        reply = reply.replace(/<thought>[\s\S]*?<\/thought>/g, '').trim();
-
         let finalPaymentData = null;          
+        
         const tags = {             
             "[PAY_THUMBNAIL]": paymentData.thumbnail,             
             "[PAY_LONG]": paymentData.long,             
@@ -110,6 +85,7 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
         }          
 
         chatMemory[clientId].push({ role: 'assistant', content: reply });          
+        if (chatMemory[clientId].length > 10) chatMemory[clientId].splice(1, 2);
 
         res.status(200).json({             
             reply,             
@@ -117,7 +93,7 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
             qrUrl: finalPaymentData?.qrUrl || null         
         });     
     } catch (error) {         
-        console.error("OpenRouter Error:", error);         
+        console.error("Auto-Router Error:", error);         
         res.status(500).json({ error: "Internal Server Error" });     
     } 
 };
