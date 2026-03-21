@@ -7,7 +7,19 @@ const groq = new OpenAI({
 
 const userState = {};
 
-// UPI generator
+const serviceNames = {
+    short: "Short Form",
+    long: "Long Form",
+    motion: "Motion Graphics",
+    thumbnail: "Thumbnails",
+    sound: "Sound Design",
+    color: "Color Correction & Grade"
+};
+
+const generateOrderId = () => {
+    return "ZYRO" + Date.now() + Math.random().toString(16).slice(2,6).toUpperCase();
+};
+
 const generateUpiData = (amount) => {     
     const upiId = "7602679995-5@ybl";     
     const name = "Soumojit Das";      
@@ -31,7 +43,6 @@ module.exports = async function(req, res) {
 
         const isNewUser = clientId.startsWith("NEW_");
 
-        // Pricing
         const pricing = isNewUser ? {
             short: { full: 100, adv: 50 },
             long: { full: 250, adv: 125 },
@@ -48,22 +59,31 @@ module.exports = async function(req, res) {
             color: { full: 175, adv: 88 }
         };
 
-        // Init state
         if (!userState[clientId]) {
             userState[clientId] = {
                 step: "start",
-                service: null
+                service: null,
+                orderId: generateOrderId()
             };
         }
 
         const state = userState[clientId];
 
-        // ---------------- FINAL LOCK ----------------
+        // FINAL LOCK
         if (state.step === "done") {
-            return res.json({ reply: "" }); // no reply after final
+            return res.json({ reply: "" });
         }
 
-        // ---------------- STEP 1: OPTIONS ----------------
+        // EXIT INTENT
+        if (["no", "cancel", "don't", "dont", "not interested"].some(w => msg.includes(w))) {
+            state.step = "done";
+            return res.json({
+                reply: `I’m a bit sad we couldn’t create something this time 😔  
+Feel free to come back anytime when you're ready.`
+            });
+        }
+
+        // STEP 1
         if (state.step === "start") {
             state.step = "select";
 
@@ -79,7 +99,7 @@ module.exports = async function(req, res) {
             });
         }
 
-        // ---------------- STEP 2: SELECTION ----------------
+        // STEP 2
         if (state.step === "select") {
 
             if (msg.includes("short")) state.service = "short";
@@ -91,15 +111,19 @@ module.exports = async function(req, res) {
 
             if (state.service) {
                 const data = pricing[state.service];
+                const name = serviceNames[state.service];
+
                 state.step = "confirm";
 
                 return res.json({
-                    reply: `You've selected *${state.service}* 🎯
+                    reply: `Order ID: ${state.orderId}
+
+You've selected *${name}* 🎯
 
 💰 Price: ₹${data.full}
 💳 Advance: ₹${data.adv}
 
-${isNewUser ? "🎉 New user discount applied!\n" : ""}
+${isNewUser ? "🎉 New user discount applied\n" : ""}
 
 ⏱ Delivery:
 • Thumbnails – Same day  
@@ -112,32 +136,52 @@ Type "pay" to proceed.`
             }
         }
 
-        // ---------------- STEP 3: PAYMENT ----------------
+        // STEP 3 PAYMENT
         if (state.step === "confirm" && msg.includes("pay")) {
 
-            state.step = "form";
+            state.step = "payment_pending";
 
             const data = pricing[state.service];
             const payment = generateUpiData(data.adv);
 
             return res.json({
-                reply: `Pay ₹${data.adv} advance 👇
+                reply: `Order ID: ${state.orderId}
 
-After payment:
+Pay ₹${data.adv} advance 👇
 
-📌 Fill the Contact Form  
-📸 Attach payment screenshot  
-🎟 Apply referral code (10% off on remaining)
-
-🧾 Bill will be sent to your email shortly.`,
+After payment, confirm here.`,
                 paymentUrl: payment.upiString,
                 qrUrl: payment.qrUrl
             });
         }
 
-        // ---------------- STEP 3 LOCK ----------------
+        // CONFIRM PAYMENT
+        if (state.step === "payment_pending") {
+
+            if (["yes", "done", "paid"].some(w => msg.includes(w))) {
+                state.step = "form";
+
+                return res.json({
+                    reply: `Order ID: ${state.orderId}
+
+Great! ✅
+
+📌 Fill the Contact Form  
+📸 Attach payment screenshot  
+🎟 Apply referral code (10% off on remaining)
+
+🧾 Invoice will be sent to your email shortly.`
+                });
+            }
+
+            return res.json({
+                reply: "Please complete the payment and confirm here."
+            });
+        }
+
+        // FORM LOOP
         if (state.step === "form") {
-            if (!msg.includes("submitted")) {
+            if (message !== "FORM_SUBMITTED") {
                 return res.json({
                     reply: "Please submit the form to continue the process."
                 });
@@ -146,28 +190,32 @@ After payment:
             state.step = "upload";
 
             return res.json({
-                reply: `Great! ✅
+                reply: `Order ID: ${state.orderId}
 
-📂 Send your raw files as DOCUMENTS:
+Great! ✅
+
+📂 Send raw files as DOCUMENTS:
 
 WhatsApp: 7602679995  
 OR  
 Email: zyroeditz.official@gmail.com  
 
-💰 Pay remaining amount by selecting remaining payment option  
+💰 Pay remaining amount  
 📸 Attach payment screenshot  
 
-📞 Need help?  
-Call/Email (Mon–Fri, 9 AM – 5 PM)`
+📞 Support:
+Mon–Fri, 9 AM – 5 PM`
             });
         }
 
-        // ---------------- STEP 5 FINAL ----------------
+        // FINAL STEP
         if (state.step === "upload") {
             state.step = "done";
 
             return res.json({
-                reply: `Thank you for choosing us to serve you 🙌  
+                reply: `Order ID: ${state.orderId}
+
+Thank you for choosing us 🙌  
 We appreciate your patience.`
             });
         }
