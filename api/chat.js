@@ -1,6 +1,6 @@
 const OpenAI = require('openai');
 
-// Pointing strictly to OpenRouter's servers
+// Pointing to OpenRouter's servers for the free tier
 const openai = new OpenAI({
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY 
@@ -80,9 +80,9 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
             chatMemory[clientId].splice(1, 2);         
         }          
 
-        // OpenRouter API call targeting the free DeepSeek model
+        // THE FIX: OpenRouter API call targeting the highly-available DeepSeek V3 Free node
         const completion = await openai.chat.completions.create({             
-            model: 'deepseek/deepseek-r1:free', 
+            model: 'deepseek/deepseek-chat:free', 
             messages: chatMemory[clientId],             
             temperature: 0.1,             
             max_tokens: 250         
@@ -120,7 +120,7 @@ STEP 4 - ONBOARDING: When they say "done/paid", tell them: "Awesome! Please uplo
         // Handles 402 (Out of credits) or 429 (Rate Limit) gracefully for your clients
         if (error.status === 402 || error.status === 429) {
             return res.status(200).json({ 
-                reply: "Our AI agent is currently offline. Please reach out to us via the contact form or WhatsApp so we can get your edit started.",
+                reply: "Our AI agent is currently assisting other clients. Please reach out to us via the contact form or WhatsApp so we can get your edit started.",
                 paymentUrl: null, qrUrl: null
             });
         }
