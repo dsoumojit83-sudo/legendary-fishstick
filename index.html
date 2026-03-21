@@ -877,7 +877,7 @@
             <div class="flex gap-2">
                 <div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div>
                 <div class="chat-bot-msg">
-                    Hey! I'm the Zyro Assistant. How can I help you with your video editing needs today?
+                    Hey! 👋 How can I help you with your video editing needs today?
                 </div>
             </div>
         </div>
@@ -1646,9 +1646,8 @@
                 animateCanvas();
             }
 
-            // ==================== SECURE AI CHATBOT LOGIC ====================
+            // ==================== SECURE CHATBOT LOGIC ====================
             function initChatbot() {
-                // 1. Persistent ID Tracking
                 let clientId = localStorage.getItem('zyro_client_id');
                 if (!clientId) {
                     clientId = 'NEW_' + Math.random().toString(36).substr(2, 9);
@@ -1673,7 +1672,6 @@
                         windowEl.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
                         input.focus();
                         
-                        // 2. Psychological Triggers: Disappear dot permanently once opened
                         if (dot) dot.style.display = 'none';
                         if (tooltip) tooltip.style.display = 'none';
                     } else {
@@ -1690,7 +1688,8 @@
                     const msgDiv = document.createElement('div');
                     msgDiv.className = 'flex gap-2 ' + (isUser ? 'justify-end' : '');
                     
-                    // Format bold text received from the backend
+                    // Note: Your new backend uses line breaks (\n) which white-space: pre-wrap handles perfectly.
+                    // The old bold text replacement is left here just in case you ever add **bolding** to your backend strings.
                     const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
                     
                     let html = '';
@@ -1706,14 +1705,12 @@
                     messages.scrollTop = messages.scrollHeight;
                 }
 
-                // 3. Dynamic UPI & QR Checkout UI
                 function renderPaymentUI(upiUrl, qrUrl) {
                     const btnContainer = document.createElement('div');
                     btnContainer.className = 'flex flex-col gap-3 mt-3 ml-8 w-full max-w-[85%]';
                     
                     let html = '';
 
-                    // Add the QR Code image if available
                     if (qrUrl) {
                         html += `
                         <div class="bg-white p-2 rounded-xl w-fit border border-white/20 shadow-lg shadow-[#ff1a1a]/20 transition-transform duration-300 hover:scale-105">
@@ -1722,7 +1719,6 @@
                         </div>`;
                     }
 
-                    // Add the clickable deep link with target="_top" security bypass
                     if (upiUrl) {
                         html += `
                         <a href="${upiUrl}" target="_top" rel="noopener noreferrer" class="flex md:hidden items-center justify-center gap-2 px-4 py-3 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-fit">
@@ -1734,7 +1730,6 @@
                     btnContainer.innerHTML = html;
                     messages.appendChild(btnContainer);
                     
-                    // FIX: QR CODE NOT SHOWING (Ensures scroll down happens AFTER image loads)
                     const imgNode = btnContainer.querySelector('.qr-img');
                     if (imgNode) {
                         imgNode.onload = () => {
@@ -1745,18 +1740,13 @@
                     }
                 }
 
-                // ==========================================
-                // UPDATED: ANTI-SPAM FORM SUBMISSION
-                // ==========================================
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     const text = input.value.trim();
                     if (!text) return;
 
-                    // THE SHIELD: Grab the submit button
                     const submitBtn = form.querySelector('button[type="submit"]');
 
-                    // INSTANT LOCKDOWN: Prevent API Spamming
                     input.disabled = true;
                     submitBtn.disabled = true;
                     input.placeholder = "Zyro Assistant is thinking...";
@@ -1765,7 +1755,6 @@
                     addMessage(text, true);
                     input.value = '';
 
-                    // Typing Indicator UI
                     const typingId = 'typing-' + Date.now();
                     const typingDiv = document.createElement('div');
                     typingDiv.id = typingId;
@@ -1789,12 +1778,12 @@
                         const typingEl = document.getElementById(typingId);
                         if(typingEl) typingEl.remove();
 
-                        if (response.ok) {
+                        if (response.ok && data.reply !== "") {
                             addMessage(data.reply, false);
                             if (data.paymentUrl || data.qrUrl) {
                                 renderPaymentUI(data.paymentUrl, data.qrUrl);
                             }
-                        } else {
+                        } else if (!response.ok) {
                             addMessage("Sorry, my systems are updating right now. Please email Zyro directly at zyroeditz.official@gmail.com!", false);
                         }
                     } catch (error) {
@@ -1802,22 +1791,19 @@
                         if(typingEl) typingEl.remove();
                         addMessage("Network error. Please try reaching out via the contact form below.", false);
                     } finally {
-                        // THE UNLOCK: Safely re-enable the chat ONLY after the cycle is complete
                         input.disabled = false;
                         submitBtn.disabled = false;
                         input.placeholder = "Type your message...";
                         submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        
-                        // Elite UX: Auto-focus back on the input so they can keep typing seamlessly
                         input.focus(); 
                     }
                 });
 
-                // 4. Form Webhook Synergy & Client Upgrade
-                window.addEventListener('projectFormSubmitted', (e) => {
-                    const clientName = e.detail.clientName || 'there';
-                    
-                    // UPGRADE STATUS: Change their ID from NEW_ to OLD_ so they get standard pricing next time
+                // ==========================================
+                // THE NEW FORM -> BOT SYNC LOGIC
+                // ==========================================
+                window.addEventListener('projectFormSubmitted', async (e) => {
+                    // 1. Upgrade User
                     let currentId = localStorage.getItem('zyro_client_id');
                     if (currentId && currentId.startsWith('NEW_')) {
                         localStorage.setItem('zyro_client_id', currentId.replace('NEW_', 'OLD_'));
@@ -1827,9 +1813,36 @@
                         toggleChat();
                     }
 
-                    setTimeout(() => {
-                        addMessage(`I just saw your project inquiry come through, ${clientName}! Zyro will review your brief and get back to you within 24 hours. Keep an eye on your inbox. 🎬`, false);
-                    }, 1000);
+                    // 2. Secretly Ping the backend with "FORM_SUBMITTED" so the step changes to "upload"
+                    try {
+                        const typingId = 'typing-' + Date.now();
+                        const typingDiv = document.createElement('div');
+                        typingDiv.id = typingId;
+                        typingDiv.className = 'flex gap-2';
+                        typingDiv.innerHTML = `
+                            <div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a] text-xs font-bold">Z</div>
+                            <div class="chat-bot-msg text-gray-500 animate-pulse">Typing...</div>
+                        `;
+                        messages.appendChild(typingDiv);
+                        messages.scrollTop = messages.scrollHeight;
+
+                        const response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: "FORM_SUBMITTED", clientId: currentId })
+                        });
+                        
+                        const data = await response.json();
+                        const typingEl = document.getElementById(typingId);
+                        if(typingEl) typingEl.remove();
+
+                        // 3. Print the backend's exact response ("Great! ✅ Send raw files as DOCUMENTS...")
+                        if (response.ok && data.reply) {
+                            addMessage(data.reply, false);
+                        }
+                    } catch (err) {
+                        console.error("Failed to sync backend state.");
+                    }
                 });
             }
             
