@@ -1228,7 +1228,7 @@
                             .then(data => {
                                 if (data.status === 'success') {
                                     couponFeedback.className = 'text-[10px] mt-2 font-bold tracking-widest uppercase text-green-400';
-                                    couponFeedback.innerHTML = + data.message;
+                                    couponFeedback.innerHTML = data.message;
                                     couponInput.style.borderColor = '#4ade80';
                                     couponInput.style.backgroundColor = 'rgba(74, 222, 128, 0.05)';
                                 } else {
