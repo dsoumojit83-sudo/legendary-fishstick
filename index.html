@@ -1212,7 +1212,7 @@
                         // Show typing/loading state
                         couponFeedback.classList.remove('hidden');
                         couponFeedback.className = 'text-[10px] mt-2 font-bold tracking-widest uppercase text-gray-400 animate-pulse flex items-center';
-                        couponFeedback.innerHTML = '<span class="yt-spinner mr-2" style="width: 10px; height: 10px; border-width: 2px;"></span> Verifying with database...';
+                        couponFeedback.innerHTML = '<span class="yt-spinner mr-2" style="width: 10px; height: 10px; border-width: 2px;"></span> Checking code validity...';
 
                         // Wait for the user to finish typing
                         debounceTimer = setTimeout(() => {
@@ -1233,7 +1233,7 @@
                                     couponInput.style.backgroundColor = 'rgba(74, 222, 128, 0.05)';
                                 } else {
                                     couponFeedback.className = 'text-[10px] mt-2 font-bold tracking-widest uppercase text-[#ff1a1a]';
-                                    couponFeedback.innerHTML = '🤫 ' + data.message;
+                                    couponFeedback.innerHTML = data.message;
                                     couponInput.style.borderColor = '#ff1a1a';
                                     couponInput.style.backgroundColor = 'rgba(255, 26, 26, 0.05)';
                                     
