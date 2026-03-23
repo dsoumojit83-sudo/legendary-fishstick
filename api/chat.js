@@ -68,7 +68,7 @@ module.exports = async function(req, res) {
             state.orderId = generateOrderId();
             
             return res.json({
-                reply: `Hey! 👋 What kind of project can I help you with today? We handle Video Editing, Thumbnails, Motion Graphics, and Sound Design!\n\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade`,
+                reply: `Hey!👋 Zyro Assistant is here. What kind of project can I help you with today? We handle everything from Video Editing to Motion Graphics and Sound Design!\nJust type the service you need from the options below:\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade`,
                 clearHistory: true
             });
         }
@@ -87,7 +87,7 @@ module.exports = async function(req, res) {
             state.step = "select";
 
             return res.json({
-                reply: `Hey! 👋 What service do you need?\n\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade`
+                reply: `Hey!👋 Zyro Assistant is here. What kind of project can I help you with today? We handle everything from Video Editing to Motion Graphics and Sound Design!\nJust type the service you need from the options below:\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade`
             });
         }
 
