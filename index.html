@@ -442,10 +442,9 @@
             <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">About Us</p>
             <h2 class="text-4xl md:text-6xl font-bold mb-12 leading-tight">Crafting Visual <span class="text-[#ff1a1a]">Excellence</span></h2>
             <p class="text-gray-400 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto">
-                ZyroEditz is more than an edit studio. We are visual architects, engineering emotion through every frame. 
-                Specializing in cinematic editing, color grading, and motion graphics for forward-thinking brands.
+                At ZyroEditz, we are more than an edit studio; we are visual architects engineering emotion through every frame. We don't just create videos; we create impact.
                 <br><br>
-                <span class="text-white text-lg">We don't just create videos. We create impact.</span>
+                <span class="text-white text-lg">Specializing in cinematic editing, color grading, and motion graphics, we cater to forward-thinking brands and creators who demand excellence. With expertise spanning short-form retention-optimized reels to long-form cinematic YouTube edits, our workflow is defined by three core pillars: Speed, Motion, and Precision. From raw footage to the final platform-ready export, we handle the strategy, production, and delivery required to elevate your brand and captivate your audience.</span>
             </p>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20">
@@ -793,17 +792,16 @@
                                         <option value="Thumbnail/Export Support">Thumbnail/Export Support</option>
                                         <option value="Color Correction & Grade">Color Correction & Grade</option>
                                         <option value="Sound Design">Sound Design</option>
-                                        <option value="Remaining Payment">Remaining Payment</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="couponCode">Coupon Code (Optional)</label>
+                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="couponCode">Coupon Code (Applies to Total Payment)</label>
                                     <input class="input-field w-full px-4 py-3 text-[#ff1a1a]" id="couponCode" name="couponCode" type="text" placeholder="e.g. SAVE10">
                                 </div>
                             </div>
 
                             <div class="mt-5">
-                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="paymentProof">Payment Proof (JPG/PNG, Max 2MB) <span class="text-[#ff1a1a]">*</span></label>
+                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="paymentProof">Full Upfront Payment Proof (JPG/PNG, Max 2MB) <span class="text-[#ff1a1a]">*</span></label>
                                 <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png" required>
                                 <p id="fileError" class="text-xs text-red-400 mt-2 hidden font-bold tracking-wide"></p>
                             </div>
@@ -824,7 +822,36 @@
         </div>
     </section>
 
-    <footer class="relative z-10 px-6 py-12 border-t border-white/10">
+    <section id="legal" class="relative z-10 px-6 py-16 border-t border-white/10 bg-[#050505]">
+        <div class="max-w-4xl mx-auto text-left">
+            <h2 class="text-2xl md:text-3xl font-bold mb-6 text-white tracking-tight">Policies & Guidelines</h2>
+            
+            <div class="space-y-8 text-gray-400 text-sm leading-relaxed">
+                <div>
+                    <h3 class="text-[#ff1a1a] uppercase tracking-widest text-xs font-bold mb-3">1. Information We Collect</h3>
+                    <p>We collect information you provide directly to us when utilizing our contact forms or communicating via email or chat. This includes your name, email address, project briefs, payment proof uploads, and custom messages. We also collect raw footage, brand assets, and content materials required to execute your project.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-[#ff1a1a] uppercase tracking-widest text-xs font-bold mb-3">2. How We Use Your Information</h3>
+                    <p>We use the collected information solely to provide, maintain, and deliver our video editing and motion graphics services. We also use it to communicate with you regarding project timelines, pricing options, next steps, and to process payments securely.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-[#ff1a1a] uppercase tracking-widest text-xs font-bold mb-3">3. Terms & Conditions / Refund Policy</h3>
+                    <p><strong class="text-white">Payment Terms:</strong> We require full payment upfront before commencing work on any project. This secures your spot in our workflow and allows us to dedicate our full resources to your edit immediately.</p>
+                    <p class="mt-2"><strong class="text-white">Refund Policy:</strong> Your satisfaction is our priority. If you do not like the final delivered project and we are unable to resolve the issues through our standard revision process, we will issue a full refund. Refunds are processed back to the original payment method.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-[#ff1a1a] uppercase tracking-widest text-xs font-bold mb-3">4. Data Protection and Sharing</h3>
+                    <p>We do not sell, trade, or rent your personal information or raw footage to third parties. Your project files and personal data are kept strictly confidential. Completed projects may be featured in our portfolio (such as our Featured Edits on YouTube or Instagram) only with your prior consent or once the content has been publicly published by you.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="relative z-10 px-6 py-12 border-t border-white/10 bg-black">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <a href="#home" class="text-lg font-bold tracking-tight hover:text-[#ff1a1a] transition-colors">Zyro<span class="text-[#ff1a1a]">Editz</span></a>
             <div class="text-xs uppercase tracking-[0.35em] text-gray-500 text-center">Precision. Motion. Speed.</div>
@@ -1086,7 +1113,7 @@
                 if (scrollTopBtn) scrollTopBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
                 (function(){
-                    const ids = ['home', 'about', 'services', 'contact'];
+                    const ids = ['home', 'about', 'services', 'contact', 'legal'];
                     const sections = ids.map(id => document.getElementById(id)).filter(Boolean);
                     const links = document.querySelectorAll('.nav-link');
                     if (!sections.length || !links.length) return;
@@ -1183,9 +1210,7 @@
                 const submitBtn = document.getElementById('contactSubmit');
                 const fileInput = document.getElementById('paymentProof');
                 const fileError = document.getElementById('fileError');
-                const subjectDropdown = document.getElementById('subject');
                 const messageInput = document.getElementById('message');
-                const messageAsterisk = document.getElementById('messageAsterisk');
                 
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyXiGjgwTlvvsqZR_WPTYIknDt_ATMxz4jkzJhA872E5wElV6SwUSIsnjFo8o6JmXT/exec'; 
 
@@ -1257,34 +1282,6 @@
                 // ------------------------------------------
 
                 if (form && statusEl && submitBtn) {
-                    
-                    // FRONTEND SECURITY LOCK + MESSAGE REQUIRED TOGGLE
-                    subjectDropdown.addEventListener('change', function() {
-                        const isActive = localStorage.getItem('zyro_active_project') === 'true';
-                        
-                        // Make Message not required for final payment
-                        if (this.value === 'Remaining Payment') {
-                            messageInput.removeAttribute('required');
-                            messageAsterisk.style.display = 'none';
-                            messageInput.placeholder = "Optional note for your final payment...";
-                        } else {
-                            messageInput.setAttribute('required', 'required');
-                            messageAsterisk.style.display = 'inline';
-                            messageInput.placeholder = "Tell me about your project, deadline, and references... *";
-                        }
-
-                        if (this.value === 'Remaining Payment' && !isActive) {
-                            submitBtn.disabled = true;
-                            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                            statusEl.innerHTML = '⚠️ Start an order in the chat first to make a final payment.';
-                            statusEl.className = 'text-xs tracking-widest text-red-400 font-bold';
-                        } else {
-                            submitBtn.disabled = false;
-                            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                            statusEl.innerHTML = '';
-                        }
-                    });
-
                     if (fileInput) {
                         fileInput.addEventListener('change', function() {
                             const file = this.files[0];
@@ -1302,15 +1299,11 @@
                                     submitBtn.disabled = true;
                                 } else {
                                     fileError.classList.add('hidden');
-                                    const isActive = localStorage.getItem('zyro_active_project') === 'true';
-                                    if (subjectDropdown.value === 'Remaining Payment' && !isActive) submitBtn.disabled = true;
-                                    else submitBtn.disabled = false;
+                                    submitBtn.disabled = false;
                                 }
                             } else {
                                 fileError.classList.add('hidden');
-                                const isActive = localStorage.getItem('zyro_active_project') === 'true';
-                                if (subjectDropdown.value === 'Remaining Payment' && !isActive) submitBtn.disabled = true;
-                                else submitBtn.disabled = false;
+                                submitBtn.disabled = false;
                             }
                         });
                     }
@@ -1354,16 +1347,9 @@
                                 statusEl.innerHTML = 'Received! Zyro is reviewing your project.';
                                 statusEl.className = 'text-xs tracking-widest text-green-400 font-bold';
                                 
-                                if (formData.subject === 'Remaining Payment') {
-                                    localStorage.removeItem('zyro_active_project');
-                                } else {
-                                    localStorage.setItem('zyro_active_project', 'true');
-                                }
+                                localStorage.setItem('zyro_active_project', 'true');
 
                                 form.reset();
-                                messageInput.setAttribute('required', 'required');
-                                messageAsterisk.style.display = 'inline';
-                                messageInput.placeholder = "Tell me about your project, deadline, and references... *";
                                 
                                 window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: formData.name, subject: formData.subject } }));
                                 
@@ -1518,7 +1504,7 @@
                 initCanvas(); animateCanvas();
             }
 
-            // ==================== STATELESS CHATBOT LOGIC (THE ULTIMATE FIX) ====================
+            // ==================== STATELESS CHATBOT LOGIC ====================
             function initChatbot() {
                 // 1. Ensure Persistent Client ID
                 let clientId = localStorage.getItem('zyro_client_id');
@@ -1724,8 +1710,7 @@
                         messages.appendChild(typingDiv);
                         messages.scrollTop = messages.scrollHeight;
 
-                        const subject = e.detail.subject || "";
-                        const messageToSend = (subject === "Remaining Payment") ? "FINAL_PAYMENT_DONE" : "FORM_SUBMITTED";
+                        const messageToSend = "FORM_SUBMITTED";
 
                         const response = await fetch('/api/chat', {
                             method: 'POST',
@@ -1737,7 +1722,6 @@
                         const typingEl = document.getElementById(typingId);
                         if(typingEl) typingEl.remove();
 
-                        // Clear history if it's the final payment
                         if (data.clearHistory) {
                             chatHistory = [];
                             localStorage.setItem('zyro_chat_history', '[]');
