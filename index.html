@@ -1593,9 +1593,6 @@
                     if (qrUrl) {
                         html += `<div class="bg-white p-2 rounded-xl w-fit border border-white/20 shadow-lg shadow-[#ff1a1a]/20 transition-transform duration-300 hover:scale-105"><img src="${qrUrl}" alt="Scan to Pay" class="w-40 h-40 object-cover rounded-lg mix-blend-multiply qr-img"><p class="text-center text-black text-[10px] font-bold mt-1.5 uppercase tracking-wider">Scan & Pay</p></div>`;
                     }
-                    if (upiUrl) {
-                        html += `<a href="${upiUrl}" target="_top" rel="noopener noreferrer" class="flex md:hidden items-center justify-center gap-2 px-4 py-3 bg-[#ff1a1a] hover:bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-[#ff1a1a]/20 w-fit">Pay via UPI App<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></a>`;
-                    }
 
                     btnContainer.innerHTML = html;
                     messages.appendChild(btnContainer);
@@ -1669,7 +1666,7 @@
                         const typingEl = document.getElementById(typingId);
                         if(typingEl) typingEl.remove();
 
-                        // Clear history if it's the final payment
+                        // 4. Memory Wipe Command (Backend tells frontend to clear history)
                         if (data.clearHistory) {
                             chatHistory = [];
                             localStorage.setItem('zyro_chat_history', '[]');
@@ -1733,7 +1730,6 @@
                         const typingEl = document.getElementById(typingId);
                         if(typingEl) typingEl.remove();
 
-                        // Clear history if it's the final payment
                         if (data.clearHistory) {
                             chatHistory = [];
                             localStorage.setItem('zyro_chat_history', '[]');
