@@ -41,17 +41,8 @@ module.exports = async function(req, res) {
         const { message, clientId = "default_user" } = req.body;
         const msg = message.toLowerCase().trim();
 
-        const isNewUser = clientId.startsWith("NEW_");
-
-        // Note: Please verify these full price numbers match your latest updated pricing.
-        const pricing = isNewUser ? {
-            short: { full: 100 },
-            long: { full: 250 },
-            motion: { full: 200 },
-            thumbnail: { full: 50 },
-            sound: { full: 100 },
-            color: { full: 88 }
-        } : {
+        // Flat pricing for ALL users
+        const pricing = {
             short: { full: 200 },
             long: { full: 500 },
             motion: { full: 400 },
@@ -70,20 +61,19 @@ module.exports = async function(req, res) {
 
         const state = userState[clientId];
 
-        // 🛠 MEMORY WIPE & RESTART: If they finished an order and come back to chat again later
+        // MEMORY WIPE & RESTART
         if (state.step === "done") {
             state.step = "start";
             state.service = null;
             state.orderId = generateOrderId();
             
-            // Sends the clearHistory flag to the frontend to wipe the local storage
             return res.json({
                 reply: `Hey! 👋 What kind of project can I help you with today? We handle Video Editing, Thumbnails, Motion Graphics, and Sound Design!\n\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade`,
                 clearHistory: true
             });
         }
 
-        // EXIT INTENT (Prevent cancelling if they are currently submitting the form)
+        // EXIT INTENT
         if (["no", "cancel", "don't", "dont", "not interested", "stop"].some(w => msg.includes(w)) && state.step !== "form") {
             state.step = "done";
             return res.json({
@@ -118,7 +108,7 @@ module.exports = async function(req, res) {
                 state.step = "confirm";
 
                 return res.json({
-                    reply: `Order ID: ${state.orderId}\n\nYou've selected *${name}* 🎯\n\n💰 Total Price: ₹${data.full}\n*(Full payment required upfront. 100% refund if not satisfied)*\n\n${isNewUser ? "🎉 New user discount applied\n\n" : ""}⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 Revisions included\n\nType "pay" to proceed.`
+                    reply: `Order ID: ${state.orderId}\n\nYou've selected *${name}* 🎯\n\n💰 Total Price: ₹${data.full}\n*(Full payment required upfront. 100% refund if not satisfied)*\n\n⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 Revisions included\n\nType "pay" to proceed.`
                 });
             }
 
