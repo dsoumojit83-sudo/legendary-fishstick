@@ -51,9 +51,10 @@ module.exports = async function(req, res) {
             color: { full: 175 }
         };
 
+        // Initialize state directly to 'select' since frontend already sent the greeting
         if (!userState[clientId]) {
             userState[clientId] = {
-                step: "start",
+                step: "select", 
                 service: null,
                 orderId: generateOrderId()
             };
@@ -63,7 +64,7 @@ module.exports = async function(req, res) {
 
         // MEMORY WIPE & RESTART
         if (state.step === "done") {
-            state.step = "start";
+            state.step = "select"; // Reset directly to 'select'
             state.service = null;
             state.orderId = generateOrderId();
             
@@ -82,16 +83,7 @@ module.exports = async function(req, res) {
             });
         }
 
-        // STEP 1
-        if (state.step === "start") {
-            state.step = "select";
-
-            return res.json({
-                reply: `Hey!👋 Zyro Assistant is here. What kind of project can I help you with today? We handle everything from Video Editing to Motion Graphics and Sound Design!\nJust type the service you need from the options below:\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade`
-            });
-        }
-
-        // STEP 2
+        // STEP 1: SERVICE SELECTION
         if (state.step === "select") {
 
             if (msg.includes("short")) state.service = "short";
@@ -112,12 +104,13 @@ module.exports = async function(req, res) {
                 });
             }
 
+            // Fallback if they type something unrelated
             return res.json({
                 reply: "Please choose a service from the options above to continue."
             });
         }
 
-        // STEP 3: STRICT "PAY" TRIGGER ONLY
+        // STEP 2: STRICT "PAY" TRIGGER ONLY
         if (state.step === "confirm" && msg.includes("pay")) {
 
             state.step = "payment_pending";
@@ -134,7 +127,7 @@ module.exports = async function(req, res) {
             return res.json({ reply: 'To secure your spot and generate the payment QR, please type "pay".' });
         }
 
-        // PAYMENT CONFIRM
+        // STEP 3: PAYMENT CONFIRM
         if (state.step === "payment_pending") {
 
             if (["yes", "done", "paid", "ok", "sent"].some(w => msg.includes(w))) {
