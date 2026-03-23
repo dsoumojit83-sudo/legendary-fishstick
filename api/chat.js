@@ -23,7 +23,7 @@ const generateOrderId = () => {
 const generateUpiData = (amount) => {     
     const upiId = "7602679995-5@ybl";     
     const name = "Soumojit Das";      
-    const note = "ZyroEditz Advance Payment";            
+    const note = "ZyroEditz Full Payment";            
 
     const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&tn=${encodeURIComponent(note)}&am=${amount}&cu=INR`;     
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}`;          
@@ -43,20 +43,21 @@ module.exports = async function(req, res) {
 
         const isNewUser = clientId.startsWith("NEW_");
 
+        // Note: Please verify these full price numbers match your latest updated pricing.
         const pricing = isNewUser ? {
-            short: { full: 100, adv: 50 },
-            long: { full: 250, adv: 125 },
-            motion: { full: 200, adv: 100 },
-            thumbnail: { full: 50, adv: 25 },
-            sound: { full: 100, adv: 50 },
-            color: { full: 88, adv: 44 }
+            short: { full: 100 },
+            long: { full: 250 },
+            motion: { full: 200 },
+            thumbnail: { full: 50 },
+            sound: { full: 100 },
+            color: { full: 88 }
         } : {
-            short: { full: 200, adv: 100 },
-            long: { full: 500, adv: 250 },
-            motion: { full: 400, adv: 200 },
-            thumbnail: { full: 100, adv: 50 },
-            sound: { full: 200, adv: 100 },
-            color: { full: 175, adv: 88 }
+            short: { full: 200 },
+            long: { full: 500 },
+            motion: { full: 400 },
+            thumbnail: { full: 100 },
+            sound: { full: 200 },
+            color: { full: 175 }
         };
 
         if (!userState[clientId]) {
@@ -70,7 +71,7 @@ module.exports = async function(req, res) {
         const state = userState[clientId];
 
         // 🛠 MEMORY WIPE & RESTART: If they finished an order and come back to chat again later
-        if (state.step === "done" && message !== "FINAL_PAYMENT_DONE") {
+        if (state.step === "done") {
             state.step = "start";
             state.service = null;
             state.orderId = generateOrderId();
@@ -82,28 +83,8 @@ module.exports = async function(req, res) {
             });
         }
 
-        // 🔥 SECURITY LOCK: Final Payment can ONLY be triggered if they are in the "upload" step
-        if (message === "FINAL_PAYMENT_DONE") {
-            if (state.step === "upload") {
-                state.step = "done";
-                return res.json({
-                    reply: `Order ID: ${state.orderId}\n\nThanks for fulfilling the payment and giving us a chance to serve you 🙌\n\nYour final bill will be emailed shortly.`,
-                    clearHistory: true // Wipes their chat so they can start a new order next time
-                });
-            } else {
-                return res.json({
-                    reply: "You can only submit a remaining payment for an active order that is currently in progress."
-                });
-            }
-        }
-
-        // FINAL LOCK (Bot stays silent if order is complete and they haven't said a new greeting yet)
-        if (state.step === "done") {
-            return res.json({ reply: "" });
-        }
-
-        // EXIT INTENT (Prevent cancelling if they are currently uploading files or paying)
-        if (["no", "cancel", "don't", "dont", "not interested", "stop"].some(w => msg.includes(w)) && state.step !== "upload" && state.step !== "form") {
+        // EXIT INTENT (Prevent cancelling if they are currently submitting the form)
+        if (["no", "cancel", "don't", "dont", "not interested", "stop"].some(w => msg.includes(w)) && state.step !== "form") {
             state.step = "done";
             return res.json({
                 reply: `I’m a bit sad we couldn’t create something this time 😔\nFeel free to come back anytime when you're ready.`,
@@ -137,7 +118,7 @@ module.exports = async function(req, res) {
                 state.step = "confirm";
 
                 return res.json({
-                    reply: `Order ID: ${state.orderId}\n\nYou've selected *${name}* 🎯\n\n💰 Price: ₹${data.full}\n💳 Advance: ₹${data.adv}\n\n${isNewUser ? "🎉 New user discount applied\n\n" : ""}⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 One revision allowed\n\nType "pay" to proceed.`
+                    reply: `Order ID: ${state.orderId}\n\nYou've selected *${name}* 🎯\n\n💰 Total Price: ₹${data.full}\n*(Full payment required upfront. 100% refund if not satisfied)*\n\n${isNewUser ? "🎉 New user discount applied\n\n" : ""}⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 Revisions included\n\nType "pay" to proceed.`
                 });
             }
 
@@ -152,10 +133,10 @@ module.exports = async function(req, res) {
             state.step = "payment_pending";
 
             const data = pricing[state.service];
-            const payment = generateUpiData(data.adv);
+            const payment = generateUpiData(data.full);
 
             return res.json({
-                reply: `Order ID: ${state.orderId}\n\nPay ₹${data.adv} advance 👇\n\nAfter payment, please type "done" or "paid" here.`,
+                reply: `Order ID: ${state.orderId}\n\nPay the full upfront amount of ₹${data.full} 👇\n\nAfter payment, please type "done" or "paid" here.`,
                 paymentUrl: payment.upiString,
                 qrUrl: payment.qrUrl
             });
@@ -170,7 +151,7 @@ module.exports = async function(req, res) {
                 state.step = "form";
 
                 return res.json({
-                    reply: `Order ID: ${state.orderId}\n\nGreat! ✅\n\n📌 Fill the Contact Form on the website\n📸 Attach payment screenshot\n🎟 Apply referral code (10% off on remaining payment)\n\n🧾 Invoice will be sent to your email shortly.`
+                    reply: `Order ID: ${state.orderId}\n\nGreat! ✅\n\n📌 Fill the Contact Form on the website\n📸 Attach your full payment screenshot\n\n🧾 Invoice will be sent to your email shortly.`
                 });
             }
 
@@ -179,26 +160,19 @@ module.exports = async function(req, res) {
             });
         }
 
-        // FORM LOOP
+        // FINAL FORM SUBMIT STEP
         if (state.step === "form") {
             if (message !== "FORM_SUBMITTED") {
                 return res.json({
-                    reply: "Please submit the Contact Form on the website to continue the process."
+                    reply: "Please submit the Contact Form on the website to finalize your order."
                 });
             }
 
-            state.step = "upload";
+            state.step = "done";
 
             return res.json({
-                reply: `Order ID: ${state.orderId}\n\nGreat! ✅\n\n📂 Send your raw files as DOCUMENTS:\n\nWhatsApp: 7602679995\nOR\nEmail: zyroeditz.official@gmail.com\n\n💰 When the project is complete, you can pay the remaining amount using the form's "Remaining Payment" option.\n\n📞 Support:\nPHONE: +917602679995\nEMAIL: zyroeditz.official@gmail.com\nMon–Fri, 9 AM – 5 PM`
-            });
-        }
-
-        // STEP FINAL BEFORE PAYMENT COMPLETE
-        if (state.step === "upload") {
-            if (message === "FORM_SUBMITTED") return res.json({ reply: "You've already submitted the details. Send your raw files to WhatsApp!" });
-            return res.json({
-                reply: "Your order is in progress! 🎬\n\nWhen you're ready to make the final payment, please select 'Remaining Payment' in the Contact Form."
+                reply: `Order ID: ${state.orderId}\n\nOrder Confirmed! ✅\n\n📂 Send your raw files as DOCUMENTS to begin:\n\nWhatsApp: +91 7602679995\nOR\nEmail: zyroeditz.official@gmail.com\n\n📞 Support:\nPHONE: +91 7602679995\nEMAIL: zyroeditz.official@gmail.com\nMon–Fri, 9 AM – 5 PM`,
+                clearHistory: true
             });
         }
 
