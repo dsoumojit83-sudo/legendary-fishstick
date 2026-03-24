@@ -21,8 +21,6 @@
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="ZyroEditz">
     
-    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
-
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -38,6 +36,8 @@
       }
     }
     </script>
+    
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1549,10 +1549,7 @@
                 function renderHistory() {
                     messages.innerHTML = ''; // Clear loading state
                     chatHistory.forEach(msg => {
-                        // Ignore old UPI memory states, only render normal chat text
-                        if (!msg.isPaymentUI) {
-                            addMessageToDOM(msg.text, msg.isUser);
-                        }
+                        addMessageToDOM(msg.text, msg.isUser);
                     });
                 }
 
