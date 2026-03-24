@@ -76,7 +76,7 @@ module.exports = async function(req, res) {
         const msg = message.toLowerCase().trim();
 
         const pricing = {
-            short: { full: 200 },
+            short: { full: 1 },
             long: { full: 500 },
             motion: { full: 400 },
             thumbnail: { full: 100 },
