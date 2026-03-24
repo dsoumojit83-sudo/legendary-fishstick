@@ -21,6 +21,8 @@
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="ZyroEditz">
     
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -841,12 +843,6 @@
                             </div>
 
                             <div class="mt-5">
-                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="paymentProof">Payment Proof (JPG/PNG, Max 2MB) <span class="text-[#ff1a1a]">*</span></label>
-                                <input class="input-field w-full px-4 py-3 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#ff1a1a]/10 file:text-[#ff1a1a] hover:file:bg-[#ff1a1a]/20" type="file" id="paymentProof" name="paymentProof" accept=".jpg, .jpeg, .png" required>
-                                <p id="fileError" class="text-xs text-red-400 mt-2 hidden font-bold tracking-wide"></p>
-                            </div>
-
-                            <div class="mt-5">
                                 <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message / Project Brief <span class="text-[#ff1a1a]" id="messageAsterisk">*</span></label>
                                 <textarea class="input-field w-full px-4 py-3 min-h-[140px] resize-y" id="message" name="message" required placeholder="Tell me about your project, deadline, and references... *"></textarea>
                             </div>
@@ -869,7 +865,7 @@
             <div class="space-y-8 text-gray-400 text-sm leading-relaxed">
                 <div>
                     <h3 class="text-[#ff1a1a] uppercase tracking-widest text-xs font-bold mb-3">1. Information We Collect</h3>
-                    <p>We collect information you provide directly to us when utilizing our contact forms or communicating via email or chat. This includes your name, email address, project briefs, payment proof uploads, and custom messages. We also collect raw footage, brand assets, and content materials required to execute your project.</p>
+                    <p>We collect information you provide directly to us when utilizing our contact forms or communicating via email or chat. This includes your name, email address, project briefs, and custom messages. We also collect raw footage, brand assets, and content materials required to execute your project.</p>
                 </div>
                 
                 <div>
@@ -994,6 +990,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const cashfree = Cashfree({ mode: "production" }); // Cashfree Setup
             
             // ==================== INITIALIZATION FUNCTIONS ====================
             function initCustomCursor() {
@@ -1260,8 +1257,6 @@
                 const form = document.getElementById('contactForm');
                 const statusEl = document.getElementById('contactStatus');
                 const submitBtn = document.getElementById('contactSubmit');
-                const fileInput = document.getElementById('paymentProof');
-                const fileError = document.getElementById('fileError');
                 const messageInput = document.getElementById('message');
                 
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyXiGjgwTlvvsqZR_WPTYIknDt_ATMxz4jkzJhA872E5wElV6SwUSIsnjFo8o6JmXT/exec'; 
@@ -1334,39 +1329,13 @@
                 // ------------------------------------------
 
                 if (form && statusEl && submitBtn) {
-                    if (fileInput) {
-                        fileInput.addEventListener('change', function() {
-                            const file = this.files[0];
-                            if (file) {
-                                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-                                if (!validTypes.includes(file.type)) {
-                                    fileError.textContent = 'ERROR: Only JPG, JPEG, or PNG formats are allowed.';
-                                    fileError.classList.remove('hidden');
-                                    this.value = ''; 
-                                    submitBtn.disabled = true;
-                                } else if (file.size > 2 * 1024 * 1024) { 
-                                    fileError.textContent = 'ERROR: Image size too large. Must be under 2MB.';
-                                    fileError.classList.remove('hidden');
-                                    this.value = ''; 
-                                    submitBtn.disabled = true;
-                                } else {
-                                    fileError.classList.add('hidden');
-                                    submitBtn.disabled = false;
-                                }
-                            } else {
-                                fileError.classList.add('hidden');
-                                submitBtn.disabled = false;
-                            }
-                        });
-                    }
-
                     form.addEventListener('submit', function (e) {
                         e.preventDefault();
                         
                         submitBtn.disabled = true;
                         submitBtn.classList.add('opacity-70');
                         statusEl.className = 'text-xs tracking-widest text-white';
-                        statusEl.innerHTML = `<span class="flex items-center gap-2"><span class="yt-spinner"></span>Uploading securely<span id="loadingDots" class="inline-block w-4 text-left"></span></span>`;
+                        statusEl.innerHTML = `<span class="flex items-center gap-2"><span class="yt-spinner"></span>Submitting securely<span id="loadingDots" class="inline-block w-4 text-left"></span></span>`;
 
                         let dotCount = 0;
                         const loadingDots = document.getElementById('loadingDots');
@@ -1385,8 +1354,6 @@
                             generatedReferralCode: generatedReferralCode 
                         };
 
-                        const file = fileInput ? fileInput.files[0] : null;
-                        
                         const sendData = (payload) => {
                             fetch(GOOGLE_SCRIPT_URL, {
                                 method: 'POST',
@@ -1416,18 +1383,7 @@
                             });
                         };
 
-                        if (file) {
-                            const reader = new FileReader();
-                            reader.onload = function(event) {
-                                formData.fileData = event.target.result.split(',')[1];
-                                formData.fileName = file.name;
-                                formData.mimeType = file.type;
-                                sendData(formData);
-                            };
-                            reader.readAsDataURL(file);
-                        } else {
-                            sendData(formData);
-                        }
+                        sendData(formData);
                     });
                 }
             }
@@ -1593,9 +1549,8 @@
                 function renderHistory() {
                     messages.innerHTML = ''; // Clear loading state
                     chatHistory.forEach(msg => {
-                        if (msg.isPaymentUI) {
-                            renderPaymentUI(msg.upiUrl, msg.qrUrl, false); // false = don't re-save to memory
-                        } else {
+                        // Ignore old UPI memory states, only render normal chat text
+                        if (!msg.isPaymentUI) {
                             addMessageToDOM(msg.text, msg.isUser);
                         }
                     });
@@ -1627,28 +1582,6 @@
                     addMessageToDOM(text, isUser);
                     chatHistory.push({ text: text, isUser: isUser });
                     localStorage.setItem('zyro_chat_history', JSON.stringify(chatHistory));
-                }
-
-                function renderPaymentUI(upiUrl, qrUrl, saveToHistory = true) {
-                    const btnContainer = document.createElement('div');
-                    btnContainer.className = 'flex flex-col gap-3 mt-3 ml-8 w-full max-w-[85%]';
-                    
-                    let html = '';
-                    if (qrUrl) {
-                        html += `<div class="bg-white p-2 rounded-xl w-fit border border-white/20 shadow-lg shadow-[#ff1a1a]/20 transition-transform duration-300 hover:scale-105"><img src="${qrUrl}" alt="Scan to Pay" class="w-40 h-40 object-cover rounded-lg mix-blend-multiply qr-img"><p class="text-center text-black text-[10px] font-bold mt-1.5 uppercase tracking-wider">Scan & Pay</p></div>`;
-                    }
-
-                    btnContainer.innerHTML = html;
-                    messages.appendChild(btnContainer);
-                    
-                    const imgNode = btnContainer.querySelector('.qr-img');
-                    if (imgNode) { imgNode.onload = () => { messages.scrollTop = messages.scrollHeight; }; } 
-                    else { messages.scrollTop = messages.scrollHeight; }
-
-                    if (saveToHistory) {
-                        chatHistory.push({ isPaymentUI: true, upiUrl: upiUrl, qrUrl: qrUrl });
-                        localStorage.setItem('zyro_chat_history', JSON.stringify(chatHistory));
-                    }
                 }
 
                 function toggleChat() {
@@ -1726,8 +1659,12 @@
 
                             addMessage(data.reply, false);
                             
-                            if (data.paymentUrl || data.qrUrl) {
-                                renderPaymentUI(data.paymentUrl, data.qrUrl, true);
+                            // TRIGGER PROFESSIONAL CASHFREE CHECKOUT MODAL
+                            if (data.paymentSessionId) {
+                                cashfree.checkout({
+                                    paymentSessionId: data.paymentSessionId,
+                                    redirectTarget: "_self" 
+                                });
                             }
                         } else if (!response.ok) {
                             addMessage("Sorry, my systems are updating right now. Please email Zyro directly at zyroeditz.official@gmail.com!", false);
