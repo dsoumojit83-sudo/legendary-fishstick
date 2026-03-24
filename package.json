@@ -1,12 +1,13 @@
 {
   "name": "zyroeditz-backend",
   "version": "1.0.0",
-  "description": "ZyroEditz AI Assistant with Cashfree Integration",
+  "description": "ZyroEditz AI Assistant",
   "main": "api/chat.js",
   "scripts": {
     "start": "node api/chat.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
     "axios": "^1.6.0",
     "openai": "^4.0.0"
   },
