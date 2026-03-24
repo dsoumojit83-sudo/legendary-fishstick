@@ -100,7 +100,7 @@ module.exports = async function(req, res) {
                 state.step = "confirm";
 
                 return res.json({
-                    reply: `Order ID: ${state.orderId}\n\nYou've selected *${name}* 🎯\n\n💰 Total Price: ₹${data.full}\n*(Full payment required upfront. 100% refund if not satisfied)*\n\n⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 Revisions included\n\nType "pay" to proceed.`
+                    reply: `Order ID: ${state.orderId}\n\nYou've selected *${name}* 🎯\n\n💰 Total Price: ₹${data.full}\n*(Full payment required upfront. 100% refund if not satisfied)*\n🎁 *Apply referral code on the website form for 10% cashback!*\n\n⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 Revisions included\n\nType "pay" to proceed.`
                 });
             }
 
@@ -134,7 +134,7 @@ module.exports = async function(req, res) {
                 state.step = "form";
 
                 return res.json({
-                    reply: `Order ID: ${state.orderId}\n\nGreat! ✅\n\n📌 Fill the Contact Form on the website\n📸 Attach your full payment screenshot\n\n🧾 Invoice will be sent to your email shortly.`
+                    reply: `Order ID: ${state.orderId}\n\nGreat! ✅\n\n📌 Fill the Contact Form on the website\n💸 Apply your referral code for 10% cashback (sent to your original payment source in 2 business days)\n📸 Attach your full payment screenshot\n\n🧾 Invoice will be sent to your email shortly.`
                 });
             }
 
