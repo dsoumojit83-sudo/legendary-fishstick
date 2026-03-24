@@ -1,10 +1,14 @@
 {
-  "name": "zyroeditz-ai-bot",
-  "version": "1.5.0",
-  "description": "ZyroEditz Bot - Groq Cloud Direct",
+  "name": "zyroeditz-backend",
+  "version": "1.0.0",
+  "description": "ZyroEditz AI Assistant with Cashfree Integration",
   "main": "api/chat.js",
+  "scripts": {
+    "start": "node api/chat.js"
+  },
   "dependencies": {
-    "openai": "^4.28.0"
+    "axios": "^1.6.0",
+    "openai": "^4.0.0"
   },
   "engines": {
     "node": "24.x"
