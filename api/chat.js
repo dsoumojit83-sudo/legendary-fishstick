@@ -59,6 +59,12 @@ const createCashfreeOrder = async (amount, orderId, customerId) => {
     }
 };
 
+// HELPER FUNCTION: Safely save memory to Supabase without crashing
+const saveState = async (state) => {
+    const { error } = await supabase.from('client_states').upsert(state);
+    if (error) console.error("Database Save Error:", error.message);
+};
+
 module.exports = async function(req, res) {
 
     if (req.method !== 'POST') {
@@ -85,7 +91,6 @@ module.exports = async function(req, res) {
             .eq('client_id', clientId)
             .single();
 
-        // If the table doesn't exist yet, we fallback to memory, but try to use DB
         let state;
         if (fetchError || !clientData) {
             state = {
@@ -94,8 +99,7 @@ module.exports = async function(req, res) {
                 service: null,
                 order_id: generateOrderId()
             };
-            // Attempt to insert, ignore if it fails due to table missing
-            await supabase.from('client_states').upsert(state).catch(()=>console.log("State save failed"));
+            await saveState(state);
         } else {
             state = clientData;
         }
@@ -105,7 +109,7 @@ module.exports = async function(req, res) {
             state.step = "select";
             state.service = null;
             state.order_id = generateOrderId();
-            await supabase.from('client_states').upsert(state).catch(()=>{});
+            await saveState(state);
         }
 
         // MEMORY WIPE & RESTART
@@ -113,7 +117,7 @@ module.exports = async function(req, res) {
             state.step = "select";
             state.service = null;
             state.order_id = generateOrderId();
-            await supabase.from('client_states').upsert(state).catch(()=>{});
+            await saveState(state);
             
             return res.json({
                 reply: `Hey!👋 Zyro Assistant is here. What kind of project can I help you with today?\nJust type the service you need from the options below:\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade`,
@@ -125,7 +129,7 @@ module.exports = async function(req, res) {
         // EXIT INTENT
         if (["no", "cancel", "don't", "dont", "not interested", "stop"].some(w => msg.includes(w)) && state.step !== "form") {
             state.step = "done";
-            await supabase.from('client_states').upsert(state).catch(()=>{});
+            await saveState(state);
             return res.json({
                 reply: `I’m a bit sad we couldn’t create something this time 😔\nFeel free to come back anytime when you're ready.`,
                 clearHistory: true,
@@ -149,15 +153,17 @@ module.exports = async function(req, res) {
                 state.step = "confirm";
                 
                 // 3. Save Order to Supabase Database
-                await supabase.from('orders').upsert({
+                const { error: orderError } = await supabase.from('orders').upsert({
                     order_id: state.order_id,
                     client_id: clientId,
                     service: state.service,
                     amount: data.full,
                     status: 'pending'
                 });
+                
+                if (orderError) console.error("Order Creation Error:", orderError.message);
 
-                await supabase.from('client_states').upsert(state).catch(()=>{});
+                await saveState(state);
 
                 return res.json({
                     reply: `Order ID: ${state.order_id}\n\nYou've selected *${name}* 🎯\n\n💰 Total Price: ₹${data.full}\n*(Full payment required upfront. 100% refund if not satisfied)*\n🎁 *Apply coupon code on the website form for 10% cashback!*\n\n⏱ Delivery:\n• Thumbnails – Same day\n• Others – 24–48 hours\n\n🔁 Revisions included\n\nType "pay" to proceed.`,
@@ -171,7 +177,7 @@ module.exports = async function(req, res) {
         // STEP 2: STRICT "PAY" TRIGGER ONLY (CASHFREE INTEGRATED)
         if (state.step === "confirm" && msg.includes("pay")) {
             state.step = "payment_pending";
-            await supabase.from('client_states').upsert(state).catch(()=>{});
+            await saveState(state);
 
             const data = pricing[state.service];
             const sessionId = await createCashfreeOrder(data.full, state.order_id, clientId);
@@ -196,7 +202,7 @@ module.exports = async function(req, res) {
             // But we keep this for the chatbot conversational flow.
             if (["yes", "done", "paid", "ok", "sent"].some(w => msg.includes(w))) {
                 state.step = "form";
-                await supabase.from('client_states').upsert(state).catch(()=>{});
+                await saveState(state);
 
                 return res.json({
                     reply: `Order ID: ${state.order_id}\n\nGreat! ✅\n\n📌 Fill the Contact Form on the website\n💸 Apply your coupon code for 10% cashback\n\n🧾 Our system will verify the payment automatically and send your invoice shortly.`,
@@ -214,7 +220,7 @@ module.exports = async function(req, res) {
             }
 
             state.step = "done";
-            await supabase.from('client_states').upsert(state).catch(()=>{});
+            await saveState(state);
 
             return res.json({
                 reply: `Order ID: ${state.order_id}\n\nOrder Confirmed! ✅\n\n📂 Send your raw files as DOCUMENTS to begin:\n\nWhatsApp: +91 7602679995\nOR\nEmail: zyroeditz.official@gmail.com\n\n📞 Support:\nPHONE: +91 7602679995\nEMAIL: zyroeditz.official@gmail.com\nMon–Fri, 9 AM – 5 PM`,
