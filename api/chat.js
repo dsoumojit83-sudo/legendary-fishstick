@@ -153,9 +153,10 @@ module.exports = async function(req, res) {
 
             state.step = "done";
 
+            // THIS IS WHERE IT WIPES THE SCREEN BEFORE SHOWING THE MESSAGE
             return res.json({
                 reply: `Order ID: ${state.orderId}\n\nOrder Confirmed! ✅\n\n📂 Send your raw files as DOCUMENTS to begin:\n\nWhatsApp: +91 7602679995\nOR\nEmail: zyroeditz.official@gmail.com\n\n📞 Support:\nPHONE: +91 7602679995\nEMAIL: zyroeditz.official@gmail.com\nMon–Fri, 9 AM – 5 PM`,
-                clearHistory: true
+                clearHistory: true 
             });
         }
 
