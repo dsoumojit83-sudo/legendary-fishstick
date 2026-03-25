@@ -137,7 +137,7 @@
                     <i data-lucide="folder-video" class="w-5 h-5"></i>
                     <span class="font-medium text-sm">All Projects</span>
                 </button>
-                <button onclick="alert('Client CRM Module coming in next update.')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all border border-transparent">
+                <button onclick="switchView('crm-view', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all border border-transparent">
                     <i data-lucide="users" class="w-5 h-5"></i>
                     <span class="font-medium text-sm">Clients CRM</span>
                 </button>
@@ -253,7 +253,7 @@
                     <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
                         <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
                             <h3 class="text-lg font-bold text-white">Project Masterlist</h3>
-                            <div class="relative">
+                            <div class="relative hidden sm:block">
                                 <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
                                 <input type="text" placeholder="Search orders..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a]">
                             </div>
@@ -271,6 +271,34 @@
                                 </thead>
                                 <tbody id="full-projects-tbody" class="text-sm">
                                     <tr><td colspan="5" class="p-4"><div class="skeleton h-10 w-full"></div></td></tr>
+                                    <tr><td colspan="5" class="p-4"><div class="skeleton h-10 w-full"></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="crm-view" class="view-section">
+                    <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
+                        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
+                            <h3 class="text-lg font-bold text-white">Client Database</h3>
+                            <div class="relative hidden sm:block">
+                                <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" placeholder="Search clients..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a]">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-left border-collapse min-w-[800px]">
+                                <thead class="bg-black/40 border-b border-white/5">
+                                    <tr>
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Client</th>
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Total Projects</th>
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Lifetime Value</th>
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Last Active</th>
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="crm-tbody" class="text-sm">
                                     <tr><td colspan="5" class="p-4"><div class="skeleton h-10 w-full"></div></td></tr>
                                 </tbody>
                             </table>
@@ -406,7 +434,8 @@
             // Update Header Title
             const titles = {
                 'dashboard-view': 'Command Center',
-                'projects-view': 'Project Masterlist'
+                'projects-view': 'Project Masterlist',
+                'crm-view': 'Client Database'
             };
             document.getElementById('header-title').innerText = titles[viewId];
 
@@ -449,8 +478,9 @@
                 document.getElementById('kpi-active').textContent = data.activeProjects;
                 document.getElementById('kpi-conv').textContent = `${data.successRate}%`;
 
-                // 2. Render Tables
+                // 2. Render Tables & CRM
                 renderTables();
+                renderCRM();
 
                 // 3. Initialize Chart
                 if(data.chartData) initChart(data.chartData);
@@ -460,6 +490,7 @@
                 const errRow = `<tr><td colspan="5" class="p-4 text-center text-[#ff1a1a] text-xs font-mono">Data sync failed. Check backend connection.</td></tr>`;
                 document.getElementById('dash-projects-tbody').innerHTML = errRow;
                 document.getElementById('full-projects-tbody').innerHTML = errRow;
+                document.getElementById('crm-tbody').innerHTML = errRow;
             } finally {
                 if(refreshIcon) refreshIcon.classList.remove('animate-spin');
             }
@@ -534,6 +565,67 @@
                         <td class="p-4 font-semibold text-[#ff1a1a]">₹${order.amount}</td>
                         <td class="p-4 text-gray-400 text-sm">${orderDate}</td>
                         <td class="p-4 text-right"><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderCRM() {
+            const crmTbody = document.getElementById('crm-tbody');
+            crmTbody.innerHTML = '';
+
+            if(globalOrdersData.length === 0) {
+                crmTbody.innerHTML = `<tr><td colspan=\"5\" class=\"p-8 text-center text-gray-500 font-mono text-xs\">No client data available.</td></tr>`;
+                return;
+            }
+
+            // Aggregate Data for CRM
+            const clientsMap = {};
+            globalOrdersData.forEach(order => {
+                const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'New Client' : order.client;
+                
+                if(!clientsMap[clientName]) {
+                    clientsMap[clientName] = {
+                        name: clientName,
+                        totalSpent: 0,
+                        projectCount: 0,
+                        lastActive: new Date(order.created_at || Date.now())
+                    };
+                }
+                
+                clientsMap[clientName].projectCount += 1;
+                clientsMap[clientName].totalSpent += Number(order.amount) || 0;
+                
+                const orderDate = new Date(order.created_at || Date.now());
+                if(orderDate > clientsMap[clientName].lastActive) {
+                    clientsMap[clientName].lastActive = orderDate;
+                }
+            });
+
+            // Convert to array and sort by Highest Lifetime Value
+            const sortedClients = Object.values(clientsMap).sort((a, b) => b.totalSpent - a.totalSpent);
+
+            sortedClients.forEach(client => {
+                const avatar = getAvatarHTML(client.name);
+                const lastActiveStr = client.lastActive.toLocaleDateString();
+
+                crmTbody.innerHTML += `
+                    <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group cursor-pointer">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                ${avatar}
+                                <div>
+                                    <div class="font-medium text-white">${client.name}</div>
+                                    <div class="font-mono text-[10px] text-gray-500">Lifetime Client</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4 text-gray-300 text-sm font-bold pl-8">${client.projectCount}</td>
+                        <td class="p-4 font-semibold text-[#ff1a1a]">₹${client.totalSpent}</td>
+                        <td class="p-4 text-gray-400 text-sm">${lastActiveStr}</td>
+                        <td class="p-4 text-right">
+                            <button class="px-4 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-colors" onclick="alert('Email system integration pending. Contacting ${client.name}...')">Contact</button>
+                        </td>
                     </tr>
                 `;
             });
@@ -703,6 +795,13 @@
                 }
                 requestAnimationFrame(animateCanvas);
             }
+
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(initCanvas, 200);
+            }, {passive: true});
+            
             initCanvas(); animateCanvas();
         }
 
