@@ -26,7 +26,8 @@ const generateOrderId = () => {
     return "ZYRO" + Date.now() + Math.random().toString(16).slice(2,6).toUpperCase();
 };
 
-const createCashfreeOrder = async (amount, orderId, customerId) => {
+// ADDED: Updated parameters to accept name, email, and phone dynamically
+const createCashfreeOrder = async (amount, orderId, customerId, customerName, customerEmail, customerPhone) => {
     try {
         const response = await axios.post(
             'https://api.cashfree.com/pg/orders',
@@ -36,7 +37,9 @@ const createCashfreeOrder = async (amount, orderId, customerId) => {
                 order_currency: "INR",
                 customer_details: {
                     customer_id: customerId,
-                    customer_phone: "9999999999" 
+                    customer_name: customerName || "Zyro Client",
+                    customer_email: customerEmail || "zyroeditz.official@gmail.com",
+                    customer_phone: customerPhone // Now securely pulling the dynamic phone number
                 },
                 order_meta: {
                     return_url: "https://zyroeditz.vercel.app/?order_id={order_id}",
@@ -59,7 +62,6 @@ const createCashfreeOrder = async (amount, orderId, customerId) => {
     }
 };
 
-// HELPER FUNCTION: Safely save memory to Supabase without crashing
 const saveState = async (state) => {
     const { error } = await supabase.from('client_states').upsert(state);
     if (error) console.error("Database Save Error:", error.message);
@@ -76,13 +78,16 @@ module.exports = async function(req, res) {
         // NEW LOGIC: Intercept direct payment requests from the HTML Wizard
         // ====================================================================
         if (req.body.service && req.body.price && req.body.orderId) {
-            const { service, price, name, email, orderId } = req.body;
+            
+            // ADDED: Destructure the phone variable
+            const { service, price, name, email, phone, orderId } = req.body;
             
             // 1. Save Order to Supabase Database
             const { error: orderError } = await supabase.from('orders').upsert({
                 order_id: orderId,
                 client_email: email,
                 client_name: name,
+                client_phone: phone, // Save the new phone number to the database!
                 service_type: service, 
                 amount: parseInt(price),
                 status: 'pending'
@@ -92,7 +97,9 @@ module.exports = async function(req, res) {
 
             // 2. Create Cashfree Order immediately
             const customerId = orderId.replace('ZYRO_', 'CUST_').substring(0, 50);
-            const sessionId = await createCashfreeOrder(parseInt(price), orderId, customerId);
+            
+            // Pass all the customer details to Cashfree
+            const sessionId = await createCashfreeOrder(parseInt(price), orderId, customerId, name, email, phone);
 
             if (!sessionId) {
                 return res.status(500).json({ error: "Failed to generate Cashfree session." });
@@ -105,8 +112,6 @@ module.exports = async function(req, res) {
         // ====================================================================
         // ORIGINAL LOGIC: The Conversational Chatbot State Machine
         // ====================================================================
-        
-        // ADDED FIX: Default message to "" so .toLowerCase() never crashes again
         const { message = "", clientId = "default_user", stepOverride } = req.body;
         const msg = message.toLowerCase().trim();
 
@@ -119,7 +124,6 @@ module.exports = async function(req, res) {
             color: { full: 175 }
         };
 
-        // Fetch or Create Client State in Database
         let { data: clientData, error: fetchError } = await supabase
             .from('client_states')
             .select('*')
@@ -139,7 +143,6 @@ module.exports = async function(req, res) {
             state = clientData;
         }
 
-        // Allow frontend to force a reset
         if (stepOverride === "select") {
             state.step = "select";
             state.service = null;
@@ -147,7 +150,6 @@ module.exports = async function(req, res) {
             await saveState(state);
         }
 
-        // MEMORY WIPE & RESTART
         if (state.step === "done") {
             state.step = "select";
             state.service = null;
@@ -161,7 +163,6 @@ module.exports = async function(req, res) {
             });
         }
 
-        // EXIT INTENT
         if (["no", "cancel", "don't", "dont", "not interested", "stop"].some(w => msg.includes(w)) && state.step !== "form") {
             state.step = "done";
             await saveState(state);
@@ -172,7 +173,6 @@ module.exports = async function(req, res) {
             });
         }
 
-        // STEP 1: SERVICE SELECTION
         if (state.step === "select") {
             if (msg.includes("short")) state.service = "short";
             else if (msg.includes("long")) state.service = "long";
@@ -187,7 +187,6 @@ module.exports = async function(req, res) {
 
                 state.step = "confirm";
                 
-                // Save Order to Supabase Database
                 const { error: orderError } = await supabase.from('orders').upsert({
                     order_id: state.order_id,
                     client_id: clientId,
@@ -209,13 +208,15 @@ module.exports = async function(req, res) {
             return res.json({ reply: "Please choose a service from the options above to continue.", currentStep: state.step });
         }
 
-        // STEP 2: STRICT "PAY" TRIGGER ONLY (CASHFREE INTEGRATED)
         if (state.step === "confirm" && msg.includes("pay")) {
             state.step = "payment_pending";
             await saveState(state);
 
             const data = pricing[state.service];
-            const sessionId = await createCashfreeOrder(data.full, state.order_id, clientId);
+            
+            // Note: Since this path doesn't know the user's details yet, it passes empty values so the defaults kick in
+            const customerId = state.order_id.replace('ZYRO_', 'CUST_').substring(0, 50);
+            const sessionId = await createCashfreeOrder(data.full, state.order_id, customerId, null, null, null);
 
             if (!sessionId) {
                 return res.json({ reply: "⚠️ Payment gateway error. Please try again in a few seconds.", currentStep: state.step });
@@ -230,7 +231,6 @@ module.exports = async function(req, res) {
             return res.json({ reply: 'To secure your spot and open the payment gateway, please type "pay".', currentStep: state.step });
         }
 
-        // STEP 3: PAYMENT CONFIRM
         if (state.step === "payment_pending") {
             if (["yes", "done", "paid", "ok", "sent"].some(w => msg.includes(w))) {
                 state.step = "form";
@@ -245,7 +245,6 @@ module.exports = async function(req, res) {
             return res.json({ reply: "Please complete the payment and confirm by typing 'done' here.", currentStep: state.step });
         }
 
-        // FINAL FORM SUBMIT STEP
         if (state.step === "form") {
             if (message !== "FORM_SUBMITTED") {
                 return res.json({ reply: "Please submit the Contact Form on the website to finalize your order.", currentStep: state.step });
