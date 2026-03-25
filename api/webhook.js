@@ -1,166 +1,97 @@
+const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
-const nodemailer = require('nodemailer');
-const PDFDocument = require('pdfkit');
-const crypto = require('crypto');
 
-// Connect to Supabase
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_KEY
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Configure the Gmail Transporter
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS // Your 16-character App Password
-    }
-});
+const generateOrderId = () => {
+    return "ZYRO" + Date.now() + Math.random().toString(16).slice(2,6).toUpperCase();
+};
 
-// The PDF Factory (Generates straight to RAM)
-const createInvoiceBuffer = (orderId, amount) => {
-    return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ margin: 50 });
-        const buffers = [];
-
-        doc.on('data', buffers.push.bind(buffers));
-        doc.on('end', () => resolve(Buffer.concat(buffers)));
-        doc.on('error', reject);
-
-        // --- DRAW THE INVOICE ---
-        doc.fontSize(28).font('Helvetica-Bold').fillColor('#ff1a1a').text('ZyroEditz', { align: 'center' });
-        doc.moveDown(0.5);
-        doc.fontSize(12).fillColor('#888888').text('Official Payment Receipt', { align: 'center' });
-        doc.moveDown(3);
-
-        doc.fontSize(16).fillColor('#050505').font('Helvetica-Bold').text('Order Details');
-        doc.moveDown(0.5);
-
-        doc.fontSize(12).font('Helvetica');
-        doc.text(`Order ID: ${orderId}`);
-        doc.text(`Date: ${new Date().toLocaleDateString()}`);
-        doc.text(`Status: PAID IN FULL`);
-
-        doc.moveDown(2);
-        doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor('#e5e5e5').stroke();
-        doc.moveDown(2);
-
-        doc.fontSize(16).font('Helvetica-Bold').fillColor('#000000').text(`Total Paid: ₹${amount}`);
-
-        doc.moveDown(5);
-        doc.font('Helvetica-Oblique').fontSize(10).fillColor('#888888').text(
-            'Thank you for your business. Please upload your raw footage to the MEGA link provided in your email to begin the project.',
-            { align: 'center' }
-        );
-
-        doc.end();
-    });
+// --- DEADLINE TIMETABLE ---
+const deadlineMap = {
+    "Short Form": 2,
+    "Long Form": 4,
+    "Motion Graphics": 4,
+    "Thumbnails": 1,
+    "Sound Design": 3,
+    "Coloring": 1 // Note: This matches the data-service="Coloring" in your frontend
 };
 
 module.exports = async function(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     try {
-        // --- 1. CASHFREE CRYPTOGRAPHIC SECURITY ---
-        const signature = req.headers['x-webhook-signature'];
-        const timestamp = req.headers['x-webhook-timestamp'];
+        const { sessionId, phone, email, name, selectedService, amount } = req.body;
 
-        if (!signature || !timestamp) {
-            console.error("🚨 Missing Cashfree security headers");
-            return res.status(401).send("Unauthorized");
+        // 1. Data Validation
+        if (!name || name.trim().length < 2) return res.status(400).json({ error: "Please provide a valid name.", field: "name" });
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailRegex.test(email)) return res.status(400).json({ error: "Invalid email format.", field: "email" });
+        const phoneRegex = /^\+?[0-9]{10,15}$/;
+        const cleanPhone = phone ? phone.replace(/\s+/g, '') : '';
+        if (!phone || !phoneRegex.test(cleanPhone)) return res.status(400).json({ error: "Please provide a valid 10-digit phone number.", field: "phone" });
+        if (!selectedService || isNaN(parseFloat(amount))) return res.status(400).json({ error: "Invalid pricing data. Please restart the wizard.", field: "system" });
+
+        // 2. Calculate Dynamic Deadline
+        const daysToAdd = deadlineMap[selectedService] || 3; // Default to 3 if unknown
+        const deadlineDate = new Date();
+        deadlineDate.setDate(deadlineDate.getDate() + daysToAdd);
+        const formattedDeadline = deadlineDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+        const orderId = generateOrderId();
+        const numericAmount = parseFloat(amount);
+
+        // 3. Database Insertion (Now includes deadline_date)
+        const { error: dbError } = await supabase.from('orders').insert([{
+            order_id: orderId,
+            client_name: name.trim(),
+            client_email: email.trim(),
+            client_phone: cleanPhone,
+            service: selectedService,
+            amount: numericAmount, 
+            status: 'pending',
+            deadline_date: formattedDeadline
+        }]);
+
+        if (dbError) {
+            console.error("Supabase Insert Failed:", dbError);
+            return res.status(500).json({ error: "Database error. Could not save order.", field: "system" });
         }
 
-        // CRITICAL FIX: Use the raw body buffer for signature verification
-        // Vercel/Next.js and Express often parse the body, destroying the original format.
-        // req.rawBody must be enabled in your server configuration (e.g., bodyParser.raw() or Next.js config)
-        const rawBodyToHash = req.rawBody ? req.rawBody : JSON.stringify(req.body);
-        const dataToHash = timestamp + rawBodyToHash;
-
-        const expectedSignature = crypto
-            .createHmac('sha256', process.env.CASHFREE_SECRET_KEY)
-            .update(dataToHash)
-            .digest('base64');
-
-        if (expectedSignature !== signature) {
-            // NOTE: If you are still getting signature errors, it means your server framework
-            // is not exposing the unparsed raw string/buffer to `req.rawBody`.
-            console.error("🚨 SECURITY ALERT: Invalid Webhook Signature! Expected:", expectedSignature, "Got:", signature);
-            return res.status(403).send("Invalid signature");
-        }
-
-        // --- 2. PROCESS THE VERIFIED PAYMENT ---
-        const payload = req.body;
-        console.log("✅ Verified Webhook received");
-
-        // Check if it's a successful payment
-        // Cashfree webhook structure can vary depending on API version (PAYMENT_SUCCESS_WEBHOOK vs SUCCESS)
-        if (payload.type === 'PAYMENT_SUCCESS_WEBHOOK' || payload.event === 'PAYMENT_SUCCESS') {
-            
-            const orderId = payload.data?.order?.order_id || payload.data?.payment?.order_id;
-            const orderAmount = payload.data?.order?.order_amount || payload.data?.payment?.payment_amount || 0;
-
-            if (!orderId) {
-                 return res.status(400).send("No order ID found in payload");
+        // 4. Secure Cashfree Session
+        const cashfreeResponse = await axios.post(
+            'https://api.cashfree.com/pg/orders',
+            {
+                order_id: orderId,
+                order_amount: numericAmount.toFixed(2), 
+                order_currency: "INR",
+                customer_details: {
+                    customer_id: sessionId || "CUST_" + Date.now(),
+                    customer_name: name.trim(),
+                    customer_email: email.trim(),
+                    customer_phone: cleanPhone
+                },
+                order_meta: {
+                    return_url: "https://zyroeditz.vercel.app/payment-success?order_id={order_id}"
+                }
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-version': '2025-01-01', 
+                    'x-client-id': process.env.CASHFREE_APP_ID,
+                    'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                }
             }
+        );
 
-            // Mark as paid in database
-            const { data: order, error } = await supabase
-                .from('orders')
-                .update({ status: 'paid' })
-                .eq('order_id', orderId)
-                .select()
-                .single();
-
-            if (error || !order) {
-                console.error("Database Error (Order not found or update failed):", error);
-                return res.status(500).send("Database update failed");
-            }
-
-            console.log(`✅ SUCCESS: Order ${orderId} secured and marked PAID in Supabase.`);
-
-            // Generate the PDF in memory
-            const pdfBuffer = await createInvoiceBuffer(orderId, orderAmount);
-
-            // --- 3. SEND GMAIL WITH ATTACHMENT ---
-            if (order.client_email) {
-                await transporter.sendMail({
-                    from: `"ZyroEditz" <${process.env.EMAIL_USER}>`,
-                    to: order.client_email,
-                    subject: `Project Started & Receipt: Order #${orderId}`,
-                    html: `
-                        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                            <h2>Payment Received! Let's get to work.</h2>
-                            <p>Hey there, I've received your full payment for order <strong>#${orderId}</strong>. Your official receipt is attached to this email.</p>
-                            <p><strong>Next Step:</strong> Please upload your raw footage, assets, and project brief to my MEGA folder below:</p>
-                            <br/>
-                            <a href="https://mega.nz/filerequest/I-2hfdO8CCo" style="display: inline-block; padding: 12px 24px; background-color: #ff1a1a; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Upload to MEGA</a>
-                            <br/><br/>
-                            <p>I'll notify you as soon as the first draft is ready for review.</p>
-                            <hr />
-                            <p>Best,<br /><strong>Soumojit Das</strong><br />Founder, ZyroEditz</p>
-                        </div>
-                    `,
-                    attachments: [
-                        {
-                            filename: `ZyroEditz_Receipt_${orderId}.pdf`,
-                            content: pdfBuffer,
-                            contentType: 'application/pdf'
-                        }
-                    ]
-                });
-                console.log(`📧 SUCCESS: MEGA link and PDF receipt sent to ${order.client_email}.`);
-            }
-
-            return res.status(200).send("OK: Payment Processed");
-        }
-
-        return res.status(200).send("OK: Event received but ignored (Not a success event)");
+        return res.status(200).json({ 
+            paymentSessionId: cashfreeResponse.data.payment_session_id,
+            orderId: orderId
+        });
 
     } catch (error) {
-        console.error("Webhook Server Error:", error);
-        return res.status(500).send("Server Error");
+        console.error("Checkout System Error:", error.response?.data || error.message);
+        return res.status(500).json({ error: "Payment gateway unavailable. Please try again.", field: "system" });
     }
 };
