@@ -26,7 +26,6 @@ const generateOrderId = () => {
     return "ZYRO" + Date.now() + Math.random().toString(16).slice(2,6).toUpperCase();
 };
 
-// ADDED: Updated parameters to accept name, email, and phone dynamically
 const createCashfreeOrder = async (amount, orderId, customerId, customerName, customerEmail, customerPhone) => {
     try {
         const response = await axios.post(
@@ -39,7 +38,7 @@ const createCashfreeOrder = async (amount, orderId, customerId, customerName, cu
                     customer_id: customerId,
                     customer_name: customerName || "Zyro Client",
                     customer_email: customerEmail || "zyroeditz.official@gmail.com",
-                    customer_phone: customerPhone // Now securely pulling the dynamic phone number
+                    customer_phone: customerPhone || "9999999999" 
                 },
                 order_meta: {
                     return_url: "https://zyroeditz.vercel.app/?order_id={order_id}",
@@ -79,15 +78,21 @@ module.exports = async function(req, res) {
         // ====================================================================
         if (req.body.service && req.body.price && req.body.orderId) {
             
-            // ADDED: Destructure the phone variable
             const { service, price, name, email, phone, orderId } = req.body;
             
-            // 1. Save Order to Supabase Database
+            // FORMAT FIX: Clean the phone number for Cashfree
+            // This strips any +91 or spaces, and grabs just the last 10 digits
+            let cleanPhone = phone ? phone.replace(/\D/g, '') : "9999999999";
+            if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
+            if (cleanPhone.length < 10) cleanPhone = "9999999999"; // Fallback to avoid crashes
+
+            // DATABASE FIX: Add client_id to satisfy your table constraints
             const { error: orderError } = await supabase.from('orders').upsert({
                 order_id: orderId,
+                client_id: orderId, // Added this line to fix the null constraint!
                 client_email: email,
                 client_name: name,
-                client_phone: phone, // Save the new phone number to the database!
+                client_phone: phone, // We save their original format to the DB
                 service_type: service, 
                 amount: parseInt(price),
                 status: 'pending'
@@ -95,17 +100,15 @@ module.exports = async function(req, res) {
             
             if (orderError) console.error("Order Creation Error:", orderError.message);
 
-            // 2. Create Cashfree Order immediately
             const customerId = orderId.replace('ZYRO_', 'CUST_').substring(0, 50);
             
-            // Pass all the customer details to Cashfree
-            const sessionId = await createCashfreeOrder(parseInt(price), orderId, customerId, name, email, phone);
+            // Pass the cleanPhone to Cashfree
+            const sessionId = await createCashfreeOrder(parseInt(price), orderId, customerId, name, email, cleanPhone);
 
             if (!sessionId) {
                 return res.status(500).json({ error: "Failed to generate Cashfree session." });
             }
 
-            // 3. Return the session ID directly to the frontend widget
             return res.json({ paymentSessionId: sessionId });
         }
 
@@ -214,7 +217,6 @@ module.exports = async function(req, res) {
 
             const data = pricing[state.service];
             
-            // Note: Since this path doesn't know the user's details yet, it passes empty values so the defaults kick in
             const customerId = state.order_id.replace('ZYRO_', 'CUST_').substring(0, 50);
             const sessionId = await createCashfreeOrder(data.full, state.order_id, customerId, null, null, null);
 
