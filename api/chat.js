@@ -2,11 +2,7 @@ const OpenAI = require('openai');
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 
-// 1. Initialize Supabase Client
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_KEY
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const groq = new OpenAI({
     baseURL: 'https://api.groq.com/openai/v1',
@@ -74,26 +70,25 @@ module.exports = async function(req, res) {
 
     try {
         // ====================================================================
-        // NEW LOGIC: Intercept direct payment requests from the HTML Wizard
+        // THIS IS THE NEW LOGIC THAT SAVES THE NAME/EMAIL/PHONE TO SUPABASE
         // ====================================================================
         if (req.body.service && req.body.price && req.body.orderId) {
             
             const { service, price, name, email, phone, orderId } = req.body;
             
-            // FORMAT FIX: Clean the phone number for Cashfree
-            // This strips any +91 or spaces, and grabs just the last 10 digits
+            // Clean the phone number for Cashfree
             let cleanPhone = phone ? phone.replace(/\D/g, '') : "9999999999";
             if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
-            if (cleanPhone.length < 10) cleanPhone = "9999999999"; // Fallback to avoid crashes
+            if (cleanPhone.length < 10) cleanPhone = "9999999999";
 
-            // DATABASE FIX: Add client_id to satisfy your table constraints
+            // Save everything to Supabase correctly
             const { error: orderError } = await supabase.from('orders').upsert({
                 order_id: orderId,
-                client_id: orderId, // Added this line to fix the null constraint!
+                client_id: orderId, 
                 client_email: email,
                 client_name: name,
-                client_phone: phone, // We save their original format to the DB
-                service_type: service, 
+                client_phone: cleanPhone, 
+                service: service, 
                 amount: parseInt(price),
                 status: 'pending'
             });
@@ -101,8 +96,6 @@ module.exports = async function(req, res) {
             if (orderError) console.error("Order Creation Error:", orderError.message);
 
             const customerId = orderId.replace('ZYRO_', 'CUST_').substring(0, 50);
-            
-            // Pass the cleanPhone to Cashfree
             const sessionId = await createCashfreeOrder(parseInt(price), orderId, customerId, name, email, cleanPhone);
 
             if (!sessionId) {
