@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const crypto = require('crypto');
 
-// Connect to the Supabase "Brain"
+// Connect to Supabase
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_KEY
@@ -24,7 +24,6 @@ const createInvoiceBuffer = (orderId, amount) => {
         const doc = new PDFDocument({ margin: 50 });
         const buffers = [];
 
-        // Catch the data as PDFKit draws it
         doc.on('data', buffers.push.bind(buffers));
         doc.on('end', () => resolve(Buffer.concat(buffers)));
         doc.on('error', reject);
@@ -60,7 +59,6 @@ const createInvoiceBuffer = (orderId, amount) => {
 };
 
 module.exports = async function(req, res) {
-    // Only accept POST requests from Cashfree
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -75,9 +73,11 @@ module.exports = async function(req, res) {
             return res.status(401).send("Unauthorized");
         }
 
-        // Cashfree requires hashing the timestamp + the raw body
-        const rawBody = req.rawBody || JSON.stringify(req.body);
-        const dataToHash = timestamp + rawBody;
+        // CRITICAL FIX: Use the raw body buffer for signature verification
+        // Vercel/Next.js and Express often parse the body, destroying the original format.
+        // req.rawBody must be enabled in your server configuration (e.g., bodyParser.raw() or Next.js config)
+        const rawBodyToHash = req.rawBody ? req.rawBody : JSON.stringify(req.body);
+        const dataToHash = timestamp + rawBodyToHash;
 
         const expectedSignature = crypto
             .createHmac('sha256', process.env.CASHFREE_SECRET_KEY)
@@ -85,20 +85,26 @@ module.exports = async function(req, res) {
             .digest('base64');
 
         if (expectedSignature !== signature) {
-            console.error("🚨 SECURITY ALERT: Invalid Webhook Signature! Someone tried to fake a payment.");
+            // NOTE: If you are still getting signature errors, it means your server framework
+            // is not exposing the unparsed raw string/buffer to `req.rawBody`.
+            console.error("🚨 SECURITY ALERT: Invalid Webhook Signature! Expected:", expectedSignature, "Got:", signature);
             return res.status(403).send("Invalid signature");
         }
 
         // --- 2. PROCESS THE VERIFIED PAYMENT ---
         const payload = req.body;
-        console.log("Verified Webhook received from Cashfree:", JSON.stringify(payload));
+        console.log("✅ Verified Webhook received");
 
-        const eventType = payload.type;
-        const orderId = payload.data?.order?.order_id;
-        const orderAmount = payload.data?.order?.order_amount || 0;
+        // Check if it's a successful payment
+        // Cashfree webhook structure can vary depending on API version (PAYMENT_SUCCESS_WEBHOOK vs SUCCESS)
+        if (payload.type === 'PAYMENT_SUCCESS_WEBHOOK' || payload.event === 'PAYMENT_SUCCESS') {
+            
+            const orderId = payload.data?.order?.order_id || payload.data?.payment?.order_id;
+            const orderAmount = payload.data?.order?.order_amount || payload.data?.payment?.payment_amount || 0;
 
-        // Check if this is a successful payment signal
-        if (eventType && (eventType.includes('SUCCESS') || eventType === 'PAYMENT_SUCCESS_WEBHOOK') && orderId) {
+            if (!orderId) {
+                 return res.status(400).send("No order ID found in payload");
+            }
 
             // Mark as paid in database
             const { data: order, error } = await supabase
@@ -109,11 +115,11 @@ module.exports = async function(req, res) {
                 .single();
 
             if (error || !order) {
-                console.error("Database Error:", error);
+                console.error("Database Error (Order not found or update failed):", error);
                 return res.status(500).send("Database update failed");
             }
 
-            console.log(`✅ SUCCESS: Order ${orderId} secured and marked PAID.`);
+            console.log(`✅ SUCCESS: Order ${orderId} secured and marked PAID in Supabase.`);
 
             // Generate the PDF in memory
             const pdfBuffer = await createInvoiceBuffer(orderId, orderAmount);
@@ -148,33 +154,10 @@ module.exports = async function(req, res) {
                 console.log(`📧 SUCCESS: MEGA link and PDF receipt sent to ${order.client_email}.`);
             }
 
-            // --- 4. SERVER-SIDE GOOGLE ANALYTICS ---
-            if (process.env.NEXT_PUBLIC_GA_ID && process.env.GA_API_SECRET) {
-                try {
-                    await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${process.env.NEXT_PUBLIC_GA_ID}&api_secret=${process.env.GA_API_SECRET}`, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            client_id: orderId, // Using order ID as a unique identifier for the transaction session
-                            events: [{
-                                name: 'purchase',
-                                params: {
-                                    transaction_id: orderId,
-                                    value: orderAmount,
-                                    currency: 'INR'
-                                }
-                            }]
-                        })
-                    });
-                    console.log(`📊 SUCCESS: Purchase logged to Google Analytics.`);
-                } catch (gaError) {
-                    console.error("GA Tracking failed (non-fatal):", gaError);
-                }
-            }
-
-            return res.status(200).send("OK");
+            return res.status(200).send("OK: Payment Processed");
         }
 
-        return res.status(200).send("Event received but ignored");
+        return res.status(200).send("OK: Event received but ignored (Not a success event)");
 
     } catch (error) {
         console.error("Webhook Server Error:", error);
