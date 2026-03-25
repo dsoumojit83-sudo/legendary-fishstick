@@ -38,6 +38,7 @@
     </script>
     
     <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -411,7 +412,7 @@
             </p>
             
             <div class="flex flex-col md:flex-row items-center justify-center gap-5 mb-16 reveal">
-                <a href="#contact" class="btn-glow btn-shine px-12 py-5 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn block">Start Project</a>
+                <button onclick="document.getElementById('chatbotToggle').click()" class="btn-glow btn-shine px-12 py-5 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn block">Start Project</button>
                 <a href="#services" class="px-12 py-5 border border-white/20 text-white font-bold uppercase tracking-widest text-xs hover:border-[#ff1a1a] hover:text-[#ff1a1a] transition-all magnetic-btn block">Services</a>
             </div>
 
@@ -746,113 +747,55 @@
     </section>
 
     <section id="contact" class="relative z-10 px-6 py-24">
-        <div class="max-w-6xl mx-auto">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-                <div class="reveal">
-                    <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">Contact</p>
-                    <h2 class="text-4xl md:text-6xl font-bold mb-4 leading-tight">Let’s build something <span class="text-[#ff1a1a]">cinematic</span></h2>
-                    
-                    <div class="mt-2 mb-1 text-[#ff1a1a] text-sm font-bold tracking-widest uppercase">TALK TO OUR ZYRO ASSISTANT FOR QUOTE AND PAYMENT</div>
-                    <div class="mb-8 text-[#ff1a1a] text-xs font-bold tracking-widest uppercase">UPTO 10% CASHBACK USING VALID COUPON CODE</div>
-                    
-                    <p class="text-gray-400 text-base md:text-lg leading-relaxed max-w-xl">Send your brief and I’ll reply with next steps, timeline, and pricing options.</p>
+        <div class="max-w-4xl mx-auto flex flex-col items-center text-center">
+            <div class="reveal w-full">
+                <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">Contact</p>
+                <h2 class="text-4xl md:text-6xl font-bold mb-4 leading-tight">Let’s build something <span class="text-[#ff1a1a]">cinematic</span></h2>
+                
+                <p class="text-gray-400 text-base md:text-lg leading-relaxed max-w-xl mx-auto mb-10">Have a custom inquiry or prefer to talk directly? Reach out below or open the Assistant to start your project.</p>
 
-                    <div class="mt-10 space-y-4">
-                        <a href="mailto:zyroeditz.official@gmail.com" class="group flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#ff1a1a]/30 hover:bg-[#ff1a1a]/[0.04] transition-all duration-300">
-                            <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
-                                <svg class="w-5 h-5 text-[#ff1a1a]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l8.913 5.476a2 2 0 002.174 0L22 7"/></svg>
-                            </div>
-                            <div>
-                                <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">Email</div>
-                                <div class="text-white text-sm group-hover:text-[#ff1a1a] transition-colors">zyroeditz.official@gmail.com</div>
-                            </div>
-                        </a>
-                        <a href="https://youtube.com/@zyroeditzfx?si=re39luv7CGi_YAHR" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#ff1a1a]/30 hover:bg-[#ff1a1a]/[0.04] transition-all duration-300">
-                            <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
-                                <svg class="w-5 h-5 text-[#ff1a1a]" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.377.504A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.504 9.376.504 9.376.504s7.505 0 9.377-.504a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                            </div>
-                            <div>
-                                <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">YouTube</div>
-                                <div class="text-white text-sm group-hover:text-[#ff1a1a] transition-colors">@zyroeditzfx</div>
-                            </div>
-                        </a>
-                        <a href="https://www.instagram.com/zyroeditz.clips?igsh=MXNnOWUxNWF5ZzEybQ==" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#ff1a1a]/30 hover:bg-[#ff1a1a]/[0.04] transition-all duration-300">
-                            <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
-                                <svg class="w-5 h-5 text-[#ff1a1a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-                            </div>
-                            <div>
-                                <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">Instagram</div>
-                                <div class="text-white text-sm group-hover:text-[#ff1a1a] transition-colors">@zyroeditz.clips</div>
-                            </div>
-                        </a>
-                        
-                        <div class="flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
-                            <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0">
-                                <svg class="w-5 h-5 text-[#ff1a1a]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                            </div>
-                            <div>
-                                <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">Phone (Mon-Fri, 9am-5pm)</div>
-                                <div class="text-white text-sm">+91 7602679995</div>
-                            </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left w-full max-w-2xl mx-auto">
+                    <a href="mailto:zyroeditz.official@gmail.com" class="group flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#ff1a1a]/30 hover:bg-[#ff1a1a]/[0.04] transition-all duration-300">
+                        <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
+                            <svg class="w-5 h-5 text-[#ff1a1a]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l8.913 5.476a2 2 0 002.174 0L22 7"/></svg>
                         </div>
-
-                        <div class="flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
-                            <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0">
-                                <svg class="w-5 h-5 text-[#ff1a1a]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                            </div>
-                            <div>
-                                <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">Response Time</div>
-                                <div class="text-white text-sm">Within 24 hours</div>
-                            </div>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">Email</div>
+                            <div class="text-white text-sm group-hover:text-[#ff1a1a] transition-colors">zyroeditz.official@gmail.com</div>
+                        </div>
+                    </a>
+                    <a href="https://youtube.com/@zyroeditzfx?si=re39luv7CGi_YAHR" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#ff1a1a]/30 hover:bg-[#ff1a1a]/[0.04] transition-all duration-300">
+                        <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
+                            <svg class="w-5 h-5 text-[#ff1a1a]" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.377.504A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.504 9.376.504 9.376.504s7.505 0 9.377-.504a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        </div>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">YouTube</div>
+                            <div class="text-white text-sm group-hover:text-[#ff1a1a] transition-colors">@zyroeditzfx</div>
+                        </div>
+                    </a>
+                    <a href="https://www.instagram.com/zyroeditz.clips?igsh=MXNnOWUxNWF5ZzEybQ==" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#ff1a1a]/30 hover:bg-[#ff1a1a]/[0.04] transition-all duration-300">
+                        <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
+                            <svg class="w-5 h-5 text-[#ff1a1a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+                        </div>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">Instagram</div>
+                            <div class="text-white text-sm group-hover:text-[#ff1a1a] transition-colors">@zyroeditz.clips</div>
+                        </div>
+                    </a>
+                    
+                    <div class="flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
+                        <div class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 text-[#ff1a1a]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        </div>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">Phone (Mon-Fri, 9am-5pm)</div>
+                            <div class="text-white text-sm">+91 7602679995</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="reveal">
-                    <div class="p-8 md:p-10 border border-white/10 bg-white/5 backdrop-blur-md rounded-2xl">
-                        <form id="contactForm">
-                            <p class="text-xs text-gray-400 mb-5"><span class="text-[#ff1a1a] font-bold">*</span> fields are mandatory</p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="name">Name <span class="text-[#ff1a1a]">*</span></label>
-                                    <input class="input-field w-full px-4 py-3" id="name" name="name" type="text" autocomplete="name" required>
-                                </div>
-                                <div>
-                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="email">Email <span class="text-[#ff1a1a]">*</span></label>
-                                    <input class="input-field w-full px-4 py-3" id="email" name="email" type="email" autocomplete="email" required>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                                <div>
-                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="subject">Project Type <span class="text-[#ff1a1a]">*</span></label>
-                                    <select class="input-field w-full px-4 py-3" id="subject" name="subject" required>
-                                        <option value="" selected disabled>Select an option</option>
-                                        <option value="Short-form Editing">Short-form Editing</option>
-                                        <option value="Long-form Editing">Long-form Editing</option>
-                                        <option value="Motion Graphics">Motion Graphics</option>
-                                        <option value="Thumbnail/Export Support">Thumbnail/Export Support</option>
-                                        <option value="Color Correction & Grade">Color Correction & Grade</option>
-                                        <option value="Sound Design">Sound Design</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="couponCode">Coupon Code (Optional)</label>
-                                    <input class="input-field w-full px-4 py-3 text-[#ff1a1a]" id="couponCode" name="couponCode" type="text" placeholder="e.g. SAVE10">
-                                </div>
-                            </div>
-
-                            <div class="mt-5">
-                                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2" for="message">Message / Project Brief <span class="text-[#ff1a1a]" id="messageAsterisk">*</span></label>
-                                <textarea class="input-field w-full px-4 py-3 min-h-[140px] resize-y" id="message" name="message" required placeholder="Tell me about your project, deadline, and references... *"></textarea>
-                            </div>
-
-                            <div class="mt-7 flex flex-col sm:flex-row sm:items-center gap-4">
-                                <button class="btn-shine px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg" type="submit" id="contactSubmit">Send to ZyroEditz</button>
-                                <div class="text-xs tracking-widest font-medium" id="contactStatus" aria-live="polite" aria-atomic="true"></div>
-                            </div>
-                        </form>
-                    </div>
+                <div class="mt-10">
+                    <button onclick="document.getElementById('chatbotToggle').click()" class="btn-shine px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all rounded-lg">Open Assistant to Book Edit</button>
                 </div>
             </div>
         </div>
@@ -927,7 +870,7 @@
         </div>
     </div>
 
-    <div id="chatbotWindow" class="fixed bottom-28 left-8 w-80 max-w-[calc(100vw-4rem)] bg-[#050505] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 opacity-0 translate-y-4 pointer-events-none" style="height: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,26,26,0.1);">
+    <div id="chatbotWindow" class="fixed bottom-28 left-8 w-80 max-w-[calc(100vw-4rem)] bg-[#050505] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 opacity-0 translate-y-4 pointer-events-none" style="height: 480px; box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,26,26,0.1);">
         <div class="bg-gradient-to-r from-[#ff1a1a]/20 to-transparent p-4 border-b border-white/10 flex justify-between items-center backdrop-blur-md">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center text-[#ff1a1a]">
@@ -947,15 +890,6 @@
         </div>
         
         <div id="chatbotMessages" class="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
-            </div>
-
-        <div class="p-3 border-t border-white/10 bg-black/60 backdrop-blur-md">
-            <form id="chatbotForm" class="flex gap-2">
-                <input type="text" id="chatbotInput" maxlength="250" class="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors" placeholder="Type your message..." autocomplete="off">
-                <button type="submit" class="w-10 h-10 rounded-full bg-[#ff1a1a] text-black flex items-center justify-center hover:bg-white transition-colors shrink-0">
-                    <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                </button>
-            </form>
         </div>
     </div>
 
@@ -1252,142 +1186,6 @@
                 });
             }
             
-            // ==================== FORM HANDLING & FRONTEND LOCK ====================
-            function initForms() {
-                const form = document.getElementById('contactForm');
-                const statusEl = document.getElementById('contactStatus');
-                const submitBtn = document.getElementById('contactSubmit');
-                const messageInput = document.getElementById('message');
-                
-                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyXiGjgwTlvvsqZR_WPTYIknDt_ATMxz4jkzJhA872E5wElV6SwUSIsnjFo8o6JmXT/exec'; 
-
-                // --- PREMIUM REAL-TIME COUPON VALIDATOR ---
-                const couponInput = document.getElementById('couponCode');
-                const couponFeedback = document.createElement('div');
-                couponFeedback.className = 'text-[10px] mt-2 font-bold tracking-widest hidden uppercase transition-all duration-300';
-                
-                if (couponInput) {
-                    couponInput.parentNode.appendChild(couponFeedback);
-                    let debounceTimer;
-
-                    couponInput.addEventListener('input', function(e) {
-                        clearTimeout(debounceTimer);
-                        const code = e.target.value.trim().toUpperCase();
-                        
-                        if (code.length < 4) {
-                            couponFeedback.classList.add('hidden');
-                            couponInput.style.borderColor = 'rgba(255,255,255,0.1)';
-                            couponInput.style.backgroundColor = 'transparent';
-                            return;
-                        }
-
-                        // Show typing/loading state
-                        couponFeedback.classList.remove('hidden');
-                        couponFeedback.className = 'text-[10px] mt-2 font-bold tracking-widest uppercase text-gray-400 animate-pulse flex items-center';
-                        couponFeedback.innerHTML = '<span class="yt-spinner mr-2" style="width: 10px; height: 10px; border-width: 2px;"></span> Checking code validity...';
-
-                        // Wait for the user to finish typing
-                        debounceTimer = setTimeout(() => {
-                            // Normal CORS request to read the JSON response
-                            fetch(GOOGLE_SCRIPT_URL, {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    action: 'validateCoupon',
-                                    couponCode: code
-                                })
-                            })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    couponFeedback.className = 'text-[10px] mt-2 font-bold tracking-widest uppercase text-green-400';
-                                    couponFeedback.innerHTML = '10% cashback applied! Reward sent in 2 business days.';
-                                    couponInput.style.borderColor = '#4ade80';
-                                    couponInput.style.backgroundColor = 'rgba(74, 222, 128, 0.05)';
-                                } else {
-                                    couponFeedback.className = 'text-[10px] mt-2 font-bold tracking-widest uppercase text-[#ff1a1a]';
-                                    couponFeedback.innerHTML = data.message;
-                                    couponInput.style.borderColor = '#ff1a1a';
-                                    couponInput.style.backgroundColor = 'rgba(255, 26, 26, 0.05)';
-                                    
-                                    // Premium "Shake" effect
-                                    couponInput.animate([
-                                        { transform: 'translateX(0)' },
-                                        { transform: 'translateX(-4px)' },
-                                        { transform: 'translateX(4px)' },
-                                        { transform: 'translateX(-2px)' },
-                                        { transform: 'translateX(2px)' },
-                                        { transform: 'translateX(0)' }
-                                    ], { duration: 300, easing: 'ease-in-out' });
-                                }
-                            })
-                            .catch(err => {
-                                couponFeedback.classList.add('hidden');
-                            });
-                        }, 1000); // Waits 1 second after last keystroke
-                    });
-                }
-                // ------------------------------------------
-
-                if (form && statusEl && submitBtn) {
-                    form.addEventListener('submit', function (e) {
-                        e.preventDefault();
-                        
-                        submitBtn.disabled = true;
-                        submitBtn.classList.add('opacity-70');
-                        statusEl.className = 'text-xs tracking-widest text-white';
-                        statusEl.innerHTML = `<span class="flex items-center gap-2"><span class="yt-spinner"></span>Submitting securely<span id="loadingDots" class="inline-block w-4 text-left"></span></span>`;
-
-                        let dotCount = 0;
-                        const loadingDots = document.getElementById('loadingDots');
-                        const dotInterval = setInterval(() => { dotCount = (dotCount + 1) % 4; if(loadingDots) loadingDots.textContent = '.'.repeat(dotCount); }, 400);
-
-                        const generatedReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-                        const finalOrderId = localStorage.getItem('zyro_order_id') || "ZYRO-UNKNOWN";
-
-                        const formData = {
-                            name: document.getElementById('name').value,
-                            email: document.getElementById('email').value,
-                            subject: document.getElementById('subject').value,
-                            couponCode: document.getElementById('couponCode') ? document.getElementById('couponCode').value : '',
-                            message: document.getElementById('message').value,
-                            orderId: finalOrderId, // Persisted Order ID
-                            generatedReferralCode: generatedReferralCode 
-                        };
-
-                        const sendData = (payload) => {
-                            fetch(GOOGLE_SCRIPT_URL, {
-                                method: 'POST',
-                                mode: 'no-cors', 
-                                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                                body: JSON.stringify(payload)
-                            })
-                            .then(response => {
-                                clearInterval(dotInterval); 
-                                statusEl.innerHTML = 'Received! Zyro is reviewing your project.';
-                                statusEl.className = 'text-xs tracking-widest text-green-400 font-bold';
-                                
-                                localStorage.setItem('zyro_active_project', 'true');
-
-                                form.reset();
-                                
-                                window.dispatchEvent(new CustomEvent('projectFormSubmitted', { detail: { clientName: formData.name, subject: formData.subject } }));
-                                
-                                setTimeout(() => { submitBtn.disabled = false; submitBtn.classList.remove('opacity-70', 'cursor-not-allowed'); statusEl.innerHTML = ''; }, 4000);
-                            })
-                            .catch(error => {
-                                clearInterval(dotInterval); 
-                                statusEl.innerHTML = 'Connection Error. Reach out via WhatsApp.';
-                                statusEl.className = 'text-xs tracking-widest text-red-400 font-bold';
-                                submitBtn.disabled = false;
-                                submitBtn.classList.remove('opacity-70');
-                            });
-                        };
-
-                        sendData(formData);
-                    });
-                }
-            }
-            
             // ==================== PERFORMANCE & FALLBACKS ====================
             function initPerformance() {
                 document.querySelectorAll('.service-card').forEach(function(card){
@@ -1512,81 +1310,25 @@
                 initCanvas(); animateCanvas();
             }
 
-            // ==================== STATELESS CHATBOT LOGIC ====================
+            // ==================== ZYRO ASSISTANT WIZARD ====================
             function initChatbot() {
-                // 1. Ensure Persistent Client ID
-                let clientId = localStorage.getItem('zyro_client_id');
-                if (!clientId) {
-                    clientId = 'NEW_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('zyro_client_id', clientId);
-                }
-
-                // NEW ZYRO ASSISTANT ICON
-                const botAvatarSVG = `<svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path><path d="M9 8h6l-6 8h6"></path></svg>`;
-
-                // 2. Load History & Order ID from Browser Memory
-                let chatHistory = JSON.parse(localStorage.getItem('zyro_chat_history') || '[]');
-                
-                // If this is their absolute first time, add the greeting to memory
-                if (chatHistory.length === 0) {
-                    const defaultGreeting = "Hey!👋  Zyro Assistant is here. What kind of project can I help you with today? We handle everything from Video Editing to Motion Graphics and Sound Design!\nJust type the service you need from the options below:\n• Short Form\n• Long Form\n• Motion Graphics\n• Thumbnails\n• Sound Design\n• Color Correction & Grade";
-                    chatHistory.push({ text: defaultGreeting, isUser: false });
-                    localStorage.setItem('zyro_chat_history', JSON.stringify(chatHistory));
-                }
-
                 const toggleBtn = document.getElementById('chatbotToggle');
                 const closeBtn = document.getElementById('chatbotClose');
                 const windowEl = document.getElementById('chatbotWindow');
-                const form = document.getElementById('chatbotForm');
-                const input = document.getElementById('chatbotInput');
                 const messages = document.getElementById('chatbotMessages');
                 const dot = document.getElementById('chatNotificationDot');
                 const tooltip = document.getElementById('chatTooltip');
 
                 let isOpen = false;
+                let orderData = { service: '', price: 0, name: '', email: '' };
 
-                // 3. Render Memory to Screen
-                function renderHistory() {
-                    messages.innerHTML = ''; // Clear loading state
-                    chatHistory.forEach(msg => {
-                        addMessageToDOM(msg.text, msg.isUser);
-                    });
-                }
-
-                function addMessageToDOM(text, isUser) {
-                    const msgDiv = document.createElement('div');
-                    msgDiv.className = 'flex gap-2 ' + (isUser ? 'justify-end' : '');
-                    
-                    // FIX: Strip leading spaces that cause weird gaps in HTML
-                    const cleanedText = text.split('\n').map(line => line.trim()).join('\n');
-                    const formattedText = cleanedText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\*(.*?)\*/g, '<b>$1</b>');
-                    
-                    let html = '';
-                    if (!isUser) {
-                        html += `<div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a]">${botAvatarSVG}</div>`;
-                        html += `<div class="chat-bot-msg whitespace-pre-wrap">${formattedText}</div>`;
-                    } else {
-                        html += `<div class="chat-user-msg whitespace-pre-wrap">${formattedText}</div>`;
-                    }
-                    
-                    msgDiv.innerHTML = html;
-                    messages.appendChild(msgDiv);
-                    messages.scrollTop = messages.scrollHeight;
-                }
-
-                // Saves to DOM and Memory
-                function addMessage(text, isUser = false) {
-                    addMessageToDOM(text, isUser);
-                    chatHistory.push({ text: text, isUser: isUser });
-                    localStorage.setItem('zyro_chat_history', JSON.stringify(chatHistory));
-                }
+                const botAvatarSVG = `<svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path><path d="M9 8h6l-6 8h6"></path></svg>`;
 
                 function toggleChat() {
                     isOpen = !isOpen;
                     if (isOpen) {
                         windowEl.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
                         windowEl.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
-                        input.focus();
                         if (dot) dot.style.display = 'none';
                         if (tooltip) tooltip.style.display = 'none';
                     } else {
@@ -1599,135 +1341,183 @@
                 closeBtn.addEventListener('click', toggleChat);
                 if (tooltip) tooltip.addEventListener('click', toggleChat);
 
-                // Initial Render
-                renderHistory();
-
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const text = input.value.trim();
-                    if (!text) return;
-
-                    const submitBtn = form.querySelector('button[type="submit"]');
-
-                    input.disabled = true;
-                    submitBtn.disabled = true;
-                    input.placeholder = "Zyro Assistant is thinking...";
-                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-
-                    addMessage(text, true);
-                    input.value = '';
-
-                    const typingId = 'typing-' + Date.now();
-                    const typingDiv = document.createElement('div');
-                    typingDiv.id = typingId;
-                    typingDiv.className = 'flex gap-2';
-                    typingDiv.innerHTML = `<div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a]">${botAvatarSVG}</div><div class="chat-bot-msg text-gray-500 animate-pulse">Typing...</div>`;
-                    messages.appendChild(typingDiv);
+                function addBotMessage(htmlContent) {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'flex gap-2 mb-4';
+                    msgDiv.innerHTML = `<div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a]">${botAvatarSVG}</div><div class="chat-bot-msg w-full overflow-hidden">${htmlContent}</div>`;
+                    messages.appendChild(msgDiv);
                     messages.scrollTop = messages.scrollHeight;
+                }
 
-                    try {
-                        const response = await fetch('/api/chat', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            // Passing step from local memory ensures the backend never "forgets"
-                            body: JSON.stringify({ 
-                                message: text, 
-                                clientId: clientId
-                            })
+                function addUserMessage(text) {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'flex gap-2 justify-end mb-4';
+                    msgDiv.innerHTML = `<div class="chat-user-msg">${text}</div>`;
+                    messages.appendChild(msgDiv);
+                    messages.scrollTop = messages.scrollHeight;
+                }
+
+                function renderStep0() {
+                    const content = `
+                        <p class="mb-3 font-bold text-white">Hey!👋 Zyro Assistant here.</p>
+                        <p class="mb-3">Select the service you need to get started:</p>
+                        <div class="flex flex-col gap-2">
+                            <button class="service-btn bg-white/5 border border-white/10 hover:border-[#ff1a1a] hover:bg-[#ff1a1a]/10 text-white text-xs py-2 px-3 rounded text-left transition-colors" data-service="Short Form" data-price="200">Short Form (₹200)</button>
+                            <button class="service-btn bg-white/5 border border-white/10 hover:border-[#ff1a1a] hover:bg-[#ff1a1a]/10 text-white text-xs py-2 px-3 rounded text-left transition-colors" data-service="Long Form" data-price="500">Long Form (₹500)</button>
+                            <button class="service-btn bg-white/5 border border-white/10 hover:border-[#ff1a1a] hover:bg-[#ff1a1a]/10 text-white text-xs py-2 px-3 rounded text-left transition-colors" data-service="Motion Graphics" data-price="400">Motion Graphics (₹400)</button>
+                            <button class="service-btn bg-white/5 border border-white/10 hover:border-[#ff1a1a] hover:bg-[#ff1a1a]/10 text-white text-xs py-2 px-3 rounded text-left transition-colors" data-service="Thumbnails" data-price="100">Thumbnails (₹100)</button>
+                        </div>
+                    `;
+                    addBotMessage(content);
+
+                    document.querySelectorAll('.service-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            document.querySelectorAll('.service-btn').forEach(b => {
+                                b.disabled = true;
+                                b.classList.add('opacity-50', 'cursor-not-allowed');
+                            });
+                            this.classList.remove('opacity-50');
+                            this.classList.add('border-[#ff1a1a]', 'bg-[#ff1a1a]/10');
+                            
+                            orderData.service = this.getAttribute('data-service');
+                            orderData.price = this.getAttribute('data-price');
+                            
+                            addUserMessage(orderData.service);
+                            setTimeout(renderStep1, 400);
                         });
-                        
-                        const data = await response.json();
-                        const typingEl = document.getElementById(typingId);
-                        if(typingEl) typingEl.remove();
+                    });
+                }
 
-                        // 4. Memory Wipe Command (Backend tells frontend to clear history)
-                        if (data.clearHistory) {
-                            chatHistory = [];
-                            localStorage.setItem('zyro_chat_history', '[]');
-                            messages.innerHTML = '';
+                function renderStep1() {
+                    const content = `
+                        <p class="mb-3">Awesome choice! What is your name?</p>
+                        <div class="flex flex-col gap-2">
+                            <input type="text" id="wizName" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Your Name" autocomplete="off">
+                            <button id="wizNameBtn" class="bg-[#ff1a1a] text-black px-3 py-2 rounded text-xs font-bold hover:bg-white transition-colors">Next</button>
+                        </div>
+                    `;
+                    addBotMessage(content);
+
+                    document.getElementById('wizNameBtn').addEventListener('click', function() {
+                        const name = document.getElementById('wizName').value.trim();
+                        if(name) {
+                            document.getElementById('wizName').disabled = true;
+                            this.disabled = true;
+                            this.classList.add('opacity-50');
+                            orderData.name = name;
+                            addUserMessage(name);
+                            setTimeout(renderStep2, 400);
                         }
+                    });
+                }
 
-                        if (response.ok && data.reply !== "") {
-                            // Automatically scrape and save the Order ID locally
-                            const orderMatch = data.reply.match(/Order ID:\s*(ZYRO[A-Z0-9]+)/i);
-                            if (orderMatch && orderMatch[1]) {
-                                localStorage.setItem('zyro_order_id', orderMatch[1]);
+                function renderStep2() {
+                    const content = `
+                        <p class="mb-3">Nice to meet you, <strong>${orderData.name}</strong>!</p>
+                        <p class="mb-3">What's your email? (We'll send your receipt and project upload link here).</p>
+                        <div class="flex flex-col gap-2">
+                            <input type="email" id="wizEmail" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="email@example.com" autocomplete="off">
+                            <button id="wizEmailBtn" class="bg-[#ff1a1a] text-black px-3 py-2 rounded text-xs font-bold hover:bg-white transition-colors">Next</button>
+                        </div>
+                    `;
+                    addBotMessage(content);
+
+                    document.getElementById('wizEmailBtn').addEventListener('click', function() {
+                        const email = document.getElementById('wizEmail').value.trim();
+                        if(email && email.includes('@')) {
+                            document.getElementById('wizEmail').disabled = true;
+                            this.disabled = true;
+                            this.classList.add('opacity-50');
+                            orderData.email = email;
+                            addUserMessage(email);
+                            setTimeout(renderStep3, 400);
+                        }
+                    });
+                }
+
+                function renderStep3() {
+                    const content = `
+                        <p class="mb-3">Perfect! Here is your order summary:</p>
+                        <div class="bg-white/5 border border-white/10 rounded p-3 mb-3">
+                            <div class="flex justify-between text-xs mb-1"><span class="text-gray-400">Service:</span><span class="text-white font-bold">${orderData.service}</span></div>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-gray-400">Name:</span><span class="text-white">${orderData.name}</span></div>
+                            <div class="flex justify-between text-xs mb-3"><span class="text-gray-400">Email:</span><span class="text-white">${orderData.email}</span></div>
+                            <div class="flex justify-between text-sm pt-2 border-t border-white/10"><span class="text-gray-400">Total:</span><span class="text-[#ff1a1a] font-bold">₹${orderData.price}</span></div>
+                        </div>
+                        <button id="wizPayBtn" class="w-full bg-[#ff1a1a] text-black px-4 py-3 rounded text-xs font-bold hover:bg-white transition-colors">Proceed to Payment</button>
+                        <div id="wizPayStatus" class="mt-2 text-[10px] text-[#ff1a1a] text-center hidden"></div>
+                    `;
+                    addBotMessage(content);
+
+                    document.getElementById('wizPayBtn').addEventListener('click', async function() {
+                        this.disabled = true;
+                        this.classList.add('opacity-50');
+                        const statusEl = document.getElementById('wizPayStatus');
+                        statusEl.classList.remove('hidden');
+
+                        const uniqueOrderId = "ZYRO_" + Date.now();
+
+                        try {
+                            statusEl.innerText = "Securing order details in database...";
+                            
+                            // Replace these values with your actual Supabase URL and Key
+                            const supabaseUrl = 'YOUR_SUPABASE_URL'; 
+                            const supabaseKey = 'YOUR_SUPABASE_KEY'; 
+                            
+                            if (supabaseUrl !== 'YOUR_SUPABASE_URL') {
+                                const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                                const { error } = await supabaseClient
+                                    .from('orders')
+                                    .insert([{ 
+                                        order_id: uniqueOrderId, 
+                                        client_email: orderData.email, 
+                                        client_name: orderData.name, 
+                                        service_type: orderData.service, 
+                                        amount: parseInt(orderData.price), 
+                                        status: 'pending' 
+                                    }]);
+
+                                if (error) throw error;
                             }
 
-                            addMessage(data.reply, false);
+                            statusEl.innerText = "Generating secure payment link...";
+
+                            const aiPrompt = `I am ready to pay. Service: ${orderData.service}. Price: ${orderData.price}. Name: ${orderData.name}. Email: ${orderData.email}. Order ID: ${uniqueOrderId}. Please generate my Cashfree payment session.`;
                             
-                            // TRIGGER PROFESSIONAL CASHFREE CHECKOUT MODAL
+                            const response = await fetch('/api/chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ message: aiPrompt, clientId: uniqueOrderId })
+                            });
+                            
+                            const data = await response.json();
+                            
                             if (data.paymentSessionId) {
+                                statusEl.innerText = "Redirecting to checkout...";
                                 cashfree.checkout({
                                     paymentSessionId: data.paymentSessionId,
                                     redirectTarget: "_self" 
                                 });
+                            } else {
+                                throw new Error("Could not retrieve payment session.");
                             }
-                        } else if (!response.ok) {
-                            addMessage("Sorry, my systems are updating right now. Please email Zyro directly at zyroeditz.official@gmail.com!", false);
+                        } catch (err) {
+                            console.error("Payment Error:", err);
+                            statusEl.innerText = "System error. Please contact support via email.";
+                            this.disabled = false;
+                            this.classList.remove('opacity-50');
                         }
-                    } catch (error) {
-                        const typingEl = document.getElementById(typingId);
-                        if(typingEl) typingEl.remove();
-                        addMessage("Network error. Please try reaching out via the contact form below.", false);
-                    } finally {
-                        input.disabled = false;
-                        submitBtn.disabled = false;
-                        input.placeholder = "Type your message...";
-                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        input.focus(); 
-                    }
-                });
+                    });
+                }
 
-                window.addEventListener('projectFormSubmitted', async (e) => {
-                    let currentId = localStorage.getItem('zyro_client_id');
-                    if (currentId && currentId.startsWith('NEW_')) {
-                        localStorage.setItem('zyro_client_id', currentId.replace('NEW_', 'OLD_'));
-                    }
-                    
-                    if (!isOpen) toggleChat();
-
-                    try {
-                        const typingId = 'typing-' + Date.now();
-                        const typingDiv = document.createElement('div');
-                        typingDiv.id = typingId;
-                        typingDiv.className = 'flex gap-2';
-                        typingDiv.innerHTML = `<div class="w-6 h-6 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center shrink-0 mt-1 text-[#ff1a1a]">${botAvatarSVG}</div><div class="chat-bot-msg text-gray-500 animate-pulse">Typing...</div>`;
-                        messages.appendChild(typingDiv);
-                        messages.scrollTop = messages.scrollHeight;
-
-                        const messageToSend = "FORM_SUBMITTED";
-
-                        const response = await fetch('/api/chat', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: messageToSend, clientId: currentId })
-                        });
-                        
-                        const data = await response.json();
-                        const typingEl = document.getElementById(typingId);
-                        if(typingEl) typingEl.remove();
-
-                        if (data.clearHistory) {
-                            chatHistory = [];
-                            localStorage.setItem('zyro_chat_history', '[]');
-                            messages.innerHTML = '';
-                        }
-
-                        if (response.ok && data.reply) {
-                            addMessage(data.reply, false);
-                        }
-                    } catch (err) {
-                        console.error("Failed to sync backend state.");
-                    }
-                });
+                messages.innerHTML = '';
+                renderStep0();
             }
             
             initCustomCursor();
             initGlobalParallax();
             initNavigation();
             initAnimations();
-            initForms();
             initPerformance();
             initCanvasBackground(); 
             initPreloader();
