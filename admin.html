@@ -50,7 +50,6 @@
         .status-progress { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
         .status-completed { background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
 
-        /* ADDED: Cinematic Background Styles */
         .noise { position: fixed; inset: 0; pointer-events: none; opacity: 0.15; z-index: -1; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter i='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
         .admin-grid { position: fixed; inset: 0; pointer-events: none; z-index: -2; background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px); background-size: 40px 40px; will-change: transform; }
         .video-bg { position: fixed; inset: 0; z-index: -3; overflow: hidden; }
@@ -112,7 +111,7 @@
         </nav>
 
         <div class="p-4 border-t border-white/5 bg-black/20">
-            <div class="flex items-center gap-3 px-4 py-3 rounded-lg bg-black/40 border border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
+            <div class="flex items-center gap-3 px-4 py-3 rounded-lg bg-black/40 border border-white/5 hover:bg-white/5 transition-colors cursor-pointer" onclick="logout()">
                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff1a1a] to-red-900 flex items-center justify-center font-bold text-xs text-white shadow-lg shadow-[#ff1a1a]/20">SD</div>
                 <div class="flex-1 overflow-hidden">
                     <div class="text-xs font-bold text-white truncate">Soumojit Das</div>
@@ -132,7 +131,6 @@
                 </div>
             </div>
             <div class="flex items-center gap-6 stagger-elem">
-                
                 <div class="hidden sm:flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
                     <span class="w-2 h-2 rounded-full bg-green-500 live-pulse"></span>
                     <span class="text-xs font-medium text-gray-300">zyroeditz.com <span class="text-gray-500 ml-1">Live</span></span>
@@ -147,7 +145,6 @@
         </header>
 
         <div class="flex-1 overflow-y-auto p-4 lg:p-10 space-y-6 pb-32" id="main-scroll">
-            
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 <div class="glass-panel p-6 rounded-2xl stagger-elem relative overflow-hidden group hover:border-[#ff1a1a]/30 transition-colors">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-[#ff1a1a]/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
@@ -166,7 +163,7 @@
                         <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-400"></i>
                     </div>
                     <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-mrr"><span class="skeleton w-24 h-8 inline-block"></span></div>
-                    <div class="text-xs text-green-400 flex items-center gap-1 relative z-10"><i data-lucide="trending-up" class="w-3 h-3"></i> +12% vs last month</div>
+                    <div class="text-xs text-green-400 flex items-center gap-1 relative z-10"><i data-lucide="trending-up" class="w-3 h-3"></i> Realized Revenue</div>
                 </div>
 
                 <div class="glass-panel p-6 rounded-2xl stagger-elem relative overflow-hidden group hover:border-yellow-500/30 transition-colors">
@@ -182,16 +179,15 @@
                 <div class="glass-panel p-6 rounded-2xl stagger-elem relative overflow-hidden group hover:border-purple-500/30 transition-colors">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
                     <div class="flex justify-between items-start mb-4 relative z-10">
-                        <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Conversion Rate</div>
+                        <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Success Rate</div>
                         <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-purple-400"></i>
                     </div>
                     <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-conv"><span class="skeleton w-16 h-8 inline-block"></span></div>
-                    <div class="text-xs text-gray-500 relative z-10">Chatbot to Checkout</div>
+                    <div class="text-xs text-gray-500 relative z-10">Completed vs Refunded</div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
                 <div class="glass-panel rounded-2xl p-6 stagger-elem lg:col-span-2 border border-white/5 flex flex-col relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-b from-[#ff1a1a]/5 to-transparent opacity-20 pointer-events-none"></div>
                     <div class="flex justify-between items-center mb-6 relative z-10">
@@ -199,11 +195,6 @@
                             <h3 class="text-lg font-bold text-white">Revenue Overview</h3>
                             <p class="text-xs text-gray-400 mt-1">Real-time earnings trajectory</p>
                         </div>
-                        <select class="bg-black/50 border border-white/10 text-xs text-white rounded px-3 py-1.5 focus:outline-none focus:border-[#ff1a1a]">
-                            <option>Last 6 Months</option>
-                            <option>This Year</option>
-                            <option>All Time</option>
-                        </select>
                     </div>
                     <div class="flex-1 w-full relative z-10 min-h-[250px]">
                         <canvas id="revenueChart"></canvas>
@@ -213,7 +204,7 @@
                 <div class="glass-panel rounded-2xl overflow-hidden stagger-elem flex flex-col border border-white/5 lg:col-span-1">
                     <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
                         <h3 class="text-md font-bold text-white">Active Pipeline</h3>
-                        <button class="text-gray-400 hover:text-[#ff1a1a] transition-colors" title="Sync Supabase">
+                        <button class="text-gray-400 hover:text-[#ff1a1a] transition-colors" title="Sync Supabase" onclick="fetchDashboardData()">
                             <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
                         </button>
                     </div>
@@ -230,13 +221,11 @@
                         <a href="#" class="text-xs text-[#ff1a1a] hover:text-white transition-colors font-semibold">View All Projects &rarr;</a>
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
 
     <div id="ai-terminal" class="fixed bottom-0 right-0 lg:bottom-6 lg:right-6 w-full lg:w-96 glass-panel lg:rounded-2xl border-t lg:border border-white/10 shadow-2xl flex flex-col z-50 h-[80vh] lg:h-auto overflow-hidden translate-y-[calc(100%-4rem)]">
-        
         <div id="terminal-header" class="h-16 bg-black/80 border-b border-white/10 flex items-center justify-between px-5 cursor-pointer hover:bg-[#ff1a1a]/5 transition-colors">
             <div class="flex items-center gap-3">
                 <div class="relative flex items-center justify-center w-8 h-8 rounded bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 text-[#ff1a1a] shadow-[0_0_10px_rgba(255,26,26,0.2)]">
@@ -256,7 +245,7 @@
 
         <div id="terminal-body" class="flex-1 p-5 overflow-y-auto lg:h-80 flex flex-col gap-2 font-mono" style="background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);">
             <div class="terminal-msg msg-ai">
-                <span class="text-[#ff1a1a] font-bold">CORE></span> Initialization complete. Secure connection to Supabase established. How can I analyze the studio data today, Soumojit?
+                <span class="text-[#ff1a1a] font-bold">CORE></span> Initialization complete. Secure connection established. How can I analyze the studio data today, Soumojit?
             </div>
         </div>
 
@@ -271,15 +260,20 @@
     </div>
 
     <script>
+        // Secure Logout Function
+        window.logout = function() {
+            sessionStorage.removeItem('zyro_admin_key');
+            window.location.reload();
+        };
+
         document.addEventListener("DOMContentLoaded", () => {
-            // Environment & Lib Setup
             if (typeof lucide !== 'undefined') lucide.createIcons();
             const isMobile = window.innerWidth < 768;
             
             const dateOptions = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
             document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', dateOptions);
 
-            // ==================== BACKGROUND CANVAS ANIMATION ====================
+            // ==================== BACKGROUND CANVAS ====================
             function initCanvasBackground() {
                 const canvas = document.getElementById('cinematicCanvas');
                 if (!canvas) return;
@@ -340,16 +334,13 @@
             }
             initCanvasBackground();
 
-            // ==================== GSAP ANIMATIONS & PARALLAX ====================
+            // ==================== GSAP ANIMATIONS ====================
             const checkGsap = setInterval(() => {
                 if(window.gsap) {
                     clearInterval(checkGsap);
-                    
-                    // Entrance Animations
                     if(!isMobile) gsap.from("#sidebar", { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
                     gsap.from(".stagger-elem", { y: 20, opacity: 0, duration: 0.6, stagger: 0.08, ease: "power2.out", delay: 0.1 });
 
-                    // Mouse Parallax for Admin Grid & Orbs
                     if(!isMobile) {
                         const grid = document.getElementById('parallaxGrid');
                         const orbs = document.querySelectorAll('.orb');
@@ -360,22 +351,25 @@
                             gsap.to(grid, { x: x, y: y, duration: 1.5, ease: 'power2.out', overwrite: 'auto' });
                         }, {passive: true});
                         
-                        // Slow floating animation for orbs
                         gsap.to('#orb1', { duration: 15, x: '+=50', y: '+=30', repeat: -1, yoyo: true, ease: 'sine.inOut' });
                         gsap.to('#orb2', { duration: 18, x: '-=40', y: '-=40', repeat: -1, yoyo: true, ease: 'sine.inOut' });
                     }
                 }
             }, 100);
 
-            // ==================== CHART.JS INITIALIZATION ====================
+            // ==================== CHART LOGIC ====================
             let revenueChartInstance = null;
-            function initChart(data) {
+            window.initChart = function(data) {
                 const checkChart = setInterval(() => {
                     if(window.Chart) {
                         clearInterval(checkChart);
-                        const ctx = document.getElementById('revenueChart').getContext('2d');
                         
-                        // Create gradient for the line chart fill
+                        // Destroy old chart if it exists to prevent glitching on refresh
+                        if(revenueChartInstance) {
+                            revenueChartInstance.destroy();
+                        }
+
+                        const ctx = document.getElementById('revenueChart').getContext('2d');
                         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
                         gradient.addColorStop(0, 'rgba(255, 26, 26, 0.4)');
                         gradient.addColorStop(1, 'rgba(255, 26, 26, 0.0)');
@@ -386,7 +380,7 @@
                         revenueChartInstance = new Chart(ctx, {
                             type: 'line',
                             data: {
-                                labels: data.labels, // e.g., ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar']
+                                labels: data.labels,
                                 datasets: [{
                                     label: 'Revenue (₹)',
                                     data: data.values,
@@ -399,7 +393,7 @@
                                     pointRadius: 4,
                                     pointHoverRadius: 6,
                                     fill: true,
-                                    tension: 0.4 // Smooth curves
+                                    tension: 0.4 
                                 }]
                             },
                             options: {
@@ -415,9 +409,7 @@
                                         borderWidth: 1,
                                         padding: 10,
                                         displayColors: false,
-                                        callbacks: {
-                                            label: function(context) { return '₹' + context.parsed.y; }
-                                        }
+                                        callbacks: { label: function(context) { return '₹' + context.parsed.y; } }
                                     }
                                 },
                                 scales: {
@@ -431,16 +423,14 @@
                 }, 100);
             }
 
-            // ==================== UI LOGIC & DATA FETCHING ====================
-            
-            // Random Latency Faker for realism
+            // Fake Latency Ping
             setInterval(() => {
-                const latency = Math.floor(Math.random() * 15) + 18; // between 18-32ms
+                const latency = Math.floor(Math.random() * 15) + 18; 
                 const el = document.getElementById('latency-ms');
                 if(el) el.innerText = latency + 'ms';
             }, 3000);
 
-            // Mobile Sidebar
+            // Mobile Sidebar Toggle
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobile-overlay');
             function toggleSidebar() {
@@ -459,7 +449,7 @@
             document.getElementById('close-sidebar').addEventListener('click', toggleSidebar);
             overlay.addEventListener('click', toggleSidebar);
 
-            // AI Terminal Logic
+            // Terminal Toggle
             const terminal = document.getElementById('ai-terminal');
             const header = document.getElementById('terminal-header');
             const icon = document.getElementById('terminal-icon');
@@ -479,70 +469,83 @@
                 }
             });
 
-            // Fetch Data
-            async function fetchDashboardData() {
+            // ==================== AUTHENTICATION & DATA FETCHING ====================
+            let adminPassword = sessionStorage.getItem('zyro_admin_key');
+            if (!adminPassword) {
+                adminPassword = prompt("ZYRO CORE SECURE LOGIN\nEnter Admin Password:");
+                if(adminPassword) {
+                    sessionStorage.setItem('zyro_admin_key', adminPassword);
+                } else {
+                    // Fallback visual if they cancel prompt
+                    document.getElementById('projects-tbody').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500 text-xs font-bold">ACCESS DENIED. REFRESH TO LOGIN.</td></tr>`;
+                }
+            }
+
+            // Globalized so the HTML refresh button can call it
+            window.fetchDashboardData = async function() {
+                if(!adminPassword) return;
+
+                // Add a small rotation animation to the refresh icon
+                const refreshIcon = document.getElementById('refresh-icon');
+                if(refreshIcon) refreshIcon.classList.add('animate-spin');
+
                 try {
-                    // Simulating network delay for skeleton loading
-                    await new Promise(r => setTimeout(r, 1000)); 
+                    const res = await fetch('/api/admin-data', {
+                        headers: { 'x-admin-password': adminPassword }
+                    });
+                    
+                    if(res.status === 401) {
+                        sessionStorage.removeItem('zyro_admin_key');
+                        alert("Authentication Failed. Access Denied.");
+                        window.location.reload();
+                        return;
+                    }
+                    
+                    const data = await res.json();
 
-                    // Mock Data (Replace with API Call)
-                    const data = {
-                        totalRevenue: 4500,
-                        mrr: 1200,
-                        activeProjects: 3,
-                        convRate: 18.5,
-                        recentOrders: [
-                            { id: 'ZYRO1A2', client: 'Ishaan Verma', service: 'Long Form', amount: 500, status: 'in_progress' },
-                            { id: 'ZYRO2B5', client: 'Priya Das', service: 'Motion Graphics', amount: 400, status: 'pending' },
-                            { id: 'ZYRO3C8', client: 'Rahul K.', service: 'Short Form', amount: 1, status: 'completed' }
-                        ],
-                        chartData: {
-                            labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
-                            values: [200, 450, 800, 600, 1000, 1450]
-                        }
-                    };
-
-                    // Update KPIs
                     document.getElementById('kpi-total-rev').textContent = `₹${data.totalRevenue}`;
                     document.getElementById('kpi-mrr').textContent = `₹${data.mrr}`;
                     document.getElementById('kpi-active').textContent = data.activeProjects;
-                    document.getElementById('kpi-conv').textContent = `${data.convRate}%`;
+                    document.getElementById('kpi-conv').textContent = `${data.successRate}%`;
 
-                    // Update Table
                     const tbody = document.getElementById('projects-tbody');
                     tbody.innerHTML = ''; 
                     
-                    data.recentOrders.forEach(order => {
-                        let badgeClass = 'status-pending';
-                        let badgeText = 'Pending Assets';
-                        if(order.status === 'in_progress') { badgeClass = 'status-progress'; badgeText = 'In Progress'; }
-                        if(order.status === 'completed') { badgeClass = 'status-completed'; badgeText = 'Completed'; }
+                    if(data.recentOrders.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No active projects</td></tr>`;
+                    } else {
+                        data.recentOrders.forEach(order => {
+                            let badgeClass = 'status-pending';
+                            let badgeText = order.status;
+                            if(order.status === 'in_progress') { badgeClass = 'status-progress'; }
+                            if(order.status === 'completed' || order.status === 'paid') { badgeClass = 'status-completed'; }
 
-                        tbody.innerHTML += `
-                            <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group cursor-pointer">
-                                <td class="p-3 lg:p-4">
-                                    <div class="font-medium text-white">${order.client}</div>
-                                    <div class="font-mono text-[10px] text-gray-500">${order.id}</div>
-                                </td>
-                                <td class="p-3 lg:p-4 text-gray-400 text-xs">${order.service}</td>
-                                <td class="p-3 lg:p-4 font-semibold text-[#ff1a1a]">₹${order.amount}</td>
-                                <td class="p-3 lg:p-4 text-right"><span class="status-badge ${badgeClass}">${badgeText}</span></td>
-                            </tr>
-                        `;
-                    });
+                            tbody.innerHTML += `
+                                <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group cursor-pointer">
+                                    <td class="p-3 lg:p-4">
+                                        <div class="font-medium text-white">${order.client}</div>
+                                        <div class="font-mono text-[10px] text-gray-500">${order.id}</div>
+                                    </td>
+                                    <td class="p-3 lg:p-4 text-gray-400 text-xs">${order.service}</td>
+                                    <td class="p-3 lg:p-4 font-semibold text-[#ff1a1a]">₹${order.amount}</td>
+                                    <td class="p-3 lg:p-4 text-right"><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+                                </tr>
+                            `;
+                        });
+                    }
 
-                    // Initialize Chart
                     initChart(data.chartData);
 
-                    // Enable AI Terminal
                     document.getElementById('ai-input').disabled = false;
                     document.getElementById('ai-submit').disabled = false;
 
                 } catch (error) {
                     console.error("Dashboard Sync Failed:", error);
-                    document.getElementById('projects-tbody').innerHTML = `<tr><td class="p-4 text-center text-red-500 text-xs">Failed to sync with Supabase.</td></tr>`;
+                    document.getElementById('projects-tbody').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500 text-xs">System Offline. Check Connection.</td></tr>`;
+                } finally {
+                    if(refreshIcon) refreshIcon.classList.remove('animate-spin');
                 }
-            }
+            };
 
             // Terminal Submit Logic
             const aiForm = document.getElementById('ai-form');
@@ -565,10 +568,23 @@
                 terminalBody.scrollTop = terminalBody.scrollHeight;
 
                 try {
-                    await new Promise(r => setTimeout(r, 1500));
-                    const aiResponse = { reply: "I am ready to process live Supabase data. Please deploy the Node backend endpoint to proceed." };
+                    const res = await fetch('/api/admin-chat', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'x-admin-password': adminPassword 
+                        },
+                        body: JSON.stringify({ prompt: text })
+                    });
+                    
+                    const aiResponse = await res.json();
                     document.getElementById(typingId).remove();
-                    terminalBody.innerHTML += `<div class="terminal-msg msg-ai"><span class="text-[#ff1a1a] font-bold">CORE></span> ${aiResponse.reply}</div>`;
+                    
+                    if(res.status === 401) {
+                        terminalBody.innerHTML += `<div class="terminal-msg msg-ai border-red-500 text-red-400"><span class="text-red-500 font-bold">SECURITY ALERT></span> Unauthorized token detected.</div>`;
+                    } else {
+                        terminalBody.innerHTML += `<div class="terminal-msg msg-ai"><span class="text-[#ff1a1a] font-bold">CORE></span> ${aiResponse.reply}</div>`;
+                    }
                 } catch (error) {
                     document.getElementById(typingId).remove();
                     terminalBody.innerHTML += `<div class="terminal-msg msg-ai border-red-500 text-red-400"><span class="text-red-500 font-bold">ERROR></span> LLM connection failed.</div>`;
