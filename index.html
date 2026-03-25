@@ -341,6 +341,30 @@
         #chatbotMessages::-webkit-scrollbar-thumb { background: rgba(255,26,26,0.3); border-radius: 2px; }
         .chat-bot-msg { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem 1rem 1rem 0.25rem; padding: 0.6rem 1rem; color: #d1d5db; font-size: 0.875rem; max-width: 85%; line-height: 1.4; word-wrap: break-word; }
         .chat-user-msg { background: rgba(255,26,26,0.15); border: 1px solid rgba(255,26,26,0.3); border-radius: 1rem 1rem 0.25rem 1rem; padding: 0.6rem 1rem; color: #fff; font-size: 0.875rem; max-width: 85%; margin-left: auto; line-height: 1.4; word-wrap: break-word; }
+
+        /* UPGRADED: Price Card Interactive CSS */
+        .price-card {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .price-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 26, 26, 0.1), transparent);
+            transition: left 0.5s ease;
+            transform: skewX(-20deg);
+        }
+        .price-card:hover::before {
+            left: 150%;
+        }
+        .price-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 26, 26, 0.4);
+            box-shadow: 0 4px 20px rgba(255, 26, 26, 0.1);
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -538,27 +562,27 @@
                 </div>
                 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full lg:w-2/3">
-                    <div class="text-center p-4 rounded-xl bg-black/40 border border-white/5 hover:border-[#ff1a1a]/30 transition-colors">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Short Form</div>
                         <div class="text-white font-bold text-lg">₹1</div>
                     </div>
-                    <div class="text-center p-4 rounded-xl bg-black/40 border border-white/5 hover:border-[#ff1a1a]/30 transition-colors">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Long Form</div>
                         <div class="text-white font-bold text-lg">₹500</div>
                     </div>
-                    <div class="text-center p-4 rounded-xl bg-black/40 border border-white/5 hover:border-[#ff1a1a]/30 transition-colors">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Motion</div>
                         <div class="text-white font-bold text-lg">₹400</div>
                     </div>
-                    <div class="text-center p-4 rounded-xl bg-black/40 border border-white/5 hover:border-[#ff1a1a]/30 transition-colors">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Thumbnails</div>
                         <div class="text-white font-bold text-lg">₹100</div>
                     </div>
-                    <div class="text-center p-4 rounded-xl bg-black/40 border border-white/5 hover:border-[#ff1a1a]/30 transition-colors">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Sound</div>
                         <div class="text-white font-bold text-lg">₹200</div>
                     </div>
-                    <div class="text-center p-4 rounded-xl bg-black/40 border border-white/5 hover:border-[#ff1a1a]/30 transition-colors">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Coloring</div>
                         <div class="text-white font-bold text-lg">₹175</div>
                     </div>
@@ -939,7 +963,7 @@
                 }
                 animateCursor();
                 
-                const interactiveElements = document.querySelectorAll('a, button, .service-card, [tabindex="0"]');
+                const interactiveElements = document.querySelectorAll('a, button, .service-card, .price-card, [tabindex="0"]');
                 interactiveElements.forEach(el => {
                     el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
                     el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
@@ -1446,6 +1470,7 @@
                     });
                 }
 
+                // UPGRADED: renderStep4 with correct payload, trust badge, and business policy enforcement
                 function renderStep4() {
                     const content = `
                         <p class="mb-3">Perfect! Here is your order summary:</p>
@@ -1456,8 +1481,17 @@
                             <div class="flex justify-between text-xs mb-3"><span class="text-gray-400">Phone:</span><span class="text-white">${orderData.phone}</span></div>
                             <div class="flex justify-between text-sm pt-2 border-t border-white/10"><span class="text-gray-400">Total:</span><span class="text-[#ff1a1a] font-bold">₹${orderData.price}</span></div>
                         </div>
-                        <button id="wizPayBtn" class="w-full bg-[#ff1a1a] text-black px-4 py-3 rounded text-xs font-bold hover:bg-white transition-colors">Proceed to Payment</button>
-                        <div id="wizPayStatus" class="mt-2 text-[10px] text-[#ff1a1a] text-center hidden"></div>
+                        
+                        <div class="mb-4 p-2 bg-[#ff1a1a]/5 border border-[#ff1a1a]/20 rounded text-[10px] text-gray-300 flex items-start gap-2">
+                            <svg class="w-4 h-4 text-[#ff1a1a] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            <p>Full payment is required upfront to secure your spot. 100% refund guaranteed if you aren't completely satisfied with the final cut.</p>
+                        </div>
+
+                        <button id="wizPayBtn" class="w-full bg-[#ff1a1a] text-black px-4 py-3 rounded text-xs font-bold hover:bg-white transition-colors flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
+                            Proceed to Secure Payment
+                        </button>
+                        <div id="wizPayStatus" class="mt-2 text-[10px] text-[#ff1a1a] text-center hidden font-medium tracking-wide"></div>
                     `;
                     addBotMessage(content);
 
@@ -1467,34 +1501,34 @@
                         const statusEl = document.getElementById('wizPayStatus');
                         statusEl.classList.remove('hidden');
 
-                        const uniqueOrderId = "ZYRO_" + Date.now();
-
                         try {
-                            statusEl.innerText = "Generating secure payment link...";
+                            statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Generating secure payment link...`;
 
+                            // FIXED: Payload aligned with chat.js expectations
                             const response = await fetch('/api/chat', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ 
-                                    service: orderData.service,
-                                    price: orderData.price,
+                                    message: `Client ready to pay. INITIATE_CHECKOUT_NOW`, 
+                                    selectedService: orderData.service,
+                                    amount: orderData.price,
                                     name: orderData.name,
                                     email: orderData.email,
                                     phone: orderData.phone,
-                                    orderId: uniqueOrderId
+                                    sessionId: "CUST_" + Date.now() 
                                 })
                             });
                             
                             const data = await response.json();
                             
                             if (data.paymentSessionId) {
-                                statusEl.innerText = "Redirecting to checkout...";
+                                statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to Cashfree...`;
                                 cashfree.checkout({
                                     paymentSessionId: data.paymentSessionId,
                                     redirectTarget: "_self" 
                                 });
                             } else {
-                                throw new Error("Could not retrieve payment session.");
+                                throw new Error(data.reply || "Could not retrieve payment session.");
                             }
                         } catch (err) {
                             console.error("Payment Error:", err);
