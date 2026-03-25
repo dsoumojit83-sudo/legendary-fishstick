@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZyroEditz | Command Center</title>
+    <meta name="robots" content="noindex, nofollow">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { brand: { red: '#ff1a1a', dark: '#050505' } },
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+
+    <style>
+        :root { --brand-red: #ff1a1a; --bg-dark: #050505; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-dark); color: #fff; font-family: 'Outfit', sans-serif; overflow: hidden; }
+        
+        ::selection { background: var(--brand-red); color: var(--bg-dark); }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,26,26,0.3); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,26,26,0.5); }
+
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+        .status-pending { background: rgba(234, 179, 8, 0.1); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.2); }
+        .status-progress { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .status-completed { background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
+
+        /* ADDED: Cinematic Background Styles */
+        .noise { position: fixed; inset: 0; pointer-events: none; opacity: 0.15; z-index: -1; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter i='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+        .admin-grid { position: fixed; inset: 0; pointer-events: none; z-index: -2; background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px); background-size: 40px 40px; will-change: transform; }
+        .video-bg { position: fixed; inset: 0; z-index: -3; overflow: hidden; }
+        .orb { position: fixed; border-radius: 50%; pointer-events: none; z-index: -2; filter: blur(80px); will-change: transform; }
+
+        #ai-terminal { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .terminal-msg { padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 0.75rem; font-size: 0.875rem; line-height: 1.5; word-wrap: break-word; }
+        .msg-ai { background: rgba(255,26,26,0.05); border-left: 2px solid var(--brand-red); color: #e5e5e5; }
+        .msg-user { background: rgba(255,255,255,0.03); border-right: 2px solid #fff; color: #a3a3a3; text-align: right; margin-left: auto; max-width: 85%; }
+        
+        .typing-indicator span { display: inline-block; width: 4px; height: 4px; background-color: var(--brand-red); border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 4px; color: transparent !important; pointer-events: none; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .live-pulse { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); animation: pulse-green 2s infinite; }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+    </style>
+</head>
+<body class="flex h-screen w-full overflow-hidden relative">
+    
+    <div class="noise" aria-hidden="true"></div>
+    <div class="admin-grid" id="parallaxGrid" aria-hidden="true"></div>
+    <div class="video-bg" style="background-color: var(--bg-dark);" aria-hidden="true">
+        <canvas id="cinematicCanvas" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.4;"></canvas>
+    </div>
+    
+    <div class="orb w-[600px] h-[600px] bg-red-600/5 top-[-20%] left-[-10%] hidden lg:block" id="orb1" aria-hidden="true"></div>
+    <div class="orb w-[500px] h-[500px] bg-red-600/3 bottom-[-10%] right-[-5%] hidden lg:block" id="orb2" aria-hidden="true"></div>
+
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-30 hidden lg:hidden transition-opacity opacity-0"></div>
+
+    <aside id="sidebar" class="w-64 glass-panel border-r border-white/5 flex flex-col z-40 fixed lg:relative h-full transition-transform duration-300 -translate-x-full lg:translate-x-0">
+        <div class="h-20 flex items-center justify-between px-6 border-b border-white/5 bg-black/20">
+            <h1 class="text-xl font-bold tracking-tight">Zyro<span class="text-[#ff1a1a]">Editz</span> <span class="text-[10px] uppercase tracking-widest text-gray-500 ml-1">Admin</span></h1>
+            <button id="close-sidebar" class="lg:hidden text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        
+        <nav class="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#ff1a1a]/10 text-[#ff1a1a] border border-[#ff1a1a]/20 transition-all shadow-[0_0_15px_rgba(255,26,26,0.1)]">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span class="font-medium text-sm">Command Center</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                <i data-lucide="folder-video" class="w-5 h-5"></i>
+                <span class="font-medium text-sm">Projects</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span class="font-medium text-sm">Clients</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span class="font-medium text-sm">Studio Settings</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-white/5 bg-black/20">
+            <div class="flex items-center gap-3 px-4 py-3 rounded-lg bg-black/40 border border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff1a1a] to-red-900 flex items-center justify-center font-bold text-xs text-white shadow-lg shadow-[#ff1a1a]/20">SD</div>
+                <div class="flex-1 overflow-hidden">
+                    <div class="text-xs font-bold text-white truncate">Soumojit Das</div>
+                    <div class="text-[10px] text-gray-500 uppercase tracking-wider">Sign Out</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col relative z-10 w-full overflow-hidden">
+        <header class="h-20 glass-panel border-b border-white/5 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-20 shrink-0 bg-black/20">
+            <div class="flex items-center gap-4">
+                <button id="open-sidebar" class="lg:hidden text-gray-400 hover:text-white"><i data-lucide="menu" class="w-6 h-6"></i></button>
+                <div>
+                    <h2 class="text-xl lg:text-2xl font-bold text-white stagger-elem">Overview</h2>
+                    <p class="text-[10px] lg:text-xs text-gray-400 mt-1 uppercase tracking-widest stagger-elem" id="current-date">Loading date...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6 stagger-elem">
+                
+                <div class="hidden sm:flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
+                    <span class="w-2 h-2 rounded-full bg-green-500 live-pulse"></span>
+                    <span class="text-xs font-medium text-gray-300">zyroeditz.com <span class="text-gray-500 ml-1">Live</span></span>
+                    <span class="text-[10px] text-green-400 font-mono ml-2 border-l border-white/10 pl-3" id="latency-ms">24ms</span>
+                </div>
+
+                <button class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-[#ff1a1a] transition-all relative">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-[#ff1a1a] rounded-full border border-black hidden" id="notif-dot"></span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 lg:p-10 space-y-6 pb-32" id="main-scroll">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                <div class="glass-panel p-6 rounded-2xl stagger-elem relative overflow-hidden group hover:border-[#ff1a1a]/30 transition-colors">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-[#ff1a1a]/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                    <div class="flex justify-between items-start mb-4 relative z-10">
+                        <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Total Revenue</div>
+                        <i data-lucide="wallet" class="w-4 h-4 text-[#ff1a1a]"></i>
+                    </div>
+                    <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-total-rev"><span class="skeleton w-24 h-8 inline-block"></span></div>
+                    <div class="text-xs text-gray-500 relative z-10">All time earnings</div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl stagger-elem relative overflow-hidden group hover:border-blue-500/30 transition-colors">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                    <div class="flex justify-between items-start mb-4 relative z-10">
+                        <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">MRR (This Month)</div>
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-400"></i>
+                    </div>
+                    <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-mrr"><span class="skeleton w-24 h-8 inline-block"></span></div>
+                    <div class="text-xs text-green-400 flex items-center gap-1 relative z-10"><i data-lucide="trending-up" class="w-3 h-3"></i> +12% vs last month</div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl stagger-elem relative overflow-hidden group hover:border-yellow-500/30 transition-colors">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                    <div class="flex justify-between items-start mb-4 relative z-10">
+                        <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Active Projects</div>
+                        <i data-lucide="scissors" class="w-4 h-4 text-yellow-400"></i>
+                    </div>
+                    <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-active"><span class="skeleton w-12 h-8 inline-block"></span></div>
+                    <div class="text-xs text-yellow-500 flex items-center gap-1 relative z-10"><i data-lucide="clock" class="w-3 h-3"></i> In production</div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl stagger-elem relative overflow-hidden group hover:border-purple-500/30 transition-colors">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                    <div class="flex justify-between items-start mb-4 relative z-10">
+                        <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Conversion Rate</div>
+                        <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-purple-400"></i>
+                    </div>
+                    <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-conv"><span class="skeleton w-16 h-8 inline-block"></span></div>
+                    <div class="text-xs text-gray-500 relative z-10">Chatbot to Checkout</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <div class="glass-panel rounded-2xl p-6 stagger-elem lg:col-span-2 border border-white/5 flex flex-col relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-b from-[#ff1a1a]/5 to-transparent opacity-20 pointer-events-none"></div>
+                    <div class="flex justify-between items-center mb-6 relative z-10">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Revenue Overview</h3>
+                            <p class="text-xs text-gray-400 mt-1">Real-time earnings trajectory</p>
+                        </div>
+                        <select class="bg-black/50 border border-white/10 text-xs text-white rounded px-3 py-1.5 focus:outline-none focus:border-[#ff1a1a]">
+                            <option>Last 6 Months</option>
+                            <option>This Year</option>
+                            <option>All Time</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 w-full relative z-10 min-h-[250px]">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl overflow-hidden stagger-elem flex flex-col border border-white/5 lg:col-span-1">
+                    <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
+                        <h3 class="text-md font-bold text-white">Active Pipeline</h3>
+                        <button class="text-gray-400 hover:text-[#ff1a1a] transition-colors" title="Sync Supabase">
+                            <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left border-collapse">
+                            <tbody id="projects-tbody" class="text-sm">
+                                <tr><td class="p-4"><div class="skeleton h-10 w-full"></div></td></tr>
+                                <tr><td class="p-4"><div class="skeleton h-10 w-full"></div></td></tr>
+                                <tr><td class="p-4"><div class="skeleton h-10 w-full"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-3 border-t border-white/5 text-center bg-black/20">
+                        <a href="#" class="text-xs text-[#ff1a1a] hover:text-white transition-colors font-semibold">View All Projects &rarr;</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="ai-terminal" class="fixed bottom-0 right-0 lg:bottom-6 lg:right-6 w-full lg:w-96 glass-panel lg:rounded-2xl border-t lg:border border-white/10 shadow-2xl flex flex-col z-50 h-[80vh] lg:h-auto overflow-hidden translate-y-[calc(100%-4rem)]">
+        
+        <div id="terminal-header" class="h-16 bg-black/80 border-b border-white/10 flex items-center justify-between px-5 cursor-pointer hover:bg-[#ff1a1a]/5 transition-colors">
+            <div class="flex items-center gap-3">
+                <div class="relative flex items-center justify-center w-8 h-8 rounded bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 text-[#ff1a1a] shadow-[0_0_10px_rgba(255,26,26,0.2)]">
+                    <i data-lucide="cpu" class="w-4 h-4"></i>
+                    <span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff1a1a]"></span>
+                    </span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-white">Zyro Core AI</h3>
+                    <p class="text-[9px] text-[#ff1a1a] uppercase tracking-widest font-mono">System Online</p>
+                </div>
+            </div>
+            <i data-lucide="chevron-up" id="terminal-icon" class="w-5 h-5 text-gray-400 transition-transform"></i>
+        </div>
+
+        <div id="terminal-body" class="flex-1 p-5 overflow-y-auto lg:h-80 flex flex-col gap-2 font-mono" style="background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);">
+            <div class="terminal-msg msg-ai">
+                <span class="text-[#ff1a1a] font-bold">CORE></span> Initialization complete. Secure connection to Supabase established. How can I analyze the studio data today, Soumojit?
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-white/10 bg-black/60 backdrop-blur-md">
+            <form id="ai-form" class="relative">
+                <input type="text" id="ai-input" class="w-full bg-black/80 border border-white/20 rounded-lg py-3 pl-4 pr-12 text-sm text-white font-mono focus:outline-none focus:border-[#ff1a1a] focus:ring-1 focus:ring-[#ff1a1a] transition-all" placeholder="Ask about revenue, projects..." autocomplete="off" disabled>
+                <button type="submit" id="ai-submit" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#ff1a1a] transition-colors disabled:opacity-50" disabled>
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Environment & Lib Setup
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            const isMobile = window.innerWidth < 768;
+            
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', dateOptions);
+
+            // ==================== BACKGROUND CANVAS ANIMATION ====================
+            function initCanvasBackground() {
+                const canvas = document.getElementById('cinematicCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                let width, height, particles;
+
+                function initCanvas() {
+                    width = canvas.width = window.innerWidth;
+                    height = canvas.height = window.innerHeight;
+                    particles = [];
+                    const particleCount = isMobile ? 20 : 60;
+                    for (let i = 0; i < particleCount; i++) { particles.push(new Particle()); }
+                }
+
+                class Particle {
+                    constructor() {
+                        this.x = Math.random() * width; this.y = Math.random() * height;
+                        this.vx = (Math.random() - 0.5) * 0.4; this.vy = (Math.random() - 0.5) * 0.4;
+                        this.size = Math.random() * 2.5 + 1; this.alpha = Math.random() * 0.5 + 0.1;
+                    }
+                    update() {
+                        this.x += this.vx; this.y += this.vy;
+                        if (this.x < 0 || this.x > width) this.vx *= -1;
+                        if (this.y < 0 || this.y > height) this.vy *= -1;
+                    }
+                    draw() {
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255, 26, 26, ${this.alpha})`; ctx.fill(); 
+                    }
+                }
+
+                function animateCanvas() {
+                    ctx.clearRect(0, 0, width, height);
+                    for (let i = 0; i < particles.length; i++) {
+                        particles[i].update(); particles[i].draw();
+                        if(!isMobile) {
+                            for (let j = i; j < particles.length; j++) {
+                                let dx = particles[i].x - particles[j].x; let dy = particles[i].y - particles[j].y;
+                                let dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist < 120) {
+                                    ctx.beginPath(); ctx.strokeStyle = `rgba(255, 26, 26, ${0.2 - (dist / 600)})`;
+                                    ctx.lineWidth = 1; ctx.moveTo(particles[i].x, particles[i].y);
+                                    ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+                                }
+                            }
+                        }
+                    }
+                    requestAnimationFrame(animateCanvas);
+                }
+
+                let resizeTimer;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(initCanvas, 200);
+                }, {passive: true});
+                
+                initCanvas(); animateCanvas();
+            }
+            initCanvasBackground();
+
+            // ==================== GSAP ANIMATIONS & PARALLAX ====================
+            const checkGsap = setInterval(() => {
+                if(window.gsap) {
+                    clearInterval(checkGsap);
+                    
+                    // Entrance Animations
+                    if(!isMobile) gsap.from("#sidebar", { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
+                    gsap.from(".stagger-elem", { y: 20, opacity: 0, duration: 0.6, stagger: 0.08, ease: "power2.out", delay: 0.1 });
+
+                    // Mouse Parallax for Admin Grid & Orbs
+                    if(!isMobile) {
+                        const grid = document.getElementById('parallaxGrid');
+                        const orbs = document.querySelectorAll('.orb');
+                        document.addEventListener('mousemove', (e) => {
+                            const x = (e.clientX / window.innerWidth - 0.5) * 20; 
+                            const y = (e.clientY / window.innerHeight - 0.5) * 20;
+                            gsap.to(orbs, { x: x*2, y: y*2, duration: 1.5, ease: 'power2.out', overwrite: 'auto' });
+                            gsap.to(grid, { x: x, y: y, duration: 1.5, ease: 'power2.out', overwrite: 'auto' });
+                        }, {passive: true});
+                        
+                        // Slow floating animation for orbs
+                        gsap.to('#orb1', { duration: 15, x: '+=50', y: '+=30', repeat: -1, yoyo: true, ease: 'sine.inOut' });
+                        gsap.to('#orb2', { duration: 18, x: '-=40', y: '-=40', repeat: -1, yoyo: true, ease: 'sine.inOut' });
+                    }
+                }
+            }, 100);
+
+            // ==================== CHART.JS INITIALIZATION ====================
+            let revenueChartInstance = null;
+            function initChart(data) {
+                const checkChart = setInterval(() => {
+                    if(window.Chart) {
+                        clearInterval(checkChart);
+                        const ctx = document.getElementById('revenueChart').getContext('2d');
+                        
+                        // Create gradient for the line chart fill
+                        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                        gradient.addColorStop(0, 'rgba(255, 26, 26, 0.4)');
+                        gradient.addColorStop(1, 'rgba(255, 26, 26, 0.0)');
+
+                        Chart.defaults.color = 'rgba(255, 255, 255, 0.5)';
+                        Chart.defaults.font.family = "'Outfit', sans-serif";
+
+                        revenueChartInstance = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.labels, // e.g., ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar']
+                                datasets: [{
+                                    label: 'Revenue (₹)',
+                                    data: data.values,
+                                    borderColor: '#ff1a1a',
+                                    backgroundColor: gradient,
+                                    borderWidth: 2,
+                                    pointBackgroundColor: '#050505',
+                                    pointBorderColor: '#ff1a1a',
+                                    pointBorderWidth: 2,
+                                    pointRadius: 4,
+                                    pointHoverRadius: 6,
+                                    fill: true,
+                                    tension: 0.4 // Smooth curves
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(5, 5, 5, 0.9)',
+                                        titleColor: '#fff',
+                                        bodyColor: '#ff1a1a',
+                                        borderColor: 'rgba(255,26,26,0.3)',
+                                        borderWidth: 1,
+                                        padding: 10,
+                                        displayColors: false,
+                                        callbacks: {
+                                            label: function(context) { return '₹' + context.parsed.y; }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: { grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false } },
+                                    y: { grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, beginAtZero: true, ticks: { callback: function(value) { return '₹' + value; } } }
+                                },
+                                interaction: { intersect: false, mode: 'index' }
+                            }
+                        });
+                    }
+                }, 100);
+            }
+
+            // ==================== UI LOGIC & DATA FETCHING ====================
+            
+            // Random Latency Faker for realism
+            setInterval(() => {
+                const latency = Math.floor(Math.random() * 15) + 18; // between 18-32ms
+                const el = document.getElementById('latency-ms');
+                if(el) el.innerText = latency + 'ms';
+            }, 3000);
+
+            // Mobile Sidebar
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            function toggleSidebar() {
+                const isOpen = !sidebar.classList.contains('-translate-x-full');
+                if (isOpen) {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden', 'opacity-0');
+                    overlay.classList.remove('opacity-100');
+                } else {
+                    sidebar.classList.remove('-translate-x-full');
+                    overlay.classList.remove('hidden');
+                    setTimeout(() => { overlay.classList.add('opacity-100'); overlay.classList.remove('opacity-0'); }, 10);
+                }
+            }
+            document.getElementById('open-sidebar').addEventListener('click', toggleSidebar);
+            document.getElementById('close-sidebar').addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
+
+            // AI Terminal Logic
+            const terminal = document.getElementById('ai-terminal');
+            const header = document.getElementById('terminal-header');
+            const icon = document.getElementById('terminal-icon');
+            const aiInput = document.getElementById('ai-input');
+            let isTerminalOpen = false;
+
+            header.addEventListener('click', () => {
+                isTerminalOpen = !isTerminalOpen;
+                if(isTerminalOpen) {
+                    terminal.classList.remove('translate-y-[calc(100%-4rem)]');
+                    icon.classList.add('rotate-180');
+                    setTimeout(() => aiInput.focus(), 300); 
+                } else {
+                    terminal.classList.add('translate-y-[calc(100%-4rem)]');
+                    icon.classList.remove('rotate-180');
+                    aiInput.blur();
+                }
+            });
+
+            // Fetch Data
+            async function fetchDashboardData() {
+                try {
+                    // Simulating network delay for skeleton loading
+                    await new Promise(r => setTimeout(r, 1000)); 
+
+                    // Mock Data (Replace with API Call)
+                    const data = {
+                        totalRevenue: 4500,
+                        mrr: 1200,
+                        activeProjects: 3,
+                        convRate: 18.5,
+                        recentOrders: [
+                            { id: 'ZYRO1A2', client: 'Ishaan Verma', service: 'Long Form', amount: 500, status: 'in_progress' },
+                            { id: 'ZYRO2B5', client: 'Priya Das', service: 'Motion Graphics', amount: 400, status: 'pending' },
+                            { id: 'ZYRO3C8', client: 'Rahul K.', service: 'Short Form', amount: 1, status: 'completed' }
+                        ],
+                        chartData: {
+                            labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+                            values: [200, 450, 800, 600, 1000, 1450]
+                        }
+                    };
+
+                    // Update KPIs
+                    document.getElementById('kpi-total-rev').textContent = `₹${data.totalRevenue}`;
+                    document.getElementById('kpi-mrr').textContent = `₹${data.mrr}`;
+                    document.getElementById('kpi-active').textContent = data.activeProjects;
+                    document.getElementById('kpi-conv').textContent = `${data.convRate}%`;
+
+                    // Update Table
+                    const tbody = document.getElementById('projects-tbody');
+                    tbody.innerHTML = ''; 
+                    
+                    data.recentOrders.forEach(order => {
+                        let badgeClass = 'status-pending';
+                        let badgeText = 'Pending Assets';
+                        if(order.status === 'in_progress') { badgeClass = 'status-progress'; badgeText = 'In Progress'; }
+                        if(order.status === 'completed') { badgeClass = 'status-completed'; badgeText = 'Completed'; }
+
+                        tbody.innerHTML += `
+                            <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group cursor-pointer">
+                                <td class="p-3 lg:p-4">
+                                    <div class="font-medium text-white">${order.client}</div>
+                                    <div class="font-mono text-[10px] text-gray-500">${order.id}</div>
+                                </td>
+                                <td class="p-3 lg:p-4 text-gray-400 text-xs">${order.service}</td>
+                                <td class="p-3 lg:p-4 font-semibold text-[#ff1a1a]">₹${order.amount}</td>
+                                <td class="p-3 lg:p-4 text-right"><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+                            </tr>
+                        `;
+                    });
+
+                    // Initialize Chart
+                    initChart(data.chartData);
+
+                    // Enable AI Terminal
+                    document.getElementById('ai-input').disabled = false;
+                    document.getElementById('ai-submit').disabled = false;
+
+                } catch (error) {
+                    console.error("Dashboard Sync Failed:", error);
+                    document.getElementById('projects-tbody').innerHTML = `<tr><td class="p-4 text-center text-red-500 text-xs">Failed to sync with Supabase.</td></tr>`;
+                }
+            }
+
+            // Terminal Submit Logic
+            const aiForm = document.getElementById('ai-form');
+            const terminalBody = document.getElementById('terminal-body');
+
+            aiForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const text = aiInput.value.trim();
+                if(!text) return;
+
+                terminalBody.innerHTML += `<div class="terminal-msg msg-user">${text}</div>`;
+                aiInput.value = '';
+                terminalBody.scrollTop = terminalBody.scrollHeight;
+
+                const typingId = 'typing-' + Date.now();
+                terminalBody.innerHTML += `
+                    <div id="${typingId}" class="terminal-msg msg-ai typing-indicator">
+                        <span class="text-[#ff1a1a] font-bold mr-2">CORE></span> <span></span><span></span><span></span>
+                    </div>`;
+                terminalBody.scrollTop = terminalBody.scrollHeight;
+
+                try {
+                    await new Promise(r => setTimeout(r, 1500));
+                    const aiResponse = { reply: "I am ready to process live Supabase data. Please deploy the Node backend endpoint to proceed." };
+                    document.getElementById(typingId).remove();
+                    terminalBody.innerHTML += `<div class="terminal-msg msg-ai"><span class="text-[#ff1a1a] font-bold">CORE></span> ${aiResponse.reply}</div>`;
+                } catch (error) {
+                    document.getElementById(typingId).remove();
+                    terminalBody.innerHTML += `<div class="terminal-msg msg-ai border-red-500 text-red-400"><span class="text-red-500 font-bold">ERROR></span> LLM connection failed.</div>`;
+                } finally {
+                    terminalBody.scrollTop = terminalBody.scrollHeight;
+                }
+            });
+
+            // Start
+            fetchDashboardData();
+        });
+    </script>
+</body>
+</html>
