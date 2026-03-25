@@ -72,7 +72,42 @@ module.exports = async function(req, res) {
     }
 
     try {
-        const { message, clientId = "default_user", stepOverride } = req.body;
+        // ====================================================================
+        // NEW LOGIC: Intercept direct payment requests from the HTML Wizard
+        // ====================================================================
+        if (req.body.service && req.body.price && req.body.orderId) {
+            const { service, price, name, email, orderId } = req.body;
+            
+            // 1. Save Order to Supabase Database
+            const { error: orderError } = await supabase.from('orders').upsert({
+                order_id: orderId,
+                client_email: email,
+                client_name: name,
+                service_type: service, 
+                amount: parseInt(price),
+                status: 'pending'
+            });
+            
+            if (orderError) console.error("Order Creation Error:", orderError.message);
+
+            // 2. Create Cashfree Order immediately
+            const customerId = orderId.replace('ZYRO_', 'CUST_').substring(0, 50);
+            const sessionId = await createCashfreeOrder(parseInt(price), orderId, customerId);
+
+            if (!sessionId) {
+                return res.status(500).json({ error: "Failed to generate Cashfree session." });
+            }
+
+            // 3. Return the session ID directly to the frontend widget
+            return res.json({ paymentSessionId: sessionId });
+        }
+
+        // ====================================================================
+        // ORIGINAL LOGIC: The Conversational Chatbot State Machine
+        // ====================================================================
+        
+        // ADDED FIX: Default message to "" so .toLowerCase() never crashes again
+        const { message = "", clientId = "default_user", stepOverride } = req.body;
         const msg = message.toLowerCase().trim();
 
         const pricing = {
@@ -84,7 +119,7 @@ module.exports = async function(req, res) {
             color: { full: 175 }
         };
 
-        // 2. Fetch or Create Client State in Database
+        // Fetch or Create Client State in Database
         let { data: clientData, error: fetchError } = await supabase
             .from('client_states')
             .select('*')
@@ -152,7 +187,7 @@ module.exports = async function(req, res) {
 
                 state.step = "confirm";
                 
-                // 3. Save Order to Supabase Database
+                // Save Order to Supabase Database
                 const { error: orderError } = await supabase.from('orders').upsert({
                     order_id: state.order_id,
                     client_id: clientId,
@@ -197,9 +232,6 @@ module.exports = async function(req, res) {
 
         // STEP 3: PAYMENT CONFIRM
         if (state.step === "payment_pending") {
-            
-            // NOTE: In a fully automated system, the webhook handles this state change.
-            // But we keep this for the chatbot conversational flow.
             if (["yes", "done", "paid", "ok", "sent"].some(w => msg.includes(w))) {
                 state.step = "form";
                 await saveState(state);
