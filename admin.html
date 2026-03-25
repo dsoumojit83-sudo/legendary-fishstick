@@ -164,11 +164,20 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-6 stagger-elem">
-                    <div class="hidden sm:flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
-                        <span class="w-2 h-2 rounded-full bg-green-500 live-pulse"></span>
-                        <span class="text-xs font-medium text-gray-300">zyroeditz.com <span class="text-gray-500 ml-1">Live</span></span>
-                        <span class="text-[10px] text-green-400 font-mono ml-2 border-l border-white/10 pl-3" id="latency-ms">24ms</span>
-                    </div>
+    <div class="hidden sm:flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
+        <span class="w-2 h-2 rounded-full bg-green-500 live-pulse"></span>
+        <span class="text-xs font-medium text-gray-300">zyroeditz.com <span class="text-gray-500 ml-1">Live</span></span>
+        <span class="text-[10px] text-green-400 font-mono ml-2 border-l border-white/10 pl-3" id="latency-ms">24ms</span>
+    </div>
+    
+    <a href="https://mega.nz/fm" target="_blank" rel="noopener noreferrer" class="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 text-[#ff1a1a] hover:bg-[#ff1a1a] hover:text-black transition-all text-xs font-bold uppercase tracking-widest">
+        <i data-lucide="cloud" class="w-4 h-4"></i> Cloud Vault
+    </a>
+
+    <button class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-[#ff1a1a] transition-all relative" onclick="fetchDashboardData()">
+        <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
+    </button>
+</div>
                     <button class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-[#ff1a1a] transition-all relative" onclick="fetchDashboardData()">
                         <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
                     </button>
