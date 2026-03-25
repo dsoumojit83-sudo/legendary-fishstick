@@ -7,53 +7,120 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #050505; color: #fff; font-family: 'Outfit', sans-serif; }
+        body { background-color: #050505; color: #fff; font-family: 'Outfit', sans-serif; overflow-x: hidden; }
         .glow { text-shadow: 0 0 20px rgba(255, 26, 26, 0.5); }
+        
+        /* Custom Scrollbar for Textarea */
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background: rgba(255,26,26,0.3); border-radius: 3px; }
+        
+        /* YouTube-style Spinner */
+        @keyframes yt-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .yt-spinner { 
+            animation: yt-spin 0.8s linear infinite; 
+            border: 3px solid rgba(255, 255, 255, 0.2); 
+            border-top-color: #fff; 
+            border-radius: 50%; 
+            width: 18px; 
+            height: 18px; 
+            display: inline-block; 
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
-    <div class="fixed inset-0 pointer-events-none opacity-10" 
+<body class="min-h-screen flex items-center justify-center p-6 relative">
+    <div class="fixed inset-0 pointer-events-none opacity-10 z-0" 
          style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 50px 50px;">
     </div>
+    <div class="fixed w-[600px] h-[600px] bg-[#ff1a1a]/5 rounded-full blur-[100px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
-    <div class="max-w-xl w-full text-center relative z-10">
-        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 mb-8">
+    <div class="max-w-2xl w-full text-center relative z-10 pt-10 pb-10">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 mb-6 shadow-[0_0_30px_rgba(255,26,26,0.2)]">
             <svg class="w-10 h-10 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
         </div>
 
-        <h1 class="text-5xl font-black tracking-tight mb-4">Zyro<span class="text-[#ff1a1a] glow">Success</span></h1>
-        <p class="text-gray-400 text-lg uppercase tracking-[0.3em] mb-8">Project Initialized</p>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">Payment <span class="text-[#ff1a1a] glow">Secured</span></h1>
+        <p class="text-gray-400 text-sm md:text-lg uppercase tracking-[0.3em] mb-8">Project Initialized</p>
         
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md mb-8">
-            <h2 class="text-xl font-bold mb-4">Payment Secured.</h2>
-            <p class="text-gray-400 leading-relaxed mb-6">
-                Thank you for your business. We've received your payment and our studio is spinning up your project.
-            </p>
-            <div class="text-left space-y-4 text-sm">
-                <div class="flex items-start gap-3">
-                    <span class="text-[#ff1a1a]">01.</span>
-                    <p>Check your email for the <strong>official receipt</strong> and <strong>MEGA</strong> upload link.</p>
-                </div>
-                <div class="flex items-start gap-3">
-                    <span class="text-[#ff1a1a]">02.</span>
-                    <p>Upload your raw footage and project brief to the folder immediately.</p>
-                </div>
-                <div class="flex items-start gap-3">
-                    <span class="text-[#ff1a1a]">03.</span>
-                    <p>Your 100% refund guarantee is active if you aren't satisfied with the final cut.</p>
-                </div>
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-xl shadow-2xl mb-8 text-left">
+            <h2 class="text-xl font-bold mb-2 text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Project Brief
+            </h2>
+            <p class="text-gray-400 text-sm mb-6">Drop your vision, timestamps, or specific requirements below. Once submitted, you'll be redirected to our secure vault to upload your raw footage.</p>
+            
+            <div class="relative mb-6">
+                <textarea id="projectBrief" rows="5" 
+                    class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-[#ff1a1a] focus:ring-1 focus:ring-[#ff1a1a] transition-all shadow-inner placeholder-gray-600 resize-none"
+                    placeholder="e.g., 'Make the intro fast-paced. Use the color grading from my last video. Cut out the dead air at 02:15...'"></textarea>
             </div>
+
+            <div class="text-left space-y-3 text-xs text-gray-400 mb-8 p-4 bg-black/20 rounded-lg border border-white/5">
+                <div class="flex items-start gap-3"><span class="text-[#ff1a1a] font-bold">01.</span><p>Your official receipt has been emailed to you.</p></div>
+                <div class="flex items-start gap-3"><span class="text-[#ff1a1a] font-bold">02.</span><p>Your 100% refund guarantee is now active.</p></div>
+            </div>
+
+            <button id="submitBriefBtn" class="w-full relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3">
+                <span id="btnText">Submit Brief & Upload Footage</span>
+                <svg id="btnIcon" class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+            <div id="statusMsg" class="mt-3 text-center text-xs font-mono hidden"></div>
         </div>
 
-        <a href="/" class="inline-block px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all rounded-lg">
-            Back to Home
-        </a>
-        
-        <p class="mt-12 text-gray-600 text-[10px] uppercase tracking-widest">
+        <p class="mt-8 text-gray-600 text-[10px] uppercase tracking-widest">
             Speed. Motion. Precision. — Soumojit Das
         </p>
     </div>
+
+    <script>
+        document.getElementById('submitBriefBtn').addEventListener('click', async function() {
+            const briefContent = document.getElementById('projectBrief').value.trim();
+            const btn = this;
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
+            const statusMsg = document.getElementById('statusMsg');
+            
+            // Extract the order_id that Cashfree puts in the URL after a successful payment
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('order_id');
+
+            // UI Loading State
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+            btnIcon.classList.add('hidden');
+            btnText.innerHTML = `<span class="yt-spinner mr-2"></span> Saving to Studio Core...`;
+            statusMsg.classList.add('hidden');
+
+            try {
+                // If they wrote something, save it to Supabase via our new API route
+                if (briefContent && orderId) {
+                    const response = await fetch('/api/save-brief', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId: orderId, notes: briefContent })
+                    });
+
+                    if (!response.ok) throw new Error("Failed to save brief.");
+                }
+
+                // Instantly redirect to your specific MEGA file request link
+                btnText.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to MEGA...`;
+                window.location.href = "https://mega.nz/filerequest/I-2hfdO8CCo";
+
+            } catch (error) {
+                console.error("Error:", error);
+                // Even if the save fails, we don't want to block the user from uploading footage
+                statusMsg.textContent = "⚠️ Minor network error, but redirecting to vault anyway...";
+                statusMsg.classList.remove('hidden', 'text-green-500');
+                statusMsg.classList.add('text-[#ff1a1a]');
+                
+                setTimeout(() => {
+                    window.location.href = "https://mega.nz/filerequest/I-2hfdO8CCo";
+                }, 1500);
+            }
+        });
+    </script>
 </body>
 </html>
