@@ -326,7 +326,7 @@
 
             <div id="terminal-body" class="flex-1 p-5 overflow-y-auto flex flex-col gap-2 font-mono" style="background: radial-gradient(circle at top, #111 0%, #000 100%);">
                 <div class="terminal-msg msg-ai">
-                    <span class="text-[#ff1a1a] font-bold">CORE></span> Initialization complete. Secure connection established. How can I analyze the studio data today, Soumojit?
+                    <span class="text-[#ff1a1a] font-bold">CORE></span> Initialization complete. Secure connection to Supabase established. How can I analyze the studio data today, Soumojit?
                 </div>
             </div>
 
@@ -363,6 +363,7 @@
     </div>
 
     <script>
+        // ==================== CORE STATE & AUTH ====================
         let adminPassword = sessionStorage.getItem('zyro_admin_key');
         let globalOrdersData = []; 
         
@@ -425,6 +426,7 @@
             window.location.reload();
         };
 
+        // ==================== VIEW ROUTING ====================
         window.switchView = function(viewId, btnElement) {
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             if(btnElement) btnElement.classList.add('active');
@@ -460,6 +462,7 @@
             }, 3000);
         }
 
+        // ==================== DATA FETCHING & RENDERING ====================
         window.fetchDashboardData = async function() {
             if(!adminPassword) return;
 
@@ -475,6 +478,7 @@
                 const data = await res.json();
                 globalOrdersData = data.recentOrders || [];
 
+                // Update KPIs
                 document.getElementById('kpi-total-rev').textContent = `₹${data.totalRevenue}`;
                 document.getElementById('kpi-mrr').textContent = `₹${data.mrr}`;
                 document.getElementById('kpi-active').textContent = data.activeProjects;
@@ -496,6 +500,7 @@
             }
         };
 
+        // ==================== UI LOGIC (AVATAR, DATES, MODALS) ====================
         function getAvatarHTML(name) {
             let displayName = (!name || name.trim() === '' || name.toLowerCase() === 'unknown') ? "Zyro Client" : name;
             const initials = displayName.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
@@ -514,6 +519,7 @@
             
             const diffTime = deadline - today;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
             const formattedDate = deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
             if (diffDays < 0) return `<span class="text-red-500 font-bold text-xs flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i>Overdue (${formattedDate})</span>`;
@@ -545,20 +551,7 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         };
 
-        // NEW: MEGA RAW FILES ACCESS FUNCTIONALITY
-        window.openMegaVault = function(orderId) {
-            navigator.clipboard.writeText(orderId).then(() => {
-                showToast(`ID ${orderId} copied! Opening MEGA...`);
-                setTimeout(() => {
-                    // Opens your Mega File Manager directly
-                    window.open('https://mega.nz/fm', '_blank');
-                }, 1500);
-            }).catch(err => {
-                console.error('Failed to copy ID: ', err);
-                showToast(`Unable to copy ID. Manual search required.`);
-            });
-        };
-
+        // NEW: Toast Notification System
         function showToast(message) {
             const toast = document.getElementById('toast-notification');
             const toastMsg = document.getElementById('toast-message');
@@ -569,6 +562,45 @@
                 toast.classList.add('translate-y-full', 'opacity-0');
             }, 4000);
         }
+
+        // NEW: MEGA Vault Automation
+        window.openMegaVault = function(orderId) {
+            navigator.clipboard.writeText(orderId).then(() => {
+                showToast(`ID ${orderId} copied! Opening MEGA...`);
+                setTimeout(() => {
+                    window.open('https://mega.nz/fm', '_blank');
+                }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy ID: ', err);
+                showToast(`Unable to copy ID. Manual search required.`);
+            });
+        };
+
+        // NEW: Mark Project Completed Logic
+        window.markProjectCompleted = async function(orderId) {
+            if (!confirm("Are you sure you want to mark this project as fully completed?")) return;
+            
+            try {
+                const response = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-admin-password': adminPassword 
+                    },
+                    body: JSON.stringify({ orderId: orderId, status: 'completed' })
+                });
+
+                if (response.ok) {
+                    showToast(`Project ${orderId} marked as completed!`);
+                    fetchDashboardData(); // Refresh the dashboard instantly
+                } else {
+                    showToast("Failed to update project status.");
+                }
+            } catch (err) {
+                console.error("Completion error:", err);
+                showToast("Network error. Could not complete project.");
+            }
+        };
 
         function renderTables() {
             const dashTbody = document.getElementById('dash-projects-tbody');
@@ -585,7 +617,6 @@
             }
 
             globalOrdersData.forEach((order, index) => {
-                // FIXED: Status correctly pulls "paid" to display as "completed"
                 let badgeClass = 'status-pending';
                 if(order.status === 'in_progress') badgeClass = 'status-progress';
                 if(order.status === 'completed' || order.status === 'paid') badgeClass = 'status-completed';
@@ -603,9 +634,19 @@
                     </div>
                 `;
 
-                // NEW: Action Buttons (Files + Brief)
+                // NEW: Action Buttons (Complete + Files + Brief)
+                let completeBtnHTML = '';
+                if (order.status !== 'completed') {
+                    completeBtnHTML = `
+                        <button onclick="markProjectCompleted('${order.id}')" class="p-1.5 rounded bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/50 text-gray-400 hover:text-green-500 transition-all" title="Mark Project as Completed">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        </button>
+                    `;
+                }
+
                 const actionBtn = `
                     <div class="flex items-center gap-2">
+                        ${completeBtnHTML}
                         <button onclick="openMegaVault('${order.id}')" class="p-1.5 rounded bg-white/5 hover:bg-white/20 border border-white/10 hover:border-white/50 text-gray-400 hover:text-white transition-all flex items-center gap-1" title="Access Raw Files">
                             <i data-lucide="folder-open" class="w-4 h-4"></i> <span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span>
                         </button>
@@ -696,11 +737,7 @@
                 }
                 
                 clientsMap[clientName].projectCount += 1;
-                
-                // Only count toward Lifetime Value if they actually paid
-                if (order.status === 'paid' || order.status === 'completed') {
-                    clientsMap[clientName].totalSpent += Number(order.amount) || 0;
-                }
+                clientsMap[clientName].totalSpent += Number(order.amount) || 0;
                 
                 const orderDate = new Date(order.created_at || Date.now());
                 if(orderDate > clientsMap[clientName].lastActive) {
@@ -740,6 +777,7 @@
             lucide.createIcons();
         }
 
+        // ==================== AI TERMINAL LOGIC ====================
         let isTerminalOpen = false;
         window.toggleTerminal = function() {
             const terminal = document.getElementById('ai-terminal');
@@ -806,6 +844,7 @@
             }
         });
 
+        // ==================== CHARTS & ANIMATIONS ====================
         let revenueChartInstance = null;
         window.initChart = function(data) {
             if(!window.Chart) return;
@@ -934,6 +973,7 @@
             }, 100);
         }
 
+        // Sidebar
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobile-overlay');
         window.toggleSidebar = function() {
