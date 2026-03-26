@@ -147,14 +147,16 @@
         .btn-shine {
             position: relative; overflow: hidden;
         }
-        .btn-shine::after {
-            content: ''; position: absolute; top: -50%; left: -100%;
-            width: 50%; height: 200%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transform: skewX(-25deg);
-            transition: left 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        @media (hover: hover) {
+            .btn-shine::after {
+                content: ''; position: absolute; top: -50%; left: -100%;
+                width: 50%; height: 200%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                transform: skewX(-25deg);
+                transition: left 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            }
+            .btn-shine:hover::after { left: 150%; }
         }
-        .btn-shine:hover::after { left: 150%; }
 
         .service-card {
             backdrop-filter: blur(20px) saturate(180%);
@@ -208,32 +210,39 @@
             box-shadow: 0 0 20px rgba(255,26,26,0.1);
         }
 
-        .custom-cursor {
-            position: fixed;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #ff1a1a;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10001;
-            transition: transform 0.15s ease, border-color 0.15s ease;
-            transform: translate(-50%, -50%);
-            mix-blend-mode: difference;
+        @media (pointer: coarse) {
+            .custom-cursor, .custom-cursor-dot { display: none !important; }
+            * { cursor: auto !important; }
         }
-        .custom-cursor.hover {
-            transform: translate(-50%, -50%) scale(2);
-            border-color: #fff;
-            background: rgba(255,26,26,0.1);
-        }
-        .custom-cursor-dot {
-            position: fixed;
-            width: 4px;
-            height: 4px;
-            background: #ff1a1a;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10002;
-            transform: translate(-50%, -50%);
+
+        @media (pointer: fine) {
+            .custom-cursor {
+                position: fixed;
+                width: 20px;
+                height: 20px;
+                border: 2px solid #ff1a1a;
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 10001;
+                transition: transform 0.15s ease, border-color 0.15s ease;
+                transform: translate(-50%, -50%);
+                mix-blend-mode: difference;
+            }
+            .custom-cursor.hover {
+                transform: translate(-50%, -50%) scale(2);
+                border-color: #fff;
+                background: rgba(255,26,26,0.1);
+            }
+            .custom-cursor-dot {
+                position: fixed;
+                width: 4px;
+                height: 4px;
+                background: #ff1a1a;
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 10002;
+                transform: translate(-50%, -50%);
+            }
         }
 
         *:focus-visible {
@@ -357,13 +366,15 @@
             transition: left 0.5s ease;
             transform: skewX(-20deg);
         }
-        .price-card:hover::before {
-            left: 150%;
-        }
-        .price-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(255, 26, 26, 0.4);
-            box-shadow: 0 4px 20px rgba(255, 26, 26, 0.1);
+        @media (hover: hover) {
+            .price-card:hover::before {
+                left: 150%;
+            }
+            .price-card:hover {
+                transform: translateY(-2px);
+                border-color: rgba(255, 26, 26, 0.4);
+                box-shadow: 0 4px 20px rgba(255, 26, 26, 0.1);
+            }
         }
     </style>
 </head>
@@ -444,7 +455,7 @@
                 Transforming raw footage into cinematic experiences.
             </p>
             
-            <div class="flex flex-col md:flex-row items-center justify-center gap-5 mb-16 reveal">
+            <div class="flex flex-col md:flex-row items-center justify-center gap-5 mb-16">
                 <button onclick="if(window.openZyroChat) window.openZyroChat()" class="btn-glow btn-shine px-12 py-5 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn block">Start Project</button>
                 <a href="#services" class="px-12 py-5 border border-white/20 text-white font-bold uppercase tracking-widest text-xs hover:border-[#ff1a1a] hover:text-[#ff1a1a] transition-all magnetic-btn block">Services</a>
             </div>
@@ -562,27 +573,27 @@
                 </div>
                 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full lg:w-2/3">
-                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5" data-service="Short Form" data-price="1">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Short Form</div>
                         <div class="text-white font-bold text-lg">₹1</div>
                     </div>
-                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5" data-service="Long Form" data-price="500">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Long Form</div>
                         <div class="text-white font-bold text-lg">₹500</div>
                     </div>
-                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5" data-service="Motion Graphics" data-price="400">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Motion</div>
                         <div class="text-white font-bold text-lg">₹400</div>
                     </div>
-                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5" data-service="Thumbnails" data-price="100">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Thumbnails</div>
                         <div class="text-white font-bold text-lg">₹100</div>
                     </div>
-                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5" data-service="Sound Design" data-price="200">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Sound</div>
                         <div class="text-white font-bold text-lg">₹200</div>
                     </div>
-                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5">
+                    <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5" data-service="Coloring" data-price="175">
                         <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider">Coloring</div>
                         <div class="text-white font-bold text-lg">₹175</div>
                     </div>
@@ -944,7 +955,7 @@
                 const cursor = document.getElementById('customCursor');
                 const cursorDot = document.getElementById('customCursorDot');
                 
-                if (!cursor || !cursorDot || prefersReducedMotion) return;
+                if (!cursor || !cursorDot || prefersReducedMotion || window.matchMedia("(pointer: coarse)").matches) return;
                 
                 let mouseX = 0, mouseY = 0;
                 let cursorX = 0, cursorY = 0;
@@ -1026,15 +1037,51 @@
                     mobileMenuToggle.setAttribute('aria-expanded', 'true');
                     lastFocusedElement = document.activeElement;
                     focusableElements = getFocusableElements();
+                    
+                    if (window.gsap) {
+                        const tl = gsap.timeline();
+                        tl.set(mobileMenu, { opacity: 0 })
+                          .to(mobileMenu, { opacity: 1, duration: 0.3, ease: 'power2.out' })
+                          .from(mobileMenu.querySelectorAll('.nav-link'), { 
+                              y: 20, 
+                              opacity: 0, 
+                              duration: 0.4, 
+                              stagger: 0.1, 
+                              ease: 'power2.out' 
+                          }, "-=0.2");
+                    }
+                    
                     if (focusableElements.length > 0) focusableElements[0].focus();
                     mobileMenu.addEventListener('keydown', trapFocus);
                 }
                 
                 function closeMobileMenu() {
-                    mobileMenu.classList.add('hidden');
-                    mobileMenuToggle.setAttribute('aria-expanded', 'false');
-                    mobileMenu.removeEventListener('keydown', trapFocus);
-                    if (lastFocusedElement) lastFocusedElement.focus();
+                    if (window.gsap) {
+                        const tl = gsap.timeline();
+                        tl.to(mobileMenu.querySelectorAll('.nav-link'), { 
+                            y: 20, 
+                            opacity: 0, 
+                            duration: 0.3, 
+                            stagger: 0.05, 
+                            ease: 'power2.in' 
+                        })
+                        .to(mobileMenu, { 
+                            opacity: 0, 
+                            duration: 0.2, 
+                            ease: 'power2.in',
+                            onComplete: () => {
+                                mobileMenu.classList.add('hidden');
+                                mobileMenuToggle.setAttribute('aria-expanded', 'false');
+                                mobileMenu.removeEventListener('keydown', trapFocus);
+                                if (lastFocusedElement) lastFocusedElement.focus();
+                            }
+                        }, "-=0.1");
+                    } else {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenuToggle.setAttribute('aria-expanded', 'false');
+                        mobileMenu.removeEventListener('keydown', trapFocus);
+                        if (lastFocusedElement) lastFocusedElement.focus();
+                    }
                 }
                 
                 if (mobileMenuToggle && mobileMenu) mobileMenuToggle.addEventListener('click', openMobileMenu);
@@ -1275,6 +1322,7 @@
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 let width, height, particles;
+                let lastWidth = window.innerWidth;
 
                 function initCanvas() {
                     width = canvas.width = window.innerWidth;
@@ -1319,7 +1367,12 @@
                     requestAnimationFrame(animateCanvas);
                 }
 
-                window.addEventListener('resize', initCanvas);
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth !== lastWidth) {
+                        lastWidth = window.innerWidth;
+                        initCanvas();
+                    }
+                });
                 initCanvas(); animateCanvas();
             }
 
@@ -1342,6 +1395,13 @@
                     } else {
                         windowEl.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
                         windowEl.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+                        
+                        // Reset chatbot state after closing
+                        setTimeout(() => {
+                            orderData = { service: '', price: 0, name: '', email: '', phone: '' };
+                            messages.innerHTML = '';
+                            renderStep0();
+                        }, 400);
                     }
                 }
                 
@@ -1349,7 +1409,27 @@
                     if (!isOpen) toggleChat();
                 };
 
+                window.startSpecificOrder = function(serviceName, price) {
+                    if (!isOpen) toggleChat();
+                    messages.innerHTML = '';
+                    orderData.service = serviceName;
+                    orderData.price = price;
+                    addBotMessage(`Great choice! Let's get your ${serviceName} project started.`);
+                    renderStep1();
+                };
+
                 closeBtn.addEventListener('click', toggleChat);
+
+                // Add click listeners to price cards
+                document.querySelectorAll('.price-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        const service = this.getAttribute('data-service');
+                        const price = this.getAttribute('data-price');
+                        if (service && price) {
+                            window.startSpecificOrder(service, price);
+                        }
+                    });
+                });
 
                 function addBotMessage(htmlContent) {
                     const msgDiv = document.createElement('div');
@@ -1451,7 +1531,7 @@
                     const content = `
                         <p class="mb-3">Got it! What is your WhatsApp or phone number?</p>
                         <div class="flex flex-col gap-2">
-                            <input type="tel" id="wizPhone" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="+91 0000000000" autocomplete="off">
+                            <input type="tel" id="wizPhone" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="0000000000" autocomplete="off">
                             <button id="wizPhoneBtn" class="bg-[#ff1a1a] text-black px-3 py-2 rounded text-xs font-bold hover:bg-white transition-colors">Next</button>
                         </div>
                     `;
