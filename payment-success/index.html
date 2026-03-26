@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body { background-color: #050505; color: #fff; font-family: 'Outfit', sans-serif; overflow-x: hidden; }
         .glow { text-shadow: 0 0 20px rgba(255, 26, 26, 0.5); }
@@ -45,7 +46,9 @@
         <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">Payment <span class="text-[#ff1a1a] glow">Secured</span></h1>
         <p class="text-gray-400 text-sm md:text-lg uppercase tracking-[0.3em] mb-8">Project Initialized</p>
         
-        <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl mb-8 text-left">
+        <div class="bg-black/20 backdrop-blur-[20px] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl mb-8 text-left relative overflow-hidden"
+             style="background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);">
+            <div class="absolute inset-0 bg-gradient-to-b from-[#ff1a1a]/5 to-transparent opacity-20 pointer-events-none"></div>
             <div class="flex items-center gap-3 mb-6">
                 <div class="w-12 h-12 bg-[#ff1a1a]/20 rounded-xl flex items-center justify-center">
                     <i data-lucide="shield-check" class="w-6 h-6 text-[#ff1a1a]"></i>
@@ -63,9 +66,10 @@
                 </div>
             </div>
 
-            <div class="space-y-4 mb-6">
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 bg-[#ff1a1a]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div class="space-y-4 mb-6 relative">
+                <div class="absolute left-4 top-8 bottom-8 w-0.5 bg-[#ff1a1a]/20"></div>
+                <div class="flex items-start gap-3 relative">
+                    <div class="w-8 h-8 bg-[#ff1a1a]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 relative z-10">
                         <span class="text-[#ff1a1a] font-bold text-sm">1</span>
                     </div>
                     <div>
@@ -74,8 +78,8 @@
                     </div>
                 </div>
                 
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 bg-[#ff1a1a]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div class="flex items-start gap-3 relative">
+                    <div class="w-8 h-8 bg-[#ff1a1a]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 relative z-10">
                         <span class="text-[#ff1a1a] font-bold text-sm">2</span>
                     </div>
                     <div>
@@ -84,8 +88,8 @@
                     </div>
                 </div>
                 
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 bg-[#ff1a1a]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div class="flex items-start gap-3 relative">
+                    <div class="w-8 h-8 bg-[#ff1a1a]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 relative z-10">
                         <span class="text-[#ff1a1a] font-bold text-sm">3</span>
                     </div>
                     <div>
@@ -99,9 +103,10 @@
                 <textarea id="projectBrief" rows="5" 
                     class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-[#ff1a1a] focus:ring-1 focus:ring-[#ff1a1a] transition-all shadow-inner placeholder-gray-600 resize-none"
                     placeholder="e.g., 'Make the intro fast-paced. Use the color grading from my last video. Cut out the dead air at 02:15...'"></textarea>
+                <div id="charCount" class="text-gray-500 text-xs mt-2 text-right">0 chars</div>
             </div>
 
-            <button id="submitBriefBtn" class="w-full relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3">
+            <button id="submitBriefBtn" class="w-full relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3 hover:transform hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(255,26,26,0.4)]">
                 <span id="btnText">Submit & Upload</span>
                 <i id="btnIcon" data-lucide="cloud-upload" class="w-5 h-5 group-hover:translate-y-[-2px] transition-transform"></i>
             </button>
@@ -121,6 +126,81 @@
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order_id') || 'ZYRO_MANUAL';
         document.getElementById('orderIdDisplay').textContent = orderId;
+
+        // 1. Post-Purchase Confetti
+        window.addEventListener('load', function() {
+            const duration = 3 * 1000; // 3 seconds
+            const animationEnd = Date.now() + duration;
+            const colors = ['#ff1a1a', '#ffffff', '#000000'];
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            // Left cannon
+            (function frame() {
+                confetti({
+                    particleCount: 2,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+
+                // Right cannon
+                confetti({
+                    particleCount: 2,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < animationEnd) {
+                    requestAnimationFrame(frame);
+                }
+            })();
+        });
+
+        // 2. Auto-Save Failsafe & 3. Character Counter
+        const projectBrief = document.getElementById('projectBrief');
+        const charCount = document.getElementById('charCount');
+        const storageKey = `zyro_brief_${orderId}`;
+
+        // Load saved brief on page load
+        const savedBrief = localStorage.getItem(storageKey);
+        if (savedBrief) {
+            projectBrief.value = savedBrief;
+            updateCharCount();
+        }
+
+        // Auto-save on input and update character counter
+        projectBrief.addEventListener('input', function() {
+            const value = this.value;
+            
+            // Auto-save to localStorage
+            localStorage.setItem(storageKey, value);
+            
+            // Update character counter
+            updateCharCount();
+        });
+
+        function updateCharCount() {
+            const length = projectBrief.value.length;
+            charCount.textContent = `${length} chars`;
+            
+            // Change color based on character count
+            if (length > 0) {
+                charCount.classList.remove('text-gray-500');
+                charCount.classList.add('text-[#ff1a1a]');
+            } else {
+                charCount.classList.remove('text-[#ff1a1a]');
+                charCount.classList.add('text-gray-500');
+            }
+        }
+
+        // Initialize character counter on load
+        updateCharCount();
         
         document.getElementById('submitBriefBtn').addEventListener('click', async function() {
             const briefContent = document.getElementById('projectBrief').value.trim();
@@ -146,11 +226,14 @@
                     });
 
                     if (!response.ok) throw new Error("Failed to save brief.");
+                    
+                    // Cleanup: Remove localStorage after successful save
+                    localStorage.removeItem(storageKey);
                 }
 
                 // Redirect to Google Form with Order ID
                 btnText.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to Vault...`;
-                const googleFormUrl = `https://docs.google.com/forms/d/e/1FAIpQLSdse7sGmGDFi3GNz5WoJYUWPP4NZdxZwjem9slCufqA-ooQWQ/viewform?usp=pp_url&entry.390428204=${encodeURIComponent(orderId)}`;
+                const googleFormUrl = `https://docs.google.com/forms/d/e/1FAIpQLSeHQbAFH7hKiKRE0S62IuUqOV2atYgowb9mW8Xzq9k6gKrCXw/viewform?usp=pp_url&entry.2108725427=${encodeURIComponent(orderId)}`;
                 window.location.href = googleFormUrl;
 
             } catch (error) {
@@ -160,7 +243,7 @@
                 statusMsg.classList.add('text-[#ff1a1a]');
                 
                 setTimeout(() => {
-                    const googleFormUrl = `https://docs.google.com/forms/d/e/1FAIpQLSdse7sGmGDFi3GNz5WoJYUWPP4NZdxZwjem9slCufqA-ooQWQ/viewform?usp=pp_url&entry.390428204=${encodeURIComponent(orderId)}`;
+                    const googleFormUrl = `https://docs.google.com/forms/d/e/1FAIpQLSeHQbAFH7hKiKRE0S62IuUqOV2atYgowb9mW8Xzq9k6gKrCXw/viewform?usp=pp_url&entry.2108725427=${encodeURIComponent(orderId)}`;
                     window.location.href = googleFormUrl;
                 }, 1500);
             }
@@ -168,3 +251,4 @@
     </script>
 </body>
 </html>
+
