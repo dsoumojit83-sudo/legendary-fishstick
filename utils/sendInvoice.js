@@ -1,20 +1,25 @@
 const nodemailer = require("nodemailer");
 const PDFDocument = require("pdfkit");
 
-// Create transporter once
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
 async function sendInvoice(order) {
     // Guard: fail fast with a clear error if email credentials are missing
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
         throw new Error('[sendInvoice] EMAIL_USER or EMAIL_PASS not configured in environment variables.');
     }
+
+    // Create transporter INSIDE the function so it reads live env vars on every call.
+    // If created at module load (top-level), Vercel serverless may not have env vars yet.
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS   // Must be a Gmail App Password, NOT your real password
+        }
+    });
+
+    // Verify SMTP connection before attempting to build the PDF.
+    // This will throw immediately with a clear error if credentials are wrong.
+    await transporter.verify();
 
     return new Promise((resolve, reject) => {
         try {
@@ -104,72 +109,77 @@ async function sendInvoice(order) {
             });
 
             // --- 3. DRAWING THE PDF ---
-            
-            // Full Bleed Black Header
+
+            // ── Full-bleed black header ──
             doc.rect(0, 0, 595.28, 140).fill('#050505');
-            
-            // Brand Logo (Left)
+
+            // Brand logo (left): "Zyro" white, "Editz" red
             doc.fillColor('#ffffff').fontSize(42).font('Helvetica-Bold').text('Zyro', 50, 45, {continued: true})
                .fillColor('#ff1a1a').text('Editz');
-            doc.fillColor('#888888').fontSize(10).font('Helvetica').text('SPEED. MOTION. PRECISION.', 50, 90, {letterSpacing: 4});
+            doc.fillColor('#888888').fontSize(10).font('Helvetica').text('Speed. Motion. Precision.', 50, 92, {letterSpacing: 4});
 
-            // Invoice Title (Right)
+            // Invoice title (right)
             doc.fillColor('#ff1a1a').fontSize(32).font('Helvetica-Bold').text('INVOICE', 0, 45, {align: 'right', width: 545});
-            doc.fillColor('#cccccc').fontSize(12).font('Courier').text(`#${order.order_id}`, 0, 80, {align: 'right', width: 545});
+            doc.fillColor('#cccccc').fontSize(12).font('Courier').text(`#${order.order_id}`, 0, 82, {align: 'right', width: 545});
             doc.fillColor('#cccccc').font('Helvetica').fontSize(12).text(`Date: ${formattedToday}`, 0, 100, {align: 'right', width: 545});
 
-            // Red Border under header
+            // Red accent border under header
             doc.rect(0, 140, 595.28, 4).fill('#ff1a1a');
 
-            // Billed To Section (Left)
-            doc.fontSize(11).fillColor('#888888').font('Helvetica-Bold').text('BILLED TO:', 50, 190);
-            doc.fontSize(14).fillColor('#000000').text(order.client_name || "Zyro Client", 50, 210);
-            doc.fontSize(12).font('Helvetica').fillColor('#555555').text(order.client_email, 50, 230);
-            doc.text(order.client_phone, 50, 245);
+            // ── BILLED TO: #f8f8f8 box with 4px #ff1a1a left border ──
+            doc.rect(50, 165, 220, 82).fill('#f8f8f8');
+            doc.rect(50, 165, 4, 82).fill('#ff1a1a');
+            doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('BILLED TO:', 64, 175);
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(order.client_name || 'Zyro Client', 64, 193);
+            doc.fillColor('#555555').fontSize(12).font('Helvetica').text(order.client_email, 64, 212);
+            doc.fillColor('#555555').fontSize(12).text(order.client_phone, 64, 228);
 
-            // Payable To Section (Right)
-            doc.fontSize(11).fillColor('#888888').font('Helvetica-Bold').text('PAYABLE TO:', 350, 190);
-            doc.fontSize(14).fillColor('#000000').text('ZyroEditz Studio', 350, 210);
-            doc.fontSize(12).font('Helvetica').fillColor('#555555').text('zyroeditz.official@gmail.com', 350, 230);
-            doc.text('Malda, West Bengal, India', 350, 245);
+            // ── PAYABLE TO: #f8f8f8 box with 4px #050505 right border, text right-aligned ──
+            doc.rect(325, 165, 220, 82).fill('#f8f8f8');
+            doc.rect(541, 165, 4, 82).fill('#050505');
+            doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('PAYABLE TO:', 325, 175, {width: 212, align: 'right'});
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz Studio', 325, 193, {width: 212, align: 'right'});
+            doc.fillColor('#555555').fontSize(12).font('Helvetica').text('zyroeditz.official@gmail.com', 325, 212, {width: 212, align: 'right'});
+            doc.fillColor('#555555').fontSize(12).text('Malda, West Bengal, India', 325, 228, {width: 212, align: 'right'});
 
-            // Table Header Background
-            doc.rect(50, 290, 495, 30).fill('#050505');
-            
-            // Table Headers
+            // ── TABLE HEADER: black bar ──
+            doc.rect(50, 270, 495, 36).fill('#050505');
             doc.fillColor('#ffffff').fontSize(12).font('Helvetica-Bold')
-               .text('DESCRIPTION', 65, 300)
-               .text('EST. DELIVERY', 300, 300, {width: 100, align: 'center'})
-               .text('AMOUNT', 430, 300, {width: 100, align: 'right'});
+               .text('DESCRIPTION', 65, 283)
+               .text('EST. DELIVERY', 295, 283, {width: 120, align: 'center'})
+               .text('AMOUNT', 430, 283, {width: 100, align: 'right'});
 
-            // Table Content
-            doc.fillColor('#000000').fontSize(14).text(`${order.service} Package`, 65, 340);
-            doc.fontSize(10).font('Helvetica').fillColor('#666666')
-               .text('Premium cinematic editing and post-production. Includes 1 free revision.', 65, 360, {width: 220});
-            doc.fontSize(14).fillColor('#000000').text(formattedDeadline, 300, 340, {width: 100, align: 'center'});
-            // FIX: Cast to Number before .toFixed() — Supabase returns numeric fields as strings
-            doc.text(`INR ${Number(order.amount).toFixed(2)}`, 430, 340, {width: 100, align: 'right'});
+            // ── TABLE ROW: bold service name + grey subtitle ──
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(`${order.service} Package`, 65, 323);
+            doc.fillColor('#666666').fontSize(10).font('Helvetica')
+               .text('Premium cinematic editing and post-production. Includes 1 free revision.', 65, 341, {width: 220});
+            // Delivery date + ₹ amount aligned to the service name row
+            doc.fillColor('#000000').fontSize(14).font('Helvetica').text(formattedDeadline, 295, 331, {width: 120, align: 'center'});
+            doc.fillColor('#000000').fontSize(14).text(`\u20B9${Number(order.amount).toFixed(2)}`, 430, 331, {width: 100, align: 'right'});
 
-            // Divider Line
-            doc.moveTo(50, 400).lineTo(545, 400).lineWidth(1).strokeColor('#eeeeee').stroke();
+            // Row divider
+            doc.moveTo(50, 382).lineTo(545, 382).lineWidth(1).strokeColor('#eeeeee').stroke();
 
-            // Total Row
-            doc.rect(50, 420, 495, 40).fill('#f8f8f8');
-            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('TOTAL PAID:', 290, 433, {width: 100, align: 'right'});
-            // FIX: Cast to Number before .toFixed() — Supabase returns numeric fields as strings
-            doc.fillColor('#ff1a1a').fontSize(18).text(`INR ${Number(order.amount).toFixed(2)}`, 400, 431, {width: 130, align: 'right'});
-            doc.moveTo(50, 460).lineTo(545, 460).lineWidth(2).strokeColor('#050505').stroke();
+            // ── TOTAL ROW: #f8f8f8 bg, "TOTAL PAID:" label, red ₹ amount ──
+            doc.rect(50, 394, 495, 44).fill('#f8f8f8');
+            doc.moveTo(50, 438).lineTo(545, 438).lineWidth(2).strokeColor('#050505').stroke();
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold')
+               .text('TOTAL PAID:', 50, 409, {width: 455, align: 'right'});
+            doc.fillColor('#ff1a1a').fontSize(18).font('Helvetica-Bold')
+               .text(`\u20B9${Number(order.amount).toFixed(2)}`, 390, 405, {width: 150, align: 'right'});
 
-            // Payment Status
-            doc.fontSize(12).fillColor('#888888').font('Helvetica-Bold').text('PAYMENT STATUS', 50, 520);
-            doc.fontSize(18).fillColor('#22c55e').text('Paid in Full ✅', 50, 535);
-            doc.fontSize(12).fillColor('#888888').font('Helvetica-Oblique').text('Thanks for giving us a chance to serve you.', 50, 560);
+            // ── PAYMENT STATUS ──
+            doc.fillColor('#888888').fontSize(12).font('Helvetica-Bold').text('PAYMENT STATUS', 50, 502);
+            doc.fillColor('#22c55e').fontSize(18).font('Helvetica-Bold').text('Paid in Full \u2705', 50, 520);
+            doc.fillColor('#888888').fontSize(12).font('Helvetica-Oblique')
+               .text('Thanks for giving us a chance to serve you.', 50, 544);
 
-            // Footer
+            // ── FOOTER ──
             doc.moveTo(50, 750).lineTo(545, 750).lineWidth(1).strokeColor('#cccccc').stroke();
-            doc.fontSize(10).fillColor('#888888').font('Helvetica')
-               .text('This is a computer-generated document. No signature is required.', 50, 765, {align: 'center'});
-            doc.font('Helvetica-Bold').text('ZyroEditz | Cinematic Editing & Motion Graphics', 50, 780, {align: 'center'});
+            doc.fillColor('#888888').fontSize(10).font('Helvetica')
+               .text('This is a computer-generated document. No signature is required.', 50, 766, {align: 'center', width: 495});
+            doc.font('Helvetica-Bold')
+               .text('ZyroEditz | Cinematic Editing & Motion Graphics', 50, 782, {align: 'center', width: 495});
 
             doc.end();
 
