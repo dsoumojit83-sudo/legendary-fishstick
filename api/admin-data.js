@@ -3,7 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 // Connect to Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-module.exports = async function(req, res) {
+module.exports = async function (req, res) {
     // 🔒 SECURITY PROTOCOL: Password Verification
     const authHeader = req.headers['x-admin-password'];
     if (authHeader !== process.env.ADMIN_PASSWORD) {
@@ -55,27 +55,27 @@ module.exports = async function(req, res) {
                 if (chartDataMap[orderMonthLabel] !== undefined) {
                     chartDataMap[orderMonthLabel] += amount;
                 }
-            } 
-            
+            }
+
             // Active Pipeline & Urgent Tasks Logistics
             if (order.status === 'pending' || order.status === 'in_progress' || order.status === 'paid') {
                 activeProjects++;
-                
+
                 // Calculate Urgent Tasks (Due in <= 2 days)
                 if (order.deadline_date) {
                     // Strip the time from 'now' to ensure accurate day-diff calculation
                     const today = new Date();
-                    today.setHours(0,0,0,0);
+                    today.setHours(0, 0, 0, 0);
                     const deadline = new Date(order.deadline_date);
-                    
+
                     const diffTime = deadline - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    
+
                     if (diffDays <= 2 && diffDays >= 0) {
                         urgentTasks++;
                     }
                 }
-            } 
+            }
         });
 
         // Secure Payload Delivery
@@ -87,14 +87,16 @@ module.exports = async function(req, res) {
             recentOrders: orders.map(o => ({
                 id: o.order_id,
                 client: o.client_name || 'Zyro Client',
-                email: o.client_email,         // New: Client Email
-                phone: o.client_phone,         // New: Client Phone
+                email: o.client_email,
+                phone: o.client_phone,
                 service: o.service || 'Custom Edit',
                 amount: o.amount,
                 status: o.status,
-                created_at: o.created_at,      // Essential for CRM timeline
-                deadline: o.deadline_date,     // New: Project Deadline
-                notes: o.project_notes         // New: Project Brief
+                created_at: o.created_at,
+                completed_at: o.completed_at,        // FIX #1: Needed for completion date display
+                deadline: o.deadline_date,
+                notes: o.project_notes,
+                drive_folder_url: o.drive_folder_url  // FIX #2: Needed for Files button
             })),
             chartData: {
                 labels: Object.keys(chartDataMap),
