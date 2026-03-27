@@ -126,6 +126,28 @@
                 <div id="charCount" class="text-gray-500 text-xs mt-2 text-right">0 chars</div>
             </div>
 
+            <!-- Hidden native file input — triggered by the label below -->
+            <input
+                type="file"
+                id="fileInput"
+                multiple
+                class="hidden"
+                aria-label="Select raw files to upload"
+            >
+
+            <!-- Custom file drop-zone label (triggers fileInput on click) -->
+            <label
+                for="fileInput"
+                id="fileDropZone"
+                class="flex flex-col items-center justify-center w-full mb-4 px-4 py-5 rounded-xl border border-dashed border-white/20 bg-black/30 cursor-pointer transition-all duration-200 hover:border-[#ff1a1a] hover:bg-[#ff1a1a]/5 group"
+            >
+                <i data-lucide="folder-open" class="w-7 h-7 text-gray-500 group-hover:text-[#ff1a1a] transition-colors mb-2"></i>
+                <span class="text-gray-400 text-sm font-medium group-hover:text-white transition-colors">Click to select raw files</span>
+                <span class="text-gray-600 text-xs mt-1">Multiple files supported · Any format</span>
+                <!-- File name list — updated by JS when files are chosen -->
+                <span id="fileNameDisplay" class="mt-2 text-[#ff1a1a] text-xs font-mono text-center hidden"></span>
+            </label>
+
             <button id="submitBriefBtn" class="w-full relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(255,26,26,0.4)]">
                 <span id="btnText">Submit & Upload</span>
                 <i id="btnIcon" data-lucide="cloud-upload" class="w-5 h-5 group-hover:translate-y-[-2px] transition-transform"></i>
@@ -146,6 +168,27 @@
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order_id') || 'ZYRO_MANUAL';
         document.getElementById('orderIdDisplay').textContent = orderId;
+
+        // =====================================================================
+        // CRITICAL: Verify payment with Cashfree server-side and trigger invoice.
+        // This is the only place that fires sendInvoice() → client email.
+        // Must run immediately on page load, right after Cashfree redirects here.
+        // =====================================================================
+        (async function verifyAndSendInvoice() {
+            if (!orderId || orderId === 'ZYRO_MANUAL') return;
+            try {
+                await fetch('/api/verify-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId })
+                });
+                // Response is intentionally ignored here — the API handles
+                // the DB update and email internally. Double-send is protected
+                // by the status === 'paid' guard inside verify-payment.js.
+            } catch (err) {
+                console.warn('[ZyroEditz] Payment verification request failed silently:', err);
+            }
+        })();
 
         // 1. Post-Purchase Confetti
         window.addEventListener('load', function() {
@@ -221,6 +264,21 @@
 
         // Initialize character counter on load
         updateCharCount();
+
+        // Show selected file names inside the drop-zone when user picks files
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const display = document.getElementById('fileNameDisplay');
+            if (this.files && this.files.length > 0) {
+                const names = Array.from(this.files).map(f => f.name).join(', ');
+                display.textContent = `${this.files.length} file${this.files.length > 1 ? 's' : ''} selected: ${names}`;
+                display.classList.remove('hidden');
+            } else {
+                display.textContent = '';
+                display.classList.add('hidden');
+            }
+            // Re-init Lucide so any new icons render correctly
+            if (window.lucide) lucide.createIcons();
+        });
         
         document.getElementById('submitBriefBtn').addEventListener('click', async function() {
             const briefContent = document.getElementById('projectBrief').value.trim();
@@ -228,7 +286,7 @@
             const btnText = document.getElementById('btnText');
             const btnIcon = document.getElementById('btnIcon');
             const statusMsg = document.getElementById('statusMsg');
-            
+
             // UI Loading State
             btn.disabled = true;
             btn.classList.add('opacity-80', 'cursor-not-allowed');
@@ -237,7 +295,7 @@
             statusMsg.classList.add('hidden');
 
             try {
-                // Save brief to API
+                // Step 1: Save brief to API
                 if (briefContent) {
                     const response = await fetch('/api/save-brief', {
                         method: 'POST',
@@ -246,26 +304,67 @@
                     });
 
                     if (!response.ok) throw new Error("Failed to save brief.");
-                    
+
                     // Cleanup: Remove localStorage after successful save
                     localStorage.removeItem(storageKey);
                 }
 
-                // Redirect to Google Form with Order ID
-                btnText.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to Vault...`;
-                const googleFormUrl = `https://docs.google.com/forms/d/e/1FAIpQLSeHQbAFH7hKiKRE0S62IuUqOV2atYgowb9mW8Xzq9k6gKrCXw/viewform?usp=pp_url&entry.2108725427=${encodeURIComponent(orderId)}`;
-                window.location.href = googleFormUrl;
+                // Step 2: Upload files (if any are selected)
+                const fileInput = document.getElementById('fileInput');
+                let uploadError = null;
+
+                if (fileInput.files && fileInput.files.length > 0) {
+                    btnText.innerHTML = `<span class="yt-spinner mr-2"></span> Uploading files...`;
+
+                    const formData = new FormData();
+                    formData.append('orderId', orderId);
+                    Array.from(fileInput.files).forEach(file => {
+                        formData.append('files', file);
+                    });
+
+                    try {
+                        // Do NOT set Content-Type manually — browser sets multipart/form-data + boundary automatically
+                        const uploadResponse = await fetch('/api/upload-files', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (!uploadResponse.ok) throw new Error("Upload failed.");
+                    } catch (err) {
+                        console.error("File upload error:", err);
+                        uploadError = "⚠️ Brief saved, but file upload failed. Please try uploading again.";
+                    }
+                }
+
+                // Step 3: Restore button and show result
+                btnText.innerHTML = `Submit & Upload`;
+                btnIcon.classList.remove('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
+
+                if (uploadError) {
+                    statusMsg.textContent = uploadError;
+                    statusMsg.classList.remove('hidden');
+                    statusMsg.classList.add('text-[#ff1a1a]');
+                    statusMsg.classList.remove('text-[#22c55e]');
+                } else {
+                    statusMsg.textContent = '✅ Brief saved! Select The high Quality Raw Files';
+                    statusMsg.classList.remove('hidden');
+                    statusMsg.classList.add('text-[#22c55e]');
+                    statusMsg.classList.remove('text-[#ff1a1a]');
+                }
 
             } catch (error) {
                 console.error("Error:", error);
-                statusMsg.textContent = "⚠️ Error saving brief, but redirecting to vault...";
+                // Re-enable button so user can retry
+                btnText.innerHTML = `Submit & Upload`;
+                btnIcon.classList.remove('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                statusMsg.textContent = "⚠️ Error saving brief. Please try again.";
                 statusMsg.classList.remove('hidden');
                 statusMsg.classList.add('text-[#ff1a1a]');
-                
-                setTimeout(() => {
-                    const googleFormUrl = `https://docs.google.com/forms/d/e/1FAIpQLSeHQbAFH7hKiKRE0S62IuUqOV2atYgowb9mW8Xzq9k6gKrCXw/viewform?usp=pp_url&entry.2108725427=${encodeURIComponent(orderId)}`;
-                    window.location.href = googleFormUrl;
-                }, 1500);
+                statusMsg.classList.remove('text-[#22c55e]');
             }
         });
     </script>
