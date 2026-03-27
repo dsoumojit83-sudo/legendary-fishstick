@@ -23,20 +23,40 @@ module.exports = async function(req, res) {
     try {
         const { sessionId, phone, email, name, selectedService, amount } = req.body;
 
-        // 1. Data Validation
+        // 1. Data Validation & Phone Formatting
         if (!name || name.trim().length < 2) return res.status(400).json({ error: "Please provide a valid name.", field: "name" });
+        
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!email || !emailRegex.test(email)) return res.status(400).json({ error: "Invalid email format.", field: "email" });
-        const phoneRegex = /^\+?[0-9]{10,15}$/;
-        const cleanPhone = phone ? phone.replace(/\s+/g, '') : '';
+        
+        // Clean phone: strip spaces, then strip +91 or 91 from the start
+        let cleanPhone = phone ? phone.replace(/\s+/g, '') : '';
+        cleanPhone = cleanPhone.replace(/^(?:\+91|91)/, '');
+        
+        // Strictly validate that exactly 10 digits remain
+        const phoneRegex = /^[0-9]{10}$/;
         if (!phone || !phoneRegex.test(cleanPhone)) return res.status(400).json({ error: "Please provide a valid 10-digit phone number.", field: "phone" });
+        
         if (!selectedService || isNaN(parseFloat(amount))) return res.status(400).json({ error: "Invalid pricing data. Please restart the wizard.", field: "system" });
 
-        // 2. Calculate Dynamic Deadline
+        // 2. Calculate Dynamic Deadline (Fixed for IST)
         const daysToAdd = deadlineMap[selectedService] || 3; // Default to 3 if unknown
+        
         const deadlineDate = new Date();
-        deadlineDate.setDate(deadlineDate.getDate() + daysToAdd);
-        const formattedDeadline = deadlineDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        
+        // Shift time to IST (UTC + 5 hours and 30 minutes)
+        deadlineDate.setUTCHours(deadlineDate.getUTCHours() + 5);
+        deadlineDate.setUTCMinutes(deadlineDate.getUTCMinutes() + 30);
+        
+        // Add the turnaround days
+        deadlineDate.setUTCDate(deadlineDate.getUTCDate() + daysToAdd);
+        
+        // Extract the date manually to prevent toISOString from reverting to UTC
+        const year = deadlineDate.getUTCFullYear();
+        const month = String(deadlineDate.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(deadlineDate.getUTCDate()).padStart(2, '0');
+        
+        const formattedDeadline = `${year}-${month}-${day}`;
 
         const orderId = generateOrderId();
         const numericAmount = parseFloat(amount);
