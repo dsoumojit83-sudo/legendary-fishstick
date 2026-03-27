@@ -14,12 +14,6 @@
       gtag('config', 'G-DWVYLJBCLR');
     </script>
     
-    <!-- Vercel Speed Insights -->
-    <script>
-      window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/speed-insights/script.js"></script>
-    
     <meta name="description" content="ZyroEditz - Professional video editing and motion graphics studio. Premium cinematic editing, color grading, and visual effects for brands that demand excellence.">
     <meta name="keywords" content="video editing, motion graphics, color grading, cinematic editing, visual effects, post-production">
     <meta name="author" content="ZyroEditz">
@@ -168,17 +162,19 @@
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%);
-            border: 1px solid;
-            border-image: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 50%, rgba(255,26,26,0.1) 100%) 1;
-            box-shadow: inset 0 1px 1px rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.02);
-            will-change: transform, opacity, box-shadow, border-color, filter;
-            backface-visibility: hidden;
-            transform: translateZ(0);
-            transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform-style: preserve-3d;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.4);
+            transition: box-shadow 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             position: relative;
             overflow: hidden;
             cursor: pointer;
+        }
+        @media (hover: hover) {
+            .service-card:hover {
+                border-color: rgba(255, 26, 26, 0.4);
+                background: linear-gradient(135deg, rgba(255,26,26,0.06) 0%, rgba(255,26,26,0.02) 100%);
+                box-shadow: inset 0 1px 1px rgba(255,255,255,0.08), 0 0 30px rgba(255,26,26,0.18), 0 8px 32px rgba(0,0,0,0.5);
+            }
         }
 
         .reveal {
@@ -356,6 +352,8 @@
         #chatbotMessages::-webkit-scrollbar-thumb { background: rgba(255,26,26,0.3); border-radius: 2px; }
         .chat-bot-msg { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem 1rem 1rem 0.25rem; padding: 0.6rem 1rem; color: #d1d5db; font-size: 0.875rem; max-width: 85%; line-height: 1.4; word-wrap: break-word; }
         .chat-user-msg { background: rgba(255,26,26,0.15); border: 1px solid rgba(255,26,26,0.3); border-radius: 1rem 1rem 0.25rem 1rem; padding: 0.6rem 1rem; color: #fff; font-size: 0.875rem; max-width: 85%; margin-left: auto; line-height: 1.4; word-wrap: break-word; }
+        /* FIX: Prevent iOS Safari auto-zoom on input focus — requires font-size 16px minimum */
+        #chatbotWindow input, #chatbotWindow select { font-size: 16px !important; }
 
         /* UPGRADED: Price Card Interactive CSS */
         .price-card {
@@ -389,6 +387,12 @@
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
+
+    <!-- Vercel Speed Insights -->
+    <script>
+      window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
 <body class="antialiased">
     <a href="#home" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[#ff1a1a] text-white px-4 py-2 rounded-md z-50 focus:outline-none focus:ring-2 focus:ring-white">Skip to Content</a>
@@ -426,6 +430,7 @@
             <a href="#home" class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">Home</a>
             <a href="#about" class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">About</a>
             <a href="#services" class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">Services</a>
+            <a href="#blogs" class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">Blogs</a>
             <a href="#contact" class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">Contact</a>
         </div>
         
@@ -443,6 +448,7 @@
         <a href="#home" class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Home</a>
         <a href="#about" class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">About</a>
         <a href="#services" class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Services</a>
+        <a href="#blogs" class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Blogs</a>
         <a href="#contact" class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Contact</a>
     </div>
 
@@ -802,6 +808,75 @@
         </div>
     </section>
 
+    <section id="blogs" class="relative z-10 px-6 py-24">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center reveal">
+                <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">Insights</p>
+                <h2 class="text-4xl md:text-6xl font-bold mb-8 leading-tight">Latest from the <span class="text-[#ff1a1a]">Studio</span></h2>
+                <p class="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">Thoughts, techniques, and deep-dives into the art of post-production.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
+                <a href="#blog1" class="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm reveal hover:border-[#ff1a1a]/40 transition-all duration-300">
+                    <div class="aspect-video relative overflow-hidden bg-white/5">
+                        <img src="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=2070&auto=format&fit=crop" alt="Blog Thumbnail" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-100" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-1">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-[10px] uppercase tracking-widest font-bold text-[#ff1a1a]">Editing</span>
+                            <span class="w-1 h-1 rounded-full bg-white/20"></span>
+                            <span class="text-[10px] uppercase tracking-widest text-gray-500">Mar 24, 2026</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-white group-hover:text-[#ff1a1a] transition-colors leading-snug">The Psychology of the 3-Second Hook</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6 flex-1">Why viewer retention starts before the thought is even finished. Breaking down the editing rules of going viral.</p>
+                        <div class="text-xs uppercase tracking-widest font-bold text-white flex items-center gap-2 mt-auto group-hover:text-[#ff1a1a] transition-colors">
+                            Read Post <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="#blog2" class="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm reveal hover:border-[#ff1a1a]/40 transition-all duration-300">
+                    <div class="aspect-video relative overflow-hidden bg-white/5">
+                        <img src="https://images.unsplash.com/photo-1626025437642-0b05076ca301?q=80&w=2034&auto=format&fit=crop" alt="Blog Thumbnail" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-100" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-1">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-[10px] uppercase tracking-widest font-bold text-[#ff1a1a]">Color Grade</span>
+                            <span class="w-1 h-1 rounded-full bg-white/20"></span>
+                            <span class="text-[10px] uppercase tracking-widest text-gray-500">Mar 20, 2026</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-white group-hover:text-[#ff1a1a] transition-colors leading-snug">Achieving the Cinematic Film Look</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6 flex-1">A deep dive into node trees, halation, and contrast ratios inside DaVinci Resolve that make digital feel organic.</p>
+                        <div class="text-xs uppercase tracking-widest font-bold text-white flex items-center gap-2 mt-auto group-hover:text-[#ff1a1a] transition-colors">
+                            Read Post <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="#blog3" class="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm reveal hover:border-[#ff1a1a]/40 transition-all duration-300">
+                    <div class="aspect-video relative overflow-hidden bg-white/5">
+                        <img src="https://images.unsplash.com/photo-1598509524136-41faefccb831?q=80&w=2072&auto=format&fit=crop" alt="Blog Thumbnail" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-100" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-1">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-[10px] uppercase tracking-widest font-bold text-[#ff1a1a]">Sound Design</span>
+                            <span class="w-1 h-1 rounded-full bg-white/20"></span>
+                            <span class="text-[10px] uppercase tracking-widest text-gray-500">Feb 15, 2026</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-white group-hover:text-[#ff1a1a] transition-colors leading-snug">Why Silence is Your Best Tool</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6 flex-1">Amateur editors fill every second with noise. Professionals know that pacing relies on breath and silence.</p>
+                        <div class="text-xs uppercase tracking-widest font-bold text-white flex items-center gap-2 mt-auto group-hover:text-[#ff1a1a] transition-colors">
+                            Read Post <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <section id="contact" class="relative z-10 px-6 py-24">
         <div class="max-w-4xl mx-auto flex flex-col items-center text-center">
             <div class="reveal w-full">
@@ -898,6 +973,7 @@
             <div class="flex items-center gap-6">
                 <a href="#about" class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">About</a>
                 <a href="#services" class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Services</a>
+                <a href="#blogs" class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Blogs</a>
                 <a href="#contact" class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Contact</a>
                 <a href="https://youtube.com/@zyroeditzfx?si=re39luv7CGi_YAHR" target="_blank" rel="noopener noreferrer" class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors">YouTube</a>
                 <a href="https://www.instagram.com/zyroeditz.clips?igsh=MXNnOWUxNWF5ZzEybQ==" target="_blank" rel="noopener noreferrer" class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Instagram</a>
@@ -906,7 +982,7 @@
         <div class="max-w-6xl mx-auto mt-6 text-center text-gray-600 text-xs">&copy; <span id="year"></span> ZyroEditz. All rights reserved.</div>
     </footer>
 
-    <div id="chatbotWindow" class="fixed bottom-28 left-8 w-80 max-w-[calc(100vw-4rem)] bg-[#050505] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 opacity-0 translate-y-4 pointer-events-none" style="height: 480px; box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,26,26,0.1);">
+    <div id="chatbotWindow" class="fixed bottom-24 right-4 left-4 md:left-auto md:right-8 md:w-80 bg-[#050505] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 opacity-0 translate-y-4 pointer-events-none" style="height: 480px; max-height: calc(100dvh - 120px); box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,26,26,0.1);">
         <div class="bg-gradient-to-r from-[#ff1a1a]/20 to-transparent p-4 border-b border-white/10 flex justify-between items-center backdrop-blur-md">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center text-[#ff1a1a]">
@@ -929,8 +1005,16 @@
         </div>
     </div>
 
-    <button id="scrollTopBtn" class="fixed bottom-8 right-8 w-12 h-12 bg-[#ff1a1a] text-white rounded-full shadow-lg shadow-[#ff1a1a]/25 flex items-center justify-center opacity-0 invisible transition-all duration-300 hover:bg-white hover:text-[#ff1a1a] z-40 pointer-events-none" aria-label="Scroll to top">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
+    </button>
+
+    <!-- Floating Chat FAB - always visible, opens the Zyro Assistant -->
+    <button id="chatFab" onclick="if(window.openZyroChat) window.openZyroChat()" class="fixed bottom-8 right-8 w-14 h-14 bg-[#ff1a1a] text-black rounded-full shadow-lg shadow-[#ff1a1a]/40 flex items-center justify-center z-40 transition-all duration-300 hover:bg-white hover:scale-110 btn-glow" aria-label="Open Zyro Assistant">
+        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path><path d="M9 8h6l-6 8h6"></path></svg>
+    </button>
+
+    <!-- Scroll to top - repositioned above FAB to avoid overlap -->
+    <button id="scrollTopBtn" class="fixed bottom-24 right-8 w-11 h-11 bg-black/70 border border-white/10 text-white rounded-full flex items-center justify-center opacity-0 invisible transition-all duration-300 hover:bg-[#ff1a1a] hover:border-[#ff1a1a] z-40 pointer-events-none" aria-label="Scroll to top">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
     </button>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1168,7 +1252,7 @@
                 if (scrollTopBtn) scrollTopBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
                 (function(){
-                    const ids = ['home', 'about', 'services', 'contact', 'legal'];
+                    const ids = ['home', 'about', 'services', 'blogs', 'contact', 'legal'];
                     const sections = ids.map(id => document.getElementById(id)).filter(Boolean);
                     const links = document.querySelectorAll('.nav-link');
                     if (!sections.length || !links.length) return;
@@ -1260,45 +1344,7 @@
             
             // ==================== PERFORMANCE & FALLBACKS ====================
             function initPerformance() {
-                document.querySelectorAll('.service-card').forEach(function(card){
-                    if(!card.querySelector('.card-shine')){
-                        var sh=document.createElement('div');
-                        sh.className='card-shine';
-                        sh.style.cssText = 'position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s; border-radius: inherit; z-index: 1;';
-                        card.style.position='relative';
-                        card.style.overflow='hidden';
-                        card.appendChild(sh);
-                    }
-                    card.addEventListener('mousemove',function(e){
-                        if(prefersReducedMotion)return;
-                        card.style.transition = 'none';
-                        if(card._ot===undefined)card._ot=card.style.transform||'';
-                        var r=card.getBoundingClientRect();
-                        var rx=-(((e.clientY-r.top)-r.height/2)/(r.height/2))*9;
-                        var ry=(((e.clientX-r.left)-r.width/2)/(r.width/2))*9;
-                        card.style.transform='perspective(800px) rotateX('+rx+'deg) rotateY('+ry+'deg) translateY(-8px) scale(1.02)';
-                        card.style.boxShadow='0 30px 60px -10px rgba(255,26,26,0.22)';
-                        card.style.borderColor='rgba(255,26,26,0.3)';
-                        
-                        var shine=card.querySelector('.card-shine');
-                        if(shine){
-                            shine.style.opacity = '1';
-                            var px=((e.clientX-r.left)/r.width*100).toFixed(1);
-                            var py=((e.clientY-r.top)/r.height*100).toFixed(1);
-                            shine.style.background='radial-gradient(circle at '+px+'% '+py+'%, rgba(255,255,255,0.08) 0%, transparent 60%)';
-                        }
-                    });
-                    
-                    card.addEventListener('mouseleave',function(){
-                        card.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                        card.style.transform=card._ot||'';
-                        card._ot=undefined;
-                        card.style.boxShadow='';
-                        card.style.borderColor='';
-                        var shine=card.querySelector('.card-shine');
-                        if(shine){ shine.style.opacity = '0'; }
-                    });
-                });
+                // Service cards now use pure CSS hover glow — no JS movement needed
             }
             
             // ==================== PRELOADER ====================
