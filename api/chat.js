@@ -31,34 +31,19 @@ module.exports = async function(req, res) {
         const numericAmount = parseFloat(amount);
 
         // --- CALCULATE DYNAMIC DEADLINE DATE ---
-        const daysToAdd = deadlineMap[selectedService] || 3; 
+        const daysToAdd = deadlineMap[selectedService] || 3;
         const deadlineDate = new Date();
         deadlineDate.setDate(deadlineDate.getDate() + daysToAdd);
         const formattedDeadline = deadlineDate.toISOString().split('T')[0];
 
-        // --- SAVE TO SUPABASE WITH DEADLINE_DATE ---
-        const { error: dbError } = await supabase.from('orders').insert([{
-            order_id: orderId,
-            client_name: name || "Zyro Client",
-            client_email: email || "zyroeditz.official@gmail.com",
-            client_phone: phone || "9999999999",
-            service: selectedService,
-            amount: numericAmount || 0, 
-            status: 'pending',
-            deadline_date: formattedDeadline // <--- THIS FIXES THE NULL DEADLINE
-        }]);
-
-        if (dbError) {
-            console.error("Supabase Insert Failed:", dbError);
-            throw new Error("Database insertion failed");
-        }
-
-        // --- SECURE CASHFREE SESSION ---
+        // --- FIX: CREATE CASHFREE SESSION FIRST ---
+        // Only save to DB after Cashfree confirms a valid session.
+        // This prevents zombie orders when Cashfree is down or misconfigured.
         const cashfreeResponse = await axios.post(
             'https://api.cashfree.com/pg/orders',
             {
                 order_id: orderId,
-                order_amount: numericAmount.toFixed(2), 
+                order_amount: numericAmount.toFixed(2),
                 order_currency: "INR",
                 customer_details: {
                     customer_id: sessionId || "CUST_" + Date.now(),
@@ -73,18 +58,37 @@ module.exports = async function(req, res) {
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-api-version': '2025-01-01', 
+                    'x-api-version': '2025-01-01',
                     'x-client-id': process.env.CASHFREE_APP_ID,
                     'x-client-secret': process.env.CASHFREE_SECRET_KEY
                 }
             }
         );
 
+        const paymentSessionId = cashfreeResponse.data.payment_session_id;
+
+        // --- SAVE TO SUPABASE ONLY AFTER CASHFREE SUCCEEDS ---
+        const { error: dbError } = await supabase.from('orders').insert([{
+            order_id: orderId,
+            client_name: name || "Zyro Client",
+            client_email: email || "zyroeditz.official@gmail.com",
+            client_phone: phone || "9999999999",
+            service: selectedService,
+            amount: numericAmount || 0,
+            status: 'pending',
+            deadline_date: formattedDeadline
+        }]);
+
+        if (dbError) {
+            console.error("Supabase Insert Failed:", dbError);
+            throw new Error("Database insertion failed");
+        }
+
         const replyText = `Excellent choice. Our studio is ready to deliver premium, cinematic quality for your ${selectedService} project.\n\nPlease note: We require full payment before starting a project. However, we offer a 100% refund if you are not satisfied with the final result.\n\nSecuring your project slot and opening the secure payment portal...`;
 
-        return res.json({ 
-            reply: replyText, 
-            paymentSessionId: cashfreeResponse.data.payment_session_id 
+        return res.json({
+            reply: replyText,
+            paymentSessionId
         });
 
     } catch (error) {
