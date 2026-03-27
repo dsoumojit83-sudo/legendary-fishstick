@@ -325,7 +325,7 @@
 
             <form id="login-form" class="space-y-6">
                 <div>
-                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Admin Passkey</label>
+                    <label for="admin-pass-input" class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Admin Passkey</label>
                     <input type="password" id="admin-pass-input"
                         class="w-full bg-black/50 border border-white/10 rounded-lg py-3 px-4 text-white focus:outline-none focus:border-[#ff1a1a] focus:ring-1 focus:ring-[#ff1a1a] transition-all text-center tracking-widest"
                         placeholder="••••••••" required>
@@ -539,6 +539,7 @@
                                 <div class="relative">
                                     <input type="text" id="search-projects"
                                         placeholder="Search orders..."
+                                        oninput="runSearch('projects')"
                                         onkeydown="if(event.key==='Enter'){event.preventDefault();runSearch('projects');}"
                                         class="bg-black/50 border border-white/10 rounded-lg py-2 pl-4 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-56">
                                 </div>
@@ -600,6 +601,7 @@
                                 <div class="relative">
                                     <input type="text" id="search-crm"
                                         placeholder="Search clients..."
+                                        oninput="runSearch('crm')"
                                         onkeydown="if(event.key==='Enter'){event.preventDefault();runSearch('crm');}"
                                         class="bg-black/50 border border-white/10 rounded-lg py-2 pl-4 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-56">
                                 </div>
@@ -932,14 +934,17 @@
             </div>`;
         }
 
-        // FIX: Added project status to timeline logic to permanently show "Completed"
         function getDeadlineBadge(order) {
-            if (order.status === 'completed' || order.status === 'paid') {
-                const completeDate = order.completed_at || order.updated_at;
-                const dateStr = completeDate ? new Date(completeDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB');
+            // Only show green completed tick if status is truly 'completed'
+            if (order.status === 'completed') {
+                const completeDate = order.completed_at;
+                const dateStr = completeDate
+                    ? new Date(completeDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                    : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 return `<span class="text-green-500 font-bold text-[10px] uppercase flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i>Completed: ${dateStr}</span>`;
             }
 
+            // For all other statuses (pending, paid, in_progress) — show days remaining
             const deadlineDateString = order.deadline;
             if (!deadlineDateString) return `<span class="text-gray-600 text-[10px] uppercase">No Deadline</span>`;
 
@@ -952,10 +957,10 @@
 
             const formattedDate = deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-            if (diffDays < 0) return `<span class="text-red-500 font-bold text-xs flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i>Overdue (${formattedDate})</span>`;
+            if (diffDays < 0)  return `<span class="text-red-500 font-bold text-xs flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i>Overdue (${formattedDate})</span>`;
             if (diffDays === 0) return `<span class="text-orange-500 font-bold text-xs flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>Due Today</span>`;
-            if (diffDays <= 2) return `<span class="text-yellow-400 text-xs">${diffDays} Days Left</span>`;
-            return `<span class="text-green-400 text-xs">${formattedDate}</span>`;
+            // All remaining days shown in yellow
+            return `<span class="text-yellow-400 font-semibold text-xs flex items-center gap-1"><i data-lucide="timer" class="w-3 h-3"></i>${diffDays} Day${diffDays === 1 ? '' : 's'} Left</span>`;
         }
 
         window.openNotesModal = function (clientName, encodedNotes) {
@@ -1260,17 +1265,81 @@
             lucide.createIcons();
         }
 
-        // ==================== SEARCH / FILTER LOGIC (DATA-DRIVEN REWRITE) ====================
+        // ==================== SEARCH ENGINE (PRECISE, MULTI-TOKEN) ====================
 
-        // Master search: filters globalOrdersData directly — no DOM text scanning
+        // Split query into individual tokens, ignoring extra spaces
+        function tokenize(str) {
+            return (str || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
+        }
+
+        // Escape special regex chars in a token before using in RegExp
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Wrap matched text with red highlight span
+        function highlight(text, tokens) {
+            if (!text || !tokens.length) return text || '';
+            let result = String(text);
+            tokens.forEach(token => {
+                const re = new RegExp(`(${escapeRegex(token)})`, 'gi');
+                result = result.replace(re, '<mark style="background:rgba(255,26,26,0.35);color:#fff;border-radius:2px;padding:0 2px;">$1</mark>');
+            });
+            return result;
+        }
+
+        // Score a single field against a token: exact=100, startsWith=50, contains=10, no match=0
+        function scoreField(field, token) {
+            const f = (field || '').toLowerCase();
+            if (!f || !token) return 0;
+            if (f === token) return 100;
+            if (f.startsWith(token)) return 50;
+            if (f.includes(token)) return 10;
+            return 0;
+        }
+
+        // An order matches if EVERY token matches at least ONE field (AND logic, per-field — no joined-string false positives)
+        function orderMatches(order, tokens) {
+            if (!tokens.length) return true;
+            const fields = [
+                order.client, order.email, order.phone,
+                order.service, order.status,
+                String(order.amount || ''), order.id || ''
+            ];
+            return tokens.every(token =>
+                fields.some(field => (field || '').toLowerCase().includes(token))
+            );
+        }
+
+        // Total relevance score for an order: sum scores across all tokens × all fields
+        function scoreOrder(order, tokens) {
+            const fields = [order.client, order.service, order.email, order.status];
+            return tokens.reduce((total, token) =>
+                total + fields.reduce((sum, field) => sum + scoreField(field, token), 0), 0);
+        }
+
+        // A client matches if EVERY token matches at least one of their fields
+        function clientMatches(client, tokens) {
+            if (!tokens.length) return true;
+            const fields = [client.name, client.email, String(client.totalSpent), String(client.projectCount)];
+            return tokens.every(token =>
+                fields.some(field => (field || '').toLowerCase().includes(token))
+            );
+        }
+
+        function scoreClient(client, tokens) {
+            return tokens.reduce((total, token) =>
+                total + scoreField(client.name, token) + scoreField(client.email, token), 0);
+        }
+
         window.runSearch = function (context) {
             if (context === 'projects') {
-                const term = (document.getElementById('search-projects').value || '').trim().toLowerCase();
+                const term = (document.getElementById('search-projects').value || '').trim();
                 const clearBtn = document.getElementById('clear-projects-btn');
                 if (clearBtn) clearBtn.classList.toggle('hidden', !term);
                 renderFilteredProjects(term);
             } else if (context === 'crm') {
-                const term = (document.getElementById('search-crm').value || '').trim().toLowerCase();
+                const term = (document.getElementById('search-crm').value || '').trim();
                 const clearBtn = document.getElementById('clear-crm-btn');
                 if (clearBtn) clearBtn.classList.toggle('hidden', !term);
                 renderFilteredCRM(term);
@@ -1293,19 +1362,19 @@
             const fullTbody = document.getElementById('full-projects-tbody');
             if (!fullTbody) return;
 
-            const filtered = term
-                ? globalOrdersData.filter(order => {
-                    const haystack = [
-                        order.client, order.email, order.phone,
-                        order.service, order.status, String(order.amount),
-                        order.id
-                    ].filter(Boolean).join(' ').toLowerCase();
-                    return haystack.includes(term);
-                })
-                : globalOrdersData;
+            const tokens = tokenize(term);
+
+            let filtered = tokens.length
+                ? globalOrdersData.filter(o => orderMatches(o, tokens))
+                : [...globalOrdersData];
+
+            // Sort by relevance when searching; default order otherwise
+            if (tokens.length) {
+                filtered.sort((a, b) => scoreOrder(b, tokens) - scoreOrder(a, tokens));
+            }
 
             if (filtered.length === 0) {
-                fullTbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-mono text-xs">No results for "${term}"</td></tr>`;
+                fullTbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-mono text-xs">No results for "<span class="text-[#ff1a1a]">${term}</span>"</td></tr>`;
                 lucide.createIcons(); return;
             }
 
@@ -1321,10 +1390,13 @@
                 const deadlineBadge = getDeadlineBadge(order);
                 const safeNotes = encodeURIComponent(order.notes || 'No brief provided.');
 
+                // Highlighted display values
+                const hl = (text) => highlight(text, tokens);
+
                 const contactHTML = `
                     <div class="flex flex-col gap-0.5 mt-1">
-                        ${order.email ? `<span class="text-[9px] text-gray-400 flex items-center gap-1"><i data-lucide="mail" class="w-2.5 h-2.5"></i>${order.email}</span>` : ''}
-                        ${order.phone ? `<span class="text-[9px] text-gray-400 flex items-center gap-1"><i data-lucide="phone" class="w-2.5 h-2.5"></i>${order.phone}</span>` : ''}
+                        ${order.email ? `<span class="text-[9px] text-gray-400 flex items-center gap-1"><i data-lucide="mail" class="w-2.5 h-2.5"></i>${hl(order.email)}</span>` : ''}
+                        ${order.phone ? `<span class="text-[9px] text-gray-400 flex items-center gap-1"><i data-lucide="phone" class="w-2.5 h-2.5"></i>${hl(order.phone)}</span>` : ''}
                     </div>`;
 
                 let completeBtnHTML = '';
@@ -1340,11 +1412,11 @@
 
                 html += `
                 <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
-                    <td class="p-4"><div class="flex items-center gap-3">${avatar}<div><div class="font-bold text-white">${clientName}</div>${contactHTML}</div></div></td>
-                    <td class="p-4 text-gray-300 text-sm font-medium">${order.service}</td>
-                    <td class="p-4 font-bold text-[#ff1a1a]">₹${order.amount}</td>
+                    <td class="p-4"><div class="flex items-center gap-3">${avatar}<div><div class="font-bold text-white">${hl(clientName)}</div>${contactHTML}</div></div></td>
+                    <td class="p-4 text-gray-300 text-sm font-medium">${hl(order.service)}</td>
+                    <td class="p-4 font-bold text-[#ff1a1a]">₹${hl(String(order.amount))}</td>
                     <td class="p-4"><div class="flex flex-col gap-1"><span class="text-[10px] text-gray-500">Booked: ${orderDate}</span>${deadlineBadge}</div></td>
-                    <td class="p-4 text-right"><div class="flex items-center justify-end gap-3"><span class="status-badge ${badgeClass}">${order.status}</span>${actionBtn}</div></td>
+                    <td class="p-4 text-right"><div class="flex items-center justify-end gap-3"><span class="status-badge ${badgeClass}">${hl(order.status)}</span>${actionBtn}</div></td>
                 </tr>`;
             });
 
@@ -1356,7 +1428,9 @@
             const crmTbody = document.getElementById('crm-tbody');
             if (!crmTbody) return;
 
-            // Build client map from all orders first
+            const tokens = tokenize(term);
+
+            // Build client map
             const clientsMap = {};
             globalOrdersData.forEach(order => {
                 const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
@@ -1369,19 +1443,22 @@
                 if (orderDate > clientsMap[clientName].lastActive) clientsMap[clientName].lastActive = orderDate;
             });
 
-            let clients = Object.values(clientsMap).sort((a, b) => b.totalSpent - a.totalSpent);
+            let clients = Object.values(clientsMap);
 
-            if (term) {
-                clients = clients.filter(c => {
-                    const haystack = [c.name, c.email, String(c.totalSpent), String(c.projectCount)].filter(Boolean).join(' ').toLowerCase();
-                    return haystack.includes(term);
-                });
+            if (tokens.length) {
+                clients = clients
+                    .filter(c => clientMatches(c, tokens))
+                    .sort((a, b) => scoreClient(b, tokens) - scoreClient(a, tokens));
+            } else {
+                clients.sort((a, b) => b.totalSpent - a.totalSpent);
             }
 
             if (clients.length === 0) {
-                crmTbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-mono text-xs">No clients found for "${term}"</td></tr>`;
+                crmTbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-mono text-xs">No clients found for "<span class="text-[#ff1a1a]">${term}</span>"</td></tr>`;
                 lucide.createIcons(); return;
             }
+
+            const hl = (text) => highlight(text, tokens);
 
             let html = '';
             clients.forEach(client => {
@@ -1389,11 +1466,11 @@
                 const lastActiveStr = client.lastActive.toLocaleDateString();
                 html += `
                 <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
-                    <td class="p-4"><div class="flex items-center gap-3">${avatar}<div><div class="font-bold text-white">${client.name}</div><div class="font-mono text-[10px] text-gray-500">Lifetime Client</div></div></div></td>
+                    <td class="p-4"><div class="flex items-center gap-3">${avatar}<div><div class="font-bold text-white">${hl(client.name)}</div><div class="font-mono text-[10px] text-gray-500">Lifetime Client</div></div></div></td>
                     <td class="p-4 text-gray-300 text-sm font-bold pl-8">${client.projectCount}</td>
                     <td class="p-4 font-semibold text-[#ff1a1a]">₹${client.totalSpent}</td>
                     <td class="p-4 text-gray-400 text-sm">${lastActiveStr}</td>
-                    <td class="p-4 text-right">${client.email ? `<a href="mailto:${client.email}" class="px-4 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-colors inline-block">Email</a>` : `<span class="text-xs text-gray-500 italic">No Email</span>`}</td>
+                    <td class="p-4 text-right">${client.email ? `<a href="mailto:${client.email}" class="px-4 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-colors inline-block">${hl(client.email)}</a>` : `<span class="text-xs text-gray-500 italic">No Email</span>`}</td>
                 </tr>`;
             });
 
@@ -1403,8 +1480,8 @@
 
         // Legacy stub — kept so old callers don't crash
         window.filterTable = function (tbodyId, term) {
-            if (tbodyId === 'full-projects-tbody') renderFilteredProjects((term || '').toLowerCase().trim());
-            else if (tbodyId === 'crm-tbody') renderFilteredCRM((term || '').toLowerCase().trim());
+            if (tbodyId === 'full-projects-tbody') renderFilteredProjects(term || '');
+            else if (tbodyId === 'crm-tbody') renderFilteredCRM(term || '');
         };
 
         // ==================== AI TERMINAL LOGIC ====================
