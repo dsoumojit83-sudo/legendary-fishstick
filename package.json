@@ -2,7 +2,6 @@
   "name": "zyroeditz-backend",
   "version": "1.0.0",
   "description": "ZyroEditz AI Assistant",
-  "type": "module",
   "main": "api/chat.js",
   "scripts": {
     "start": "node api/chat.js"
@@ -10,11 +9,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.6.0",
-    "formidable": "^3.5.4",
     "nodemailer": "^6.9.13",
     "openai": "^4.0.0",
-    "pdfkit": "^0.18.0"
+    "pdfkit": "^0.18.0",
+    "formidable": "^3.5.4"
   },
   "engines": {
     "node": "24.x"
