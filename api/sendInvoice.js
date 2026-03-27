@@ -1,6 +1,27 @@
 const nodemailer = require("nodemailer");
 const PDFDocument = require("pdfkit");
 
+// ADDED: Strip all characters outside printable ASCII (0x20–0x7E).
+// Prevents hidden Unicode, emoji, currency symbols (e.g. ¹, ₹, ✅, smart quotes)
+// from breaking PDFKit's Helvetica renderer and producing corrupted output.
+function sanitizeText(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/[^\x20-\x7E]/g, '') // Remove non-printable + non-ASCII
+        .trim();
+}
+
+// ADDED: Extract only numeric digits and a single decimal point from raw amount.
+// Handles prefixes like '₹', '¹', currency symbols, spaces, or any junk.
+// Examples: '¹1' → '1.00' | '₹1000' → '1000.00' | '' → '0.00'
+function safeAmount(value) {
+    if (value === null || value === undefined) return '0.00';
+    // Keep only digits and a single decimal separator
+    const cleaned = String(value).replace(/[^0-9.]/g, '');
+    const parsed = parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed.toFixed(2) : '0.00';
+}
+
 async function sendInvoice(order) {
     // Guard: fail fast with a clear error if email credentials are missing
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
@@ -120,7 +141,7 @@ async function sendInvoice(order) {
 
             // Invoice title (right)
             doc.fillColor('#ff1a1a').fontSize(32).font('Helvetica-Bold').text('INVOICE', 0, 45, {align: 'right', width: 545});
-            doc.fillColor('#cccccc').fontSize(12).font('Courier').text(`#${order.order_id}`, 0, 82, {align: 'right', width: 545});
+            doc.fillColor('#cccccc').fontSize(12).font('Courier').text(`#${sanitizeText(order.order_id)}`, 0, 82, {align: 'right', width: 545}); // UPDATED
             doc.fillColor('#cccccc').font('Helvetica').fontSize(12).text(`Date: ${formattedToday}`, 0, 100, {align: 'right', width: 545});
 
             // Red accent border under header
@@ -130,9 +151,9 @@ async function sendInvoice(order) {
             doc.rect(50, 165, 220, 82).fill('#f8f8f8');
             doc.rect(50, 165, 4, 82).fill('#ff1a1a');
             doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('BILLED TO:', 64, 175);
-            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(order.client_name || 'Zyro Client', 64, 193);
-            doc.fillColor('#555555').fontSize(12).font('Helvetica').text(order.client_email, 64, 212);
-            doc.fillColor('#555555').fontSize(12).text(order.client_phone, 64, 228);
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(sanitizeText(order.client_name) || 'Zyro Client', 64, 193); // UPDATED
+            doc.fillColor('#555555').fontSize(12).font('Helvetica').text(sanitizeText(order.client_email), 64, 212); // UPDATED
+            doc.fillColor('#555555').fontSize(12).text(sanitizeText(order.client_phone), 64, 228); // UPDATED
 
             // ── PAYABLE TO ──
             doc.rect(325, 165, 220, 82).fill('#f8f8f8');
@@ -150,11 +171,11 @@ async function sendInvoice(order) {
                .text('AMOUNT', 430, 283, {width: 100, align: 'right'});
 
             // ── TABLE ROW ──
-            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(`${order.service} Package`, 65, 323);
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(`${sanitizeText(order.service)} Package`, 65, 323); // UPDATED
             doc.fillColor('#666666').fontSize(10).font('Helvetica')
                .text('Premium cinematic editing and post-production. Includes 1 free revision.', 65, 341, {width: 220});
             doc.fillColor('#000000').fontSize(14).font('Helvetica').text(formattedDeadline, 295, 331, {width: 120, align: 'center'});
-            doc.fillColor('#000000').fontSize(14).text(`\u20B9${Number(order.amount).toFixed(2)}`, 430, 331, {width: 100, align: 'right'});
+            doc.fillColor('#000000').fontSize(14).text(`Rs.${safeAmount(order.amount)}`, 430, 331, {width: 100, align: 'right'}); // UPDATED: safeAmount strips \u00B9/\u20B9 junk; Rs. is ASCII-safe
 
             // Row divider
             doc.moveTo(50, 382).lineTo(545, 382).lineWidth(1).strokeColor('#eeeeee').stroke();
@@ -165,11 +186,11 @@ async function sendInvoice(order) {
             doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold')
                .text('TOTAL PAID:', 50, 409, {width: 455, align: 'right'});
             doc.fillColor('#ff1a1a').fontSize(18).font('Helvetica-Bold')
-               .text(`\u20B9${Number(order.amount).toFixed(2)}`, 390, 405, {width: 150, align: 'right'});
+               .text(`Rs.${safeAmount(order.amount)}`, 390, 405, {width: 150, align: 'right'}); // UPDATED
 
             // ── PAYMENT STATUS ──
             doc.fillColor('#888888').fontSize(12).font('Helvetica-Bold').text('PAYMENT STATUS', 50, 502);
-            doc.fillColor('#22c55e').fontSize(18).font('Helvetica-Bold').text('Paid in Full \u2705', 50, 520);
+            doc.fillColor('#22c55e').fontSize(18).font('Helvetica-Bold').text('Paid in Full', 50, 520, {continued: false}); // UPDATED: continued:false kills stray PDFKit cursor bleed from earlier {continued:true} chain
             doc.fillColor('#888888').fontSize(12).font('Helvetica-Oblique')
                .text('Thanks for giving us a chance to serve you.', 50, 544);
 
