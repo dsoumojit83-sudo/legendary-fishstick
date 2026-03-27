@@ -177,9 +177,9 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-6 stagger-elem">
-                    <button onclick="exportToCSV()" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white">
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                        <span>Export to CSV</span>
+                    <button onclick="exportToPDF()" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        <span>Export PDF</span>
                     </button>
                     <div class="hidden sm:flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
                         <span class="w-2 h-2 rounded-full bg-green-500 live-pulse"></span>
@@ -271,8 +271,8 @@
                         <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
                             <h3 class="text-lg font-bold text-white">Project Vault</h3>
                             <div class="relative hidden sm:block">
-                                <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                                <input type="text" id="search-projects" oninput="filterTable('full-projects-tbody', this.value)" placeholder="Search orders..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                                <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                                <input type="text" id="search-projects" oninput="filterTable('full-projects-tbody', this.value)" placeholder="Search orders..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-64">
                             </div>
                         </div>
                         <div class="overflow-x-auto w-full">
@@ -307,8 +307,8 @@
                         <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
                             <h3 class="text-lg font-bold text-white">Client Database</h3>
                             <div class="relative hidden sm:block">
-                                <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                                <input type="text" id="search-crm" oninput="filterTable('crm-tbody', this.value)" placeholder="Search clients..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                                <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                                <input type="text" id="search-crm" oninput="filterTable('crm-tbody', this.value)" placeholder="Search clients..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-64">
                             </div>
                         </div>
                         <div class="overflow-x-auto w-full">
@@ -538,7 +538,6 @@
 
                 if(data.chartData) initChart(data.chartData);
                 
-                // Re-apply any active search filters after fresh data loads
                 const projSearch = document.getElementById('search-projects').value;
                 if(projSearch) filterTable('full-projects-tbody', projSearch);
                 
@@ -566,7 +565,12 @@
             </div>`;
         }
 
-        function getDeadlineBadge(deadlineDateString) {
+        // FIX: Added project status to timeline logic to permanently show "Completed"
+        function getDeadlineBadge(deadlineDateString, status) {
+            if (status === 'completed' || status === 'paid') {
+                return `<span class="text-green-500 font-bold text-[10px] uppercase flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i>Completed</span>`;
+            }
+            
             if (!deadlineDateString) return `<span class="text-gray-600 text-[10px] uppercase">No Deadline</span>`;
             
             const deadline = new Date(deadlineDateString);
@@ -654,7 +658,10 @@
                 const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
                 const avatar = getAvatarHTML(clientName);
                 const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString() : 'Just now';
-                const deadlineBadge = getDeadlineBadge(order.deadline);
+                
+                // FIX: Passing the status to force the green "Completed" override
+                const deadlineBadge = getDeadlineBadge(order.deadline, order.status);
+                
                 const safeNotes = encodeURIComponent(order.notes || "No brief provided.");
 
                 const contactHTML = `
@@ -812,26 +819,29 @@
         }
 
         // ==================== SEARCH / FILTER LOGIC ====================
+        
+        // FIX: Added text scanner directly to inputs to prevent DOM unbinding
         window.filterTable = function(tbodyId, searchTerm) {
-            const term = searchTerm.toLowerCase();
+            const term = searchTerm.toLowerCase().trim();
             const tbody = document.getElementById(tbodyId);
             if (!tbody) return;
             
             const rows = tbody.querySelectorAll('tr');
             
             rows.forEach(row => {
-                // Ignore empty state or loading skeleton rows
-                if (row.querySelector('.skeleton') || row.textContent.includes('No project data') || row.textContent.includes('No client data')) {
+                if (row.querySelector('.skeleton') || row.innerText.includes('No project data') || row.innerText.includes('No client data')) {
                     return;
                 }
                 
-                // Read all the text inside the row (names, amounts, services)
-                const rowText = row.textContent.toLowerCase();
+                // Reads the raw readable text in the browser
+                const rowText = row.innerText.toLowerCase();
                 
                 if (rowText.includes(term)) {
                     row.style.display = '';
+                    row.classList.remove('hidden'); 
                 } else {
                     row.style.display = 'none';
+                    row.classList.add('hidden'); 
                 }
             });
         };
@@ -1020,7 +1030,7 @@
             initCanvas(); animateCanvas();
         }
 
-        // ==================== SORTING & EXPORT FUNCTIONS ====================
+        // ==================== SORTING & PDF EXPORT FUNCTIONS ====================
         let currentSort = { field: null, direction: 'asc' };
 
         window.sortTable = function(field) {
@@ -1135,47 +1145,76 @@
             sortedRows.forEach(row => tbody.appendChild(row));
         };
 
-        window.exportToCSV = function() {
+        // FIX: Corporate PDF Generation Tool (replaces CSV)
+        window.exportToPDF = function() {
             const activeView = document.querySelector('.view-section.active');
-            let csvContent = '';
-            let filename = '';
+            let title = 'ZyroEditz Data Report';
+            let tableHtml = '';
 
-            if (activeView.id === 'projects-view') {
-                filename = 'zyroeditz_projects_export.csv';
-                csvContent = 'Client Info,Service,Amount,Timeline,Status\n';
-                const rows = document.querySelectorAll('#full-projects-tbody tr');
-                rows.forEach(row => {
-                    if (!row.querySelector('.skeleton') && row.style.display !== 'none') {
-                        const cells = row.querySelectorAll('td');
-                        csvContent += `"${cells[0].textContent}","${cells[1].textContent}","${cells[2].textContent}","${cells[3].textContent}","${cells[4].textContent.trim()}"\n`;
-                    }
-                });
+            if (activeView.id === 'dashboard-view') {
+                title = 'ZyroEditz - Recent Pipeline';
+                const table = document.querySelector('#dash-projects-tbody').parentElement;
+                if (!table || table.textContent.includes('No project data')) return showToast('No data to export', 'error');
+                tableHtml = table.outerHTML;
+            } else if (activeView.id === 'projects-view') {
+                title = 'ZyroEditz - Project Vault';
+                const table = document.querySelector('#full-projects-tbody').parentElement;
+                if (!table || table.textContent.includes('No project data')) return showToast('No data to export', 'error');
+                tableHtml = table.outerHTML;
             } else if (activeView.id === 'crm-view') {
-                filename = 'zyroeditz_crm_export.csv';
-                csvContent = 'Client,Total Projects,Lifetime Value,Last Active\n';
-                const rows = document.querySelectorAll('#crm-tbody tr');
-                rows.forEach(row => {
-                    if (!row.querySelector('.skeleton') && row.style.display !== 'none') {
-                        const cells = row.querySelectorAll('td');
-                        csvContent += `"${cells[0].textContent}","${cells[1].textContent}","${cells[2].textContent}","${cells[3].textContent}","${cells[4].textContent.trim()}"\n`;
-                    }
-                });
+                title = 'ZyroEditz - Client Database';
+                const table = document.querySelector('#crm-tbody').parentElement;
+                if (!table || table.textContent.includes('No client data')) return showToast('No data to export', 'error');
+                tableHtml = table.outerHTML;
             } else {
-                showToast('No data available to export', 'error');
+                showToast('Cannot export this view', 'error');
                 return;
             }
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>${title}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; color: #1a1a1a; }
+                        .header { border-bottom: 2px solid #ff1a1a; padding-bottom: 10px; margin-bottom: 30px; }
+                        h1 { color: #000; text-transform: uppercase; font-size: 24px; margin: 0 0 5px 0; letter-spacing: 2px; }
+                        .timestamp { color: #666; font-size: 12px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                        th, td { border-bottom: 1px solid #ddd; padding: 16px 12px; text-align: left; }
+                        th { background-color: #f8f9fa; color: #333; font-weight: bold; text-transform: uppercase; border-top: 1px solid #ddd; letter-spacing: 1px; }
+                        tr:nth-child(even) { background-color: #fafafa; }
+                        
+                        /* Strip UI Elements for clean print */
+                        svg, button, .action-btn { display: none !important; }
+                        .hidden { display: none !important; } 
+                        
+                        .status-badge { font-weight: bold; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; border: 1px solid #eee; }
+                        .text-green-500 { color: #16a34a; font-weight: bold; }
+                        .text-red-500 { color: #dc2626; font-weight: bold; }
+                        .text-\\[\\#ff1a1a\\] { color: #ff1a1a; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>${title}</h1>
+                        <div class="timestamp">Generated on: ${new Date().toLocaleString()} | zyroeditz.com</div>
+                    </div>
+                    ${tableHtml}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
             
-            showToast('Data exported successfully', 'success');
+            showToast('Preparing PDF layout...', 'info');
+            
+            setTimeout(() => {
+                printWindow.print();
+                // Optionally close automatically after print dialog resolves
+                // printWindow.close(); 
+            }, 800);
         };
 
         // ==================== TOAST NOTIFICATION SYSTEM ====================
