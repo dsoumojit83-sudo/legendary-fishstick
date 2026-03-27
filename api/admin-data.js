@@ -3,6 +3,8 @@ const { createClient } = require('@supabase/supabase-js');
 // Connect to Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+const BUCKET = 'orders'; // Supabase Storage bucket name
+
 module.exports = async function (req, res) {
     // 🔒 SECURITY PROTOCOL: Password Verification
     const authHeader = req.headers['x-admin-password'];
@@ -78,6 +80,28 @@ module.exports = async function (req, res) {
             }
         });
 
+        // Check Supabase Storage for each order to set has_files flag
+        // This is batched in parallel for speed
+        const fileCheckResults = await Promise.allSettled(
+            orders.map(o =>
+                supabase.storage
+                    .from(BUCKET)
+                    .list(o.order_id, { limit: 1 })
+                    .then(({ data }) => ({
+                        order_id: o.order_id,
+                        has_files: Array.isArray(data) && data.filter(f => f.name !== '.emptyFolderPlaceholder').length > 0
+                    }))
+            )
+        );
+
+        // Build a quick lookup map: order_id -> has_files
+        const filesMap = {};
+        fileCheckResults.forEach(result => {
+            if (result.status === 'fulfilled') {
+                filesMap[result.value.order_id] = result.value.has_files;
+            }
+        });
+
         // Secure Payload Delivery
         return res.status(200).json({
             totalRevenue,
@@ -93,10 +117,10 @@ module.exports = async function (req, res) {
                 amount: o.amount,
                 status: o.status,
                 created_at: o.created_at,
-                completed_at: o.completed_at,        // FIX #1: Needed for completion date display
+                completed_at: o.completed_at,
                 deadline: o.deadline_date,
                 notes: o.project_notes,
-                drive_folder_url: o.drive_folder_url  // FIX #2: Needed for Files button
+                has_files: filesMap[o.order_id] || false  // true = green Files button, false = grey
             })),
             chartData: {
                 labels: Object.keys(chartDataMap),
