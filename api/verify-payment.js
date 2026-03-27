@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
-const sendInvoice = require('../util/sendInvoice'); // Correct relative path!
+const sendInvoice = require('../util/sendInvoice'); // util/sendInvoice.js
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
