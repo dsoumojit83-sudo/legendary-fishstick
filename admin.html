@@ -279,19 +279,19 @@
                             <table class="w-full text-left border-collapse min-w-[800px]">
                                 <thead class="bg-black/40 border-b border-white/5">
                                     <tr>
-                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors flex items-center gap-2" onclick="sortTable('clientInfo')">
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors inline-flex items-center gap-2" onclick="sortTable('clientInfo')">
                                             Client Info
                                             <i data-lucide="chevron-up" class="w-3 h-3 sort-icon sort-asc"></i>
                                         </th>
-                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors flex items-center gap-2" onclick="sortTable('service')">
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors inline-flex items-center gap-2" onclick="sortTable('service')">
                                             Service
                                             <i data-lucide="chevron-up" class="w-3 h-3 sort-icon sort-asc"></i>
                                         </th>
-                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors flex items-center gap-2" onclick="sortTable('amount')">
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors inline-flex items-center gap-2" onclick="sortTable('amount')">
                                             Amount
                                             <i data-lucide="chevron-up" class="w-3 h-3 sort-icon sort-asc"></i>
                                         </th>
-                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors flex items-center gap-2" onclick="sortTable('timeline')">
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors inline-flex items-center gap-2" onclick="sortTable('timeline')">
                                             Timeline
                                             <i data-lucide="chevron-up" class="w-3 h-3 sort-icon sort-asc"></i>
                                         </th>
@@ -319,19 +319,19 @@
                             <table class="w-full text-left border-collapse min-w-[800px]">
                                 <thead class="bg-black/40 border-b border-white/5">
                                     <tr>
-                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors flex items-center gap-2" onclick="sortCRM('client')">
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors inline-flex items-center gap-2" onclick="sortCRM('client')">
                                             Client
                                             <i data-lucide="chevron-up" class="w-3 h-3 sort-icon sort-asc"></i>
                                         </th>
-                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors flex items-center gap-2" onclick="sortCRM('projects')">
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors inline-flex items-center gap-2" onclick="sortCRM('projects')">
                                             Total Projects
                                             <i data-lucide="chevron-up" class="w-3 h-3 sort-icon sort-asc"></i>
                                         </th>
-                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors flex items-center gap-2" onclick="sortCRM('value')">
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors inline-flex items-center gap-2" onclick="sortCRM('value')">
                                             Lifetime Value
                                             <i data-lucide="chevron-up" class="w-3 h-3 sort-icon sort-asc"></i>
                                         </th>
-                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors flex items-center gap-2" onclick="sortCRM('lastActive')">
+                                        <th class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold cursor-pointer hover:text-white transition-colors inline-flex items-center gap-2" onclick="sortCRM('lastActive')">
                                             Last Active
                                             <i data-lucide="chevron-up" class="w-3 h-3 sort-icon sort-asc"></i>
                                         </th>
@@ -1160,29 +1160,27 @@
         // ==================== TOAST NOTIFICATION SYSTEM ====================
         window.showToast = function(message, type = 'success') {
             const toast = document.getElementById('toast-notification');
-            const toastMessage = document.getElementById('toast-message');
-            const toastIcon = toast.querySelector('i');
             
-            // Update content and styling
-            toastMessage.textContent = message;
-            
-            // Update icon and colors based on type
-            toast.className = 'fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-[300] flex items-center gap-3';
-            
-            switch(type) {
-                case 'success':
-                    toast.classList.add('bg-[#22c55e]', 'text-black');
-                    toastIcon.setAttribute('data-lucide', 'check-circle');
-                    break;
-                case 'error':
-                    toast.classList.add('bg-[#ff1a1a]', 'text-white');
-                    toastIcon.setAttribute('data-lucide', 'alert-circle');
-                    break;
-                case 'info':
-                    toast.classList.add('bg-blue-500', 'text-white');
-                    toastIcon.setAttribute('data-lucide', 'info');
-                    break;
+            // Define styling and icon based on type
+            let iconName = 'check-circle';
+            let bgClass = 'bg-[#22c55e]';
+            let textClass = 'text-black';
+
+            if (type === 'error') {
+                iconName = 'alert-circle';
+                bgClass = 'bg-[#ff1a1a]';
+                textClass = 'text-white';
+            } else if (type === 'info') {
+                iconName = 'info';
+                bgClass = 'bg-blue-500';
+                textClass = 'text-white';
             }
+
+            // Apply classes
+            toast.className = `fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-[300] flex items-center gap-3 ${bgClass} ${textClass}`;
+            
+            // Inject fresh HTML so Lucide doesn't fail trying to modify an existing SVG
+            toast.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5"></i><span id="toast-message" class="text-sm tracking-wide">${message}</span>`;
             
             lucide.createIcons();
             
