@@ -17,10 +17,30 @@ module.exports = async function(req, res) {
             return res.status(400).json({ error: "Missing required data" });
         }
 
-        // Update the specific order row in Supabase with the client's notes
+        // Basic input sanitization
+        const sanitizedNotes = String(notes).trim().substring(0, 2000);
+
+        // FIX: Verify the order exists before allowing a write.
+        // Prevents anyone from overwriting notes on a random/guessed order_id.
+        const { data: existingOrder, error: fetchError } = await supabase
+            .from('orders')
+            .select('order_id, status')
+            .eq('order_id', orderId)
+            .single();
+
+        if (fetchError || !existingOrder) {
+            return res.status(404).json({ error: "Order not found." });
+        }
+
+        // Don't allow editing notes on already-completed projects
+        if (existingOrder.status === 'completed') {
+            return res.status(403).json({ error: "Cannot edit brief for a completed project." });
+        }
+
+        // Update the order with the client's notes
         const { error } = await supabase
             .from('orders')
-            .update({ project_notes: notes })
+            .update({ project_notes: sanitizedNotes })
             .eq('order_id', orderId);
 
         if (error) {
