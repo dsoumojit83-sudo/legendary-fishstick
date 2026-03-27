@@ -272,7 +272,7 @@
                             <h3 class="text-lg font-bold text-white">Project Vault</h3>
                             <div class="relative hidden sm:block">
                                 <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                                <input type="text" placeholder="Search orders..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a]">
+                                <input type="text" id="search-projects" oninput="filterTable('full-projects-tbody', this.value)" placeholder="Search orders..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
                             </div>
                         </div>
                         <div class="overflow-x-auto w-full">
@@ -308,7 +308,7 @@
                             <h3 class="text-lg font-bold text-white">Client Database</h3>
                             <div class="relative hidden sm:block">
                                 <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                                <input type="text" placeholder="Search clients..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a]">
+                                <input type="text" id="search-crm" oninput="filterTable('crm-tbody', this.value)" placeholder="Search clients..." class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
                             </div>
                         </div>
                         <div class="overflow-x-auto w-full">
@@ -491,7 +491,6 @@
             initAnimations();
             fetchDashboardData();
             
-            // Start digital clock
             setInterval(updateDigitalClock, 1000);
             updateDigitalClock();
             
@@ -529,7 +528,6 @@
                 const data = await res.json();
                 globalOrdersData = data.recentOrders || [];
 
-                // Update KPIs
                 document.getElementById('kpi-total-rev').textContent = `₹${data.totalRevenue}`;
                 document.getElementById('kpi-mrr').textContent = `₹${data.mrr}`;
                 document.getElementById('kpi-active').textContent = data.activeProjects;
@@ -539,6 +537,13 @@
                 renderCRM();
 
                 if(data.chartData) initChart(data.chartData);
+                
+                // Re-apply any active search filters after fresh data loads
+                const projSearch = document.getElementById('search-projects').value;
+                if(projSearch) filterTable('full-projects-tbody', projSearch);
+                
+                const crmSearch = document.getElementById('search-crm').value;
+                if(crmSearch) filterTable('crm-tbody', crmSearch);
 
             } catch (error) {
                 console.error("Dashboard Sync Failed:", error);
@@ -551,7 +556,7 @@
             }
         };
 
-        // ==================== UI LOGIC (AVATAR, DATES, MODALS) ====================
+        // ==================== UI LOGIC ====================
         function getAvatarHTML(name) {
             let displayName = (!name || name.trim() === '' || name.toLowerCase() === 'unknown') ? "Zyro Client" : name;
             const initials = displayName.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
@@ -806,14 +811,38 @@
             lucide.createIcons();
         }
 
+        // ==================== SEARCH / FILTER LOGIC ====================
+        window.filterTable = function(tbodyId, searchTerm) {
+            const term = searchTerm.toLowerCase();
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            
+            const rows = tbody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                // Ignore empty state or loading skeleton rows
+                if (row.querySelector('.skeleton') || row.textContent.includes('No project data') || row.textContent.includes('No client data')) {
+                    return;
+                }
+                
+                // Read all the text inside the row (names, amounts, services)
+                const rowText = row.textContent.toLowerCase();
+                
+                if (rowText.includes(term)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        };
+
         // ==================== AI TERMINAL LOGIC ====================
-        
-        // NEW FIX: Markdown Parser to format AI text properly
         function formatAIText(text) {
             return text
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>') // Bold text
-                .replace(/\n/g, '<br>') // Line breaks
-                .replace(/ - /g, '<br><span class="text-[#ff1a1a] mr-2">►</span>'); // Bullet points
+                .replace(/### (.*?)(?=\n|$)/g, '<div class="text-[#ff1a1a] font-bold mt-5 mb-1 uppercase tracking-widest text-[10px] border-b border-white/10 pb-1">$1</div>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>') 
+                .replace(/(?:^|\n)-\s+(.*?)(?=\n|$)/g, '<br><span class="text-[#ff1a1a] mr-2">►</span>$1')
+                .replace(/\n/g, '<br>'); 
         }
 
         let isTerminalOpen = false;
@@ -873,7 +902,6 @@
                 if(res.status === 401) {
                     terminalBody.innerHTML += `<div class="terminal-msg msg-ai border-red-500 text-red-400"><span class="text-red-500 font-bold">SECURITY ALERT></span> Unauthorized token detected.</div>`;
                 } else {
-                    // NEW FIX: Apply the formatter here before inserting into the DOM
                     const formattedReply = formatAIText(aiResponse.reply);
                     terminalBody.innerHTML += `<div class="terminal-msg msg-ai leading-relaxed"><span class="text-[#ff1a1a] font-bold">CORE></span> ${formattedReply}</div>`;
                 }
@@ -1000,7 +1028,6 @@
             const rows = Array.from(tbody.querySelectorAll('tr'));
             if (rows.length === 0 || rows[0].querySelector('.skeleton')) return;
 
-            // Toggle sort direction
             if (currentSort.field === field) {
                 currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
             } else {
@@ -1008,7 +1035,6 @@
                 currentSort.direction = 'asc';
             }
 
-            // Update all chevron icons
             document.querySelectorAll('.sort-icon').forEach(icon => {
                 icon.classList.remove('sort-asc', 'sort-desc');
                 if (icon.parentElement.getAttribute('onclick').includes(field)) {
@@ -1021,7 +1047,6 @@
             });
             lucide.createIcons();
 
-            // Sort and re-render
             const sortedRows = rows.sort((a, b) => {
                 let aVal, bVal;
                 switch(field) {
@@ -1059,7 +1084,6 @@
             const rows = Array.from(tbody.querySelectorAll('tr'));
             if (rows.length === 0 || rows[0].querySelector('.skeleton')) return;
 
-            // Toggle sort direction
             if (currentSort.field === 'crm_' + field) {
                 currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
             } else {
@@ -1067,7 +1091,6 @@
                 currentSort.direction = 'asc';
             }
 
-            // Update chevron icons
             document.querySelectorAll('.sort-icon').forEach(icon => {
                 icon.classList.remove('sort-asc', 'sort-desc');
                 if (icon.parentElement.getAttribute('onclick').includes(field)) {
@@ -1080,7 +1103,6 @@
             });
             lucide.createIcons();
 
-            // Sort and re-render
             const sortedRows = rows.sort((a, b) => {
                 let aVal, bVal;
                 switch(field) {
@@ -1123,7 +1145,7 @@
                 csvContent = 'Client Info,Service,Amount,Timeline,Status\n';
                 const rows = document.querySelectorAll('#full-projects-tbody tr');
                 rows.forEach(row => {
-                    if (!row.querySelector('.skeleton')) {
+                    if (!row.querySelector('.skeleton') && row.style.display !== 'none') {
                         const cells = row.querySelectorAll('td');
                         csvContent += `"${cells[0].textContent}","${cells[1].textContent}","${cells[2].textContent}","${cells[3].textContent}","${cells[4].textContent.trim()}"\n`;
                     }
@@ -1133,7 +1155,7 @@
                 csvContent = 'Client,Total Projects,Lifetime Value,Last Active\n';
                 const rows = document.querySelectorAll('#crm-tbody tr');
                 rows.forEach(row => {
-                    if (!row.querySelector('.skeleton')) {
+                    if (!row.querySelector('.skeleton') && row.style.display !== 'none') {
                         const cells = row.querySelectorAll('td');
                         csvContent += `"${cells[0].textContent}","${cells[1].textContent}","${cells[2].textContent}","${cells[3].textContent}","${cells[4].textContent.trim()}"\n`;
                     }
