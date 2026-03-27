@@ -535,13 +535,20 @@
                     <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
                         <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
                             <h3 class="text-lg font-bold text-white">Project Vault</h3>
-                            <div class="relative hidden sm:block">
-                                <i data-lucide="search"
-                                    class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                                <input type="text" id="search-projects"
-                                    oninput="filterTable('full-projects-tbody', this.value)"
-                                    placeholder="Search orders..."
-                                    class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-64">
+                            <div class="relative flex items-center gap-2 hidden sm:flex">
+                                <div class="relative">
+                                    <input type="text" id="search-projects"
+                                        placeholder="Search orders..."
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault();runSearch('projects');}"
+                                        class="bg-black/50 border border-white/10 rounded-lg py-2 pl-4 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-56">
+                                </div>
+                                <button onclick="runSearch('projects')" title="Search"
+                                    class="flex items-center justify-center w-8 h-8 rounded-lg bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 hover:bg-[#ff1a1a] hover:border-[#ff1a1a] text-[#ff1a1a] hover:text-black transition-all">
+                                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="clearSearch('projects')" title="Clear" id="clear-projects-btn" class="hidden flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                </button>
                             </div>
                         </div>
                         <div class="overflow-x-auto w-full">
@@ -589,12 +596,20 @@
                     <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
                         <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
                             <h3 class="text-lg font-bold text-white">Client Database</h3>
-                            <div class="relative hidden sm:block">
-                                <i data-lucide="search"
-                                    class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                                <input type="text" id="search-crm" oninput="filterTable('crm-tbody', this.value)"
-                                    placeholder="Search clients..."
-                                    class="bg-black/50 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-64">
+                            <div class="relative flex items-center gap-2 hidden sm:flex">
+                                <div class="relative">
+                                    <input type="text" id="search-crm"
+                                        placeholder="Search clients..."
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault();runSearch('crm');}"
+                                        class="bg-black/50 border border-white/10 rounded-lg py-2 pl-4 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-56">
+                                </div>
+                                <button onclick="runSearch('crm')" title="Search"
+                                    class="flex items-center justify-center w-8 h-8 rounded-lg bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 hover:bg-[#ff1a1a] hover:border-[#ff1a1a] text-[#ff1a1a] hover:text-black transition-all">
+                                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="clearSearch('crm')" title="Clear" id="clear-crm-btn" class="hidden flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                </button>
                             </div>
                         </div>
                         <div class="overflow-x-auto w-full">
@@ -707,6 +722,40 @@
             </div>
             <div class="mt-6 flex justify-end">
                 <button onclick="closeNotesModal()"
+                    class="px-5 py-2 bg-[#ff1a1a] text-black font-bold text-xs uppercase tracking-widest rounded hover:bg-white transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FILES MODAL ========== -->
+    <div id="files-modal"
+        class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-lg border border-white/10 shadow-2xl relative transform scale-95 transition-transform duration-300"
+            id="files-modal-content">
+            <button onclick="closeFilesModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                <i data-lucide="folder-open" class="w-5 h-5 text-green-500"></i> Client Files
+            </h3>
+            <p id="files-modal-order-id" class="text-xs text-gray-500 uppercase tracking-widest mb-6 font-mono"></p>
+
+            <!-- Loading state -->
+            <div id="files-modal-loading" class="flex items-center justify-center py-8 gap-3 text-gray-400 text-sm">
+                <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-[#ff1a1a]"></i> Fetching from Supabase Storage...
+            </div>
+
+            <!-- File list -->
+            <div id="files-modal-list" class="hidden max-h-72 overflow-y-auto space-y-2"></div>
+
+            <!-- Empty state -->
+            <div id="files-modal-empty" class="hidden py-8 text-center text-gray-500 text-sm font-mono">No files uploaded yet.</div>
+
+            <!-- Error state -->
+            <div id="files-modal-error" class="hidden py-4 text-center text-[#ff1a1a] text-xs font-mono"></div>
+
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeFilesModal()"
                     class="px-5 py-2 bg-[#ff1a1a] text-black font-bold text-xs uppercase tracking-widest rounded hover:bg-white transition-colors">Close</button>
             </div>
         </div>
@@ -932,6 +981,75 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         };
 
+        // ==================== FILES MODAL (SUPABASE STORAGE) ====================
+        window.openFilesModal = async function (orderId) {
+            const modal = document.getElementById('files-modal');
+            const content = document.getElementById('files-modal-content');
+            const loadingEl = document.getElementById('files-modal-loading');
+            const listEl = document.getElementById('files-modal-list');
+            const emptyEl = document.getElementById('files-modal-empty');
+            const errorEl = document.getElementById('files-modal-error');
+
+            // Reset state
+            document.getElementById('files-modal-order-id').textContent = `Order: ${orderId}`;
+            loadingEl.classList.remove('hidden');
+            listEl.classList.add('hidden');
+            emptyEl.classList.add('hidden');
+            errorEl.classList.add('hidden');
+            listEl.innerHTML = '';
+
+            // Open modal
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                content.classList.remove('scale-95');
+            }, 10);
+            lucide.createIcons();
+
+            // Fetch files from /api/get-files
+            try {
+                const res = await fetch(`/api/get-files?orderId=${encodeURIComponent(orderId)}`, {
+                    headers: { 'x-admin-password': adminPassword }
+                });
+
+                if (!res.ok) throw new Error(`Server error: ${res.status}`);
+                const data = await res.json();
+
+                loadingEl.classList.add('hidden');
+
+                if (!data.files || data.files.length === 0) {
+                    emptyEl.classList.remove('hidden');
+                    return;
+                }
+
+                // Build file list — each file is a clickable download link
+                listEl.innerHTML = data.files.map(file => `
+                    <a href="${file.url}" target="_blank" rel="noopener noreferrer"
+                        class="flex items-center gap-3 p-3 rounded-lg bg-black/40 border border-white/5 hover:border-green-500/30 hover:bg-green-500/5 transition-all group">
+                        <i data-lucide="file" class="w-4 h-4 text-green-400 shrink-0"></i>
+                        <span class="text-sm text-gray-300 group-hover:text-white transition-colors truncate flex-1">${file.name}</span>
+                        <i data-lucide="download" class="w-3.5 h-3.5 text-gray-500 group-hover:text-green-400 transition-colors shrink-0"></i>
+                    </a>
+                `).join('');
+                listEl.classList.remove('hidden');
+                lucide.createIcons();
+
+            } catch (err) {
+                console.error('Files fetch error:', err);
+                loadingEl.classList.add('hidden');
+                errorEl.textContent = `⚠️ Failed to load files: ${err.message}`;
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        window.closeFilesModal = function () {
+            const modal = document.getElementById('files-modal');
+            const content = document.getElementById('files-modal-content');
+            modal.classList.remove('opacity-100');
+            content.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
         window.markProjectCompleted = async function (orderId) {
             if (!confirm("Are you sure you want to mark this project as fully completed?")) return;
 
@@ -1001,17 +1119,20 @@
                     `;
                 }
 
+                // Files button: green + clickable if order has uploaded files, grey + disabled if not.
+                // has_files is set by admin-data.js based on Supabase Storage listing.
+                const filesBtn = order.has_files
+                    ? `<button onclick="openFilesModal('${order.id}')" class="p-1.5 rounded bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 transition-all flex items-center gap-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]" title="View Uploaded Files">
+                           <i data-lucide="folder-open" class="w-4 h-4"></i> <span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span>
+                       </button>`
+                    : `<button class="p-1.5 rounded bg-white/5 text-gray-600 cursor-not-allowed flex items-center gap-1" title="Awaiting Client Upload" disabled>
+                           <i data-lucide="folder-clock" class="w-4 h-4"></i> <span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span>
+                       </button>`;
+
                 const actionBtn = `
                     <div class="flex items-center gap-2">
                         ${completeBtnHTML}
-                        ${order.drive_folder_url
-                        ? `<a href="${order.drive_folder_url}" target="_blank" onclick="showToast('Opening Google Drive Vault...', 'info')" class="p-1.5 rounded bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 transition-all flex items-center gap-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]" title="Open Google Drive Vault">
-                                <i data-lucide="folder-open" class="w-4 h-4"></i> <span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span>
-                               </a>`
-                        : `<button class="p-1.5 rounded bg-white/5 text-gray-600 cursor-not-allowed flex items-center gap-1" title="Awaiting Client Upload">
-                                <i data-lucide="folder-clock" class="w-4 h-4"></i> <span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span>
-                               </button>`
-                    }
+                        ${filesBtn}
                         <button onclick="openNotesModal('${clientName}', '${safeNotes}')" class="p-1.5 rounded bg-white/5 hover:bg-[#ff1a1a]/20 border border-white/10 hover:border-[#ff1a1a]/50 text-gray-400 hover:text-[#ff1a1a] transition-all" title="View Brief">
                             <i data-lucide="file-text" class="w-4 h-4"></i>
                         </button>
@@ -1139,33 +1260,151 @@
             lucide.createIcons();
         }
 
-        // ==================== SEARCH / FILTER LOGIC ====================
+        // ==================== SEARCH / FILTER LOGIC (DATA-DRIVEN REWRITE) ====================
 
-        // FIX: Added text scanner directly to inputs to prevent DOM unbinding
-        window.filterTable = function (tbodyId, searchTerm) {
-            const term = searchTerm.toLowerCase().trim();
-            const tbody = document.getElementById(tbodyId);
-            if (!tbody) return;
+        // Master search: filters globalOrdersData directly — no DOM text scanning
+        window.runSearch = function (context) {
+            if (context === 'projects') {
+                const term = (document.getElementById('search-projects').value || '').trim().toLowerCase();
+                const clearBtn = document.getElementById('clear-projects-btn');
+                if (clearBtn) clearBtn.classList.toggle('hidden', !term);
+                renderFilteredProjects(term);
+            } else if (context === 'crm') {
+                const term = (document.getElementById('search-crm').value || '').trim().toLowerCase();
+                const clearBtn = document.getElementById('clear-crm-btn');
+                if (clearBtn) clearBtn.classList.toggle('hidden', !term);
+                renderFilteredCRM(term);
+            }
+        };
 
-            const rows = tbody.querySelectorAll('tr');
+        window.clearSearch = function (context) {
+            if (context === 'projects') {
+                document.getElementById('search-projects').value = '';
+                document.getElementById('clear-projects-btn').classList.add('hidden');
+                renderFilteredProjects('');
+            } else if (context === 'crm') {
+                document.getElementById('search-crm').value = '';
+                document.getElementById('clear-crm-btn').classList.add('hidden');
+                renderFilteredCRM('');
+            }
+        };
 
-            rows.forEach(row => {
-                const textContent = row.textContent || "";
-                if (row.querySelector('.skeleton') || textContent.includes('No project data') || textContent.includes('No client data')) {
-                    return;
+        function renderFilteredProjects(term) {
+            const fullTbody = document.getElementById('full-projects-tbody');
+            if (!fullTbody) return;
+
+            const filtered = term
+                ? globalOrdersData.filter(order => {
+                    const haystack = [
+                        order.client, order.email, order.phone,
+                        order.service, order.status, String(order.amount),
+                        order.id
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    return haystack.includes(term);
+                })
+                : globalOrdersData;
+
+            if (filtered.length === 0) {
+                fullTbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-mono text-xs">No results for "${term}"</td></tr>`;
+                lucide.createIcons(); return;
+            }
+
+            let html = '';
+            filtered.forEach(order => {
+                let badgeClass = 'status-pending';
+                if (order.status === 'in_progress') badgeClass = 'status-progress';
+                if (order.status === 'completed' || order.status === 'paid') badgeClass = 'status-completed';
+
+                const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
+                const avatar = getAvatarHTML(clientName);
+                const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB') : 'Just now';
+                const deadlineBadge = getDeadlineBadge(order);
+                const safeNotes = encodeURIComponent(order.notes || 'No brief provided.');
+
+                const contactHTML = `
+                    <div class="flex flex-col gap-0.5 mt-1">
+                        ${order.email ? `<span class="text-[9px] text-gray-400 flex items-center gap-1"><i data-lucide="mail" class="w-2.5 h-2.5"></i>${order.email}</span>` : ''}
+                        ${order.phone ? `<span class="text-[9px] text-gray-400 flex items-center gap-1"><i data-lucide="phone" class="w-2.5 h-2.5"></i>${order.phone}</span>` : ''}
+                    </div>`;
+
+                let completeBtnHTML = '';
+                if (order.status !== 'completed') {
+                    completeBtnHTML = `<button onclick="markProjectCompleted('${order.id}')" class="p-1.5 rounded bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/50 text-gray-400 hover:text-green-500 transition-all" title="Mark Completed"><i data-lucide="check-circle" class="w-4 h-4"></i></button>`;
                 }
 
-                // Reads the raw readable text using textContent for better reliability
-                const rowText = textContent.toLowerCase();
+                const filesBtn = order.has_files
+                    ? `<button onclick="openFilesModal('${order.id}')" class="p-1.5 rounded bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 transition-all flex items-center gap-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]" title="View Uploaded Files"><i data-lucide="folder-open" class="w-4 h-4"></i><span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span></button>`
+                    : `<button class="p-1.5 rounded bg-white/5 text-gray-600 cursor-not-allowed flex items-center gap-1" title="Awaiting Upload" disabled><i data-lucide="folder-clock" class="w-4 h-4"></i><span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span></button>`;
 
-                if (rowText.includes(term)) {
-                    row.style.display = '';
-                    row.classList.remove('hidden');
-                } else {
-                    row.style.display = 'none';
-                    row.classList.add('hidden');
-                }
+                const actionBtn = `<div class="flex items-center gap-2">${completeBtnHTML}${filesBtn}<button onclick="openNotesModal('${clientName}', '${safeNotes}')" class="p-1.5 rounded bg-white/5 hover:bg-[#ff1a1a]/20 border border-white/10 hover:border-[#ff1a1a]/50 text-gray-400 hover:text-[#ff1a1a] transition-all" title="View Brief"><i data-lucide="file-text" class="w-4 h-4"></i></button></div>`;
+
+                html += `
+                <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
+                    <td class="p-4"><div class="flex items-center gap-3">${avatar}<div><div class="font-bold text-white">${clientName}</div>${contactHTML}</div></div></td>
+                    <td class="p-4 text-gray-300 text-sm font-medium">${order.service}</td>
+                    <td class="p-4 font-bold text-[#ff1a1a]">₹${order.amount}</td>
+                    <td class="p-4"><div class="flex flex-col gap-1"><span class="text-[10px] text-gray-500">Booked: ${orderDate}</span>${deadlineBadge}</div></td>
+                    <td class="p-4 text-right"><div class="flex items-center justify-end gap-3"><span class="status-badge ${badgeClass}">${order.status}</span>${actionBtn}</div></td>
+                </tr>`;
             });
+
+            fullTbody.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function renderFilteredCRM(term) {
+            const crmTbody = document.getElementById('crm-tbody');
+            if (!crmTbody) return;
+
+            // Build client map from all orders first
+            const clientsMap = {};
+            globalOrdersData.forEach(order => {
+                const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
+                if (!clientsMap[clientName]) {
+                    clientsMap[clientName] = { name: clientName, email: order.email, totalSpent: 0, projectCount: 0, lastActive: new Date(order.created_at || Date.now()) };
+                }
+                clientsMap[clientName].projectCount += 1;
+                clientsMap[clientName].totalSpent += Number(order.amount) || 0;
+                const orderDate = new Date(order.created_at || Date.now());
+                if (orderDate > clientsMap[clientName].lastActive) clientsMap[clientName].lastActive = orderDate;
+            });
+
+            let clients = Object.values(clientsMap).sort((a, b) => b.totalSpent - a.totalSpent);
+
+            if (term) {
+                clients = clients.filter(c => {
+                    const haystack = [c.name, c.email, String(c.totalSpent), String(c.projectCount)].filter(Boolean).join(' ').toLowerCase();
+                    return haystack.includes(term);
+                });
+            }
+
+            if (clients.length === 0) {
+                crmTbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-mono text-xs">No clients found for "${term}"</td></tr>`;
+                lucide.createIcons(); return;
+            }
+
+            let html = '';
+            clients.forEach(client => {
+                const avatar = getAvatarHTML(client.name);
+                const lastActiveStr = client.lastActive.toLocaleDateString();
+                html += `
+                <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
+                    <td class="p-4"><div class="flex items-center gap-3">${avatar}<div><div class="font-bold text-white">${client.name}</div><div class="font-mono text-[10px] text-gray-500">Lifetime Client</div></div></div></td>
+                    <td class="p-4 text-gray-300 text-sm font-bold pl-8">${client.projectCount}</td>
+                    <td class="p-4 font-semibold text-[#ff1a1a]">₹${client.totalSpent}</td>
+                    <td class="p-4 text-gray-400 text-sm">${lastActiveStr}</td>
+                    <td class="p-4 text-right">${client.email ? `<a href="mailto:${client.email}" class="px-4 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-colors inline-block">Email</a>` : `<span class="text-xs text-gray-500 italic">No Email</span>`}</td>
+                </tr>`;
+            });
+
+            crmTbody.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // Legacy stub — kept so old callers don't crash
+        window.filterTable = function (tbodyId, term) {
+            if (tbodyId === 'full-projects-tbody') renderFilteredProjects((term || '').toLowerCase().trim());
+            else if (tbodyId === 'crm-tbody') renderFilteredCRM((term || '').toLowerCase().trim());
         };
 
         // ==================== AI TERMINAL LOGIC ====================
