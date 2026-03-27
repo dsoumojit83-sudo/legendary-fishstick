@@ -855,11 +855,12 @@
             class="hidden md:block px-6 py-2.5 border border-white/20 text-xs uppercase tracking-widest hover:border-[#ff1a1a] hover:text-[#ff1a1a] transition-all magnetic-btn"
             rel="noopener noreferrer" aria-label="Send email to ZyroEditz">Let's Talk</a>
 
+        <!-- UPDATED: Hamburger button with animated bars -->
         <button class="md:hidden w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="mobileMenuToggle"
             aria-label="Toggle mobile menu" aria-expanded="false">
-            <span class="w-6 h-0.5 bg-white"></span>
-            <span class="w-6 h-0.5 bg-white"></span>
-            <span class="w-6 h-0.5 bg-white"></span>
+            <span id="bar1" class="w-6 h-0.5 bg-white block origin-center" style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
+            <span id="bar2" class="w-6 h-0.5 bg-white block" style="transition: opacity 0.25s ease;"></span>
+            <span id="bar3" class="w-6 h-0.5 bg-white block origin-center" style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
         </button>
     </nav>
 
@@ -1660,9 +1661,16 @@
                 const yearEl = document.getElementById('year');
                 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+                // UPDATED: Mobile menu with proper toggle state + GSAP conflict prevention
                 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
                 const mobileMenuClose = document.getElementById('mobileMenuClose');
                 const mobileMenu = document.getElementById('mobileMenu');
+                // ADDED: hamburger bar elements for animation
+                const bar1 = document.getElementById('bar1');
+                const bar2 = document.getElementById('bar2');
+                const bar3 = document.getElementById('bar3');
+                // ADDED: single source of truth for menu state
+                let isMenuOpen = false;
                 let focusableElements = [];
                 let lastFocusedElement = null;
 
@@ -1691,17 +1699,42 @@
                     if (e.key === 'Escape') closeMobileMenu();
                 }
 
+                // ADDED: Animate hamburger bars → X icon
+                function animateHamburgerOpen() {
+                    if (bar1 && bar2 && bar3) {
+                        bar1.style.transform = 'translateY(8px) rotate(45deg)';
+                        bar2.style.opacity = '0';
+                        bar3.style.transform = 'translateY(-8px) rotate(-45deg)';
+                    }
+                }
+
+                // ADDED: Animate X icon → hamburger bars
+                function animateHamburgerClose() {
+                    if (bar1 && bar2 && bar3) {
+                        bar1.style.transform = '';
+                        bar2.style.opacity = '1';
+                        bar3.style.transform = '';
+                    }
+                }
+
                 function openMobileMenu() {
+                    if (isMenuOpen) return; // ADDED: guard against double-open
+                    isMenuOpen = true; // ADDED
                     mobileMenu.classList.remove('hidden');
                     mobileMenuToggle.setAttribute('aria-expanded', 'true');
                     lastFocusedElement = document.activeElement;
                     focusableElements = getFocusableElements();
+                    animateHamburgerOpen(); // ADDED
 
                     if (window.gsap) {
+                        gsap.killTweensOf(mobileMenu); // ADDED: prevent overlapping animations
+                        const navLinks = mobileMenu.querySelectorAll('.nav-link');
+                        gsap.killTweensOf(navLinks); // ADDED: kill any leftover tweens on nav-links from close animation
+                        gsap.set(navLinks, { clearProps: 'all' }); // ADDED: wipe GSAP-injected opacity/transform inline styles so .from() starts clean
                         const tl = gsap.timeline();
                         tl.set(mobileMenu, { opacity: 0 })
                             .to(mobileMenu, { opacity: 1, duration: 0.3, ease: 'power2.out' })
-                            .from(mobileMenu.querySelectorAll('.nav-link'), {
+                            .from(navLinks, {
                                 y: 20,
                                 opacity: 0,
                                 duration: 0.4,
@@ -1715,7 +1748,13 @@
                 }
 
                 function closeMobileMenu() {
+                    if (!isMenuOpen) return; // ADDED: guard against double-close
+                    isMenuOpen = false; // ADDED
+                    animateHamburgerClose(); // ADDED
+                    mobileMenuToggle.setAttribute('aria-expanded', 'false');
+
                     if (window.gsap) {
+                        gsap.killTweensOf(mobileMenu); // ADDED: kill any open animation first
                         const tl = gsap.timeline();
                         tl.to(mobileMenu.querySelectorAll('.nav-link'), {
                             y: 20,
@@ -1729,22 +1768,27 @@
                                 duration: 0.2,
                                 ease: 'power2.in',
                                 onComplete: () => {
-                                    mobileMenu.classList.add('hidden');
-                                    mobileMenuToggle.setAttribute('aria-expanded', 'false');
+                                    mobileMenu.classList.add('hidden'); // UPDATED: add hidden only after GSAP finishes
                                     mobileMenu.removeEventListener('keydown', trapFocus);
                                     if (lastFocusedElement) lastFocusedElement.focus();
                                 }
                             }, "-=0.1");
                     } else {
                         mobileMenu.classList.add('hidden');
-                        mobileMenuToggle.setAttribute('aria-expanded', 'false');
                         mobileMenu.removeEventListener('keydown', trapFocus);
                         if (lastFocusedElement) lastFocusedElement.focus();
                     }
                 }
 
-                if (mobileMenuToggle && mobileMenu) mobileMenuToggle.addEventListener('click', openMobileMenu);
+                // UPDATED: Single click listener on hamburger that toggles (not duplicate open)
+                if (mobileMenuToggle && mobileMenu) {
+                    mobileMenuToggle.addEventListener('click', function () {
+                        if (isMenuOpen) { closeMobileMenu(); } else { openMobileMenu(); }
+                    });
+                }
+                // Keep the dedicated close button working too
                 if (mobileMenuClose && mobileMenu) mobileMenuClose.addEventListener('click', closeMobileMenu);
+                // ADDED: Close menu on any link click inside it
                 mobileMenu?.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMobileMenu));
 
                 let ticking = false;
