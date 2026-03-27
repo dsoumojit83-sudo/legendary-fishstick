@@ -11,6 +11,11 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendInvoice(order) {
+    // Guard: fail fast with a clear error if email credentials are missing
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        throw new Error('[sendInvoice] EMAIL_USER or EMAIL_PASS not configured in environment variables.');
+    }
+
     return new Promise((resolve, reject) => {
         try {
             // --- Date Formatting Logic ---
@@ -142,7 +147,8 @@ async function sendInvoice(order) {
             doc.fontSize(10).font('Helvetica').fillColor('#666666')
                .text('Premium cinematic editing and post-production. Includes 1 free revision.', 65, 360, {width: 220});
             doc.fontSize(14).fillColor('#000000').text(formattedDeadline, 300, 340, {width: 100, align: 'center'});
-            doc.text(`INR ${order.amount.toFixed(2)}`, 430, 340, {width: 100, align: 'right'});
+            // FIX: Cast to Number before .toFixed() — Supabase returns numeric fields as strings
+            doc.text(`INR ${Number(order.amount).toFixed(2)}`, 430, 340, {width: 100, align: 'right'});
 
             // Divider Line
             doc.moveTo(50, 400).lineTo(545, 400).lineWidth(1).strokeColor('#eeeeee').stroke();
@@ -150,7 +156,8 @@ async function sendInvoice(order) {
             // Total Row
             doc.rect(50, 420, 495, 40).fill('#f8f8f8');
             doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('TOTAL PAID:', 290, 433, {width: 100, align: 'right'});
-            doc.fillColor('#ff1a1a').fontSize(18).text(`INR ${order.amount.toFixed(2)}`, 400, 431, {width: 130, align: 'right'});
+            // FIX: Cast to Number before .toFixed() — Supabase returns numeric fields as strings
+            doc.fillColor('#ff1a1a').fontSize(18).text(`INR ${Number(order.amount).toFixed(2)}`, 400, 431, {width: 130, align: 'right'});
             doc.moveTo(50, 460).lineTo(545, 460).lineWidth(2).strokeColor('#050505').stroke();
 
             // Payment Status
