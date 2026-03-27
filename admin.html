@@ -572,11 +572,14 @@
         }
 
         // FIX: Added project status to timeline logic to permanently show "Completed"
-        function getDeadlineBadge(deadlineDateString, status) {
-            if (status === 'completed' || status === 'paid') {
-                return `<span class="text-green-500 font-bold text-[10px] uppercase flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i>Completed</span>`;
+        function getDeadlineBadge(order) {
+            if (order.status === 'completed' || order.status === 'paid') {
+                const completeDate = order.completed_at || order.updated_at;
+                const dateStr = completeDate ? new Date(completeDate).toLocaleDateString() : new Date().toLocaleDateString();
+                return `<span class="text-green-500 font-bold text-[10px] uppercase flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i>Completed: ${dateStr}</span>`;
             }
             
+            const deadlineDateString = order.deadline;
             if (!deadlineDateString) return `<span class="text-gray-600 text-[10px] uppercase">No Deadline</span>`;
             
             const deadline = new Date(deadlineDateString);
@@ -665,8 +668,8 @@
                 const avatar = getAvatarHTML(clientName);
                 const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString() : 'Just now';
                 
-                // FIX: Passing the status to force the green "Completed" override
-                const deadlineBadge = getDeadlineBadge(order.deadline, order.status);
+                // FIX: Passing the entire order to calculate dynamic completion date or deadline
+                const deadlineBadge = getDeadlineBadge(order);
                 
                 const safeNotes = encodeURIComponent(order.notes || "No brief provided.");
 
@@ -835,12 +838,13 @@
             const rows = tbody.querySelectorAll('tr');
             
             rows.forEach(row => {
-                if (row.querySelector('.skeleton') || row.innerText.includes('No project data') || row.innerText.includes('No client data')) {
+                const textContent = row.textContent || "";
+                if (row.querySelector('.skeleton') || textContent.includes('No project data') || textContent.includes('No client data')) {
                     return;
                 }
                 
-                // Reads the raw readable text in the browser
-                const rowText = row.innerText.toLowerCase();
+                // Reads the raw readable text using textContent for better reliability
+                const rowText = textContent.toLowerCase();
                 
                 if (rowText.includes(term)) {
                     row.style.display = '';
