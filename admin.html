@@ -364,7 +364,7 @@
 
             <div id="terminal-body" class="flex-1 p-5 overflow-y-auto flex flex-col gap-2 font-mono" style="background: radial-gradient(circle at top, #111 0%, #000 100%);">
                 <div class="terminal-msg msg-ai">
-                    <span class="text-[#ff1a1a] font-bold">CORE></span> Initialization complete. Secure connection to Supabase established. How can I analyze the studio data today, Soumojit?
+                    <span class="text-[#ff1a1a] font-bold">CORE></span> Initialization complete. Secure connection to Supabase established. How can I analyze the studio data today?
                 </div>
             </div>
 
@@ -807,6 +807,15 @@
         }
 
         // ==================== AI TERMINAL LOGIC ====================
+        
+        // NEW FIX: Markdown Parser to format AI text properly
+        function formatAIText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>') // Bold text
+                .replace(/\n/g, '<br>') // Line breaks
+                .replace(/ - /g, '<br><span class="text-[#ff1a1a] mr-2">►</span>'); // Bullet points
+        }
+
         let isTerminalOpen = false;
         window.toggleTerminal = function() {
             const terminal = document.getElementById('ai-terminal');
@@ -864,7 +873,9 @@
                 if(res.status === 401) {
                     terminalBody.innerHTML += `<div class="terminal-msg msg-ai border-red-500 text-red-400"><span class="text-red-500 font-bold">SECURITY ALERT></span> Unauthorized token detected.</div>`;
                 } else {
-                    terminalBody.innerHTML += `<div class="terminal-msg msg-ai"><span class="text-[#ff1a1a] font-bold">CORE></span> ${aiResponse.reply}</div>`;
+                    // NEW FIX: Apply the formatter here before inserting into the DOM
+                    const formattedReply = formatAIText(aiResponse.reply);
+                    terminalBody.innerHTML += `<div class="terminal-msg msg-ai leading-relaxed"><span class="text-[#ff1a1a] font-bold">CORE></span> ${formattedReply}</div>`;
                 }
             } catch (error) {
                 document.getElementById(typingId).remove();
@@ -1196,7 +1207,6 @@
                     clearInterval(checkGsap);
                     if(!isMobile) gsap.from("#sidebar", { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
                     
-                    // FIX: We only stagger charts and titles now, NOT the KPI cards
                     gsap.from(".stagger-elem", { y: 20, opacity: 0, duration: 0.6, stagger: 0.08, ease: "power2.out", delay: 0.1 });
                     
                     if(!isMobile) {
