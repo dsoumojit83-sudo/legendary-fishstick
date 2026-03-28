@@ -97,9 +97,14 @@ module.exports = async function (req, res) {
         // Calculate a quick summary for the top of your ledger
         let totalUPI = 0;
         let totalCard = 0;
+        let totalNetbanking = 0;
+        let totalWallet = 0;
+        
         ledger.forEach(l => {
             if (l.payment_type === 'UPI') totalUPI += l.amount;
             if (l.payment_type === 'Card') totalCard += l.amount;
+            if (l.payment_type === 'Netbanking') totalNetbanking += l.amount;
+            if (l.payment_type === 'Wallet') totalWallet += l.amount;
         });
 
         // 3. Deliver payload back to admin panel
@@ -107,7 +112,9 @@ module.exports = async function (req, res) {
             success: true,
             summary: {
                 total_upi_revenue: totalUPI,
-                total_card_revenue: totalCard
+                total_card_revenue: totalCard,
+                total_netbanking_revenue: totalNetbanking,
+                total_wallet_revenue: totalWallet
             },
             ledger: ledger
         });
