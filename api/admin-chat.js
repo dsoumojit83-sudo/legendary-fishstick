@@ -163,6 +163,42 @@ module.exports = async function(req, res) {
 
         const profitMargin = totalRev > 0 ? (((totalRev - totalGatewayFees) / totalRev) * 100).toFixed(1) + "%" : "0%";
 
+        // --- FETCH PAYMENT METHOD DISTRIBUTION ---
+        let upiVol = 0, cardVol = 0, netVol = 0, walletVol = 0;
+        try {
+            if (orders && orders.length > 0) {
+                // limit to last 30 paid orders to keep chat API fast
+                const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'completed').slice(0, 30);
+                
+                const pmChecks = await Promise.allSettled(
+                    paidOrders.map(o => 
+                        axios.get(`https://api.cashfree.com/pg/orders/${o.order_id}/payments`, {
+                            headers: {
+                                "x-client-id": process.env.CASHFREE_APP_ID,
+                                "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+                                "x-api-version": "2023-08-01"
+                            }
+                        }).then(res => ({ amount: o.amount, payments: res.data }))
+                    )
+                );
+
+                pmChecks.forEach(res => {
+                    if (res.status === 'fulfilled' && res.value.payments.length > 0) {
+                        const successPm = res.value.payments.find(p => p.payment_status === 'SUCCESS');
+                        if (successPm && successPm.payment_method) {
+                            const pm = successPm.payment_method;
+                            if (pm.upi) upiVol += res.value.amount;
+                            else if (pm.card) cardVol += res.value.amount;
+                            else if (pm.netbanking) netVol += res.value.amount;
+                            else if (pm.app) walletVol += res.value.amount;
+                        }
+                    }
+                });
+            }
+        } catch(e) {
+            console.log("Admin Chat - Payment Method check error", e.message);
+        }
+
         // --- THE MASTER PROMPT ---
         const systemPrompt = `You are ZyroCore, an ultra-advanced AI studio manager and elite executive personal assistant exclusively for Soumojit Das, the Founder of ZyroEditz. You are seamlessly integrated into the studio's data layer, handling business intelligence, client relations, and day-to-day strategic operations.
 
@@ -176,6 +212,12 @@ module.exports = async function(req, res) {
 - Pending Clearance: Rs.${Math.max(0, pendingClearance).toFixed(2)}
 - Total Gateway Fees Deducted: Rs.${totalGatewayFees.toFixed(2)}
 - Net Profit Margin (After Fees/Tax): ${profitMargin}
+
+[PAYMENT METHOD DISTRIBUTION (Recent 30 Orders)]
+- UPI / QR Scans: Rs.${upiVol}
+- Credit/Debit Cards: Rs.${cardVol}
+- Netbanking: Rs.${netVol}
+- Wallets: Rs.${walletVol}
 
 [FULL SUPABASE DATABASE RECORD (EVERY ORDER)]
 You have RAW, unrestricted access to the entire studio database below. Use this to answer ANY historical, specific, or data-driven question Soumojit asks:
@@ -208,7 +250,8 @@ ${crmList.join('\n')}
    - If a client has not uploaded but payment is done (status: paid), flag this as a production blocker.
 
 4. FINANCIAL ANALYTICS & BANKING LEDGER:
-   - You have real-time access to the Cashfree Settlement Gateway. Provide exact statistics on Gateway Fees, Net Profit Margins, and settled vs pending amounts when asked about finances or margins.
+   - You have real-time access to the Cashfree Settlement Gateway and Payment Method records.
+   - When asked "how do my clients pay?", recite the precise breakdown of UPI vs Cards vs Netbanking using the [PAYMENT METHOD DISTRIBUTION] section.
    - Evaluate client value using the CRM metrics (Lifetime Value, Number of Orders) and advise priority attention to highest LTV clients.
 
 5. REAL-LIFE EXECUTIVE ASSISTANCE:
