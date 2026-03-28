@@ -21,6 +21,29 @@ module.exports = async function(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     try {
+        // --- 1. CASHFREE WEBHOOK HANDLER ---
+        // Identify Cashfree's nested JSON structure to prevent 400 errors
+        if (req.body.data && req.body.type) {
+            const eventType = req.body.type;
+            const orderId = req.body.data.order?.order_id;
+            const pmStatus = req.body.data.payment?.payment_status;
+
+            console.log("Webhook Received:", eventType, "for Order:", orderId);
+
+            if (pmStatus === 'SUCCESS' && orderId) {
+                // Asynchronously finalize order in Supabase
+                const { error: dbError } = await supabase
+                    .from('orders')
+                    .update({ status: 'paid' })
+                    .eq('order_id', orderId);
+                    
+                if (dbError) console.error("Webhook DB Update Failed:", dbError);
+            }
+            // Always return 200 OK so Cashfree stops retrying
+            return res.status(200).send('Webhook Processed');
+        }
+
+        // --- 2. CHECKOUT SESSION HANDLER (Frontend Wizard) ---
         const { sessionId, phone, email, name, selectedService, amount } = req.body;
 
         // 1. Data Validation
