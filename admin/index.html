@@ -1950,9 +1950,10 @@
 
             // Fetch Payment Methods explicitly via payments API to inject accurate UPI/Card metrics correctly
             try {
-                const payRes = await fetch('/api/payments', {
+                const payRes = await fetch(`/api/payments?t=${Date.now()}`, {
                     method: 'GET',
-                    headers: { 'x-admin-password': adminPassword }
+                    headers: { 'x-admin-password': adminPassword },
+                    cache: 'no-store'
                 });
                 
                 if(payRes.ok) {
