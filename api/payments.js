@@ -42,46 +42,59 @@ module.exports = async function (req, res) {
                         headers: {
                             "x-client-id": process.env.CASHFREE_APP_ID,
                             "x-client-secret": process.env.CASHFREE_SECRET_KEY,
-                            "x-api-version": "2023-08-01",
+                            "x-api-version": "2025-01-01",
                             "Content-Type": "application/json"
                         }
                     }
                 );
 
-                // Find the successful transaction (ignores failed attempts by the client)
                 const payments = cfRes.data || [];
-                const successfulPayment = payments.find(p => p.payment_status === 'SUCCESS');
+                const successfulPayment = payments
+                    .filter(p => p.payment_status === 'SUCCESS')
+                    .sort((a,b)=> new Date(b.payment_completion_time) - new Date(a.payment_completion_time))[0];
 
-                let paymentMethod = "Unknown";
+                let paymentMethod = "MANUAL";
                 let networkOrApp = "N/A";
                 let utr = "N/A";
                 let cfPaymentId = "N/A";
+                let gatewayAmount = order.amount;
+                let paymentTime = null;
+                let gatewayStatus = "MANUAL/PENDING";
 
                 if (successfulPayment) {
-                    paymentMethod = successfulPayment.payment_group || "Unknown";
-                    utr = successfulPayment.bank_reference || "N/A";
+                    let extractedGroup = (successfulPayment.payment_group || "unknown").toUpperCase();
+                    
+                    if (extractedGroup.includes("UPI")) paymentMethod = "UPI";
+                    else if (extractedGroup.includes("CARD")) paymentMethod = "CARD";
+                    else if (extractedGroup.includes("NET")) paymentMethod = "NETBANKING";
+                    else if (extractedGroup.includes("WALLET")) paymentMethod = "WALLET";
+                    else if (extractedGroup.includes("BANK")) paymentMethod = "BANK_TRANSFER";
+                    else paymentMethod = extractedGroup;
+
+                    utr = 
+                        successfulPayment.bank_reference ||
+                        successfulPayment.authorization?.action_reference ||
+                        successfulPayment.payment_gateway_details?.gateway_reference_name ||
+                        "N/A";
+                    
                     cfPaymentId = successfulPayment.cf_payment_id || "N/A";
+                    gatewayAmount = successfulPayment.payment_amount || order.amount;
+                    paymentTime = successfulPayment.payment_completion_time || null;
+                    gatewayStatus = "SUCCESS";
 
                     const pm = successfulPayment.payment_method || {};
 
                     if (pm.upi) {
-                        networkOrApp =
-                            pm.upi.upi_id ||
-                            pm.upi.channel ||
-                            "UPI";
-                    } else if (pm.card) {
-                        networkOrApp =
-                            pm.card.card_network ||
-                            pm.card.card_bank_name ||
-                            "Card";
-                    } else if (pm.netbanking) {
-                        networkOrApp =
-                            pm.netbanking.bank_name ||
-                            "Netbanking";
-                    } else if (pm.app) {
-                        networkOrApp =
-                            pm.app.provider ||
-                            "Wallet";
+                        networkOrApp = pm.upi.channel || pm.upi.upi_id || "UPI";
+                    } 
+                    else if (pm.card) {
+                        networkOrApp = pm.card.card_network || pm.card.card_bank_name || "CARD";
+                    } 
+                    else if (pm.netbanking) {
+                        networkOrApp = pm.netbanking.bank_name || "NETBANKING";
+                    }
+                    else if (pm.app) {
+                        networkOrApp = pm.app.provider || "WALLET";
                     }
                 }
 
@@ -89,31 +102,33 @@ module.exports = async function (req, res) {
                     order_id: order.order_id,
                     client: order.client_name || "Zyro Client",
                     amount: order.amount,
-                    date: order.created_at,
+                    gateway_amount: gatewayAmount,
                     payment_type: paymentMethod,
                     payment_network: networkOrApp,
                     bank_reference: utr,
                     cf_payment_id: cfPaymentId,
-                    gateway_status: successfulPayment ? 'SUCCESS' : 'MANUAL/PENDING'
+                    payment_time: paymentTime,
+                    gateway_status: gatewayStatus
                 };
 
             } catch (cfError) {
                 console.error(`Cashfree Ledger Error for ${order.order_id}:`, cfError.response?.data || cfError.message);
-                // If the order wasn't found in Cashfree (e.g. manually marked paid)
+                
                 return {
                     order_id: order.order_id,
-                    client: order.client_name,
+                    client: order.client_name || "Zyro Client",
                     amount: order.amount,
-                    date: order.created_at,
-                    payment_type: "Manual Entry",
+                    gateway_amount: order.amount,
+                    payment_type: "MANUAL",
                     payment_network: "N/A",
                     bank_reference: "N/A",
-                    gateway_status: "MANUAL"
+                    cf_payment_id: "N/A",
+                    payment_time: null,
+                    gateway_status: "MANUAL/PENDING"
                 };
             }
         }));
 
-        // Calculate a quick summary for the top of your ledger
         let totalUPI = 0;
         let totalCard = 0;
         let totalNetbanking = 0;
@@ -121,10 +136,10 @@ module.exports = async function (req, res) {
         
         ledger.forEach(l => {
             const pType = String(l.payment_type).toUpperCase();
-            if (pType === 'UPI') totalUPI += l.amount;
-            else if (pType === 'CARD') totalCard += l.amount;
-            else if (pType === 'NETBANKING') totalNetbanking += l.amount;
-            else if (pType === 'WALLET' || pType === 'APP') totalWallet += l.amount;
+            if (pType.includes('UPI')) totalUPI += l.amount;
+            else if (pType.includes('CARD')) totalCard += l.amount;
+            else if (pType.includes('NET')) totalNetbanking += l.amount;
+            else if (pType.includes('WALLET') || pType.includes('APP')) totalWallet += l.amount;
         });
 
         // 3. Deliver payload back to admin panel
