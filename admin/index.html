@@ -814,24 +814,30 @@
                 <div id="ledger-view" class="view-section">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
                         <div class="flex flex-col gap-4 lg:gap-6 lg:col-span-2">
-                            <div class="glass-panel p-6 rounded-2xl border border-white/5 bg-black/20 flex justify-between items-center">
-                                <div>
-                                    <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Total Settled Volume</div>
-                                    <div class="text-3xl font-bold text-[#ff1a1a]" id="ledger-total-upi"><span class="skeleton w-24 h-8 inline-block"></span></div>
-                                    <div class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">Last 12 months via Cashfree</div>
-                                </div>
-                                <div class="w-16 h-16 rounded-full bg-[#ff1a1a]/10 flex items-center justify-center text-[#ff1a1a] shadow-[0_0_20px_rgba(255,26,26,0.1)]">
-                                    <i data-lucide="landmark" class="w-8 h-8"></i>
+                            <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-[#ff1a1a]/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(255,26,26,0.15)] opacity-100 bg-black/40">
+                                <div class="absolute top-0 right-0 w-32 h-32 bg-[#ff1a1a]/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                                <div class="flex justify-between items-start mb-4 relative z-10">
+                                    <div>
+                                        <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">Total Settled Volume</div>
+                                        <div class="text-3xl font-bold text-[#ff1a1a]" id="ledger-total-upi"><span class="skeleton w-24 h-8 inline-block"></span></div>
+                                        <div class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">Last 12 months via Cashfree</div>
+                                    </div>
+                                    <div class="w-16 h-16 rounded-full bg-[#ff1a1a]/10 flex items-center justify-center text-[#ff1a1a] shadow-[0_0_20px_rgba(255,26,26,0.1)] group-hover:scale-110 transition-transform">
+                                        <i data-lucide="landmark" class="w-8 h-8"></i>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="glass-panel p-6 rounded-2xl border border-white/5 bg-black/20 flex justify-between items-center">
-                                <div>
-                                    <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Total Fees Deducted</div>
-                                    <div class="text-3xl font-bold text-yellow-400" id="ledger-total-card"><span class="skeleton w-24 h-8 inline-block"></span></div>
-                                    <div class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">Service charge + tax</div>
-                                </div>
-                                <div class="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
-                                    <i data-lucide="receipt" class="w-8 h-8"></i>
+                            <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(234,179,8,0.15)] opacity-100 bg-black/40">
+                                <div class="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                                <div class="flex justify-between items-start mb-4 relative z-10">
+                                    <div>
+                                        <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">Total Fees Deducted</div>
+                                        <div class="text-3xl font-bold text-yellow-400" id="ledger-total-card"><span class="skeleton w-24 h-8 inline-block"></span></div>
+                                        <div class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">Service charge + tax</div>
+                                    </div>
+                                    <div class="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.1)] group-hover:scale-110 transition-transform">
+                                        <i data-lucide="receipt" class="w-8 h-8"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -849,34 +855,43 @@
 
                     <!-- Payment Methods Distribution Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6 mb-6">
-                        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-white/5 bg-black/20 flex justify-between items-center hover:bg-white/5 transition-colors group">
-                            <div>
-                                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">UPI Volume</div>
-                                <div class="text-2xl lg:text-3xl font-bold text-green-400" id="ledger-upi-vol"><span class="skeleton w-20 h-8 inline-block"></span></div>
-                                <div class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-mono">Real-time GPay/PhonePe</div>
-                            </div>
-                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform">
-                                <i data-lucide="smartphone-nfc" class="w-5 h-5 lg:w-8 lg:h-8"></i>
-                            </div>
-                        </div>
-                        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-white/5 bg-black/20 flex justify-between items-center hover:bg-white/5 transition-colors group">
-                            <div>
-                                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">Card Volume</div>
-                                <div class="text-2xl lg:text-3xl font-bold text-purple-400" id="ledger-card-vol"><span class="skeleton w-20 h-8 inline-block"></span></div>
-                                <div class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-mono">Visa/Mastercard</div>
-                            </div>
-                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                                <i data-lucide="credit-card" class="w-5 h-5 lg:w-8 lg:h-8"></i>
+                        <div class="glass-panel p-5 sm:p-6 rounded-2xl relative overflow-hidden group hover:border-green-500/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(74,222,128,0.15)] opacity-100 bg-black/40">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <div>
+                                    <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">UPI Volume</div>
+                                    <div class="text-2xl lg:text-3xl font-bold text-green-400" id="ledger-upi-vol"><span class="skeleton w-20 h-8 inline-block"></span></div>
+                                    <div class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-mono">Real-time GPay/PhonePe</div>
+                                </div>
+                                <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform">
+                                    <i data-lucide="smartphone-nfc" class="w-5 h-5 lg:w-8 lg:h-8"></i>
+                                </div>
                             </div>
                         </div>
-                        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-white/5 bg-black/20 flex justify-between items-center hover:bg-white/5 transition-colors group">
-                            <div>
-                                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">Netbanking/Wallets</div>
-                                <div class="text-2xl lg:text-3xl font-bold text-blue-400" id="ledger-net-vol"><span class="skeleton w-20 h-8 inline-block"></span></div>
-                                <div class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-mono">IMPS/NEFT/Wallets</div>
+                        <div class="glass-panel p-5 sm:p-6 rounded-2xl relative overflow-hidden group hover:border-purple-500/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] opacity-100 bg-black/40">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <div>
+                                    <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">Card Volume</div>
+                                    <div class="text-2xl lg:text-3xl font-bold text-purple-400" id="ledger-card-vol"><span class="skeleton w-20 h-8 inline-block"></span></div>
+                                    <div class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-mono">Visa/Mastercard</div>
+                                </div>
+                                <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                    <i data-lucide="credit-card" class="w-5 h-5 lg:w-8 lg:h-8"></i>
+                                </div>
                             </div>
-                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-                                <i data-lucide="monitor" class="w-5 h-5 lg:w-8 lg:h-8"></i>
+                        </div>
+                        <div class="glass-panel p-5 sm:p-6 rounded-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(59,130,246,0.15)] opacity-100 bg-black/40">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <div>
+                                    <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">Netbanking/Wallets</div>
+                                    <div class="text-2xl lg:text-3xl font-bold text-blue-400" id="ledger-net-vol"><span class="skeleton w-20 h-8 inline-block"></span></div>
+                                    <div class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-mono">IMPS/NEFT/Wallets</div>
+                                </div>
+                                <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                                    <i data-lucide="monitor" class="w-5 h-5 lg:w-8 lg:h-8"></i>
+                                </div>
                             </div>
                         </div>
                         <div class="glass-panel py-4 px-6 rounded-2xl border border-white/5 bg-black/20 flex flex-col justify-center items-center">
@@ -2017,18 +2032,21 @@
         window.initPaymentPieChart = function(settled, fees) {
             if (!window.Chart) return;
             if (pieChartInst) pieChartInst.destroy();
-            if(!settled && !fees) return;
+
+            const isZero = (!settled && !fees);
+            const chartData = isZero ? [1] : [settled, fees];
+            const chartColors = isZero ? ['rgba(255,255,255,0.05)'] : ['#ff1a1a', '#3b82f6'];
 
             const ctx = document.getElementById('paymentPieChart').getContext('2d');
             pieChartInst = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Settled', 'Fees'],
+                    labels: isZero ? ['No Data'] : ['Settled', 'Fees'],
                     datasets: [{
-                        data: [settled, fees],
-                        backgroundColor: ['#ff1a1a', '#3b82f6'],
+                        data: chartData,
+                        backgroundColor: chartColors,
                         borderWidth: 0,
-                        hoverOffset: 4
+                        hoverOffset: isZero ? 0 : 4
                     }]
                 },
                 options: {
@@ -2037,7 +2055,40 @@
                     cutout: '75%',
                     plugins: {
                         legend: { display: false },
-                        tooltip: { backgroundColor: 'rgba(5, 5, 5, 0.9)', titleColor: '#fff', bodyColor: '#fff', borderColor: 'rgba(255,26,26,0.3)', borderWidth: 1, padding: 10 }
+                        tooltip: { enabled: !isZero, backgroundColor: 'rgba(5, 5, 5, 0.9)', titleColor: '#fff', bodyColor: '#fff', borderColor: 'rgba(255,26,26,0.3)', borderWidth: 1, padding: 10 }
+                    }
+                }
+            });
+        };
+
+        let methodPieChartInst = null;
+        window.initMethodPieChart = function(upi, card, net) {
+            if (!window.Chart) return;
+            if (methodPieChartInst) methodPieChartInst.destroy();
+
+            const isZero = (!upi && !card && !net);
+            const chartData = isZero ? [1] : [upi, card, net];
+            const chartColors = isZero ? ['rgba(255,255,255,0.05)'] : ['#4ade80', '#c084fc', '#60a5fa'];
+
+            const ctx = document.getElementById('pmPieChart').getContext('2d');
+            methodPieChartInst = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: isZero ? ['No Data'] : ['UPI', 'Cards', 'Netbanking'],
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: chartColors,
+                        borderWidth: 0,
+                        hoverOffset: isZero ? 0 : 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: !isZero, backgroundColor: 'rgba(5, 5, 5, 0.9)', titleColor: '#fff', bodyColor: '#fff', borderColor: 'rgba(255,26,26,0.3)', borderWidth: 1, padding: 10 }
                     }
                 }
             });
