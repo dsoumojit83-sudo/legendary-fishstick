@@ -20,21 +20,17 @@ module.exports = async function (req, res) {
             return res.status(400).json({ error: "startDate and endDate required" });
         }
 
-        // Debug logs (check in Vercel logs)
-        console.log("APP_ID:", process.env.CASHFREE_APP_ID);
-        console.log("SECRET:", process.env.CASHFREE_SECRET_KEY);
-
-        // Call Cashfree API
+        // Call Cashfree LIVE API (IMPORTANT FIX)
         const response = await axios.post(
-            "https://sandbox.cashfree.com/pg/settlements",
+            "https://api.cashfree.com/pg/settlements",
             {
                 pagination: {
                     limit: 10,
                     cursor: cursor
                 },
                 filters: {
-                    start_date: startDate,
-                    end_date: endDate
+                    start_date: `${startDate}T00:00:00Z`,
+                    end_date: `${endDate}T23:59:59Z`
                 }
             },
             {
