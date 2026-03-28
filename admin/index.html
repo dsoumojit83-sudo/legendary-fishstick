@@ -13,6 +13,9 @@
     <meta name="theme-color" content="#ff1a1a">
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Analytical PDF Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -2629,76 +2632,158 @@
             sortedRows.forEach(row => tbody.appendChild(row));
         };
 
-        // FIX: Corporate PDF Generation Tool (replaces CSV)
+        // FIX: Corporate PDF Generation Engine using jsPDF
         window.exportToPDF = function () {
-            const activeView = document.querySelector('.view-section.active');
-            let title = 'ZyroEditz Data Report';
-            let tableHtml = '';
-
-            if (activeView.id === 'dashboard-view') {
-                title = 'ZyroEditz - Recent Pipeline';
-                const table = document.querySelector('#dash-projects-tbody').parentElement;
-                if (!table || table.textContent.includes('No project data')) return showToast('No data to export', 'error');
-                tableHtml = table.outerHTML;
-            } else if (activeView.id === 'projects-view') {
-                title = 'ZyroEditz - Project Vault';
-                const table = document.querySelector('#full-projects-tbody').parentElement;
-                if (!table || table.textContent.includes('No project data')) return showToast('No data to export', 'error');
-                tableHtml = table.outerHTML;
-            } else if (activeView.id === 'crm-view') {
-                title = 'ZyroEditz - Client Database';
-                const table = document.querySelector('#crm-tbody').parentElement;
-                if (!table || table.textContent.includes('No client data')) return showToast('No data to export', 'error');
-                tableHtml = table.outerHTML;
-            } else {
-                showToast('Cannot export this view', 'error');
-                return;
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                return showToast('PDF Engine still loading, please wait...', 'error');
             }
+            showToast('Compiling analytical vector PDF...', 'info');
 
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>${title}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 40px; color: #1a1a1a; }
-                        .header { border-bottom: 2px solid #ff1a1a; padding-bottom: 10px; margin-bottom: 30px; }
-                        h1 { color: #000; text-transform: uppercase; font-size: 24px; margin: 0 0 5px 0; letter-spacing: 2px; }
-                        .timestamp { color: #666; font-size: 12px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-                        th, td { border-bottom: 1px solid #ddd; padding: 16px 12px; text-align: left; }
-                        th { background-color: #f8f9fa; color: #333; font-weight: bold; text-transform: uppercase; border-top: 1px solid #ddd; letter-spacing: 1px; }
-                        tr:nth-child(even) { background-color: #fafafa; }
-                        
-                        /* Strip UI Elements for clean print */
-                        svg, button, .action-btn { display: none !important; }
-                        .hidden { display: none !important; } 
-                        
-                        .status-badge { font-weight: bold; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; border: 1px solid #eee; }
-                        .text-green-500 { color: #16a34a; font-weight: bold; }
-                        .text-red-500 { color: #dc2626; font-weight: bold; }
-                        .text-\\[\\#ff1a1a\\] { color: #ff1a1a; font-weight: bold; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>${title}</h1>
-                        <div class="timestamp">Generated on: ${new Date().toLocaleString()} | zyroeditz.com</div>
-                    </div>
-                    ${tableHtml}
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.focus();
+            const { jsPDF } = window.jspdf;
+            // Create a high-fidelity A4 standard document
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            
+            // Core Branding Palette
+            const BRAND_RED = [255, 26, 26];
+            const DARK_TXT = [40, 40, 40];
+            const LIGHT_TXT = [120, 120, 120];
 
-            showToast('Preparing PDF layout...', 'info');
+            let yCursor = 20;
 
-            setTimeout(() => {
-                printWindow.print();
-                // Optionally close automatically after print dialog resolves
-                // printWindow.close(); 
-            }, 800);
+            // ==================== PAGE 1: EXECUTIVE BRIEF ====================
+            doc.setFontSize(24);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...BRAND_RED);
+            doc.text("ZYROEDITZ EXECUTIVE REPORT", 14, yCursor);
+            
+            yCursor += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(...LIGHT_TXT);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated securely from Live Gateway Stream on: ${new Date().toLocaleString()}`, 14, yCursor);
+            
+            yCursor += 15;
+            doc.setDrawColor(...BRAND_RED);
+            doc.setLineWidth(0.5);
+            doc.line(14, yCursor, 196, yCursor);
+            
+            // --- Live KPI Extraction ---
+            const totalRev = document.getElementById('kpi-total-rev').textContent;
+            const liveProfit = document.getElementById('kpi-profit').textContent;
+            const totalClients = document.getElementById('kpi-crm-total').textContent;
+            const completeProjs = document.getElementById('kpi-vault-completed').textContent;
+            const vaultAwaiting = document.getElementById('kpi-vault-awaiting').textContent;
+
+            const globalFeesText = document.getElementById('ledger-total-card').textContent;
+            const globalSettledText = document.getElementById('ledger-total-upi').textContent;
+
+            yCursor += 15;
+            doc.setFontSize(16);
+            doc.setTextColor(...DARK_TXT);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Macro Financials & Velocity", 14, yCursor);
+
+            yCursor += 10;
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            
+            const leftColX = 14;
+            const rightColX = 110;
+            
+            doc.text(`Lifetime Gross Revenue: ${totalRev}`, leftColX, yCursor);
+            doc.text(`Net Automated Settled: ${globalSettledText}`, rightColX, yCursor);
+            
+            yCursor += 8;
+            doc.text(`Lifetime Profit Margin: ${liveProfit}`, leftColX, yCursor);
+            doc.text(`Total Gateway Fees: ${globalFeesText}`, rightColX, yCursor);
+
+            yCursor += 8;
+            doc.text(`Total Distinct Clients: ${totalClients}`, leftColX, yCursor);
+            doc.text(`Total Completed Projects: ${completeProjs}`, rightColX, yCursor);
+
+            yCursor += 8;
+            doc.setTextColor(220, 38, 38);
+            doc.text(`Projects Awaiting Client Uploads: ${vaultAwaiting}`, leftColX, yCursor);
+            doc.setTextColor(...DARK_TXT);
+
+            // --- CRM Scoreboard Matrix ---
+            yCursor += 25;
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Top 5 Client Scoreboard (LTV)", 14, yCursor);
+
+            const crmMap = {};
+            globalOrdersData.forEach(o => {
+                const name = (!o.client || o.client.toLowerCase() === 'unknown') ? 'Zyro Client' : o.client;
+                const amt = Number(o.amount) || 0;
+                if (!crmMap[name]) crmMap[name] = { spent: 0, count: 0 };
+                crmMap[name].spent += amt;
+                crmMap[name].count++;
+            });
+            const sortedClients = Object.entries(crmMap).map(([name, m]) => {
+                return [name, m.count, `Rs. ${m.spent}`];
+            }).sort((a,b) => parseFloat(b[2].split(' ')[1]) - parseFloat(a[2].split(' ')[1])).slice(0, 5);
+
+            doc.autoTable({
+                startY: yCursor + 8,
+                head: [['Client Name', 'Total Projects', 'Lifetime Value (Rs)']],
+                body: sortedClients,
+                theme: 'grid',
+                headStyles: { fillColor: BRAND_RED, textColor: [255,255,255] },
+                alternateRowStyles: { fillColor: [249, 250, 251] }
+            });
+
+            // ==================== PAGE 2: LEDGER ====================
+            doc.addPage();
+            yCursor = 20;
+
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Cashfree Live Transaction Ledger", 14, yCursor);
+            
+            yCursor += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(...LIGHT_TXT);
+            doc.setFont('helvetica', 'normal');
+            doc.text("Mathematical payload dynamically applying local 1.95% + 18% GST ruleset to gateway transit.", 14, yCursor);
+
+            const ledgerRows = globalLedgerData.map(tx => {
+                const dateObj = new Date(tx.transfer_time || tx.payment_time || tx.date || Date.now());
+                const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                
+                const ordAmt = tx.order_amount || tx.amount || 0;
+                const setAmt = tx.settlement_amount || tx.gateway_amount || tx.amount || 0;
+                
+                const baseMdr = setAmt * 0.0195;
+                const gstOnMdr = baseMdr * 0.18;
+                const totalFee = baseMdr + gstOnMdr;
+                const netSettlement = setAmt - totalFee;
+
+                return [
+                    dateStr,
+                    tx.order_id || 'N/A',
+                    tx.payment_network || 'N/A',
+                    `Rs. ${Number(ordAmt).toFixed(0)}`,
+                    `Rs. ${totalFee.toFixed(2)}`,
+                    `Rs. ${netSettlement.toFixed(2)}`
+                ];
+            });
+
+            doc.autoTable({
+                startY: yCursor + 8,
+                head: [['Date', 'Order ID', 'Network/App', 'Gross Amount', 'Fee Deducted', 'Net Settled']],
+                body: ledgerRows,
+                theme: 'striped',
+                headStyles: { fillColor: [40, 40, 40], textColor: [255,255,255] },
+                columnStyles: {
+                    4: { textColor: [220, 38, 38] }, // Red for fees
+                    5: { textColor: [22, 163, 74], fontStyle: 'bold' } // green for net settled
+                }
+            });
+
+            // Trigger the native automatic PDF file download!
+            doc.save('ZyroEditz_Analytics_Master.pdf');
+            showToast('PDF downloaded successfully!', 'success');
         };
 
         // ==================== TOAST NOTIFICATION SYSTEM ====================
