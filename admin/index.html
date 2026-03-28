@@ -2633,12 +2633,12 @@
 
         // NEW: Highly Functional CRM CSV Export Engine for Marketing & Retargeting
         window.exportCRMToCSV = function () {
-            if (!window.globalOrdersData || window.globalOrdersData.length === 0) {
+            if (!globalOrdersData || globalOrdersData.length === 0) {
                 return showToast('No underlying database available yet.', 'error');
             }
 
             const crmMap = {};
-            window.globalOrdersData.forEach(o => {
+            globalOrdersData.forEach(o => {
                 const name = o.client_name || o.client || "Unknown Client";
                 if (!crmMap[name]) {
                     crmMap[name] = { 
@@ -2675,14 +2675,14 @@
 
         // NEW: Accounting Ledger CSV Export (MDR/GST Compliant for CA)
         window.exportLedgerToCSV = function () {
-            if (!window.globalLedgerData || window.globalLedgerData.length === 0) {
+            if (!globalLedgerData || globalLedgerData.length === 0) {
                 return showToast('Ledger data stream unavailable.', 'error');
             }
 
             // Standard RFC 4180 CSV Compilation
             let csv = "Date,Order Reference,Payment Network/App,Gross Payment (INR),Gateway Fees (1.95% + GST),Net Automated Settled (INR)\n";
             
-            window.globalLedgerData.forEach(tx => {
+            globalLedgerData.forEach(tx => {
                 const dateObj = new Date(tx.transfer_time || tx.payment_time || tx.date || Date.now());
                 const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 
