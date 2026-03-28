@@ -9,6 +9,13 @@ const groq = new OpenAI({
 
 const BUCKET = 'orders';
 
+// Convert YYYY-MM-DD (Supabase storage format) → DD/MM/YYYY (human-readable Indian format)
+const formatDate = (dateStr) => {
+    if (!dateStr) return 'None';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+};
+
 module.exports = async function(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
     
@@ -89,7 +96,7 @@ module.exports = async function(req, res) {
         const activePipeline = activeOrders.map(o => {
             const clientName = o.client_name || "Unknown Client";
             const fileStatus = filesMap[o.order_id] ? '✅ UPLOADED' : '⚠️ AWAITING UPLOAD';
-            return `[Order: ${o.order_id} | Client: ${clientName} | Service: ${o.service} | Status: ${o.status} | Due: ${o.deadline_date || 'None'} | Files: ${fileStatus} | Notes: ${o.project_notes || 'None'}]`;
+            return `[Order: ${o.order_id} | Client: ${clientName} | Service: ${o.service} | Status: ${o.status} | Due: ${formatDate(o.deadline_date)} | Files: ${fileStatus} | Notes: ${o.project_notes || 'None'}]`;
         });
 
         // Separate lists for quick AI reference
@@ -156,8 +163,14 @@ ${crmList.join('\n')}
    - Use **bold text** for client names, revenue numbers, and critical action items to make them pop.
    - Use bullet points (-) and headers (###) to organize thoughts.
    - Output clean, visually appealing responses with adequate spacing. No massive walls of text. Provide immediate value inside the first sentence.
+
+6. RESPONSE LENGTH (CRITICAL — STRICT):
+   - Answer ONLY what was directly asked. Nothing more.
+   - Do NOT volunteer extra analysis, suggestions, upsell ideas, or business advice unless Soumojit explicitly asks for it.
+   - Keep replies short and direct. If the answer is one line, reply in one line.
+   - No padding, no filler phrases, no unsolicited commentary.
    
-When asked a question, cross-reference the LIVE data above with real-world business acumen, and deliver world-class assistance.`;
+When asked a question, cross-reference the LIVE data above and deliver a precise, direct answer.`;
 
         const aiResponse = await groq.chat.completions.create({
             model: "llama-3.3-70b-versatile",
