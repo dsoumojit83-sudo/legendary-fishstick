@@ -184,7 +184,7 @@ async function sendInvoice(order) {
             doc.rect(50, 394, 495, 44).fill('#f8f8f8');
             doc.moveTo(50, 438).lineTo(545, 438).lineWidth(2).strokeColor('#050505').stroke();
             doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold')
-               .text('TOTAL PAID:', 50, 409, {width: 455, align: 'right'});
+               .text('TOTAL PAID:', 50, 409, {width: 370, align: 'right'});
             doc.fillColor('#ff1a1a').fontSize(18).font('Helvetica-Bold')
                .text(`Rs.${safeAmount(order.amount)}`, 390, 405, {width: 150, align: 'right'}); // UPDATED
 
