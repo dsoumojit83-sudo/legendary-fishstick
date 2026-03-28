@@ -13,9 +13,6 @@
     <meta name="theme-color" content="#ff1a1a">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Analytical PDF Engine -->
-    <!-- Architectural HTML-To-PDF DOM Snapshot Engine -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -396,17 +393,20 @@
                     <button id="open-sidebar" class="lg:hidden text-gray-400 hover:text-white"><i data-lucide="menu"
                             class="w-6 h-6"></i></button>
                     <div>
-                        <h2 class="text-xl lg:text-2xl font-bold text-white stagger-elem" id="header-title">Command
-                            Center</h2>
-                        <p class="text-[10px] lg:text-xs text-gray-400 mt-1 uppercase tracking-widest stagger-elem"
-                            id="current-date">Loading date...</p>
+                        <h2 class="text-xl lg:text-2xl font-bold text-white stagger-elem" id="header-title">Command Center</h2>
+                        <p class="text-[10px] lg:text-xs text-gray-400 mt-1 uppercase tracking-widest stagger-elem" id="current-date">Loading date...</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 sm:gap-6 stagger-elem">
-                    <button onclick="exportToPDF()"
+                    <button onclick="exportLedgerToCSV()"
+                        class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        <span>Export Ledger</span>
+                    </button>
+                    <button onclick="exportCRMToCSV()"
                         class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white">
-                        <i data-lucide="file-text" class="w-4 h-4"></i>
-                        <span>Export PDF</span>
+                        <i data-lucide="users" class="w-4 h-4"></i>
+                        <span>Export CRM</span>
                     </button>
                     <button onclick="toggleTerminal()"
                         class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white relative">
@@ -1367,8 +1367,7 @@
 
                 if (res.status === 401) { logout(); return; }
                 const data = await res.json();
-                window.globalOrdersData = data.recentOrders || [];
-                window.globalChartData = data.chartData || null;
+                globalOrdersData = data.recentOrders || [];
 
                 document.getElementById('kpi-total-rev').textContent = `₹${data.totalRevenue}`;
                 document.getElementById('kpi-mrr').textContent = `₹${data.mrr}`;
@@ -1695,7 +1694,7 @@
                             </div>
                         </td>
                         <td class="p-4 text-gray-300 text-sm font-medium">${order.service}</td>
-                        <td class="p-4 font-bold text-[#ff1a1a]">₹${order.amount}</td>
+                        <td class="p-4 font-bold text-white">₹${order.amount}</td>
                         <td class="p-4">
                             <div class="flex flex-col gap-1">
                                 <span class="text-[10px] text-gray-500">Booked: ${orderDate}</span>
@@ -1767,7 +1766,7 @@
                             </div>
                         </td>
                         <td class="p-4 text-gray-300 text-sm font-bold pl-8">${client.projectCount}</td>
-                        <td class="p-4 font-semibold text-[#ff1a1a]">₹${client.totalSpent}</td>
+                        <td class="p-4 font-semibold text-white">₹${client.totalSpent}</td>
                         <td class="p-4 text-gray-400 text-sm">${lastActiveStr}</td>
                         <td class="p-4 text-right">
                             ${client.email
@@ -1843,7 +1842,7 @@
                         </div>
                     </td>
                     <td class="p-3 text-gray-300 text-sm font-medium">${client.projectCount}</td>
-                    <td class="p-3 font-bold text-[#ff1a1a]">Rs.${client.totalSpent}</td>
+                    <td class="p-3 font-bold text-white">Rs.${client.totalSpent}</td>
                     <td class="p-3 text-gray-400 text-sm">${client.lastActive.toLocaleDateString('en-GB')}</td>
                 </tr>`;
             }).join('');
@@ -2241,8 +2240,8 @@
                     </td>
                     <td class="p-4 font-bold text-white">₹${Number(ordAmt).toFixed(2)}</td>
                     <td class="p-4">
-                        <div class="font-bold text-green-400">₹${netSettlement.toFixed(2)}</div>
-                        <div class="text-[9px] text-[#ff1a1a] uppercase tracking-widest mt-0.5">Fee: ₹${totalFee.toFixed(2)}</div>
+                        <div class="font-bold text-white">₹${netSettlement.toFixed(2)}</div>
+                        <div class="text-[9px] text-gray-400 uppercase tracking-widest mt-0.5">Fee: ₹${totalFee.toFixed(2)}</div>
                     </td>
                     <td class="p-4 text-right"><div class="text-xs font-mono text-green-400 bg-green-400/10 px-2 py-1 rounded inline-block border border-green-400/20" title="Bank Reference: ${utr}">${utr}</div></td>
                 </tr>`;
@@ -2632,160 +2631,83 @@
             sortedRows.forEach(row => tbody.appendChild(row));
         };
 
-        // ==================== PREMIUM HTML-TO-PDF RENDERER ====================
-        window.exportToPDF = function () {
-            if (typeof html2pdf === 'undefined') return showToast('PDF Engine loading, please wait...', 'error');
-            showToast('Rendering High-Fidelity Executive Report...', 'info');
+        // NEW: Highly Functional CRM CSV Export Engine for Marketing & Retargeting
+        window.exportCRMToCSV = function () {
+            if (!window.globalOrdersData || window.globalOrdersData.length === 0) {
+                return showToast('No underlying database available yet.', 'error');
+            }
 
-            // --- 1. Gather Live Dashboard Metrics ---
-            const elTxt = (id) => document.getElementById(id)?.textContent || '0';
-            const totalRevText = elTxt('kpi-total-rev');
-            const mrrText = elTxt('kpi-mrr');
-            const activeProj = elTxt('kpi-active');
-            const overdueProj = elTxt('kpi-urgent');
-            const pendingAuth = elTxt('kpi-vault-awaiting');
-            const readyDel = elTxt('kpi-vault-ready');
-            const completedYtd = elTxt('kpi-vault-completed');
-
-            const feesText = elTxt('ledger-total-card');
-            const clearedText = elTxt('ledger-total-upi');
-
-            const tr = Number(totalRevText.replace(/[^0-9.-]+/g, "")) || 0;
-            const gf = Number(feesText.replace(/[^0-9.-]+/g, "")) || 0;
-            const liveProfit = tr > 0 ? (((tr - gf) / tr) * 100).toFixed(1) + "%" : "0%";
-
-            // --- 2. Build CRM Table HTML ---
             const crmMap = {};
-            (window.globalOrdersData || []).forEach(o => {
-                const name = (!o.client || o.client.toLowerCase() === 'unknown') ? 'Zyro Client' : o.client;
-                const amt = Number(o.amount) || 0;
-                if (!crmMap[name]) crmMap[name] = { spent: 0, count: 0 };
-                crmMap[name].spent += amt;
-                crmMap[name].count++;
+            window.globalOrdersData.forEach(o => {
+                const name = o.client_name || o.client || "Unknown Client";
+                if (!crmMap[name]) {
+                    crmMap[name] = { 
+                        email: o.client_email || o.email || "N/A", 
+                        phone: o.client_phone || o.phone || "N/A", 
+                        spent: 0, 
+                        orders: 0 
+                    };
+                }
+                crmMap[name].spent += Number(o.amount) || 0;
+                crmMap[name].orders += 1;
             });
-            const topClientsHTML = Object.entries(crmMap)
-                .map(([name, m]) => [name, m.count, m.spent])
-                .sort((a,b) => b[2] - a[2]).slice(0, 5)
-                .map((c, i) => `<tr class="border-b border-white/5"><td class="font-mono text-gray-500">0${i+1}</td><td class="font-bold text-white">${c[0]}</td><td>${c[1]}</td><td class="text-right text-[#ff1a1a] font-mono">₹${c[2].toLocaleString('en-IN')}</td></tr>`)
-                .join('');
 
-            // --- 3. Build Ledger Table HTML ---
-            const ledgerHTML = (window.globalLedgerData || []).slice(0, 5).map(tx => {
-                const dateObj = new Date(tx.transfer_time || tx.payment_time || tx.date || Date.now());
-                const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-                const ordAmt = tx.order_amount || tx.amount || 0;
-                const setAmt = tx.settlement_amount || tx.gateway_amount || tx.amount || 0;
-                const baseMdr = setAmt * 0.0195;
-                const totalFee = baseMdr + (baseMdr * 0.18);
-                const netSettlement = setAmt - totalFee;
-                return `<tr class="border-b border-white/5"><td class="font-mono">${dateStr}</td><td class="font-mono text-gray-400">${tx.order_id || 'N/A'}</td><td class="text-green-400 font-mono">₹${netSettlement.toFixed(2)}</td><td class="text-right text-gray-500 font-mono text-[7px]">${(tx.payment_network || 'SETTLED').toUpperCase()}</td></tr>`;
-            }).join('');
+            // Standard RFC 4180 CSV Compilation
+            let csv = "Client Name,Email Address,Phone Number,Total Spent (INR),Total Orders\n";
+            Object.keys(crmMap).forEach(name => {
+                const c = crmMap[name];
+                // Quote encapsulation prevents inner commas from destroying grid
+                csv += `"${name}","${c.email}","${c.phone}","${c.spent}","${c.orders}"\n`;
+            });
 
-            // --- 4. Chart Data Extraction ---
-            const chartData = window.globalChartData || { labels: [], values: [] };
+            // Native Browser Buffer Download stream
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `ZyroEditz_CRM_Export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            showToast('CRM Marketing Database successfully exported to CSV!', 'success');
+        };
+
+        // NEW: Accounting Ledger CSV Export (MDR/GST Compliant for CA)
+        window.exportLedgerToCSV = function () {
+            if (!window.globalLedgerData || window.globalLedgerData.length === 0) {
+                return showToast('Ledger data stream unavailable.', 'error');
+            }
+
+            // Standard RFC 4180 CSV Compilation
+            let csv = "Date,Order Reference,Payment Network/App,Gross Payment (INR),Gateway Fees (1.95% + GST),Net Automated Settled (INR)\n";
             
-            // Payment method pie split (mock estimate from live ledger data for visualization)
-            let upiCount = 0, cardCount = 0, netCount = 0;
-            (window.globalLedgerData || []).forEach(tx => {
-                const str = (tx.payment_network || '').toLowerCase();
-                if(str.includes('upi')) upiCount++;
-                else if(str.includes('card')) cardCount++;
-                else netCount++;
-            });
-            if(upiCount===0 && cardCount===0) upiCount = 1;
+            window.globalLedgerData.forEach(tx => {
+                const dateObj = new Date(tx.transfer_time || tx.payment_time || tx.date || Date.now());
+                const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                
+                const ordAmt = Number(tx.order_amount || tx.amount || 0);
+                const setAmt = Number(tx.settlement_amount || tx.gateway_amount || tx.amount || 0);
+                
+                const baseMdr = setAmt * 0.0195;
+                const gstOnMdr = baseMdr * 0.18;
+                const totalFee = baseMdr + gstOnMdr;
+                const netSettlement = setAmt - totalFee;
 
-            // --- 5. Assemble HTML Payload ---
-            const container = document.createElement('div');
-            container.style.position = 'absolute'; container.style.left = '-9999px'; container.style.top = '0';
-            document.body.appendChild(container);
-
-            container.innerHTML = `
-            <style>
-                .pdf-page { width: 210mm; height: 297mm; background-color: #050505; color: #ffffff; position: relative; overflow: hidden; padding: 12mm 15mm; box-sizing: border-box; }
-                .pdf-bg-grid { position: absolute; inset: 0; z-index: -2; pointer-events: none; background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px); background-size: 30px 30px; }
-                .pdf-orb-red { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(255, 26, 26, 0.06) 0%, rgba(5, 5, 5, 0) 70%); top: -150px; right: -200px; z-index: -1; }
-                .pdf-orb-blue { position: absolute; width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.04) 0%, rgba(5, 5, 5, 0) 70%); bottom: -100px; left: -100px; z-index: -1; }
-                .pdf-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 130px; font-weight: 900; color: rgba(255, 26, 26, 0.015); z-index: -1; pointer-events: none; letter-spacing: -2px; }
-                .pdf-glass { background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; position: relative; overflow: hidden; }
-                .pdf-glow-top-red { border-top: 2px solid #ff1a1a; background: linear-gradient(180deg, rgba(255, 26, 26, 0.05) 0%, rgba(0,0,0,0) 100%); }
-                .pdf-glow-top-blue { border-top: 2px solid #3b82f6; background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, rgba(0,0,0,0) 100%); }
-                .pdf-glow-top-green { border-top: 2px solid #22c55e; background: linear-gradient(180deg, rgba(34, 197, 94, 0.05) 0%, rgba(0,0,0,0) 100%); }
-                .pdf-glow-top-yellow { border-top: 2px solid #eab308; background: linear-gradient(180deg, rgba(234, 179, 8, 0.05) 0%, rgba(0,0,0,0) 100%); }
-                .pdf-glow-top-purple { border-top: 2px solid #a855f7; background: linear-gradient(180deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0) 100%); }
-                table { width: 100%; border-collapse: collapse; } th { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px 6px; text-transform: uppercase; font-size: 7px; color: #a3a3a3; letter-spacing: 0.1em; text-align: left; }
-                td { border-bottom: 1px solid rgba(255,255,255,0.03); padding: 8px 6px; font-size: 9px; } .pdf-table-wrapper { border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.4); margin-bottom: 10px;}
-                .chart-container-pdf { height: 140px; width: 100%; position: relative; }
-            </style>
-            <div class="pdf-page bg-[#050505] font-sans antialiased text-white" id="pdf-export-target" style="-webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                <div class="pdf-bg-grid"></div><div class="pdf-orb-red"></div><div class="pdf-orb-blue"></div><div class="pdf-watermark">ZYROEDITZ</div>
-                <header class="flex justify-between items-end pb-3 border-b border-white/10 mb-4 relative">
-                    <div class="absolute bottom-[-1px] left-0 w-1/3 h-[1px] bg-gradient-to-r from-[#ff1a1a] to-transparent"></div>
-                    <div><h1 class="text-3xl font-extrabold tracking-tight text-white mb-0.5">ZYRO<span class="text-[#ff1a1a]">EDITZ</span></h1>
-                    <span class="inline-block px-1.5 py-0.5 bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 text-[#ff1a1a] text-[7px] uppercase tracking-widest font-mono rounded">Premium Video Editing Agency</span></div>
-                    <div class="text-right"><h2 class="text-xs font-bold text-gray-300 uppercase tracking-widest">Executive Performance Report</h2>
-                    <p class="text-[8px] text-gray-500 mt-1">PREPARED BY: <span class="text-[#ff1a1a] font-medium">SOUMOJIT DAS</span></p>
-                    <p class="text-[7px] text-gray-600 font-mono mt-0.5">\${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></div>
-                </header>
-                <h3 class="text-[9px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-[#ff1a1a] pl-2">Financial Performance</h3>
-                <div class="grid grid-cols-5 gap-3 mb-4">
-                    <div class="pdf-glass pdf-glow-top-red p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Gross Revenue</p><p class="text-base font-bold text-white">\${totalRevText}</p></div>
-                    <div class="pdf-glass pdf-glow-top-blue p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Monthly Recurring</p><p class="text-base font-bold text-white">\${mrrText}</p></div>
-                    <div class="pdf-glass pdf-glow-top-green p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Cleared Funds</p><p class="text-base font-bold text-white">\${clearedText}</p></div>
-                    <div class="pdf-glass pdf-glow-top-yellow p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Platform Fees</p><p class="text-base font-bold text-white">\${feesText}</p></div>
-                    <div class="pdf-glass pdf-glow-top-purple p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Net Margin</p><p class="text-base font-bold text-green-400">\${liveProfit}</p></div>
-                </div>
-                <h3 class="text-[9px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-blue-500 pl-2">Project Pipeline</h3>
-                <div class="grid grid-cols-5 gap-3 mb-4">
-                    <div class="pdf-glass p-3 border-l-2 border-l-blue-500"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Active Projects</p><p class="text-base font-bold text-white">\${activeProj}</p></div>
-                    <div class="pdf-glass p-3 border-l-2 border-l-purple-500"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Pending Review</p><p class="text-base font-bold text-white">\${pendingAuth}</p></div>
-                    <div class="pdf-glass p-3 border-l-2 border-l-yellow-500"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Ready for Delivery</p><p class="text-base font-bold text-white">\${readyDel}</p></div>
-                    <div class="pdf-glass p-3 border-l-2 border-l-green-500"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Completed (YTD)</p><p class="text-base font-bold text-white">\${completedYtd}</p></div>
-                    <div class="pdf-glass p-3 border-l-2 border-l-[#ff1a1a] bg-[#ff1a1a]/5"><p class="text-[6.5px] uppercase tracking-widest text-[#ff1a1a] font-semibold mb-1">Overdue Tasks</p><p class="text-base font-bold text-[#ff1a1a]">\${overdueProj}</p></div>
-                </div>
-                <div class="grid grid-cols-3 gap-3 mb-4">
-                    <div class="pdf-glass p-3 col-span-2"><h3 class="text-[8px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-[#ff1a1a] pl-2">Revenue Trends</h3><div class="chart-container-pdf"><canvas id="pdfLineChart"></canvas></div></div>
-                    <div class="pdf-glass p-3 col-span-1"><h3 class="text-[8px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-blue-500 pl-2">Revenue by Source</h3><div class="chart-container-pdf flex items-center justify-center"><canvas id="pdfPieChart"></canvas></div></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><h3 class="text-[8px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-purple-500 pl-2">Key Client Accounts</h3>
-                    <div class="pdf-table-wrapper"><table class="w-full text-left"><thead class="bg-white/5"><tr><th>Rank</th><th>Client Name</th><th>Total Proj.</th><th class="text-right">Lifetime Value</th></tr></thead><tbody class="text-gray-300">
-                    \${topClientsHTML}
-                    </tbody></table></div></div>
-                    <div><h3 class="text-[8px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-green-500 pl-2">Recent Financial Transactions</h3>
-                    <div class="pdf-table-wrapper"><table class="w-full text-left"><thead class="bg-white/5"><tr><th>Date</th><th>Order Ref</th><th>Net Amount</th><th class="text-right">Status / ID</th></tr></thead><tbody class="text-gray-300">
-                    \${ledgerHTML}
-                    </tbody></table></div></div>
-                </div>
-                <div class="absolute bottom-[10mm] left-[15mm] right-[15mm] border-t border-white/10 pt-3 flex justify-between items-end text-[6px] text-gray-500 font-mono uppercase tracking-widest"><p>END OF REPORT // GENERATED BY ZYROCORE PLATFORM // CONFIDENTIAL</p><p>PAGE 01 / 01</p></div>
-            </div>`;
-
-            // --- 6. Render Embedded Charts (Headless) ---
-            const ctxL = container.querySelector('#pdfLineChart').getContext('2d');
-            new Chart(ctxL, {
-                type: 'line', data: { labels: chartData.labels, datasets: [{
-                    data: chartData.values, borderColor: '#ff1a1a', backgroundColor: 'rgba(255, 26, 26, 0.1)', borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0
-                }]}, options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-                scales: { x: { display: false }, y: { display: false } } }
+                csv += `"${dateStr}","${tx.order_id || 'N/A'}","${tx.payment_network || 'N/A'}","${ordAmt.toFixed(2)}","${totalFee.toFixed(2)}","${netSettlement.toFixed(2)}"\n`;
             });
 
-            const ctxP = container.querySelector('#pdfPieChart').getContext('2d');
-            new Chart(ctxP, {
-                type: 'doughnut', data: { labels: ['UPI', 'Card', 'Net/App'], datasets: [{ data: [upiCount, cardCount, netCount], backgroundColor: ['#22c55e', '#3b82f6', '#ff1a1a'], borderWidth: 0 }] },
-                options: { animation: false, responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { boxWidth: 4, font: { size: 5 }, color: '#a3a3a3'} } } }
-            });
+            // Native Browser Buffer Download stream
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `ZyroEditz_Accounting_Ledger_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
 
-            // --- 7. html2pdf Snapshot Execution ---
-            const element = container.querySelector('#pdf-export-target');
-            html2pdf().set({
-                margin: 0,
-                filename: 'ZyroEditz_Executive_Report.pdf',
-                image: { type: 'jpeg', quality: 1.0 },
-                html2canvas: { scale: 3, useCORS: true, backgroundColor: '#050505', logging: false },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(element).save().then(() => {
-                showToast('Vector PDF Exported Successfully!', 'success');
-                container.remove(); // Burn the DOM element after snapshot
-            });
+            showToast('Accounting Ledger successfully exported to CSV!', 'success');
         };
 
         // ==================== TOAST NOTIFICATION SYSTEM ====================
