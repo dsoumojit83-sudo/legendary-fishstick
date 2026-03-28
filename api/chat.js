@@ -30,11 +30,12 @@ module.exports = async function(req, res) {
         const orderId = generateOrderId();
         const numericAmount = parseFloat(amount);
 
-        // --- CALCULATE DYNAMIC DEADLINE DATE ---
+        // --- CALCULATE DYNAMIC DEADLINE DATE (IST = UTC+5:30) ---
         const daysToAdd = deadlineMap[selectedService] || 3;
-        const deadlineDate = new Date();
-        deadlineDate.setDate(deadlineDate.getDate() + daysToAdd);
-        const formattedDeadline = deadlineDate.toISOString().split('T')[0];
+        const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in ms
+        const nowIST = new Date(Date.now() + IST_OFFSET_MS); // Current time in IST
+        nowIST.setUTCDate(nowIST.getUTCDate() + daysToAdd); // Add days in IST context
+        const formattedDeadline = nowIST.toISOString().split('T')[0]; // Format as YYYY-MM-DD (IST date)
 
         // --- FIX: CREATE CASHFREE SESSION FIRST ---
         // Only save to DB after Cashfree confirms a valid session.
