@@ -20,7 +20,7 @@ module.exports = async function (req, res) {
             return res.status(400).json({ error: "startDate and endDate required" });
         }
 
-        // Call Cashfree LIVE API (IMPORTANT FIX)
+        // Call Cashfree LIVE API
         const response = await axios.post(
             "https://api.cashfree.com/pg/settlements",
             {
@@ -43,21 +43,25 @@ module.exports = async function (req, res) {
             }
         );
 
-        const settlements = response.data?.data || [];
+        // ✅ FIXED: handle both response formats
+        const settlements = Array.isArray(response.data)
+            ? response.data
+            : response.data?.data || [];
+
         const nextCursor = response.data?.cursor || null;
 
-        // Map response
+        // Map response properly
         const mapped = settlements.map(item => ({
-            order_id: item.order_id,
-            payment_id: item.cf_payment_id,
-            settlement_id: item.cf_settlement_id,
-            order_amount: item.order_amount,
-            service_charge: item.service_charge,
-            service_tax: item.service_tax,
-            settlement_amount: item.settlement_amount,
-            transfer_utr: item.transfer_utr,
-            transfer_time: item.transfer_time,
-            currency: item.settlement_currency
+            order_id: item?.order_id || null,
+            payment_id: item?.cf_payment_id || null,
+            settlement_id: item?.cf_settlement_id || null,
+            order_amount: item?.order_amount || 0,
+            service_charge: item?.service_charge || 0,
+            service_tax: item?.service_tax || 0,
+            settlement_amount: item?.settlement_amount || 0,
+            transfer_utr: item?.transfer_utr || null,
+            transfer_time: item?.transfer_time || null,
+            currency: item?.settlement_currency || null
         }));
 
         return res.status(200).json({
