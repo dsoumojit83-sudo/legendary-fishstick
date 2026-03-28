@@ -6,6 +6,11 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 const BUCKET = 'orders'; // Supabase Storage bucket name
 
 module.exports = async function (req, res) {
+    // Prevent 304 Browser/Vercel Caching
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     // 🔒 SECURITY PROTOCOL: Password Verification
     const authHeader = req.headers['x-admin-password'];
     if (authHeader !== process.env.ADMIN_PASSWORD) {
