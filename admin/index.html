@@ -14,8 +14,8 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Analytical PDF Engine -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- Architectural HTML-To-PDF DOM Snapshot Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -1126,7 +1126,7 @@
         </main>
 
         <div id="ai-terminal"
-            class="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[480px] glass-panel rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex-col z-50 h-[80dvh] sm:h-[650px] terminal-closed transition-all duration-300 transform translate-y-4 opacity-0 max-h-[800px]">
+            class="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[480px] bg-[#050505]/95 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex flex-col z-50 h-[75dvh] sm:h-[600px] max-h-[calc(100vh-100px)] terminal-closed transition-all duration-300 transform translate-y-4 opacity-0 overflow-hidden">
 
             <div
                 class="h-14 bg-black/90 border-b border-white/10 flex items-center justify-between px-5 shrink-0 rounded-t-2xl">
@@ -1151,8 +1151,7 @@
                 </button>
             </div>
 
-            <div id="terminal-body" class="flex-1 p-5 overflow-y-auto flex flex-col gap-2 font-mono"
-                style="background: radial-gradient(circle at top, #111 0%, #000 100%);">
+            <div id="terminal-body" class="flex-1 p-5 overflow-y-auto flex flex-col gap-2 font-mono relative">
                 <div class="terminal-msg msg-ai">
                     <span class="text-[#ff1a1a] font-bold">CORE></span> Initialization complete. Secure connection to
                     Supabase established. How can I analyze the studio data today?
@@ -1368,7 +1367,8 @@
 
                 if (res.status === 401) { logout(); return; }
                 const data = await res.json();
-                globalOrdersData = data.recentOrders || [];
+                window.globalOrdersData = data.recentOrders || [];
+                window.globalChartData = data.chartData || null;
 
                 document.getElementById('kpi-total-rev').textContent = `₹${data.totalRevenue}`;
                 document.getElementById('kpi-mrr').textContent = `₹${data.mrr}`;
@@ -2632,166 +2632,160 @@
             sortedRows.forEach(row => tbody.appendChild(row));
         };
 
-        // FIX: Corporate PDF Generation Engine using jsPDF
+        // ==================== PREMIUM HTML-TO-PDF RENDERER ====================
         window.exportToPDF = function () {
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                return showToast('PDF Engine still loading, please wait...', 'error');
-            }
-            showToast('Compiling analytical vector PDF...', 'info');
+            if (typeof html2pdf === 'undefined') return showToast('PDF Engine loading, please wait...', 'error');
+            showToast('Rendering High-Fidelity Executive Report...', 'info');
 
-            const { jsPDF } = window.jspdf;
-            // Create a high-fidelity A4 standard document
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-            
-            // Core Branding Palette
-            const BRAND_RED = [255, 26, 26];
-            const DARK_TXT = [40, 40, 40];
-            const LIGHT_TXT = [120, 120, 120];
+            // --- 1. Gather Live Dashboard Metrics ---
+            const elTxt = (id) => document.getElementById(id)?.textContent || '0';
+            const totalRevText = elTxt('kpi-total-rev');
+            const mrrText = elTxt('kpi-mrr');
+            const activeProj = elTxt('kpi-active');
+            const overdueProj = elTxt('kpi-urgent');
+            const pendingAuth = elTxt('kpi-vault-awaiting');
+            const readyDel = elTxt('kpi-vault-ready');
+            const completedYtd = elTxt('kpi-vault-completed');
 
-            let yCursor = 20;
+            const feesText = elTxt('ledger-total-card');
+            const clearedText = elTxt('ledger-total-upi');
 
-            // ==================== PAGE 1: EXECUTIVE BRIEF ====================
-            doc.setFontSize(24);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...BRAND_RED);
-            doc.text("ZYROEDITZ EXECUTIVE REPORT", 14, yCursor);
-            
-            yCursor += 8;
-            doc.setFontSize(10);
-            doc.setTextColor(...LIGHT_TXT);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Generated securely from Live Gateway Stream on: ${new Date().toLocaleString()}`, 14, yCursor);
-            
-            yCursor += 15;
-            doc.setDrawColor(...BRAND_RED);
-            doc.setLineWidth(0.5);
-            doc.line(14, yCursor, 196, yCursor);
-            
-            // --- Live KPI Extraction (Null-Safe) ---
-            const elTxt = (id) => document.getElementById(id)?.textContent || 'N/A';
-            const totalRev = elTxt('kpi-total-rev');
-            const totalClients = elTxt('kpi-crm-total');
-            const completeProjs = elTxt('kpi-vault-completed');
-            const vaultAwaiting = elTxt('kpi-vault-awaiting');
+            const tr = Number(totalRevText.replace(/[^0-9.-]+/g, "")) || 0;
+            const gf = Number(feesText.replace(/[^0-9.-]+/g, "")) || 0;
+            const liveProfit = tr > 0 ? (((tr - gf) / tr) * 100).toFixed(1) + "%" : "0%";
 
-            const globalFeesText = elTxt('ledger-total-card');
-            const globalSettledText = elTxt('ledger-total-upi');
-
-            // Mathematically reconstruct Profit Margin if HUD element is missing
-            let liveProfit = elTxt('kpi-profit');
-            if (liveProfit === 'N/A') {
-                const tr = Number(totalRev.replace(/[^0-9.-]+/g, "")) || 0;
-                const gf = Number(globalFeesText.replace(/[^0-9.-]+/g, "")) || 0;
-                liveProfit = tr > 0 ? (((tr - gf) / tr) * 100).toFixed(1) + "%" : "0%";
-            }
-
-            yCursor += 15;
-            doc.setFontSize(16);
-            doc.setTextColor(...DARK_TXT);
-            doc.setFont('helvetica', 'bold');
-            doc.text("Macro Financials & Velocity", 14, yCursor);
-
-            yCursor += 10;
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-            
-            const leftColX = 14;
-            const rightColX = 110;
-            
-            doc.text(`Lifetime Gross Revenue: ${totalRev}`, leftColX, yCursor);
-            doc.text(`Net Automated Settled: ${globalSettledText}`, rightColX, yCursor);
-            
-            yCursor += 8;
-            doc.text(`Lifetime Profit Margin: ${liveProfit}`, leftColX, yCursor);
-            doc.text(`Total Gateway Fees: ${globalFeesText}`, rightColX, yCursor);
-
-            yCursor += 8;
-            doc.text(`Total Distinct Clients: ${totalClients}`, leftColX, yCursor);
-            doc.text(`Total Completed Projects: ${completeProjs}`, rightColX, yCursor);
-
-            yCursor += 8;
-            doc.setTextColor(220, 38, 38);
-            doc.text(`Projects Awaiting Client Uploads: ${vaultAwaiting}`, leftColX, yCursor);
-            doc.setTextColor(...DARK_TXT);
-
-            // --- CRM Scoreboard Matrix ---
-            yCursor += 25;
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text("Top 5 Client Scoreboard (LTV)", 14, yCursor);
-
+            // --- 2. Build CRM Table HTML ---
             const crmMap = {};
-            globalOrdersData.forEach(o => {
+            (window.globalOrdersData || []).forEach(o => {
                 const name = (!o.client || o.client.toLowerCase() === 'unknown') ? 'Zyro Client' : o.client;
                 const amt = Number(o.amount) || 0;
                 if (!crmMap[name]) crmMap[name] = { spent: 0, count: 0 };
                 crmMap[name].spent += amt;
                 crmMap[name].count++;
             });
-            const sortedClients = Object.entries(crmMap).map(([name, m]) => {
-                return [name, m.count, `Rs. ${m.spent}`];
-            }).sort((a,b) => parseFloat(b[2].split(' ')[1]) - parseFloat(a[2].split(' ')[1])).slice(0, 5);
+            const topClientsHTML = Object.entries(crmMap)
+                .map(([name, m]) => [name, m.count, m.spent])
+                .sort((a,b) => b[2] - a[2]).slice(0, 5)
+                .map((c, i) => `<tr class="border-b border-white/5"><td class="font-mono text-gray-500">0${i+1}</td><td class="font-bold text-white">${c[0]}</td><td>${c[1]}</td><td class="text-right text-[#ff1a1a] font-mono">₹${c[2].toLocaleString('en-IN')}</td></tr>`)
+                .join('');
 
-            doc.autoTable({
-                startY: yCursor + 8,
-                head: [['Client Name', 'Total Projects', 'Lifetime Value (Rs)']],
-                body: sortedClients,
-                theme: 'grid',
-                headStyles: { fillColor: BRAND_RED, textColor: [255,255,255] },
-                alternateRowStyles: { fillColor: [249, 250, 251] }
-            });
-
-            // ==================== PAGE 2: LEDGER ====================
-            doc.addPage();
-            yCursor = 20;
-
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text("Cashfree Live Transaction Ledger", 14, yCursor);
-            
-            yCursor += 8;
-            doc.setFontSize(10);
-            doc.setTextColor(...LIGHT_TXT);
-            doc.setFont('helvetica', 'normal');
-            doc.text("Mathematical payload dynamically applying local 1.95% + 18% GST ruleset to gateway transit.", 14, yCursor);
-
-            const ledgerRows = globalLedgerData.map(tx => {
+            // --- 3. Build Ledger Table HTML ---
+            const ledgerHTML = (window.globalLedgerData || []).slice(0, 5).map(tx => {
                 const dateObj = new Date(tx.transfer_time || tx.payment_time || tx.date || Date.now());
                 const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-                
                 const ordAmt = tx.order_amount || tx.amount || 0;
                 const setAmt = tx.settlement_amount || tx.gateway_amount || tx.amount || 0;
-                
                 const baseMdr = setAmt * 0.0195;
-                const gstOnMdr = baseMdr * 0.18;
-                const totalFee = baseMdr + gstOnMdr;
+                const totalFee = baseMdr + (baseMdr * 0.18);
                 const netSettlement = setAmt - totalFee;
+                return `<tr class="border-b border-white/5"><td class="font-mono">${dateStr}</td><td class="font-mono text-gray-400">${tx.order_id || 'N/A'}</td><td class="text-green-400 font-mono">₹${netSettlement.toFixed(2)}</td><td class="text-right text-gray-500 font-mono text-[7px]">${(tx.payment_network || 'SETTLED').toUpperCase()}</td></tr>`;
+            }).join('');
 
-                return [
-                    dateStr,
-                    tx.order_id || 'N/A',
-                    tx.payment_network || 'N/A',
-                    `Rs. ${Number(ordAmt).toFixed(0)}`,
-                    `Rs. ${totalFee.toFixed(2)}`,
-                    `Rs. ${netSettlement.toFixed(2)}`
-                ];
+            // --- 4. Chart Data Extraction ---
+            const chartData = window.globalChartData || { labels: [], values: [] };
+            
+            // Payment method pie split (mock estimate from live ledger data for visualization)
+            let upiCount = 0, cardCount = 0, netCount = 0;
+            (window.globalLedgerData || []).forEach(tx => {
+                const str = (tx.payment_network || '').toLowerCase();
+                if(str.includes('upi')) upiCount++;
+                else if(str.includes('card')) cardCount++;
+                else netCount++;
+            });
+            if(upiCount===0 && cardCount===0) upiCount = 1;
+
+            // --- 5. Assemble HTML Payload ---
+            const container = document.createElement('div');
+            container.style.position = 'absolute'; container.style.left = '-9999px'; container.style.top = '0';
+            document.body.appendChild(container);
+
+            container.innerHTML = `
+            <style>
+                .pdf-page { width: 210mm; height: 297mm; background-color: #050505; color: #ffffff; position: relative; overflow: hidden; padding: 12mm 15mm; box-sizing: border-box; }
+                .pdf-bg-grid { position: absolute; inset: 0; z-index: -2; pointer-events: none; background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px); background-size: 30px 30px; }
+                .pdf-orb-red { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(255, 26, 26, 0.06) 0%, rgba(5, 5, 5, 0) 70%); top: -150px; right: -200px; z-index: -1; }
+                .pdf-orb-blue { position: absolute; width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.04) 0%, rgba(5, 5, 5, 0) 70%); bottom: -100px; left: -100px; z-index: -1; }
+                .pdf-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 130px; font-weight: 900; color: rgba(255, 26, 26, 0.015); z-index: -1; pointer-events: none; letter-spacing: -2px; }
+                .pdf-glass { background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; position: relative; overflow: hidden; }
+                .pdf-glow-top-red { border-top: 2px solid #ff1a1a; background: linear-gradient(180deg, rgba(255, 26, 26, 0.05) 0%, rgba(0,0,0,0) 100%); }
+                .pdf-glow-top-blue { border-top: 2px solid #3b82f6; background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, rgba(0,0,0,0) 100%); }
+                .pdf-glow-top-green { border-top: 2px solid #22c55e; background: linear-gradient(180deg, rgba(34, 197, 94, 0.05) 0%, rgba(0,0,0,0) 100%); }
+                .pdf-glow-top-yellow { border-top: 2px solid #eab308; background: linear-gradient(180deg, rgba(234, 179, 8, 0.05) 0%, rgba(0,0,0,0) 100%); }
+                .pdf-glow-top-purple { border-top: 2px solid #a855f7; background: linear-gradient(180deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0) 100%); }
+                table { width: 100%; border-collapse: collapse; } th { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px 6px; text-transform: uppercase; font-size: 7px; color: #a3a3a3; letter-spacing: 0.1em; text-align: left; }
+                td { border-bottom: 1px solid rgba(255,255,255,0.03); padding: 8px 6px; font-size: 9px; } .pdf-table-wrapper { border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.4); margin-bottom: 10px;}
+                .chart-container-pdf { height: 140px; width: 100%; position: relative; }
+            </style>
+            <div class="pdf-page bg-[#050505] font-sans antialiased text-white" id="pdf-export-target" style="-webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                <div class="pdf-bg-grid"></div><div class="pdf-orb-red"></div><div class="pdf-orb-blue"></div><div class="pdf-watermark">ZYROEDITZ</div>
+                <header class="flex justify-between items-end pb-3 border-b border-white/10 mb-4 relative">
+                    <div class="absolute bottom-[-1px] left-0 w-1/3 h-[1px] bg-gradient-to-r from-[#ff1a1a] to-transparent"></div>
+                    <div><h1 class="text-3xl font-extrabold tracking-tight text-white mb-0.5">ZYRO<span class="text-[#ff1a1a]">EDITZ</span></h1>
+                    <span class="inline-block px-1.5 py-0.5 bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 text-[#ff1a1a] text-[7px] uppercase tracking-widest font-mono rounded">Premium Video Editing Agency</span></div>
+                    <div class="text-right"><h2 class="text-xs font-bold text-gray-300 uppercase tracking-widest">Executive Performance Report</h2>
+                    <p class="text-[8px] text-gray-500 mt-1">PREPARED BY: <span class="text-[#ff1a1a] font-medium">SOUMOJIT DAS</span></p>
+                    <p class="text-[7px] text-gray-600 font-mono mt-0.5">\${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></div>
+                </header>
+                <h3 class="text-[9px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-[#ff1a1a] pl-2">Financial Performance</h3>
+                <div class="grid grid-cols-5 gap-3 mb-4">
+                    <div class="pdf-glass pdf-glow-top-red p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Gross Revenue</p><p class="text-base font-bold text-white">\${totalRevText}</p></div>
+                    <div class="pdf-glass pdf-glow-top-blue p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Monthly Recurring</p><p class="text-base font-bold text-white">\${mrrText}</p></div>
+                    <div class="pdf-glass pdf-glow-top-green p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Cleared Funds</p><p class="text-base font-bold text-white">\${clearedText}</p></div>
+                    <div class="pdf-glass pdf-glow-top-yellow p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Platform Fees</p><p class="text-base font-bold text-white">\${feesText}</p></div>
+                    <div class="pdf-glass pdf-glow-top-purple p-3"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Net Margin</p><p class="text-base font-bold text-green-400">\${liveProfit}</p></div>
+                </div>
+                <h3 class="text-[9px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-blue-500 pl-2">Project Pipeline</h3>
+                <div class="grid grid-cols-5 gap-3 mb-4">
+                    <div class="pdf-glass p-3 border-l-2 border-l-blue-500"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Active Projects</p><p class="text-base font-bold text-white">\${activeProj}</p></div>
+                    <div class="pdf-glass p-3 border-l-2 border-l-purple-500"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Pending Review</p><p class="text-base font-bold text-white">\${pendingAuth}</p></div>
+                    <div class="pdf-glass p-3 border-l-2 border-l-yellow-500"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Ready for Delivery</p><p class="text-base font-bold text-white">\${readyDel}</p></div>
+                    <div class="pdf-glass p-3 border-l-2 border-l-green-500"><p class="text-[6.5px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Completed (YTD)</p><p class="text-base font-bold text-white">\${completedYtd}</p></div>
+                    <div class="pdf-glass p-3 border-l-2 border-l-[#ff1a1a] bg-[#ff1a1a]/5"><p class="text-[6.5px] uppercase tracking-widest text-[#ff1a1a] font-semibold mb-1">Overdue Tasks</p><p class="text-base font-bold text-[#ff1a1a]">\${overdueProj}</p></div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="pdf-glass p-3 col-span-2"><h3 class="text-[8px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-[#ff1a1a] pl-2">Revenue Trends</h3><div class="chart-container-pdf"><canvas id="pdfLineChart"></canvas></div></div>
+                    <div class="pdf-glass p-3 col-span-1"><h3 class="text-[8px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-blue-500 pl-2">Revenue by Source</h3><div class="chart-container-pdf flex items-center justify-center"><canvas id="pdfPieChart"></canvas></div></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><h3 class="text-[8px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-purple-500 pl-2">Key Client Accounts</h3>
+                    <div class="pdf-table-wrapper"><table class="w-full text-left"><thead class="bg-white/5"><tr><th>Rank</th><th>Client Name</th><th>Total Proj.</th><th class="text-right">Lifetime Value</th></tr></thead><tbody class="text-gray-300">
+                    \${topClientsHTML}
+                    </tbody></table></div></div>
+                    <div><h3 class="text-[8px] font-bold text-white uppercase tracking-widest mb-2 border-l-2 border-green-500 pl-2">Recent Financial Transactions</h3>
+                    <div class="pdf-table-wrapper"><table class="w-full text-left"><thead class="bg-white/5"><tr><th>Date</th><th>Order Ref</th><th>Net Amount</th><th class="text-right">Status / ID</th></tr></thead><tbody class="text-gray-300">
+                    \${ledgerHTML}
+                    </tbody></table></div></div>
+                </div>
+                <div class="absolute bottom-[10mm] left-[15mm] right-[15mm] border-t border-white/10 pt-3 flex justify-between items-end text-[6px] text-gray-500 font-mono uppercase tracking-widest"><p>END OF REPORT // GENERATED BY ZYROCORE PLATFORM // CONFIDENTIAL</p><p>PAGE 01 / 01</p></div>
+            </div>`;
+
+            // --- 6. Render Embedded Charts (Headless) ---
+            const ctxL = container.querySelector('#pdfLineChart').getContext('2d');
+            new Chart(ctxL, {
+                type: 'line', data: { labels: chartData.labels, datasets: [{
+                    data: chartData.values, borderColor: '#ff1a1a', backgroundColor: 'rgba(255, 26, 26, 0.1)', borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0
+                }]}, options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { display: false } } }
             });
 
-            doc.autoTable({
-                startY: yCursor + 8,
-                head: [['Date', 'Order ID', 'Network/App', 'Gross Amount', 'Fee Deducted', 'Net Settled']],
-                body: ledgerRows,
-                theme: 'striped',
-                headStyles: { fillColor: [40, 40, 40], textColor: [255,255,255] },
-                columnStyles: {
-                    4: { textColor: [220, 38, 38] }, // Red for fees
-                    5: { textColor: [22, 163, 74], fontStyle: 'bold' } // green for net settled
-                }
+            const ctxP = container.querySelector('#pdfPieChart').getContext('2d');
+            new Chart(ctxP, {
+                type: 'doughnut', data: { labels: ['UPI', 'Card', 'Net/App'], datasets: [{ data: [upiCount, cardCount, netCount], backgroundColor: ['#22c55e', '#3b82f6', '#ff1a1a'], borderWidth: 0 }] },
+                options: { animation: false, responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { boxWidth: 4, font: { size: 5 }, color: '#a3a3a3'} } } }
             });
 
-            // Trigger the native automatic PDF file download!
-            doc.save('ZyroEditz_Analytics_Master.pdf');
-            showToast('PDF downloaded successfully!', 'success');
+            // --- 7. html2pdf Snapshot Execution ---
+            const element = container.querySelector('#pdf-export-target');
+            html2pdf().set({
+                margin: 0,
+                filename: 'ZyroEditz_Executive_Report.pdf',
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: { scale: 3, useCORS: true, backgroundColor: '#050505', logging: false },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(element).save().then(() => {
+                showToast('Vector PDF Exported Successfully!', 'success');
+                container.remove(); // Burn the DOM element after snapshot
+            });
         };
 
         // ==================== TOAST NOTIFICATION SYSTEM ====================
