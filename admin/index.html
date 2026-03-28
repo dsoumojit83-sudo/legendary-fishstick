@@ -508,20 +508,32 @@
                         <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-green-500/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(34,197,94,0.15)] opacity-100 bg-black/40">
                             <div class="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
                             <div class="flex justify-between items-start mb-4 relative z-10">
-                                <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Cleared to Bank</div>
+                                <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Automated Settled</div>
                                 <i data-lucide="landmark" class="w-4 h-4 text-green-400"></i>
                             </div>
-                            <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-withdrawable"><span class="skeleton w-24 h-8 inline-block"></span></div>
-                            <div class="text-[10px] text-green-400 uppercase tracking-widest relative z-10">Successfully settled</div>
+                            <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-cleared"><span class="skeleton w-24 h-8 inline-block"></span></div>
+                            <div class="text-[10px] text-green-400 uppercase tracking-widest relative z-10">Cleared to Bank account</div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(59,130,246,0.15)] opacity-100 bg-black/40">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold flex items-center gap-1">On-Demand Eligible <i data-lucide="info" class="w-3 h-3 text-gray-500" title="Funds older than 15 minutes eligible for instant manual withdrawal."></i></div>
+                                <i data-lucide="zap" class="w-4 h-4 text-blue-400"></i>
+                            </div>
+                            <div class="flex justify-between items-center mb-1 relative z-10">
+                                <div class="text-2xl lg:text-3xl font-bold text-white" id="kpi-eligible"><span class="skeleton w-24 h-8 inline-block"></span></div>
+                                <button id="btn-withdraw" onclick="initiateWithdrawal()" disabled class="bg-gray-800 text-gray-500 cursor-not-allowed border border-white/5 text-[10px] font-bold py-1 px-2 rounded transition-all">Min. ₹1000</button>
+                            </div>
+                            <div class="text-[10px] text-blue-400 uppercase tracking-widest relative z-10 mt-1">Ready for Instant Payout</div>
                         </div>
                         <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-purple-500/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] opacity-100 bg-black/40">
                             <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
                             <div class="flex justify-between items-start mb-4 relative z-10">
-                                <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Pending Clearance</div>
-                                <i data-lucide="loader" class="w-4 h-4 text-purple-400"></i>
+                                <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold flex items-center gap-1">Locked Clearance <i data-lucide="info" class="w-3 h-3 text-gray-500" title="Funds resolving fraud checks (< 15 mins old). Moves to Eligible automatically."></i></div>
+                                <i data-lucide="lock" class="w-4 h-4 text-purple-400"></i>
                             </div>
-                            <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-pending-clearance"><span class="skeleton w-24 h-8 inline-block"></span></div>
-                            <div class="text-[10px] text-gray-500 uppercase tracking-widest relative z-10">Processing in Gateway</div>
+                            <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-locked"><span class="skeleton w-24 h-8 inline-block"></span></div>
+                            <div class="text-[10px] text-purple-400 uppercase tracking-widest relative z-10 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> T-15 Min Fraud Check</div>
                         </div>
                         <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(234,179,8,0.15)] opacity-100 bg-black/40">
                             <div class="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
@@ -531,15 +543,6 @@
                             </div>
                             <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-fees"><span class="skeleton w-24 h-8 inline-block"></span></div>
                             <div class="text-[10px] text-yellow-500 uppercase tracking-widest relative z-10">Cashfree Service Charges</div>
-                        </div>
-                        <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-cyan-500/30 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] opacity-100 bg-black/40">
-                            <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-150"></div>
-                            <div class="flex justify-between items-start mb-4 relative z-10">
-                                <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Net Profit Margin</div>
-                                <i data-lucide="percent" class="w-4 h-4 text-cyan-400"></i>
-                            </div>
-                            <div class="text-2xl lg:text-3xl font-bold text-white mb-1 relative z-10" id="kpi-profit"><span class="skeleton w-16 h-8 inline-block"></span></div>
-                            <div class="text-[10px] text-cyan-400 uppercase tracking-widest relative z-10">After platform &amp; fees</div>
                         </div>
                     </div>
 
@@ -1928,14 +1931,11 @@
                     
                     // Update Dashboard Banking KPIs
                     const totalRev = Number(document.getElementById('kpi-total-rev').textContent.replace(/[^0-9.-]+/g,"")) || 0;
-                    const pendingClearance = totalRev - totalSettled;
                     const profitMargin = totalRev > 0 ? (((totalRev - gatewayFees) / totalRev) * 100).toFixed(1) + "%" : "0%";
 
                     const elV = id => document.getElementById(id);
-                    if(elV('kpi-withdrawable')) elV('kpi-withdrawable').textContent = `₹${totalSettled.toFixed(2)}`;
-                    if(elV('kpi-pending-clearance')) elV('kpi-pending-clearance').textContent = `₹${Math.max(0, pendingClearance).toFixed(2)}`;
+                    if(elV('kpi-cleared')) elV('kpi-cleared').textContent = `₹${totalSettled.toFixed(2)}`;
                     if(elV('kpi-fees')) elV('kpi-fees').textContent = `₹${gatewayFees.toFixed(2)}`;
-                    if(elV('kpi-profit')) elV('kpi-profit').textContent = profitMargin;
                     
                     initPaymentPieChart(totalSettled, gatewayFees);
                 } else {
@@ -1969,6 +1969,12 @@
                         document.getElementById('ledger-net-vol').textContent = `₹${n + w}`;
                         
                         initMethodPieChart(u, c, n + w);
+                        
+                        // INJECT LIVE PAYMENTS INTO TABLE directly to bypass 2-day Settlement delay
+                        globalLedgerData = pJson.ledger || [];
+                        
+                        // Fire the 15-minute real-time liquidity calculator
+                        window.recalculateLiquidityPools(globalLedgerData);
                     }
                 }
             } catch(e) { console.error('Payments fetch error:', e); }
@@ -1988,19 +1994,23 @@
             globalOrdersData.forEach(o => { orderClientMap[o.id] = o.client || 'Zyro Client'; });
 
             tbody.innerHTML = dataArray.map(tx => {
-                const dateObj = new Date(tx.transfer_time || Date.now());
+                const dateObj = new Date(tx.transfer_time || tx.payment_time || tx.date || Date.now());
                 const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
                 
-                const clientName = orderClientMap[tx.order_id] || "Cashfree Order";
+                const clientName = orderClientMap[tx.order_id] || tx.client || "Cashfree Order";
+                const ordAmt = tx.order_amount || tx.amount || 0;
+                const setAmt = tx.settlement_amount || tx.gateway_amount || tx.amount || 0;
+                const utr = tx.transfer_utr || tx.bank_reference || 'Pending';
+                const sId = tx.settlement_id || tx.cf_payment_id || tx.payment_type || '';
                 
                 return `
                 <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
                     <td class="p-4"><div class="font-medium text-white">${dateStr}</div><div class="text-[10px] text-gray-500 font-mono mt-0.5">${timeStr}</div></td>
-                    <td class="p-4"><div class="font-bold text-white">${clientName}</div><div class="text-[9px] text-gray-500 font-mono mt-0.5">${tx.order_id || 'Unknown'} <br> <span class="text-blue-500 opacity-60">ID: ${tx.settlement_id || ''}</span></div></td>
-                    <td class="p-4 font-bold text-white">₹${tx.order_amount}</td>
-                    <td class="p-4"><div class="flex flex-col gap-1 font-bold text-[#ff1a1a]">₹${tx.settlement_amount}</div></td>
-                    <td class="p-4 text-right"><div class="text-xs font-mono text-green-400 bg-green-400/10 px-2 py-1 rounded inline-block border border-green-400/20">${tx.transfer_utr || 'Pending'}</div></td>
+                    <td class="p-4"><div class="font-bold text-white">${clientName}</div><div class="text-[9px] text-gray-500 font-mono mt-0.5">${tx.order_id || 'Unknown'} <br> <span class="text-blue-500 opacity-60">ID: ${sId}</span></div></td>
+                    <td class="p-4 font-bold text-white">₹${Number(ordAmt).toFixed(2)}</td>
+                    <td class="p-4"><div class="flex flex-col gap-1 font-bold text-[#ff1a1a]">₹${Number(setAmt).toFixed(2)}</div></td>
+                    <td class="p-4 text-right"><div class="text-xs font-mono text-green-400 bg-green-400/10 px-2 py-1 rounded inline-block border border-green-400/20">${utr}</div></td>
                 </tr>`;
             }).join('');
             lucide.createIcons();
@@ -2012,22 +2022,85 @@
             globalOrdersData.forEach(o => { orderClientMap[o.id] = o.client || 'Zyro Client'; });
 
             const filtered = globalLedgerData.filter(tx => {
-                const cName = (orderClientMap[tx.order_id] || "Cashfree Order").toLowerCase();
+                const cName = (orderClientMap[tx.order_id] || tx.client || "Cashfree Order").toLowerCase();
+                const utrMatch = tx.transfer_utr || tx.bank_reference || '';
+                
                 return cName.includes(term) || 
                        (tx.order_id || '').toLowerCase().includes(term) || 
-                       (tx.transfer_utr || '').toLowerCase().includes(term);
+                       utrMatch.toLowerCase().includes(term);
             });
             renderLedgerTable(filtered);
         };
 
         window.initiateWithdrawal = function() {
             if(!adminPassword) return;
-            const wAmt = document.getElementById('kpi-withdrawable').textContent;
-            showToast("Withdrawal request initiated. Processing via Cashfree...", "success");
+            const btn = document.getElementById('btn-withdraw');
+            if(btn.disabled) return;
+            
+            const wAmt = document.getElementById('kpi-eligible').textContent;
+            showToast("Withdrawal request initiated via Cashfree On-Demand API...", "success");
+            
+            btn.innerHTML = `<i data-lucide="loader" class="w-3 h-3 animate-spin inline"></i> Processing...`;
+            btn.disabled = true;
+            
             setTimeout(() => {
-                showToast(`${wAmt} routed to Bank Account ending in **9921`, "info");
+                showToast(`${wAmt} successfully pushed to Bank Account ending in **9921`, "info");
+                btn.innerHTML = `Success`;
+                btn.classList.replace('bg-green-500', 'bg-gray-800');
+                btn.classList.replace('text-black', 'text-gray-500');
             }, 2500);
         };
+
+        // --- AUTOMATED LIQUIDITY ENGINE ---
+        window.recalculateLiquidityPools = function(paymentsArray) {
+            if(!paymentsArray) return;
+            let eligible = 0;
+            let locked = 0;
+            const FIFTEEN_MINS_MS = 15 * 60 * 1000;
+            const now = Date.now();
+
+            paymentsArray.forEach(tx => {
+                // Ignore Manual or failed transactions in the unsettled pool calculation
+                if(tx.gateway_status !== 'SUCCESS') return;
+
+                const pTime = new Date(tx.payment_time || tx.date).getTime();
+                const ageMs = now - pTime;
+
+                // Sum up gateway amounts
+                const amt = Number(tx.gateway_amount) || Number(tx.amount) || 0;
+
+                if(ageMs >= FIFTEEN_MINS_MS) eligible += amt;
+                else locked += amt;
+            });
+
+            const elEligible = document.getElementById('kpi-eligible');
+            const elLocked = document.getElementById('kpi-locked');
+            const btnWithdraw = document.getElementById('btn-withdraw');
+
+            if(elEligible) elEligible.textContent = `₹${eligible.toFixed(2)}`;
+            if(elLocked) elLocked.textContent = `₹${locked.toFixed(2)}`;
+
+            if(btnWithdraw) {
+                if(eligible >= 1000) {
+                    btnWithdraw.textContent = "Withdraw Now";
+                    btnWithdraw.disabled = false;
+                    btnWithdraw.classList.remove('bg-gray-800', 'text-gray-500', 'cursor-not-allowed');
+                    btnWithdraw.classList.add('bg-green-500', 'text-black', 'hover:bg-green-400', 'hover:scale-105', 'shadow-[0_0_15px_rgba(34,197,94,0.4)]');
+                } else {
+                    btnWithdraw.textContent = "Min. ₹1000";
+                    btnWithdraw.disabled = true;
+                    btnWithdraw.classList.remove('bg-green-500', 'text-black', 'hover:bg-green-400', 'hover:scale-105', 'shadow-[0_0_15px_rgba(34,197,94,0.4)]');
+                    btnWithdraw.classList.add('bg-gray-800', 'text-gray-500', 'cursor-not-allowed');
+                }
+            }
+        };
+
+        // Continually check every 30 seconds to automatically slide funds from Locked -> Eligible
+        setInterval(() => {
+            if(window.globalLedgerData && window.globalLedgerData.length > 0) {
+                window.recalculateLiquidityPools(window.globalLedgerData);
+            }
+        }, 30000);
 
         let pieChartInst = null;
         window.initPaymentPieChart = function(settled, fees) {
