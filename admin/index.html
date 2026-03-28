@@ -338,7 +338,7 @@
             class="fixed inset-0 bg-black/80 backdrop-blur-sm z-30 hidden lg:hidden transition-opacity opacity-0"></div>
 
         <aside id="sidebar"
-            class="w-64 glass-panel border-r border-white/5 flex flex-col z-40 fixed lg:relative h-full transition-transform duration-300 -translate-x-full lg:translate-x-0">
+            class="w-64 glass-panel border-r border-white/5 flex flex-col z-40 fixed inset-y-0 left-0 lg:relative h-full transition-transform duration-300 -translate-x-full lg:translate-x-0">
             <div class="h-20 flex items-center justify-between px-6 border-b border-white/5 bg-black/20 shrink-0">
                 <h1 class="text-xl font-bold tracking-tight">Zyro<span class="text-[#ff1a1a]">Editz</span></h1>
                 <button id="close-sidebar" class="lg:hidden text-gray-400 hover:text-white"><i data-lucide="x"
@@ -682,9 +682,9 @@
                         </div>
                     </div>
                     <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
-                        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
-                            <h3 class="text-lg font-bold text-white">Project Vault</h3>
-                            <div class="relative flex items-center gap-2 flex-wrap">
+                        <div class="p-4 sm:p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-black/20">
+                            <h3 class="text-lg font-bold text-white">All Projects</h3>
+                            <div class="relative flex items-center gap-2 w-full sm:w-auto flex-wrap">
                                 <div class="relative">
                                     <input type="text" id="search-projects"
                                         placeholder="Search orders..."
@@ -766,9 +766,9 @@
                         </div>
                     </div>
                     <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
-                        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
+                        <div class="p-4 sm:p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-black/20">
                             <h3 class="text-lg font-bold text-white">Client Database</h3>
-                            <div class="relative flex items-center gap-2 flex-wrap">
+                            <div class="relative flex items-center gap-2 w-full sm:w-auto">
                                 <div class="relative">
                                     <input type="text" id="search-crm"
                                         placeholder="Search clients..."
@@ -848,9 +848,9 @@
                     </div>
 
                     <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
-                        <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-black/20">
+                        <div class="p-4 sm:p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-black/20">
                             <h3 class="text-lg font-bold text-white">Transaction Ledger</h3>
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
                                 <div class="relative">
                                     <input type="text" id="search-ledger" placeholder="Search UTR, Order ID..." oninput="filterLedger()" class="bg-black/50 border border-white/10 rounded-lg py-1.5 pl-3 pr-8 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-44 sm:w-56">
                                     <i data-lucide="search" class="w-3 h-3 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2"></i>
@@ -883,7 +883,7 @@
         </main>
 
         <div id="ai-terminal"
-            class="fixed bottom-6 right-6 sm:w-[480px] glass-panel rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex-col z-50 h-[85vh] sm:h-[650px] terminal-closed transition-all duration-300 transform translate-y-4 opacity-0">
+            class="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[480px] glass-panel rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex-col z-50 h-[80dvh] sm:h-[650px] terminal-closed transition-all duration-300 transform translate-y-4 opacity-0 max-h-[800px]">
 
             <div class="h-14 bg-black/90 border-b border-white/10 flex items-center justify-between px-5 shrink-0 rounded-t-2xl">
                 <div class="flex items-center gap-3">
@@ -1995,8 +1995,13 @@
             isTerminalOpen = !isTerminalOpen;
 
             if (isTerminalOpen) {
-                terminal.classList.remove('terminal-closed', 'translate-y-4', 'opacity-0');
-                setTimeout(() => aiInput.focus(), 100);
+                terminal.classList.remove('terminal-closed');
+                
+                // Force a browser reflow to allow the CSS transition to play smoothly
+                void terminal.offsetWidth;
+                
+                terminal.classList.remove('translate-y-4', 'opacity-0');
+                setTimeout(() => aiInput.focus(), 300);
             } else {
                 terminal.classList.add('translate-y-4', 'opacity-0');
                 setTimeout(() => terminal.classList.add('terminal-closed'), 300);
