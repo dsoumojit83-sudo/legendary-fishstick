@@ -123,42 +123,41 @@ module.exports = async function(req, res) {
             return `[ID:${o.order_id}|Client:${o.client_name || 'N/A'}|Email:${o.client_email || 'N/A'}|Phone:${o.client_phone || 'N/A'}|Service:${o.service || 'N/A'}|Amt:Rs.${o.amount || 0}|Status:${o.status}|Booked:${formatDate(o.created_at)}|Due:${formatDate(o.deadline_date)}|Files:${fStatus}|Notes: ${o.project_notes || 'None'}]`;
         }).join('\n') : 'No database records found.';
 
-        // --- FETCH CASHFREE LEDGER DATA (Last 30 Days Context) ---
+        // --- 15-MINUTE INSTANT SETTLEMENT PHYSICS ENGINE ---
         let totalSettled = 0;
         let pendingClearance = 0;
         let totalGatewayFees = 0;
+        
         try {
-            const now = new Date();
-            const past = new Date(); past.setFullYear(now.getFullYear() - 1); // 1 yr for consistency with UI
+            // 1. Apply global API MDR fee physics (1.95% + 18% GST)
+            const globalBaseMdr = totalRev * 0.0195;
+            totalGatewayFees = globalBaseMdr + (globalBaseMdr * 0.18);
+            const globalNet = totalRev - totalGatewayFees;
+
+            // 2. Scan recent orders for 15-minute Transit Locks
+            const nowMs = Date.now();
+            const FIFTEEN_MINS_MS = 15 * 60 * 1000;
             
-            const [sY, sM, sD] = [past.getFullYear(), String(past.getMonth() + 1).padStart(2, '0'), String(past.getDate()).padStart(2, '0')];
-            const [eY, eM, eD] = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')];
-
-            const response = await axios.post(
-                "https://api.cashfree.com/pg/settlements",
-                {
-                    pagination: { limit: 100 },
-                    filters: { start_date: `${sY}-${sM}-${sD}T00:00:00Z`, end_date: `${eY}-${eM}-${eD}T23:59:59Z` }
-                },
-                {
-                    headers: {
-                        "x-client-id": process.env.CASHFREE_APP_ID,
-                        "x-client-secret": process.env.CASHFREE_SECRET_KEY,
-                        "x-api-version": "2025-01-01",
-                        "Content-Type": "application/json"
+            if (orders) {
+                orders.forEach(o => {
+                    if (o.status === 'paid' || o.status === 'completed') {
+                        const txTime = new Date(o.created_at).getTime();
+                        const rawAmt = Number(o.amount) || 0;
+                        const mdr = (rawAmt * 0.0195) * 1.18;
+                        const netAmt = rawAmt - mdr;
+                        
+                        if ((nowMs - txTime) < FIFTEEN_MINS_MS) {
+                            pendingClearance += netAmt;
+                        }
                     }
-                }
-            );
-
-            const settlements = response.data?.data?.content || [];
-            settlements.forEach(tx => {
-                totalSettled += tx.settlement_amount || 0;
-                totalGatewayFees += (tx.service_charge || 0) + (tx.service_tax || 0);
-            });
-            pendingClearance = totalRev - totalSettled;
+                });
+            }
+            
+            // 3. Instant Sweep
+            totalSettled = Math.max(0, globalNet - pendingClearance);
             
         } catch(e) {
-            console.log("Admin Chat - Cashfree fetch error (using defaults)", e.message);
+            console.log("Admin Chat - Physics Engine Error", e.message);
         }
 
         const profitMargin = totalRev > 0 ? (((totalRev - totalGatewayFees) / totalRev) * 100).toFixed(1) + "%" : "0%";
@@ -208,10 +207,11 @@ module.exports = async function(req, res) {
 - Total Orders Logged: ${orders ? orders.length : 0}
 
 [BANKING & CASHFREE SETTLEMENT LOGISTICS]
-- Cleared to Bank (Settled Amount): Rs.${totalSettled.toFixed(2)}
-- Pending Clearance: Rs.${Math.max(0, pendingClearance).toFixed(2)}
-- Total Gateway Fees Deducted: Rs.${totalGatewayFees.toFixed(2)}
+- Cleared to Bank (Instant Auto-Settled): Rs.${totalSettled.toFixed(2)}
+- Locked in Gateway (< 15 Minutes Old): Rs.${Math.max(0, pendingClearance).toFixed(2)}
+- Lifetime Gateway Fees (1.95% + 18% GST Engine): Rs.${totalGatewayFees.toFixed(2)}
 - Net Profit Margin (After Fees/Tax): ${profitMargin}
+- System Architecture: You are currently running on a 15-Minute Instant Settlement pipeline. There is no T+2 transit time. Any order older than 15 minutes is mathematically instantly beamed to Soumojit's bank account.
 
 [PAYMENT METHOD DISTRIBUTION (Recent 30 Orders)]
 - UPI / QR Scans: Rs.${upiVol}
@@ -256,7 +256,6 @@ ${crmList.join('\n')}
 
 5. REAL-LIFE EXECUTIVE ASSISTANCE:
    - If Soumojit asks you to draft an email, invoice note, or WhatsApp message to a client, write it immediately using a premium, professional, bold tone suited for a high-end video agency. Pull the client's name and project details from the database automatically.
-   - Provide high-level business advice. If asked how to scale, offer actionable strategies specific to a video editing/motion graphics agency.
    - Act as a sparring partner for creative workflows, time management, and studio operations.
 
 6. PERSONA & TONE:
@@ -264,6 +263,11 @@ ${crmList.join('\n')}
    - Adopt a persona akin to JARVIS or FRIDAY - confident, incredibly sharp, and solution-oriented.
    - Always address the user respectfully as "Soumojit", "Boss", "Sir", or "Chief".
    - NEVER start responses with "I am an AI...". You are "ZyroCore, the studio's operational mainframe".
+
+7. EXECUTIVE CONSULTING & WORLD KNOWLEDGE (CRITICAL DIRECTIVE):
+   - You are explicitly authorized to answer general business, financial, or strategic questions OUTSIDE of the provided database.
+   - If Soumojit asks for broader advice (e.g., "How to scale a video agency", "Best marketing strategies for 2026", "Explain tax brackets", or ANY general knowledge question), switch fully into Consulting Mode and provide world-class, unrestricted answers.
+   - Do NOT say "I cannot find this in our database" for general strategy questions. Simply leverage your vast underlying LLM intelligence to advise him.
 
 7. FORMATTING RULES (STRICT COMPLIANCE):
    - Use advanced Markdown structuring.
