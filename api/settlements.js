@@ -1,10 +1,12 @@
 const axios = require("axios");
 
 module.exports = async function (req, res) {
+    // Allow only POST
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
+    // Admin security
     const authHeader = req.headers["x-admin-password"];
     if (authHeader !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ error: "Unauthorized Access. Core Locked." });
@@ -13,20 +15,30 @@ module.exports = async function (req, res) {
     try {
         const { startDate, endDate, cursor = null } = req.body;
 
+        // Validate input
         if (!startDate || !endDate) {
             return res.status(400).json({ error: "startDate and endDate required" });
         }
 
+        // Debug logs (check in Vercel logs)
+        console.log("APP_ID:", process.env.CASHFREE_APP_ID);
+        console.log("SECRET:", process.env.CASHFREE_SECRET_KEY);
+
+        // Call Cashfree API
         const response = await axios.post(
             "https://sandbox.cashfree.com/pg/settlements",
             {
-                pagination: { limit: 10, cursor },
-                filters: { start_date: startDate, end_date: endDate }
+                pagination: {
+                    limit: 10,
+                    cursor: cursor
+                },
+                filters: {
+                    start_date: startDate,
+                    end_date: endDate
+                }
             },
             {
                 headers: {
-                    console.log("APP_ID:", process.env.CASHFREE_APP_ID);
-console.log("SECRET:", process.env.CASHFREE_SECRET_KEY);
                     "x-client-id": process.env.CASHFREE_APP_ID,
                     "x-client-secret": process.env.CASHFREE_SECRET_KEY,
                     "x-api-version": "2025-01-01",
@@ -38,6 +50,7 @@ console.log("SECRET:", process.env.CASHFREE_SECRET_KEY);
         const settlements = response.data?.data || [];
         const nextCursor = response.data?.cursor || null;
 
+        // Map response
         const mapped = settlements.map(item => ({
             order_id: item.order_id,
             payment_id: item.cf_payment_id,
