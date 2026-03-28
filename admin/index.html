@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -296,10 +296,7 @@
 
     <div class="noise" aria-hidden="true"></div>
     <div class="admin-grid" id="parallaxGrid" aria-hidden="true"></div>
-    <div class="video-bg" style="background-color: var(--bg-dark);" aria-hidden="true">
-        <canvas id="cinematicCanvas"
-            style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.4;"></canvas>
-    </div>
+
 
     <div class="orb w-[600px] h-[600px] bg-red-600/5 top-[-20%] left-[-10%] hidden lg:block" id="orb1"
         aria-hidden="true"></div>
@@ -405,6 +402,15 @@
                         class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white">
                         <i data-lucide="file-text" class="w-4 h-4"></i>
                         <span>Export PDF</span>
+                    </button>
+                    <button onclick="toggleTerminal()"
+                        class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white relative">
+                        <i data-lucide="cpu" class="w-4 h-4"></i>
+                        <span>ZyroCore</span>
+                        <span class="flex h-2 w-2 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
+                        </span>
                     </button>
                     <div
                         class="hidden sm:flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
@@ -526,6 +532,66 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TOP CLIENTS SPOTLIGHT PANEL -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                        <!-- Top Clients by LTV -->
+                        <div class="glass-panel rounded-2xl overflow-hidden stagger-elem flex flex-col border border-white/5 lg:col-span-2">
+                            <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
+                                <div>
+                                    <h3 class="text-md font-bold text-white">Top Clients by Lifetime Value</h3>
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Ranked by total spend</p>
+                                </div>
+                                <i data-lucide="crown" class="w-4 h-4 text-yellow-400"></i>
+                            </div>
+                            <div class="overflow-x-auto flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-black/40 border-b border-white/5">
+                                        <tr>
+                                            <th class="p-3 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">#</th>
+                                            <th class="p-3 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Client</th>
+                                            <th class="p-3 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Projects</th>
+                                            <th class="p-3 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Lifetime Value</th>
+                                            <th class="p-3 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Last Active</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="top-clients-tbody" class="text-sm">
+                                        <tr><td colspan="5" class="p-4"><div class="skeleton h-8 w-full"></div></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Quick Stats Panel -->
+                        <div class="glass-panel rounded-2xl p-6 stagger-elem border border-white/5 flex flex-col gap-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-md font-bold text-white">Studio Health</h3>
+                                <i data-lucide="activity" class="w-4 h-4 text-green-400"></i>
+                            </div>
+                            <div class="flex flex-col gap-3 mt-1">
+                                <div class="flex justify-between items-center py-2 border-b border-white/5">
+                                    <span class="text-xs text-gray-400 uppercase tracking-widest">Total Clients</span>
+                                    <span class="text-sm font-bold text-white" id="stat-total-clients">â€”</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-white/5">
+                                    <span class="text-xs text-gray-400 uppercase tracking-widest">Repeat Clients</span>
+                                    <span class="text-sm font-bold text-green-400" id="stat-repeat-clients">â€”</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-white/5">
+                                    <span class="text-xs text-gray-400 uppercase tracking-widest">Avg. Order Value</span>
+                                    <span class="text-sm font-bold text-[#ff1a1a]" id="stat-avg-order">â€”</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-white/5">
+                                    <span class="text-xs text-gray-400 uppercase tracking-widest">Completed Orders</span>
+                                    <span class="text-sm font-bold text-blue-400" id="stat-completed">â€”</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-xs text-gray-400 uppercase tracking-widest">Pending Payment</span>
+                                    <span class="text-sm font-bold text-orange-400" id="stat-pending">â€”</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -784,7 +850,7 @@
                 setTimeout(() => document.getElementById('app-wrapper').classList.add('opacity-100'), 50);
                 initializeApp();
             } else {
-                initCanvasBackground();
+
             }
         });
 
@@ -856,7 +922,7 @@
         };
 
         function initializeApp() {
-            initCanvasBackground();
+
             initAnimations();
             fetchDashboardData();
 
@@ -904,6 +970,7 @@
 
                 renderTables();
                 renderCRM();
+                renderTopClients();
 
                 if (data.chartData) initChart(data.chartData);
 
@@ -1237,7 +1304,7 @@
 
             sortedClients.forEach(client => {
                 const avatar = getAvatarHTML(client.name);
-                const lastActiveStr = client.lastActive.toLocaleDateString();
+                const lastActiveStr = client.lastActive.toLocaleDateString('en-GB');
 
                 crmTbody.innerHTML += `
                     <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
@@ -1262,6 +1329,76 @@
                     </tr>
                 `;
             });
+            lucide.createIcons();
+        }
+
+        // ==================== TOP CLIENTS + STUDIO HEALTH ====================
+        function renderTopClients() {
+            const tbody = document.getElementById('top-clients-tbody');
+            if (!tbody) return;
+
+            if (!globalOrdersData || globalOrdersData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500 text-xs font-mono">No client data yet.</td></tr>';
+                return;
+            }
+
+            // Build client map
+            const clientsMap = {};
+            let totalOrderValue = 0;
+            let completedCount = 0;
+            let pendingCount = 0;
+
+            globalOrdersData.forEach(order => {
+                const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
+                const amount = Number(order.amount) || 0;
+                totalOrderValue += amount;
+                if (order.status === 'completed') completedCount++;
+                if (order.status === 'pending') pendingCount++;
+
+                if (!clientsMap[clientName]) {
+                    clientsMap[clientName] = { name: clientName, email: order.email, totalSpent: 0, projectCount: 0, lastActive: new Date(order.created_at || Date.now()) };
+                }
+                clientsMap[clientName].projectCount += 1;
+                clientsMap[clientName].totalSpent += amount;
+                const orderDate = new Date(order.created_at || Date.now());
+                if (orderDate > clientsMap[clientName].lastActive) clientsMap[clientName].lastActive = orderDate;
+            });
+
+            const sorted = Object.values(clientsMap).sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
+            const totalClients = Object.keys(clientsMap).length;
+            const repeatClients = Object.values(clientsMap).filter(c => c.projectCount > 1).length;
+            const avgOrder = globalOrdersData.length > 0 ? Math.round(totalOrderValue / globalOrdersData.length) : 0;
+
+            // Populate studio health stats
+            const el = id => document.getElementById(id);
+            if (el('stat-total-clients'))  el('stat-total-clients').textContent  = totalClients;
+            if (el('stat-repeat-clients')) el('stat-repeat-clients').textContent = repeatClients;
+            if (el('stat-avg-order'))      el('stat-avg-order').textContent      = `Rs.${avgOrder}`;
+            if (el('stat-completed'))      el('stat-completed').textContent      = completedCount;
+            if (el('stat-pending'))        el('stat-pending').textContent        = pendingCount;
+
+            // Render top clients table
+            const medals = ['ðŸ¥‡', 'ðŸ¥ˆ', 'ðŸ¥‰', '4', '5'];
+            tbody.innerHTML = sorted.map((client, i) => {
+                const initials = client.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                return `
+                <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
+                    <td class="p-3 text-center font-bold text-sm ${i < 3 ? 'text-yellow-400' : 'text-gray-500'}">${medals[i]}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center text-[10px] font-bold text-white shrink-0">${initials}</div>
+                            <div>
+                                <div class="font-semibold text-white text-sm">${client.name}</div>
+                                <div class="text-[10px] text-gray-500">${client.email || 'No email'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-3 text-gray-300 text-sm font-medium">${client.projectCount}</td>
+                    <td class="p-3 font-bold text-[#ff1a1a]">Rs.${client.totalSpent}</td>
+                    <td class="p-3 text-gray-400 text-sm">${client.lastActive.toLocaleDateString('en-GB')}</td>
+                </tr>`;
+            }).join('');
+
             lucide.createIcons();
         }
 
@@ -1463,7 +1600,7 @@
             let html = '';
             clients.forEach(client => {
                 const avatar = getAvatarHTML(client.name);
-                const lastActiveStr = client.lastActive.toLocaleDateString();
+                const lastActiveStr = client.lastActive.toLocaleDateString('en-GB');
                 html += `
                 <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
                     <td class="p-4"><div class="flex items-center gap-3">${avatar}<div><div class="font-bold text-white">${hl(client.name)}</div><div class="font-mono text-[10px] text-gray-500">Lifetime Client</div></div></div></td>
@@ -1609,64 +1746,7 @@
             });
         };
 
-        const isMobile = window.innerWidth < 768;
-        function initCanvasBackground() {
-            const canvas = document.getElementById('cinematicCanvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            let width, height, particles;
 
-            function initCanvas() {
-                width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight;
-                particles = [];
-                const particleCount = isMobile ? 20 : 60;
-                for (let i = 0; i < particleCount; i++) particles.push(new Particle());
-            }
-
-            class Particle {
-                constructor() {
-                    this.x = Math.random() * width; this.y = Math.random() * height;
-                    this.vx = (Math.random() - 0.5) * 0.4; this.vy = (Math.random() - 0.5) * 0.4;
-                    this.size = Math.random() * 2.5 + 1; this.alpha = Math.random() * 0.5 + 0.1;
-                }
-                update() {
-                    this.x += this.vx; this.y += this.vy;
-                    if (this.x < 0 || this.x > width) this.vx *= -1;
-                    if (this.y < 0 || this.y > height) this.vy *= -1;
-                }
-                draw() {
-                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 26, 26, ${this.alpha})`; ctx.fill();
-                }
-            }
-
-            function animateCanvas() {
-                ctx.clearRect(0, 0, width, height);
-                for (let i = 0; i < particles.length; i++) {
-                    particles[i].update(); particles[i].draw();
-                    if (!isMobile) {
-                        for (let j = i; j < particles.length; j++) {
-                            let dx = particles[i].x - particles[j].x; let dy = particles[i].y - particles[j].y;
-                            let dist = Math.sqrt(dx * dx + dy * dy);
-                            if (dist < 120) {
-                                ctx.beginPath(); ctx.strokeStyle = `rgba(255, 26, 26, ${0.2 - (dist / 600)})`;
-                                ctx.lineWidth = 1; ctx.moveTo(particles[i].x, particles[i].y);
-                                ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
-                            }
-                        }
-                    }
-                }
-                requestAnimationFrame(animateCanvas);
-            }
-
-            let resizeTimer;
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(initCanvas, 200);
-            }, { passive: true });
-
-            initCanvas(); animateCanvas();
-        }
 
         // ==================== SORTING & PDF EXPORT FUNCTIONS ====================
         let currentSort = { field: null, direction: 'asc' };
@@ -1684,13 +1764,14 @@
             }
 
             document.querySelectorAll('.sort-icon').forEach(icon => {
-                icon.classList.remove('sort-asc', 'sort-desc');
-                if (icon.parentElement.getAttribute('onclick').includes(field)) {
+                const parentOnclick = icon.parentElement.getAttribute('onclick') || '';
+                if (parentOnclick.includes(field) && parentOnclick.includes('sortTable')) {
+                    icon.classList.remove('sort-asc', 'sort-desc');
                     icon.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
                     icon.setAttribute('data-lucide', currentSort.direction === 'asc' ? 'chevron-up' : 'chevron-down');
-                } else {
-                    icon.classList.add('sort-asc');
-                    icon.setAttribute('data-lucide', 'chevron-up');
+                } else if (parentOnclick.includes('sortTable')) {
+                    icon.classList.remove('sort-asc', 'sort-desc');
+                    icon.setAttribute('data-lucide', 'chevrons-up-down');
                 }
             });
             lucide.createIcons();
@@ -1740,13 +1821,14 @@
             }
 
             document.querySelectorAll('.sort-icon').forEach(icon => {
-                icon.classList.remove('sort-asc', 'sort-desc');
-                if (icon.parentElement.getAttribute('onclick').includes(field)) {
+                const parentOnclick = icon.parentElement.getAttribute('onclick') || '';
+                if (parentOnclick.includes(field) && parentOnclick.includes('sortCRM')) {
+                    icon.classList.remove('sort-asc', 'sort-desc');
                     icon.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
                     icon.setAttribute('data-lucide', currentSort.direction === 'asc' ? 'chevron-up' : 'chevron-down');
-                } else {
-                    icon.classList.add('sort-asc');
-                    icon.setAttribute('data-lucide', 'chevron-up');
+                } else if (parentOnclick.includes('sortCRM')) {
+                    icon.classList.remove('sort-asc', 'sort-desc');
+                    icon.setAttribute('data-lucide', 'chevrons-up-down');
                 }
             });
             lucide.createIcons();
@@ -1944,5 +2026,4 @@
 
     </script>
 </body>
-
 </html>
