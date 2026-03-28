@@ -978,7 +978,8 @@
             const deadlineDateString = order.deadline;
             if (!deadlineDateString) return `<span class="text-gray-600 text-[10px] uppercase">No Deadline</span>`;
 
-            const deadline = new Date(deadlineDateString);
+            const [dy, dm, dd] = deadlineDateString.split('-').map(Number);
+            const deadline = new Date(dy, dm - 1, dd);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
