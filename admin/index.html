@@ -1925,19 +1925,16 @@
                         gatewayFees += (tx.service_charge + tx.service_tax);
                     });
                     
-                    // Update Ledger View
-                    document.getElementById('ledger-total-upi').textContent = `₹${totalSettled.toFixed(2)}`;
-                    document.getElementById('ledger-total-card').textContent = `₹${gatewayFees.toFixed(2)}`;
+                    // OVERRIDE: Settlement delay has been replaced by Realtime Simulator below!
+                    // document.getElementById('ledger-total-upi').textContent = `₹${totalSettled.toFixed(2)}`;
+                    // document.getElementById('ledger-total-card').textContent = `₹${gatewayFees.toFixed(2)}`;
                     
-                    // Update Dashboard Banking KPIs
+                    // Update Dashboard Banking KPIs (Profit Margin shifted to Realtime Estimator)
                     const totalRev = Number(document.getElementById('kpi-total-rev').textContent.replace(/[^0-9.-]+/g,"")) || 0;
-                    const profitMargin = totalRev > 0 ? (((totalRev - gatewayFees) / totalRev) * 100).toFixed(1) + "%" : "0%";
 
                     const elV = id => document.getElementById(id);
-                    if(elV('kpi-cleared')) elV('kpi-cleared').textContent = `₹${totalSettled.toFixed(2)}`;
-                    if(elV('kpi-fees')) elV('kpi-fees').textContent = `₹${gatewayFees.toFixed(2)}`;
                     
-                    initPaymentPieChart(totalSettled, gatewayFees);
+                    // initPaymentPieChart(totalSettled, gatewayFees); // Replaced by live math below
                 } else {
                     document.getElementById('ledger-tbody').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-[#ff1a1a] font-mono text-xs">Failed to load Cashfree ledger.</td></tr>`;
                 }
@@ -1972,6 +1969,42 @@
                         
                         // INJECT LIVE PAYMENTS INTO TABLE directly to bypass 2-day Settlement delay
                         globalLedgerData = pJson.ledger || [];
+                        
+                        // GLOBAL GATEWAY & SETTLEMENT ESTIMATOR (Scaling to ALL-TIME Revenue, circumventing 20-order API limits)
+                        const totalRevStr = Number(document.getElementById('kpi-total-rev').textContent.replace(/[^0-9.-]+/g,"")) || 0;
+                        const globalBaseMdr = totalRevStr * 0.0195;
+                        const globalGst = globalBaseMdr * 0.18;
+                        const globalFees = globalBaseMdr + globalGst;
+                        const globalSettled = totalRevStr - globalFees;
+
+                        // LIVE DATA LOOP (Strictly for Pie-Chart relative ratios)
+                        let liveFees = 0;
+                        let liveSettled = 0;
+                        globalLedgerData.forEach(tx => {
+                            if(tx.gateway_status === 'SUCCESS') {
+                                const amt = Number(tx.gateway_amount) || Number(tx.amount) || 0;
+                                const baseMdr = amt * 0.0195;
+                                const gstOnMdr = baseMdr * 0.18;
+                                const totalFee = baseMdr + gstOnMdr; 
+                                liveFees += totalFee;
+                                liveSettled += (amt - totalFee);
+                            }
+                        });
+
+                        // Instantly populate the Overview and Bank Ledger cards using GLOBAL math to ensure 0s never persist falsely
+                        document.getElementById('ledger-total-upi').textContent = `₹${globalSettled.toFixed(2)}`;
+                        document.getElementById('ledger-total-card').textContent = `₹${globalFees.toFixed(2)}`;
+                        
+                        const elV = id => document.getElementById(id);
+                        if(elV('kpi-cleared')) elV('kpi-cleared').textContent = `₹${globalSettled.toFixed(2)}`;
+                        if(elV('kpi-fees')) elV('kpi-fees').textContent = `₹${globalFees.toFixed(2)}`;
+                        
+                        // Real-time Profit Margin math
+                        const liveProfit = totalRevStr > 0 ? (((totalRevStr - globalFees) / totalRevStr) * 100).toFixed(1) + "%" : "0%";
+                        if(elV('kpi-profit')) elV('kpi-profit').textContent = liveProfit;
+                        
+                        // Boot relative live chart distribution based on recent sample
+                        initPaymentPieChart(liveSettled || globalSettled, liveFees || globalFees);
                         
                         // Fire the 15-minute real-time liquidity calculator
                         window.recalculateLiquidityPools(globalLedgerData);
@@ -2573,5 +2606,4 @@
 
     </script>
 </body>
-
 </html>
