@@ -2667,15 +2667,23 @@
             doc.setLineWidth(0.5);
             doc.line(14, yCursor, 196, yCursor);
             
-            // --- Live KPI Extraction ---
-            const totalRev = document.getElementById('kpi-total-rev').textContent;
-            const liveProfit = document.getElementById('kpi-profit').textContent;
-            const totalClients = document.getElementById('kpi-crm-total').textContent;
-            const completeProjs = document.getElementById('kpi-vault-completed').textContent;
-            const vaultAwaiting = document.getElementById('kpi-vault-awaiting').textContent;
+            // --- Live KPI Extraction (Null-Safe) ---
+            const elTxt = (id) => document.getElementById(id)?.textContent || 'N/A';
+            const totalRev = elTxt('kpi-total-rev');
+            const totalClients = elTxt('kpi-crm-total');
+            const completeProjs = elTxt('kpi-vault-completed');
+            const vaultAwaiting = elTxt('kpi-vault-awaiting');
 
-            const globalFeesText = document.getElementById('ledger-total-card').textContent;
-            const globalSettledText = document.getElementById('ledger-total-upi').textContent;
+            const globalFeesText = elTxt('ledger-total-card');
+            const globalSettledText = elTxt('ledger-total-upi');
+
+            // Mathematically reconstruct Profit Margin if HUD element is missing
+            let liveProfit = elTxt('kpi-profit');
+            if (liveProfit === 'N/A') {
+                const tr = Number(totalRev.replace(/[^0-9.-]+/g, "")) || 0;
+                const gf = Number(globalFeesText.replace(/[^0-9.-]+/g, "")) || 0;
+                liveProfit = tr > 0 ? (((tr - gf) / tr) * 100).toFixed(1) + "%" : "0%";
+            }
 
             yCursor += 15;
             doc.setFontSize(16);
