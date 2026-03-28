@@ -847,6 +847,46 @@
                         </div>
                     </div>
 
+                    <!-- Payment Methods Distribution Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6 mb-6">
+                        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-white/5 bg-black/20 flex justify-between items-center hover:bg-white/5 transition-colors group">
+                            <div>
+                                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">UPI Volume</div>
+                                <div class="text-2xl lg:text-3xl font-bold text-green-400" id="ledger-upi-vol"><span class="skeleton w-20 h-8 inline-block"></span></div>
+                                <div class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-mono">Real-time GPay/PhonePe</div>
+                            </div>
+                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform">
+                                <i data-lucide="smartphone-nfc" class="w-5 h-5 lg:w-8 lg:h-8"></i>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-white/5 bg-black/20 flex justify-between items-center hover:bg-white/5 transition-colors group">
+                            <div>
+                                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">Card Volume</div>
+                                <div class="text-2xl lg:text-3xl font-bold text-purple-400" id="ledger-card-vol"><span class="skeleton w-20 h-8 inline-block"></span></div>
+                                <div class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-mono">Visa/Mastercard</div>
+                            </div>
+                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                <i data-lucide="credit-card" class="w-5 h-5 lg:w-8 lg:h-8"></i>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-white/5 bg-black/20 flex justify-between items-center hover:bg-white/5 transition-colors group">
+                            <div>
+                                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1 group-hover:text-gray-300 transition-colors">Netbanking/Wallets</div>
+                                <div class="text-2xl lg:text-3xl font-bold text-blue-400" id="ledger-net-vol"><span class="skeleton w-20 h-8 inline-block"></span></div>
+                                <div class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-mono">IMPS/NEFT/Wallets</div>
+                            </div>
+                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                                <i data-lucide="monitor" class="w-5 h-5 lg:w-8 lg:h-8"></i>
+                            </div>
+                        </div>
+                        <div class="glass-panel py-4 px-6 rounded-2xl border border-white/5 bg-black/20 flex flex-col justify-center items-center">
+                            <div class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold w-full text-left mb-3">Methods</div>
+                            <div class="w-28 h-28 relative">
+                                <canvas id="pmPieChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
                         <div class="p-4 sm:p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-black/20">
                             <h3 class="text-lg font-bold text-white">Transaction Ledger</h3>
@@ -1882,7 +1922,6 @@
                     if(elV('kpi-fees')) elV('kpi-fees').textContent = `₹${gatewayFees.toFixed(2)}`;
                     if(elV('kpi-profit')) elV('kpi-profit').textContent = profitMargin;
                     
-                    renderLedgerTable(globalLedgerData);
                     initPaymentPieChart(totalSettled, gatewayFees);
                 } else {
                     document.getElementById('ledger-tbody').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-[#ff1a1a] font-mono text-xs">Failed to load Cashfree ledger.</td></tr>`;
@@ -1893,6 +1932,32 @@
             } finally {
                 if (refreshIcon) refreshIcon.classList.remove('animate-spin');
             }
+
+            // Fetch Payment Methods explicitly via payments API to inject accurate UPI/Card metrics correctly
+            try {
+                const payRes = await fetch('/api/payments', {
+                    method: 'GET',
+                    headers: { 'x-admin-password': adminPassword }
+                });
+                
+                if(payRes.ok) {
+                    const pJson = await payRes.json();
+                    if(pJson.success && pJson.summary) {
+                        const u = pJson.summary.total_upi_revenue || 0;
+                        const c = pJson.summary.total_card_revenue || 0;
+                        const n = pJson.summary.total_netbanking_revenue || 0;
+                        const w = pJson.summary.total_wallet_revenue || 0;
+                        
+                        document.getElementById('ledger-upi-vol').textContent = `₹${u}`;
+                        document.getElementById('ledger-card-vol').textContent = `₹${c}`;
+                        document.getElementById('ledger-net-vol').textContent = `₹${n + w}`;
+                        
+                        initMethodPieChart(u, c, n + w);
+                    }
+                }
+            } catch(e) { console.error('Payments fetch error:', e); }
+
+            renderLedgerTable(globalLedgerData);
         };
 
         function renderLedgerTable(dataArray) {
