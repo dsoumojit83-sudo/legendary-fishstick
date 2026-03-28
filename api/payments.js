@@ -42,7 +42,7 @@ module.exports = async function (req, res) {
                         headers: {
                             "x-client-id": process.env.CASHFREE_APP_ID,
                             "x-client-secret": process.env.CASHFREE_SECRET_KEY,
-                            "x-api-version": "2025-01-01",
+                            "x-api-version": "2023-08-01",
                             "Content-Type": "application/json"
                         }
                     }
@@ -54,22 +54,34 @@ module.exports = async function (req, res) {
 
                 let paymentMethod = "Unknown";
                 let networkOrApp = "N/A";
-                
-                // Decode Cashfree's nested payment method object
-                if (successfulPayment && successfulPayment.payment_method) {
-                    const pm = successfulPayment.payment_method;
-                    if (pm.upi) { 
-                        paymentMethod = "UPI"; 
-                        networkOrApp = pm.upi.channel || "GPay/PhonePe"; 
-                    } else if (pm.card) { 
-                        paymentMethod = "Card"; 
-                        networkOrApp = pm.card.card_network || "Visa/Mastercard"; 
-                    } else if (pm.netbanking) { 
-                        paymentMethod = "Netbanking"; 
-                        networkOrApp = pm.netbanking.bank_name; 
-                    } else if (pm.app) { 
-                        paymentMethod = "Wallet"; 
-                        networkOrApp = pm.app.provider; 
+                let utr = "N/A";
+                let cfPaymentId = "N/A";
+
+                if (successfulPayment) {
+                    paymentMethod = successfulPayment.payment_group || "Unknown";
+                    utr = successfulPayment.bank_reference || "N/A";
+                    cfPaymentId = successfulPayment.cf_payment_id || "N/A";
+
+                    const pm = successfulPayment.payment_method || {};
+
+                    if (pm.upi) {
+                        networkOrApp =
+                            pm.upi.upi_id ||
+                            pm.upi.channel ||
+                            "UPI";
+                    } else if (pm.card) {
+                        networkOrApp =
+                            pm.card.card_network ||
+                            pm.card.card_bank_name ||
+                            "Card";
+                    } else if (pm.netbanking) {
+                        networkOrApp =
+                            pm.netbanking.bank_name ||
+                            "Netbanking";
+                    } else if (pm.app) {
+                        networkOrApp =
+                            pm.app.provider ||
+                            "Wallet";
                     }
                 }
 
@@ -78,14 +90,16 @@ module.exports = async function (req, res) {
                     client: order.client_name || "Zyro Client",
                     amount: order.amount,
                     date: order.created_at,
-                    payment_type: paymentMethod,             // e.g., "UPI" or "Card"
-                    payment_network: networkOrApp,           // e.g., "Visa" or "GPay"
-                    bank_reference: successfulPayment ? successfulPayment.bank_reference : 'N/A',
+                    payment_type: paymentMethod,
+                    payment_network: networkOrApp,
+                    bank_reference: utr,
+                    cf_payment_id: cfPaymentId,
                     gateway_status: successfulPayment ? 'SUCCESS' : 'MANUAL/PENDING'
                 };
 
             } catch (cfError) {
-                // If the order wasn't found in Cashfree (e.g. manually marked paid by you)
+                console.error(`Cashfree Ledger Error for ${order.order_id}:`, cfError.response?.data || cfError.message);
+                // If the order wasn't found in Cashfree (e.g. manually marked paid)
                 return {
                     order_id: order.order_id,
                     client: order.client_name,
@@ -106,10 +120,11 @@ module.exports = async function (req, res) {
         let totalWallet = 0;
         
         ledger.forEach(l => {
-            if (l.payment_type === 'UPI') totalUPI += l.amount;
-            if (l.payment_type === 'Card') totalCard += l.amount;
-            if (l.payment_type === 'Netbanking') totalNetbanking += l.amount;
-            if (l.payment_type === 'Wallet') totalWallet += l.amount;
+            const pType = String(l.payment_type).toUpperCase();
+            if (pType === 'UPI') totalUPI += l.amount;
+            else if (pType === 'CARD') totalCard += l.amount;
+            else if (pType === 'NETBANKING') totalNetbanking += l.amount;
+            else if (pType === 'WALLET' || pType === 'APP') totalWallet += l.amount;
         });
 
         // 3. Deliver payload back to admin panel
