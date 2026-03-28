@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -392,16 +392,16 @@
                             id="current-date">Loading date...</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-6 stagger-elem">
+                <div class="flex items-center gap-2 sm:gap-6 stagger-elem">
                     <button onclick="exportToPDF()"
                         class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white">
                         <i data-lucide="file-text" class="w-4 h-4"></i>
                         <span>Export PDF</span>
                     </button>
                     <button onclick="toggleTerminal()"
-                        class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white relative">
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-[#ff1a1a]/10 hover:border-[#ff1a1a]/30 transition-all text-xs text-gray-300 hover:text-white relative">
                         <i data-lucide="cpu" class="w-4 h-4"></i>
-                        <span>ZyroCore</span>
+                        <span class="hidden sm:inline">ZyroCore</span>
                         <span class="flex h-2 w-2 relative">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
@@ -596,13 +596,13 @@
                     <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
                         <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
                             <h3 class="text-lg font-bold text-white">Project Vault</h3>
-                            <div class="relative flex items-center gap-2 hidden sm:flex">
+                            <div class="relative flex items-center gap-2 flex-wrap">
                                 <div class="relative">
                                     <input type="text" id="search-projects"
                                         placeholder="Search orders..."
                                         oninput="runSearch('projects')"
                                         onkeydown="if(event.key==='Enter'){event.preventDefault();runSearch('projects');}"
-                                        class="bg-black/50 border border-white/10 rounded-lg py-2 pl-4 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-56">
+                                        class="bg-black/50 border border-white/10 rounded-lg py-2 pl-4 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-40 sm:w-56">
                                 </div>
                                 <button onclick="runSearch('projects')" title="Search"
                                     class="flex items-center justify-center w-8 h-8 rounded-lg bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 hover:bg-[#ff1a1a] hover:border-[#ff1a1a] text-[#ff1a1a] hover:text-black transition-all">
@@ -642,13 +642,13 @@
                     <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-white/5">
                         <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
                             <h3 class="text-lg font-bold text-white">Client Database</h3>
-                            <div class="relative flex items-center gap-2 hidden sm:flex">
+                            <div class="relative flex items-center gap-2 flex-wrap">
                                 <div class="relative">
                                     <input type="text" id="search-crm"
                                         placeholder="Search clients..."
                                         oninput="runSearch('crm')"
                                         onkeydown="if(event.key==='Enter'){event.preventDefault();runSearch('crm');}"
-                                        class="bg-black/50 border border-white/10 rounded-lg py-2 pl-4 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-56">
+                                        class="bg-black/50 border border-white/10 rounded-lg py-2 pl-4 pr-4 text-xs text-white focus:outline-none focus:border-[#ff1a1a] transition-colors w-40 sm:w-56">
                                 </div>
                                 <button onclick="runSearch('crm')" title="Search"
                                     class="flex items-center justify-center w-8 h-8 rounded-lg bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 hover:bg-[#ff1a1a] hover:border-[#ff1a1a] text-[#ff1a1a] hover:text-black transition-all">
@@ -688,7 +688,7 @@
         </main>
 
         <div id="ai-terminal"
-            class="fixed top-20 right-6 w-96 glass-panel rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.8)] flex-col z-50 h-[500px] terminal-closed">
+            class="fixed top-20 left-2 right-2 sm:left-auto sm:right-6 sm:w-96 glass-panel rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.8)] flex-col z-50 h-[80vh] sm:h-[500px] terminal-closed">
 
             <div class="h-14 bg-black/90 border-b border-white/10 flex items-center justify-between px-5 shrink-0 rounded-t-2xl">
                 <div class="flex items-center gap-3">
@@ -734,7 +734,7 @@
 
     <div id="notes-modal"
         class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-panel p-8 rounded-2xl w-full max-w-lg border border-white/10 shadow-2xl relative transform scale-95 transition-transform duration-300"
+        <div class="glass-panel p-4 sm:p-8 rounded-2xl w-full max-w-lg mx-3 sm:mx-0 border border-white/10 shadow-2xl relative transform scale-95 transition-transform duration-300"
             id="notes-modal-content">
             <button onclick="closeNotesModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i
                     data-lucide="x" class="w-5 h-5"></i></button>
@@ -756,7 +756,7 @@
     <!-- ========== FILES MODAL ========== -->
     <div id="files-modal"
         class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-panel p-8 rounded-2xl w-full max-w-lg border border-white/10 shadow-2xl relative transform scale-95 transition-transform duration-300"
+        <div class="glass-panel p-4 sm:p-8 rounded-2xl w-full max-w-lg mx-3 sm:mx-0 border border-white/10 shadow-2xl relative transform scale-95 transition-transform duration-300"
             id="files-modal-content">
             <button onclick="closeFilesModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
                 <i data-lucide="x" class="w-5 h-5"></i>
@@ -877,7 +877,11 @@
             };
             document.getElementById('header-title').innerText = titles[viewId];
 
-            if (window.innerWidth < 1024) toggleSidebar();
+            if (window.innerWidth < 1024) {
+                const sidebar = document.getElementById('sidebar');
+                const isOpen = !sidebar.classList.contains('-translate-x-full');
+                if (isOpen) toggleSidebar();
+            }
         };
 
         function initializeApp() {
