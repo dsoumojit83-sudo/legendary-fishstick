@@ -43,25 +43,22 @@ module.exports = async function (req, res) {
             }
         );
 
-        // ✅ FIXED: handle both response formats
-        const settlements = Array.isArray(response.data)
-            ? response.data
-            : response.data?.data || [];
+        // ✅ Correct extraction (FIXED)
+        const settlements = response.data?.data?.content || [];
+        const nextCursor = response.data?.data?.cursor || null;
 
-        const nextCursor = response.data?.cursor || null;
-
-        // Map response properly
+        // Map properly
         const mapped = settlements.map(item => ({
-            order_id: item?.order_id || null,
-            payment_id: item?.cf_payment_id || null,
-            settlement_id: item?.cf_settlement_id || null,
-            order_amount: item?.order_amount || 0,
-            service_charge: item?.service_charge || 0,
-            service_tax: item?.service_tax || 0,
-            settlement_amount: item?.settlement_amount || 0,
-            transfer_utr: item?.transfer_utr || null,
-            transfer_time: item?.transfer_time || null,
-            currency: item?.settlement_currency || null
+            order_id: item.order_id || null,
+            payment_id: item.cf_payment_id || null,
+            settlement_id: item.cf_settlement_id || null,
+            order_amount: item.order_amount || 0,
+            service_charge: item.service_charge || 0,
+            service_tax: item.service_tax || 0,
+            settlement_amount: item.settlement_amount || 0,
+            transfer_utr: item.transfer_utr || null,
+            transfer_time: item.transfer_time || null,
+            currency: item.settlement_currency || null
         }));
 
         return res.status(200).json({
