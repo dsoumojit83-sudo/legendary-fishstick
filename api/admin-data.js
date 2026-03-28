@@ -68,7 +68,9 @@ module.exports = async function (req, res) {
                     // Strip the time from 'now' to ensure accurate day-diff calculation
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    const deadline = new Date(order.deadline_date);
+                    // Parse YYYY-MM-DD as local date (not UTC midnight) to avoid IST off-by-one
+                    const [dy, dm, dd] = order.deadline_date.split('-').map(Number);
+                    const deadline = new Date(dy, dm - 1, dd);
 
                     const diffTime = deadline - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
