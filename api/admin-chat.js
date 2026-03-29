@@ -11,11 +11,27 @@ const BUCKET = 'orders';
 const axios = require('axios');
 let adminMemory = []; // Global memory (Short-term context)
 
-// Convert YYYY-MM-DD (Supabase storage format) → DD/MM/YYYY (human-readable Indian format)
+// Convert ISO String → 26th March, 2026 (Premium Human Readable)
 const formatDate = (dateStr) => {
     if (!dateStr) return 'None';
-    const [y, m, d] = dateStr.split('-');
-    return `${d}/${m}/${y}`;
+    try {
+        const dObj = new Date(dateStr);
+        if (isNaN(dObj.getTime())) return 'Invalid Date';
+        
+        const day = dObj.getUTCDate();
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const month = months[dObj.getUTCMonth()];
+        const year = dObj.getUTCFullYear();
+        
+        let suffix = 'th';
+        if (day % 10 === 1 && day !== 11) suffix = 'st';
+        else if (day % 10 === 2 && day !== 12) suffix = 'nd';
+        else if (day % 10 === 3 && day !== 13) suffix = 'rd';
+        
+        return `${day}${suffix} ${month}, ${year}`;
+    } catch (e) {
+        return 'Error';
+    }
 };
 
 module.exports = async function (req, res) {
@@ -42,6 +58,8 @@ module.exports = async function (req, res) {
         const nowIST = new Date(Date.now() + IST_OFFSET_MS);
         const nowMs = nowIST.getTime();
         const todayStr = nowIST.toISOString().split('T')[0];
+        const currentMonth = nowIST.getMonth();
+        let monthRev = 0;
 
         // --- SHORT TERM MEMORY PHYSICS (TTL 30 MINS) ---
         const now = Date.now();
@@ -170,7 +188,7 @@ module.exports = async function (req, res) {
             const globalNet = totalRev - totalGatewayFees;
 
             // 2. Scan recent orders for 15-minute Transit Locks
-            const nowMs = Date.now();
+            const currentMs = Date.now();
             const FIFTEEN_MINS_MS = 15 * 60 * 1000;
 
             if (orders) {
@@ -181,7 +199,7 @@ module.exports = async function (req, res) {
                         const mdr = (rawAmt * 0.0195) * 1.18;
                         const netAmt = rawAmt - mdr;
 
-                        if ((nowMs - txTime) < FIFTEEN_MINS_MS) {
+                        if ((currentMs - txTime) < FIFTEEN_MINS_MS) {
                             pendingClearance += netAmt;
                         }
                     }
