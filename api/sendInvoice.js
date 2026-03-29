@@ -94,6 +94,14 @@ async function sendInvoice(order) {
 
             let buffers = [];
             doc.on("data", buffers.push.bind(buffers));
+            
+            // --- CATCH ASYNC STREAM ERRORS ---
+            // Without this, if PDFKit silently crashes during generation,
+            // the promise hangs forever causing Vercel to timeout (504).
+            doc.on("error", (streamErr) => {
+                log('ERROR', orderId, 'FAILED: PDFKit stream emitted an error mid-generation.', streamErr);
+                reject(streamErr);
+            });
 
             doc.on("end", async () => {
                 try {
