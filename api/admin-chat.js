@@ -22,7 +22,7 @@ module.exports = async function(req, res) {
     
     // Security check
     const authHeader = req.headers['x-admin-password'];
-    if (authHeader !== process.env.ADMIN_PASSWORD) {
+    if (!process.env.ADMIN_PASSWORD || authHeader !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ error: 'Unauthorized Access. Core Locked.' });
     }
 
@@ -166,20 +166,26 @@ module.exports = async function(req, res) {
         let upiVol = 0, cardVol = 0, netVol = 0, walletVol = 0;
         try {
             if (orders && orders.length > 0) {
-                // limit to last 30 paid orders to keep chat API fast
-                const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'completed').slice(0, 30);
+                // limit to last 15 paid orders to keep chat API fast and avoid Cashfree 429
+                const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'completed').slice(0, 15);
                 
-                const pmChecks = await Promise.allSettled(
-                    paidOrders.map(o => 
-                        axios.get(`https://api.cashfree.com/pg/orders/${o.order_id}/payments`, {
-                            headers: {
-                                "x-client-id": process.env.CASHFREE_APP_ID,
-                                "x-client-secret": process.env.CASHFREE_SECRET_KEY,
-                                "x-api-version": "2023-08-01"
-                            }
-                        }).then(res => ({ amount: o.amount, payments: res.data }))
-                    )
-                );
+                const pmChecks = [];
+                const CHUNK_SIZE = 5;
+                for (let i = 0; i < paidOrders.length; i += CHUNK_SIZE) {
+                    const chunk = paidOrders.slice(i, i + CHUNK_SIZE);
+                    const chunkResults = await Promise.allSettled(
+                        chunk.map(o => 
+                            axios.get(`https://api.cashfree.com/pg/orders/${o.order_id}/payments`, {
+                                headers: {
+                                    "x-client-id": process.env.CASHFREE_APP_ID,
+                                    "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+                                    "x-api-version": "2023-08-01"
+                                }
+                            }).then(res => ({ amount: o.amount, payments: res.data }))
+                        )
+                    );
+                    pmChecks.push(...chunkResults);
+                }
 
                 pmChecks.forEach(res => {
                     if (res.status === 'fulfilled' && res.value.payments.length > 0) {
