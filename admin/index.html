@@ -989,7 +989,7 @@
                                 <span class="flex items-center gap-1.5"><span
                                         class="w-2 h-2 rounded-full bg-[#ff1a1a] inline-block"></span>Settled</span>
                                 <span class="flex items-center gap-1.5"><span
-                                        class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>Fees</span>
+                                        class="w-2 h-2 rounded-full bg-[#facc15] inline-block"></span>Fees</span>
                             </div>
                         </div>
                     </div>
@@ -2328,7 +2328,7 @@
 
             const isZero = (!settled && !fees);
             const chartData = isZero ? [1] : [settled, fees];
-            const chartColors = isZero ? ['rgba(255,255,255,0.05)'] : ['#ff1a1a', '#3b82f6'];
+            const chartColors = isZero ? ['rgba(255,255,255,0.05)'] : ['#ff1a1a', '#facc15'];
 
             const ctx = document.getElementById('paymentPieChart').getContext('2d');
             pieChartInst = new Chart(ctx, {
