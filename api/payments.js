@@ -17,7 +17,7 @@ module.exports = async function (req, res) {
 
     // Security Check
     const authHeader = req.headers['x-admin-password'];
-    if (authHeader !== process.env.ADMIN_PASSWORD) {
+    if (!process.env.ADMIN_PASSWORD || authHeader !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ error: 'Unauthorized Access. Core Locked.' });
     }
 
@@ -33,7 +33,7 @@ module.exports = async function (req, res) {
         if (error) throw error;
 
         // 2. Cross-reference with Cashfree to get the exact Payment Methods
-        const ledger = await Promise.all(orders.map(async (order) => {
+        const fetchOrderDetails = async (order) => {
             try {
                 // Ask Cashfree for the payment details of this specific order
                 const cfRes = await axios.get(
@@ -127,7 +127,15 @@ module.exports = async function (req, res) {
                     gateway_status: "MANUAL/PENDING"
                 };
             }
-        }));
+        };
+
+        const ledger = [];
+        const CHUNK_SIZE = 5;
+        for (let i = 0; i < orders.length; i += CHUNK_SIZE) {
+            const chunk = orders.slice(i, i + CHUNK_SIZE);
+            const chunkResults = await Promise.all(chunk.map(fetchOrderDetails));
+            ledger.push(...chunkResults);
+        }
 
         let totalUPI = 0;
         let totalCard = 0;
