@@ -4,323 +4,302 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Failed | ZyroEditz</title>
-
-    <!-- X / Cross Favicon -->
+    
+    <!-- Red X Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23050505'/%3E%3Cpath d='M30 30 L70 70 M70 30 L30 70' fill='none' stroke='%23ff1a1a' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E">
-    <meta name="theme-color" content="#050505">
+    <meta name="theme-color" content="#ff1a1a">
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body {
-            background-color: #050505;
-            color: #fff;
-            font-family: 'Outfit', sans-serif;
-            overflow-x: hidden;
-        }
+        body { background-color: #050505; color: #fff; font-family: 'Outfit', sans-serif; overflow-x: hidden; }
+        .glow { text-shadow: 0 0 20px rgba(255, 26, 26, 0.5); }
+        
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background: rgba(255,26,26,0.3); border-radius: 3px; }
+        
+        textarea, input, select { font-size: 16px !important; }
 
-        /* ── Pulsing red glow behind the X icon ── */
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 30px 10px rgba(255,26,26,0.15); }
-            50%       { box-shadow: 0 0 60px 20px rgba(255,26,26,0.40); }
-        }
-        .icon-ring { animation: pulse-glow 2s ease-in-out infinite; }
-
-        /* ── Shake animation for the X icon ── */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0) rotate(0deg); }
-            10%       { transform: translateX(-4px) rotate(-3deg); }
-            20%       { transform: translateX(4px) rotate(3deg); }
-            30%       { transform: translateX(-4px) rotate(-2deg); }
-            40%       { transform: translateX(4px) rotate(2deg); }
-            50%       { transform: translateX(-2px) rotate(-1deg); }
-            60%       { transform: translateX(2px) rotate(1deg); }
-            70%       { transform: translateX(-2px); }
-            80%       { transform: translateX(2px); }
-        }
-        .shake-icon { animation: shake 1.2s ease-in-out 0.3s 1; }
-
-
-
-        /* ── Scanline overlay ── */
-        .scanlines::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: repeating-linear-gradient(
-                to bottom,
-                transparent 0px,
-                transparent 3px,
-                rgba(0,0,0,0.08) 3px,
-                rgba(0,0,0,0.08) 4px
-            );
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        /* ── Flickering red noise in background ── */
-        @keyframes flicker {
-            0%, 19.9%, 22%, 62.9%, 64%, 100% { opacity: 0.03; }
-            20%, 21.9%, 63%, 63.9% { opacity: 0.07; }
-        }
-        .noise-flicker {
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-            animation: flicker 4s infinite;
-        }
-
-        /* ── Status badge blink ── */
-        @keyframes blink-dot {
-            0%, 100% { opacity: 1; } 50% { opacity: 0.2; }
-        }
-        .blink { animation: blink-dot 1s ease-in-out infinite; }
-
-        /* ── Try Again button shimmer ── */
-        @keyframes shimmer {
-            0%   { background-position: -200% center; }
-            100% { background-position: 200% center; }
-        }
-        .btn-shimmer {
-            background: linear-gradient(90deg, #ff1a1a 0%, #ff4444 40%, #ff8888 50%, #ff4444 60%, #ff1a1a 100%);
-            background-size: 200% auto;
-            animation: shimmer 2.5s linear infinite;
-        }
-        .btn-shimmer:hover {
-            background: #ffffff;
-            background-size: unset;
-            animation: none;
-            color: #000;
-        }
-
-        /* ── Fade-in-up ── */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .fade-up { animation: fadeUp 0.6s ease forwards; }
-        .fade-up-2 { animation: fadeUp 0.6s 0.15s ease both; }
-        .fade-up-3 { animation: fadeUp 0.6s 0.30s ease both; }
-        .fade-up-4 { animation: fadeUp 0.6s 0.45s ease both; }
-
-        /* ── Error code mono style ── */
-        .error-code {
-            font-family: 'Courier New', monospace;
-            letter-spacing: 0.1em;
-            color: #ff1a1a;
+        @keyframes yt-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .yt-spinner { 
+            animation: yt-spin 0.8s linear infinite; 
+            border: 3px solid rgba(255, 255, 255, 0.2); 
+            border-top-color: #fff; 
+            border-radius: 50%; 
+            width: 18px; 
+            height: 18px; 
+            display: inline-block; 
         }
     </style>
-
-    <!-- Vercel Analytics -->
-    <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+    
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
     <script defer src="/_vercel/insights/script.js"></script>
-    <script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
+
+    <script>
+      window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
-
-<body class="min-h-screen flex items-center justify-center p-6 relative scanlines">
-
-    <!-- Background grid (same as success page) -->
-    <div class="fixed inset-0 pointer-events-none opacity-10 z-0"
+<body class="min-h-screen flex items-center justify-center p-6 relative">
+    <div class="fixed inset-0 pointer-events-none opacity-10 z-0" 
          style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 50px 50px;">
     </div>
+    <div class="fixed w-[600px] h-[600px] bg-[#ff1a1a]/5 rounded-full blur-[100px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
-    <!-- Red ambient glow blob -->
-    <div class="fixed w-[700px] h-[700px] rounded-full blur-[120px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"
-         style="background: radial-gradient(circle, rgba(255,26,26,0.12) 0%, transparent 70%);">
-    </div>
-
-    <!-- Noise overlay -->
-    <div class="fixed inset-0 z-0 pointer-events-none noise-flicker"></div>
-
-    <!-- ═══════════ MAIN CARD ═══════════ -->
-    <div class="max-w-lg w-full text-center relative z-10 pt-10 pb-10">
-
-        <!-- ── X Icon ── -->
-        <div class="fade-up flex justify-center mb-6">
-            <div class="icon-ring shake-icon inline-flex items-center justify-center w-24 h-24 rounded-full border-2 border-[#ff1a1a]/50"
-                 style="background: radial-gradient(circle, rgba(255,26,26,0.15) 0%, rgba(5,5,5,0.9) 80%);">
-                <svg class="w-12 h-12 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </div>
+    <div class="max-w-2xl w-full text-center relative z-10 pt-10 pb-10">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 mb-6 shadow-[0_0_30px_rgba(255,26,26,0.2)]">
+            <svg class="w-10 h-10 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
         </div>
 
-        <!-- ── Headline ── -->
-        <h1 class="fade-up-2 text-5xl md:text-6xl font-black tracking-tight mb-2">
-            Payment <span class="text-[#ff1a1a]" style="text-shadow: 0 0 20px rgba(255,26,26,0.5);">Failed.</span>
-        </h1>
-        <p class="fade-up-2 text-gray-500 text-sm uppercase tracking-[0.35em] mb-8">Transaction Not Completed</p>
-
-        <!-- ── Error Detail Card ── -->
-        <div class="fade-up-3 mb-6 rounded-2xl p-6 text-left relative overflow-hidden"
-             style="background: linear-gradient(135deg, rgba(255,26,26,0.05) 0%, rgba(5,5,5,0.95) 100%); border: 1px solid rgba(255,26,26,0.2);">
-
-            <!-- Top glow line -->
-            <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/60 to-transparent"></div>
-
-            <!-- Status badge -->
-            <div class="flex items-center justify-between mb-5">
-                <div class="flex items-center gap-2">
-                    <span class="blink w-2 h-2 rounded-full bg-[#ff1a1a] inline-block"></span>
-                    <span class="text-xs uppercase tracking-widest text-[#ff1a1a] font-bold">Live Status</span>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">Payment <span class="text-[#ff1a1a] glow">Failed</span></h1>
+        <p class="text-gray-400 text-sm md:text-lg uppercase tracking-[0.3em] mb-8">Action Required</p>
+        
+        <div class="bg-black/20 backdrop-blur-[20px] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl mb-8 text-left relative overflow-hidden"
+             style="background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);">
+            <div class="absolute inset-0 bg-gradient-to-b from-[#ff1a1a]/5 to-transparent opacity-20 pointer-events-none"></div>
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 bg-[#ff1a1a]/20 rounded-xl flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-[#ff1a1a]"></i>
                 </div>
-                <span class="error-code text-xs bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 px-3 py-1 rounded-full" id="orderIdDisplay">---</span>
+                <div>
+                    <h2 class="text-xl font-bold text-white">Project Initialization</h2>
+                    <p class="text-gray-400 text-sm">Please submit your brief and files below manually.</p>
+                </div>
             </div>
-
-            <!-- Reason rows -->
-            <div class="space-y-3 mb-5">
-                <div class="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-white/5">
-                    <i data-lucide="wifi-off" class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0"></i>
-                    <div>
-                        <p class="text-sm font-semibold text-white">Transaction Incomplete</p>
-                        <p class="text-xs text-gray-500 mt-0.5">Your payment was not authorised or was cancelled before completion.</p>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-white/5">
-                    <i data-lucide="shield-x" class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0"></i>
-                    <div>
-                        <p class="text-sm font-semibold text-white">No Charges Applied</p>
-                        <p class="text-xs text-gray-500 mt-0.5">Your account has not been debited. It is completely safe to try again.</p>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-white/5">
-                    <i data-lucide="refresh-ccw" class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0"></i>
-                    <div>
-                        <p class="text-sm font-semibold text-white">Restart Required</p>
-                        <p class="text-xs text-gray-500 mt-0.5">Use the button below to go back and re-initiate your order fresh.</p>
-                    </div>
+            
+            <div class="bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 rounded-xl p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">Order ID:</span>
+                    <span id="orderIdDisplay" class="font-mono font-bold text-[#ff1a1a]">LOADING...</span>
                 </div>
             </div>
 
-            <!-- Bottom glow line -->
-            <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/40 to-transparent"></div>
+            <div class="space-y-4 mb-6 relative">
+                <div class="absolute left-4 top-8 bottom-8 w-0.5 bg-[#ff1a1a]/20"></div>
+                <div class="flex items-start gap-3 relative">
+                    <div class="w-8 h-8 bg-[#ff1a1a]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 relative z-10">
+                        <span class="text-[#ff1a1a] font-bold text-sm">1</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white mb-1">Confirm your Order ID</h3>
+                        <p class="text-gray-400 text-sm">Verify your unique order identifier above</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-3 relative">
+                    <div class="w-8 h-8 bg-[#ff1a1a]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 relative z-10">
+                        <span class="text-[#ff1a1a] font-bold text-sm">2</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white mb-1">Type your detailed project brief</h3>
+                        <p class="text-gray-400 text-sm">Include timestamps and creative direction</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-3 relative">
+                    <div class="w-8 h-8 bg-[#ff1a1a]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 relative z-10">
+                        <span class="text-[#ff1a1a] font-bold text-sm">3</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white mb-1">Click 'Submit & Upload' to save progress</h3>
+                        <p class="text-gray-400 text-sm">Your brief will be saved despite the payment status</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="relative mb-6">
+                <textarea id="projectBrief" rows="5" 
+                    class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-[#ff1a1a] focus:ring-1 focus:ring-[#ff1a1a] transition-all shadow-inner placeholder-gray-600 resize-none"
+                    placeholder="e.g., 'Make the intro fast-paced. Use the color grading from my last video. Cut out the dead air at 02:15...'"></textarea>
+                <div id="charCount" class="text-gray-500 text-xs mt-2 text-right">0 chars</div>
+            </div>
+
+            <input type="file" id="fileInput" multiple class="hidden" aria-label="Select raw files to upload">
+
+            <label for="fileInput" id="fileDropZone" class="flex flex-col items-center justify-center w-full mb-4 px-4 py-5 rounded-xl border border-dashed border-white/20 bg-black/30 cursor-pointer transition-all duration-200 hover:border-[#ff1a1a] hover:bg-[#ff1a1a]/5 group">
+                <i data-lucide="folder-open" class="w-7 h-7 text-gray-500 group-hover:text-[#ff1a1a] transition-colors mb-2"></i>
+                <span class="text-gray-400 text-sm font-medium group-hover:text-white transition-colors">Click to select raw files</span>
+                <span class="text-gray-600 text-xs mt-1">Multiple files supported · Any format</span>
+                <span id="fileNameDisplay" class="mt-2 text-[#ff1a1a] text-xs font-mono text-center hidden"></span>
+            </label>
+
+            <button id="submitBriefBtn" class="w-full relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(255,26,26,0.4)]">
+                <span id="btnText">Submit & Upload</span>
+                <i id="btnIcon" data-lucide="cloud-upload" class="w-5 h-5 group-hover:translate-y-[-2px] transition-transform"></i>
+            </button>
+            <div id="statusMsg" class="mt-3 text-center text-xs font-mono hidden"></div>
         </div>
 
-        <!-- ── CTA Button ── -->
-        <div class="fade-up-4 space-y-3">
-            <a href="https://zyroeditz.vercel.app/#pricing" id="tryAgainBtn"
-               class="btn-shimmer w-full flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm py-4 rounded-xl text-black transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,26,26,0.5)]">
-                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-                Try Again
-            </a>
-
-            <a href="https://zyroeditz.vercel.app"
-               class="w-full flex items-center justify-center gap-2 font-medium text-sm py-3 rounded-xl text-gray-500 hover:text-white border border-white/5 hover:border-white/20 transition-all duration-300">
-                <i data-lucide="home" class="w-4 h-4"></i>
-                Back to Home
-            </a>
-        </div>
-
-        <!-- ── Footer tagline ── -->
-        <p class="mt-10 text-gray-700 text-[10px] uppercase tracking-widest fade-up-4">
+        <p class="mt-8 text-gray-600 text-[10px] uppercase tracking-widest">
             Speed. Motion. Precision. — Soumojit Das
         </p>
     </div>
 
     <script>
         lucide.createIcons();
-
-        // Show order ID if present in URL (for traceability)
-        const urlParams = new URLSearchParams(window.location.search);
-        const orderId = urlParams.get('order_id');
-        const display = document.getElementById('orderIdDisplay');
-        if (orderId) {
-            display.textContent = orderId;
-        } else {
-            display.textContent = 'NO ORDER ID';
-        }
-
-        // ── FALLING ✕ CROSSES / CRASH ANIMATION ──────────────────────────────
+        
+        // 1. Post-Purchase Confetti — 4-Stage Premium Celebration
         window.addEventListener('load', function () {
+            const celebColors = ['#ff1a1a', '#ffffff', '#ffcc00', '#ff6666', '#ffaa00', '#ff4444'];
+            const goldSparks  = ['#ffcc00', '#ffdd44', '#ffe97a', '#ffffff', '#ff1a1a'];
+            const redWhite    = ['#ff1a1a', '#ffffff', '#ff4444'];
 
-            // Register a custom ✕ cross shape using an SVG path.
-            const crossShape = confetti.shapeFromPath({
-                path: 'M 30 0 L 50 20 L 70 0 L 100 30 L 80 50 L 100 70 L 70 100 L 50 80 L 30 100 L 0 70 L 20 50 L 0 30 Z'
-            });
-
-            const debrisColors = ['#ff1a1a', '#cc0000', '#880000', '#ffffff'];
-            const ashColors    = ['#880000', '#440000', '#cc0000'];
-
-            // ── STAGE 1: Central implosion burst ─────────────────────────────
+            // ── STAGE 1: Instant center starburst ───────────────────────────
             confetti({
-                particleCount: 60,
-                spread: 360,
-                startVelocity: 28,
-                decay: 0.88,
-                gravity: 2.5,
-                scalar: 2,
-                ticks: 100,
-                origin: { x: 0.5, y: 0.3 },
-                colors: debrisColors,
-                shapes: [crossShape],
+                particleCount: 160, spread: 360, startVelocity: 45, decay: 0.92, gravity: 0.8, scalar: 0.9, ticks: 120,
+                origin: { x: 0.5, y: 0.55 }, colors: celebColors, shapes: ['star', 'circle', 'square'],
                 disableForReducedMotion: true
             });
 
-            // ── STAGE 2: Continuous ✕ streams from the top corners ───────────
-            const duration     = 3 * 1000;
+            // ── STAGE 2: Dual continuous cannons ───────────────────────────
+            const duration = 4 * 1000;
             const animationEnd = Date.now() + duration;
-
-            (function fallFrame() {
-                // Top-left stream — falls diagonally right
+            (function cannonFrame() {
                 confetti({
-                    particleCount: 2,
-                    angle: 285,
-                    spread: 40,
-                    startVelocity: 18,
-                    decay: 0.9,
-                    gravity: 2.0,
-                    scalar: 1.8,
-                    ticks: 90,
-                    origin: { x: 0.04, y: 0 },
-                    colors: debrisColors,
-                    shapes: [crossShape],
-                    disableForReducedMotion: true
+                    particleCount: 6, angle: 65, spread: 60, startVelocity: 55, decay: 0.91, gravity: 0.9, scalar: 0.85, ticks: 110,
+                    origin: { x: 0, y: 0.9 }, colors: celebColors, shapes: ['star', 'circle'], disableForReducedMotion: true
                 });
-
-                // Top-right stream — falls diagonally left
                 confetti({
-                    particleCount: 2,
-                    angle: 255,
-                    spread: 40,
-                    startVelocity: 18,
-                    decay: 0.9,
-                    gravity: 2.0,
-                    scalar: 1.8,
-                    ticks: 90,
-                    origin: { x: 0.96, y: 0 },
-                    colors: debrisColors,
-                    shapes: [crossShape],
-                    disableForReducedMotion: true
+                    particleCount: 6, angle: 115, spread: 60, startVelocity: 55, decay: 0.91, gravity: 0.9, scalar: 0.85, ticks: 110,
+                    origin: { x: 1, y: 0.9 }, colors: celebColors, shapes: ['star', 'circle'], disableForReducedMotion: true
                 });
-
-                if (Date.now() < animationEnd) {
-                    requestAnimationFrame(fallFrame);
-                } else {
-                    // ── STAGE 3: Dying ✕ drizzle — sparse, slow, dark ────────
-                    let tick = 0;
-                    (function drizzle() {
-                        if (tick >= 12) return;
-                        tick++;
-                        confetti({
-                            particleCount: 1,
-                            angle: 270,
-                            spread: 80,
-                            startVelocity: 5,
-                            decay: 0.83,
-                            gravity: 1.4,
-                            scalar: 1.5,
-                            ticks: 65,
-                            origin: { x: Math.random(), y: 0 },
-                            colors: ashColors,
-                            shapes: [crossShape],
-                            disableForReducedMotion: true
-                        });
-                        setTimeout(drizzle, 250);
-                    })();
-                }
+                if (Date.now() < animationEnd) requestAnimationFrame(cannonFrame);
             })();
+
+            // ── STAGE 3: Surprise gold star burst at 1.5s ───────────────────
+            setTimeout(function () {
+                confetti({
+                    particleCount: 80, angle: 80, spread: 70, startVelocity: 50, decay: 0.9, gravity: 0.85, scalar: 0.8, ticks: 100,
+                    origin: { x: 0.25, y: 0.85 }, colors: goldSparks, shapes: ['star'], disableForReducedMotion: true
+                });
+                confetti({
+                    particleCount: 80, angle: 100, spread: 70, startVelocity: 50, decay: 0.9, gravity: 0.85, scalar: 0.8, ticks: 100,
+                    origin: { x: 0.75, y: 0.85 }, colors: goldSparks, shapes: ['star'], disableForReducedMotion: true
+                });
+            }, 1500);
+
+            // ── STAGE 4: Grand finale — red & white rain from the top ────────
+            setTimeout(function () {
+                confetti({
+                    particleCount: 200, spread: 160, startVelocity: 30, decay: 0.93, gravity: 1.1, scalar: 0.7, ticks: 130,
+                    origin: { x: 0.5, y: 0 }, colors: redWhite, shapes: ['square', 'circle'], disableForReducedMotion: true
+                });
+            }, 3500);
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order_id') || 'ZYRO_MANUAL';
+        document.getElementById('orderIdDisplay').textContent = orderId;
+
+        const projectBrief = document.getElementById('projectBrief');
+        const charCount = document.getElementById('charCount');
+        const storageKey = `zyro_brief_${orderId}`;
+
+        const savedBrief = localStorage.getItem(storageKey);
+        if (savedBrief) {
+            projectBrief.value = savedBrief;
+            updateCharCount();
+        }
+
+        projectBrief.addEventListener('input', function() {
+            localStorage.setItem(storageKey, this.value);
+            updateCharCount();
+        });
+
+        function updateCharCount() {
+            const length = projectBrief.value.length;
+            charCount.textContent = `${length} chars`;
+            if (length > 0) {
+                charCount.classList.remove('text-gray-500');
+                charCount.classList.add('text-[#ff1a1a]');
+            } else {
+                charCount.classList.remove('text-[#ff1a1a]');
+                charCount.classList.add('text-gray-500');
+            }
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const display = document.getElementById('fileNameDisplay');
+            if (this.files && this.files.length > 0) {
+                const names = Array.from(this.files).map(f => f.name).join(', ');
+                display.textContent = `${this.files.length} file${this.files.length > 1 ? 's' : ''} selected: ${names}`;
+                display.classList.remove('hidden');
+            } else {
+                display.classList.add('hidden');
+            }
+            if (window.lucide) lucide.createIcons();
+        });
+        
+        document.getElementById('submitBriefBtn').addEventListener('click', async function() {
+            const briefContent = document.getElementById('projectBrief').value.trim();
+            const btn = this;
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
+            const statusMsg = document.getElementById('statusMsg');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+            btnIcon.classList.add('hidden');
+            btnText.innerHTML = `<span class="yt-spinner mr-2"></span> SAVING TO STUDIO CORE...`;
+            statusMsg.classList.add('hidden');
+
+            try {
+                if (briefContent) {
+                    await fetch('/api/save-brief', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId: orderId, notes: briefContent })
+                    });
+                    localStorage.removeItem(storageKey);
+                }
+
+                const fileInput = document.getElementById('fileInput');
+                let uploadError = null;
+
+                if (fileInput.files && fileInput.files.length > 0) {
+                    btnText.innerHTML = `<span class="yt-spinner mr-2"></span> Uploading files...`;
+                    const formData = new FormData();
+                    formData.append('orderId', orderId);
+                    Array.from(fileInput.files).forEach(file => formData.append('files', file));
+
+                    try {
+                        const uploadResponse = await fetch('/api/upload-files', { method: 'POST', body: formData });
+                        if (!uploadResponse.ok) throw new Error("Upload failed.");
+                    } catch (err) {
+                        uploadError = "⚠️ Brief saved, but file upload failed. Please try again.";
+                    }
+                }
+
+                btnText.innerHTML = `Submit & Upload`;
+                btnIcon.classList.remove('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
+
+                if (uploadError) {
+                    statusMsg.textContent = uploadError;
+                    statusMsg.classList.remove('hidden', 'text-[#22c55e]');
+                    statusMsg.classList.add('text-[#ff1a1a]');
+                } else {
+                    statusMsg.textContent = '✅ ZyroEditz has received your brief and raw files!';
+                    statusMsg.classList.remove('hidden', 'text-[#ff1a1a]');
+                    statusMsg.classList.add('text-[#22c55e]');
+                }
+            } catch (error) {
+                btnText.innerHTML = `Submit & Upload`;
+                btnIcon.classList.remove('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                statusMsg.textContent = "⚠️ Error saving brief. Please try again.";
+                statusMsg.classList.remove('hidden', 'text-[#22c55e]');
+                statusMsg.classList.add('text-[#ff1a1a]');
+            }
         });
     </script>
 </body>
