@@ -6,7 +6,7 @@ module.exports = async function(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
     
     // Security check to ensure only YOU can complete projects
-    if (req.headers['x-admin-password'] !== process.env.ADMIN_PASSWORD) {
+    if (!process.env.ADMIN_PASSWORD || req.headers['x-admin-password'] !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ error: 'Unauthorized Access.' });
     }
 
