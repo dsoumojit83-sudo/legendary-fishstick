@@ -2,13 +2,14 @@ const OpenAI = require('openai');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-const groq = new OpenAI({ 
-    baseURL: 'https://api.groq.com/openai/v1', 
-    apiKey: process.env.GROQ_API_KEY 
+const groq = new OpenAI({
+    baseURL: 'https://api.groq.com/openai/v1',
+    apiKey: process.env.GROQ_API_KEY
 });
 
 const BUCKET = 'orders';
 const axios = require('axios');
+let adminMemory = []; // Global memory (Short-term context)
 
 // Convert YYYY-MM-DD (Supabase storage format) → DD/MM/YYYY (human-readable Indian format)
 const formatDate = (dateStr) => {
@@ -17,9 +18,9 @@ const formatDate = (dateStr) => {
     return `${d}/${m}/${y}`;
 };
 
-module.exports = async function(req, res) {
+module.exports = async function (req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-    
+
     // Security check
     const authHeader = req.headers['x-admin-password'];
     if (!process.env.ADMIN_PASSWORD || authHeader !== process.env.ADMIN_PASSWORD) {
@@ -28,16 +29,20 @@ module.exports = async function(req, res) {
 
     try {
         const { prompt } = req.body;
-        
+
         // Fetch ALL orders from Supabase
         const { data: orders } = await supabase.from('orders').select('*');
-        
+
         let totalRev = 0;
         let activeOrders = [];
         let crmMap = {};
-        
+
         const currentMonth = new Date().getMonth();
         let monthRev = 0;
+
+        // --- SHORT TERM MEMORY PHYSICS (TTL 30 MINS) ---
+        const now = Date.now();
+        adminMemory = adminMemory.filter(m => (now - m.timestamp) < 30 * 60 * 1000);
 
         if (orders) {
             orders.forEach(o => {
@@ -50,7 +55,7 @@ module.exports = async function(req, res) {
                     totalRev += amount;
                     if (date.getMonth() === currentMonth) monthRev += amount;
                 }
-                
+
                 // --- 2. COLLECT ACTIVE ORDERS FOR PIPELINE + FILE CHECK ---
                 if (o.status === 'pending' || o.status === 'in_progress' || o.status === 'paid') {
                     activeOrders.push(o);
@@ -58,12 +63,12 @@ module.exports = async function(req, res) {
 
                 // --- 3. CLIENT CRM LOGISTICS (All-Time) ---
                 if (!crmMap[clientName]) {
-                    crmMap[clientName] = { 
-                        email: o.client_email || "N/A", 
-                        phone: o.client_phone || "N/A", 
-                        totalSpent: 0, 
+                    crmMap[clientName] = {
+                        email: o.client_email || "N/A",
+                        phone: o.client_phone || "N/A",
+                        totalSpent: 0,
                         count: 0,
-                        projects: [] 
+                        projects: []
                     };
                 }
                 crmMap[clientName].projects.push(o.service);
@@ -127,7 +132,7 @@ module.exports = async function(req, res) {
         let totalSettled = 0;
         let pendingClearance = 0;
         let totalGatewayFees = 0;
-        
+
         try {
             // 1. Apply global API MDR fee physics (1.95% + 18% GST)
             const globalBaseMdr = totalRev * 0.0195;
@@ -137,7 +142,7 @@ module.exports = async function(req, res) {
             // 2. Scan recent orders for 15-minute Transit Locks
             const nowMs = Date.now();
             const FIFTEEN_MINS_MS = 15 * 60 * 1000;
-            
+
             if (orders) {
                 orders.forEach(o => {
                     if (o.status === 'paid' || o.status === 'completed') {
@@ -145,18 +150,18 @@ module.exports = async function(req, res) {
                         const rawAmt = Number(o.amount) || 0;
                         const mdr = (rawAmt * 0.0195) * 1.18;
                         const netAmt = rawAmt - mdr;
-                        
+
                         if ((nowMs - txTime) < FIFTEEN_MINS_MS) {
                             pendingClearance += netAmt;
                         }
                     }
                 });
             }
-            
+
             // 3. Instant Sweep
             totalSettled = Math.max(0, globalNet - pendingClearance);
-            
-        } catch(e) {
+
+        } catch (e) {
             console.log("Admin Chat - Physics Engine Error", e.message);
         }
 
@@ -168,13 +173,13 @@ module.exports = async function(req, res) {
             if (orders && orders.length > 0) {
                 // limit to last 15 paid orders to keep chat API fast and avoid Cashfree 429
                 const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'completed').slice(0, 15);
-                
+
                 const pmChecks = [];
                 const CHUNK_SIZE = 5;
                 for (let i = 0; i < paidOrders.length; i += CHUNK_SIZE) {
                     const chunk = paidOrders.slice(i, i + CHUNK_SIZE);
                     const chunkResults = await Promise.allSettled(
-                        chunk.map(o => 
+                        chunk.map(o =>
                             axios.get(`https://api.cashfree.com/pg/orders/${o.order_id}/payments`, {
                                 headers: {
                                     "x-client-id": process.env.CASHFREE_APP_ID,
@@ -200,7 +205,7 @@ module.exports = async function(req, res) {
                     }
                 });
             }
-        } catch(e) {
+        } catch (e) {
             console.log("Admin Chat - Payment Method check error", e.message);
         }
 
@@ -228,7 +233,7 @@ module.exports = async function(req, res) {
 [FULL SUPABASE DATABASE RECORD (EVERY ORDER)]
 You have RAW, unrestricted access to the entire studio database below. Use this to answer ANY historical, specific, or data-driven question Soumojit asks:
 ${fullDatabaseLog}
-
+a 
 [FILE UPLOAD STATUS - CLIENT ASSET DELIVERY]
 Clients who have UPLOADED their raw footage/assets (ready to start editing):
 ${uploadedFiles.length > 0 ? uploadedFiles.join('\n') : "None yet."}
@@ -289,16 +294,29 @@ ${crmList.join('\n')}
    
 When asked a question, cross-reference the FULL RAW DATA above and deliver a precise, direct answer.`;
 
+        // Prepare the messages array with short-term memory
+        const currentMessages = [
+            { role: "system", content: systemPrompt },
+            ...adminMemory.map(m => ({ role: m.role, content: m.content })),
+            { role: "user", content: prompt }
+        ];
+
         const aiResponse = await groq.chat.completions.create({
             model: "llama-3.3-70b-versatile",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: prompt }
-            ],
+            messages: currentMessages,
             temperature: 0.2
         });
 
-        return res.status(200).json({ reply: aiResponse.choices[0].message.content });
+        const aiContent = aiResponse.choices[0].message.content;
+
+        // Update memory: Store current exchange (User Prompt + AI Reply)
+        adminMemory.push({ role: "user", content: prompt, timestamp: now });
+        adminMemory.push({ role: "assistant", content: aiContent, timestamp: now });
+
+        // Keep memory lean (last 10 exchanges = 20 messages)
+        if (adminMemory.length > 20) adminMemory.splice(0, 2);
+
+        return res.status(200).json({ reply: aiContent });
 
     } catch (err) {
         console.error("Admin Chat Error:", err);
