@@ -7,7 +7,7 @@ const BUCKET = 'orders';
 
 module.exports = async function (req, res) {
     // 🔒 Admin-only — same password header as other admin APIs
-    if (req.headers['x-admin-password'] !== process.env.ADMIN_PASSWORD) {
+    if (!process.env.ADMIN_PASSWORD || req.headers['x-admin-password'] !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ error: 'Unauthorized.' });
     }
 
