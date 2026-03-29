@@ -4,6 +4,25 @@ const sendInvoice = require('./sendInvoice');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+// ─── STRUCTURED LOGGER ───────────────────────────────────────────────────────
+function log(level, orderId, message, extra) {
+    const ts = new Date().toISOString();
+    const orderTag = orderId ? `order=${orderId}` : 'order=UNKNOWN';
+    const prefix = `[ZYRO][verify-payment][${level}] ${ts} | ${orderTag} |`;
+    if (level === 'ERROR' && extra) {
+        console.error(prefix, message);
+        console.error(prefix, 'Error name   :', extra.name);
+        console.error(prefix, 'Error message:', extra.message);
+        console.error(prefix, 'Error code   :', extra.code);
+        console.error(prefix, 'Error stack  :', extra.stack);
+        if (extra.response?.data) console.error(prefix, 'API response :', JSON.stringify(extra.response.data));
+    } else if (level === 'ERROR') {
+        console.error(prefix, message);
+    } else {
+        console.log(prefix, message);
+    }
+}
+
 module.exports = async function(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
@@ -11,8 +30,11 @@ module.exports = async function(req, res) {
         const { order_id } = req.body;
         
         if (!order_id) {
+            log('ERROR', null, 'Request arrived with missing order_id.');
             return res.status(400).json({ error: 'Missing order_id for verification.' });
         }
+
+        log('INFO', order_id, 'Verification request received. Calling Cashfree API...');
 
         // 1. Fetch the authoritative status directly from Cashfree (Server-to-Server)
         const cashfreeResponse = await axios.get(
@@ -27,6 +49,7 @@ module.exports = async function(req, res) {
         );
 
         const orderStatus = cashfreeResponse.data.order_status; // e.g., "PAID", "ACTIVE"
+        log('INFO', order_id, `Cashfree returned order_status: ${orderStatus}`);
 
         // 2. Only proceed if the payment actually cleared on Cashfree
         if (orderStatus === 'PAID') {
@@ -38,12 +61,18 @@ module.exports = async function(req, res) {
                 .eq('order_id', order_id)
                 .single();
 
-            if (fetchError) throw new Error("Could not fetch order data for invoice.");
+            if (fetchError) {
+                log('ERROR', order_id, 'Supabase fetch failed — cannot retrieve order data for invoice.', fetchError);
+                throw new Error("Could not fetch order data for invoice.");
+            }
+
+            log('INFO', order_id, `DB record fetched. Current status in DB: '${orderData.status}'`);
 
             // --- CRITICAL FIX: PREVENT DOUBLE EMAILS ---
             // If it's already marked as paid in our DB, the user just refreshed the page. 
             // Return success to the frontend, but DO NOT send another invoice.
             if (orderData.status === 'paid' || orderData.status === 'completed') {
+                log('INFO', order_id, `Duplicate call detected (DB status='${orderData.status}'). Skipping invoice. Returning 200.`);
                 return res.status(200).json({ success: true, status: 'paid' });
             }
 
@@ -54,25 +83,30 @@ module.exports = async function(req, res) {
                 .eq('order_id', order_id);
 
             if (dbError) {
-                console.error("Supabase Status Update Failed:", dbError);
+                log('ERROR', order_id, 'Supabase status update to "paid" FAILED.', dbError);
                 throw new Error("Database update failed");
             }
+
+            log('INFO', order_id, 'DB status updated to "paid". Triggering sendInvoice()...');
             
             // Fire the invoice system with the client's data ONE TIME
             try {
                 await sendInvoice(orderData);
+                log('INFO', order_id, 'sendInvoice() resolved successfully.');
             } catch (invoiceErr) {
-                console.error("Payment succeeded, but invoice email failed to send:", invoiceErr);
+                log('ERROR', order_id, 'sendInvoice() FAILED after payment was confirmed. Client did NOT receive invoice email.', invoiceErr);
             }
             
             return res.status(200).json({ success: true, status: 'paid' });
         } 
         
         // If it's still pending or failed, return the status
+        log('INFO', order_id, `Order is not yet PAID. Returning status: ${orderStatus.toLowerCase()}`);
         return res.status(200).json({ success: true, status: orderStatus.toLowerCase() });
 
     } catch (error) {
-        console.error("Payment Verification System Error:", error.response?.data || error.message);
+        const order_id_ctx = req.body?.order_id || 'UNKNOWN';
+        log('ERROR', order_id_ctx, 'Unhandled exception in verify-payment handler.', error);
         return res.status(500).json({ error: "Failed to verify payment status with gateway." });
     }
 };
