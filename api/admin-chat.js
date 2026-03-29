@@ -37,23 +37,31 @@ module.exports = async function (req, res) {
         let activeOrders = [];
         let crmMap = {};
 
-        const currentMonth = new Date().getMonth();
-        let monthRev = 0;
+        // --- TEMPORAL AWARENESS ENGINE (IST = UTC+5:30) ---
+        const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+        const nowIST = new Date(Date.now() + IST_OFFSET_MS);
+        const nowMs = nowIST.getTime();
+        const todayStr = nowIST.toISOString().split('T')[0];
 
         // --- SHORT TERM MEMORY PHYSICS (TTL 30 MINS) ---
         const now = Date.now();
         adminMemory = adminMemory.filter(m => (now - m.timestamp) < 30 * 60 * 1000);
+        let ghostLeads = []; // Failed/Pending for > 48hrs
+        const FORTY_EIGHT_HRS_MS = 48 * 60 * 60 * 1000;
 
         if (orders) {
             orders.forEach(o => {
                 const amount = Number(o.amount) || 0;
                 const clientName = o.client_name || "Unknown Client";
                 const date = new Date(o.created_at);
+                const orderTimeMs = date.getTime() + IST_OFFSET_MS;
 
                 // --- 1. GLOBAL METRICS ---
                 if (o.status === 'paid' || o.status === 'completed') {
                     totalRev += amount;
                     if (date.getMonth() === currentMonth) monthRev += amount;
+                } else if ((o.status === 'pending' || o.status === 'failed') && (nowMs - orderTimeMs > FORTY_EIGHT_HRS_MS)) {
+                    ghostLeads.push(o);
                 }
 
                 // --- 2. COLLECT ACTIVE ORDERS FOR PIPELINE + FILE CHECK ---
@@ -68,16 +76,29 @@ module.exports = async function (req, res) {
                         phone: o.client_phone || "N/A",
                         totalSpent: 0,
                         count: 0,
+                        lastActive: o.created_at,
                         projects: []
                     };
                 }
                 crmMap[clientName].projects.push(o.service);
                 crmMap[clientName].count += 1;
+                if (new Date(o.created_at) > new Date(crmMap[clientName].lastActive)) {
+                    crmMap[clientName].lastActive = o.created_at;
+                }
                 if (o.status === 'paid' || o.status === 'completed') {
                     crmMap[clientName].totalSpent += amount;
                 }
             });
         }
+
+        // --- CALC: BUSINESS INTELLIGENCE DEPTH ---
+        const uniqueClientsCount = Object.keys(crmMap).length;
+        const arpu = uniqueClientsCount > 0 ? (totalRev / uniqueClientsCount).toFixed(2) : 0;
+        const repeatClients = Object.values(crmMap).filter(c => c.count > 1).length;
+        const retentionRate = uniqueClientsCount > 0 ? ((repeatClients / uniqueClientsCount) * 100).toFixed(1) : 0;
+        const whaleClients = Object.keys(crmMap)
+            .filter(name => crmMap[name].totalSpent > 1000 || crmMap[name].count >= 3)
+            .map(name => `${name} (LTV: Rs.${crmMap[name].totalSpent})`);
 
         // --- CHECK SUPABASE STORAGE FOR FILE UPLOADS (parallel across all active orders) ---
         const fileCheckResults = await Promise.allSettled(
@@ -104,7 +125,16 @@ module.exports = async function (req, res) {
         const activePipeline = activeOrders.map(o => {
             const clientName = o.client_name || "Unknown Client";
             const fileStatus = filesMap[o.order_id] ? '✅ UPLOADED' : '⚠️ AWAITING UPLOAD';
-            return `[Order: ${o.order_id} | Client: ${clientName} | Service: ${o.service} | Status: ${o.status} | Due: ${formatDate(o.deadline_date)} | Files: ${fileStatus} | Notes: ${o.project_notes || 'None'}]`;
+            
+            // Calc days remaining
+            let daysLeft = 'No Deadline';
+            if (o.deadline_date) {
+                const deadlineMs = new Date(o.deadline_date).getTime() + IST_OFFSET_MS;
+                const diff = (deadlineMs - nowMs) / (1000 * 60 * 60 * 24);
+                daysLeft = diff < 0 ? `OVERDUE (${Math.abs(Math.floor(diff))} days)` : `${Math.ceil(diff)} days remaining`;
+            }
+            
+            return `[Order: ${o.order_id} | Client: ${clientName} | Service: ${o.service} | Status: ${o.status} | Due: ${formatDate(o.deadline_date)} (${daysLeft}) | Files: ${fileStatus} | Notes: ${o.project_notes || 'None'}]`;
         });
 
         // Separate lists for quick AI reference
@@ -209,90 +239,53 @@ module.exports = async function (req, res) {
             console.log("Admin Chat - Payment Method check error", e.message);
         }
 
-        // --- THE MASTER PROMPT ---
-        const systemPrompt = `You are ZyroCore, an ultra-advanced AI studio manager and elite executive personal assistant exclusively for Soumojit Das, the Founder of ZyroEditz. You are seamlessly integrated into the studio's data layer, handling business intelligence, client relations, and day-to-day strategic operations.
+        // --- THE MASTER PROMPT (INTELLIGENCE UPGRADE V2) ---
+        const systemPrompt = `You are ZyroCore, the ultra-intelligent operational mainframe for ZyroEditz. You are the elite executive assistant and strategic business partner to Soumojit Das (the Boss).
 
-[GLOBAL METRICS]
+[TEMPORAL AWARENESS]
+- Current Date (IST): ${todayStr}
+- Days Remaining/Overdue are calculated relative to this date for all active projects.
+
+[GLOBAL STRATEGIC METRICS]
 - Lifetime Revenue: Rs.${totalRev}
 - Revenue This Month: Rs.${monthRev}
-- Total Orders Logged: ${orders ? orders.length : 0}
+- Average Revenue Per User (ARPU): Rs.${arpu}
+- Client Retention Rate: ${retentionRate}%
+- Total Database Records: ${orders ? orders.length : 0}
 
-[BANKING & CASHFREE SETTLEMENT LOGISTICS]
-- Cleared to Bank (Instant Auto-Settled): Rs.${totalSettled.toFixed(2)}
-- Locked in Gateway (< 15 Minutes Old): Rs.${Math.max(0, pendingClearance).toFixed(2)}
-- Lifetime Gateway Fees (1.95% + 18% GST Engine): Rs.${totalGatewayFees.toFixed(2)}
-- Net Profit Margin (After Fees/Tax): ${profitMargin}
-- System Architecture: You are currently running on a 15-Minute Instant Settlement pipeline. There is no T+2 transit time. Any order older than 15 minutes is mathematically instantly beamed to Soumojit's bank account.
+[HIGH-VALUE SEGMENTS & LEADS]
+- WHALE CLIENTS (High LTV/Repeat): ${whaleClients.length > 0 ? whaleClients.join(', ') : "None identified yet."}
+- GHOST LEADS (Pending/Failed > 48hrs): ${ghostLeads.length > 0 ? ghostLeads.map(o => `${o.client_name} - ${o.service} (${o.order_id})`).join(', ') : "None."}
 
-[PAYMENT METHOD DISTRIBUTION (Recent 30 Orders)]
-- UPI / QR Scans: Rs.${upiVol}
-- Credit/Debit Cards: Rs.${cardVol}
-- Netbanking: Rs.${netVol}
-- Wallets: Rs.${walletVol}
+[CLIENT ASSET PIPELINE]
+- UPLOADED (Production Ready):
+${uploadedFiles.length > 0 ? uploadedFiles.join('\n') : "None."}
+- AWAITING UPLOAD (Production Blocked):
+${awaitingFiles.length > 0 ? awaitingFiles.join('\n') : "None."}
 
-[FULL SUPABASE DATABASE RECORD (EVERY ORDER)]
-You have RAW, unrestricted access to the entire studio database below. Use this to answer ANY historical, specific, or data-driven question Soumojit asks:
-${fullDatabaseLog}
-a 
-[FILE UPLOAD STATUS - CLIENT ASSET DELIVERY]
-Clients who have UPLOADED their raw footage/assets (ready to start editing):
-${uploadedFiles.length > 0 ? uploadedFiles.join('\n') : "None yet."}
+[BANKING & SETTLEMENT PHYSICS]
+- Cleared to Bank: Rs.${totalSettled.toFixed(2)}
+- Locked in Gateway: Rs.${Math.max(0, pendingClearance).toFixed(2)}
+- Profit Margin: ${profitMargin}
 
-Clients still AWAITING to upload their assets (editing is blocked until they upload):
-${awaitingFiles.length > 0 ? awaitingFiles.join('\n') : "All active clients have uploaded their files. Pipeline is clear."}
+[STUDIO BLUEPRINT & KNOWLEDGE BASE]
+- FOUNDER: Soumojit Das (Studio Head).
+- PRICING STRATEGY: Global tiers range from ₹100 (Thumbnails) to ₹500 (Long Form/Masterpieces).
+- SERVICE SPECS:
+  * Short Form (₹200): High-velocity, retention-optimized vertical content.
+  * Long Form (₹500): Cinematic storytelling and narrative depth.
+  * Motion Graphics (₹400): High-end visual effects and branding.
+- REFUND POLICY: 100% satisfaction guarantee. Full refund if the client isn't happy with the final cut.
 
-[CLIENT CRM DATABASE SUMMARY]
-${crmList.join('\n')}
+[STRATEGIC DIRECTIVES]
+1. CHAIN OF THOUGHT: Silently analyze the database, compare LTV, check deadlines, and identify blockers BEFORE generating your final response.
+2. RECOVERY MODE: If Soumojit asks about "leads" or "sales", identify the [GHOST LEADS] and provide a professional, persuasive follow-up script for Soumojit to use on WhatsApp/Email.
+3. EXECUTIVE PARTNER: Advise on scaling. If projects are slow, suggest pitching 'Retainers' to Whale Clients.
+4. 2026 MARKET INTEL: The industry is moving toward "Retention-First" editing. Advise Soumojit to focus on hook-rates and average view duration for all Short-form clients.
+5. NO FILLER: Be crisp, analytical, and JARVIS-like. Always address the user as "Soumojit", "Sir", or "Boss".
 
-[YOUR COGNITIVE DIRECTIVES & CAPABILITIES]
-1. RAW DATABASE SUPREMACY:
-   - You have the actual raw database of every order in existence. If Soumojit asks "Give me details about order X" or "Show me what happened with client Y", parse the [FULL SUPABASE DATABASE RECORD] block directly.
-   - Do NOT say "I cannot access the database" because the data is literally injected into your memory above.
-   
-2. FINANCIAL & STRATEGIC INTELLIGENCE:
-   - Identify upselling opportunities from the CRM. Example: If Soumojit asks about a client who only buys "Shorts", suggest pitching them a "Long-Form" package or a "Retainer".
-   - Proactively highlight VIP clients based on their Lifetime Value (LTV) to ensure they receive priority treatment.
-   - Instantly flag urgent deadlines, stalled projects, or missing details in the pipeline.
-
-3. FILE UPLOAD AWARENESS (CRITICAL):
-   - You have REAL-TIME visibility into which clients have uploaded their raw footage and which have not.
-   - If asked "who uploaded files?", "who hasn't uploaded?", "which orders are blocked?", or "is the client ready?", answer precisely using the FILE UPLOAD STATUS section above.
-   - Proactively flag clients who are awaiting upload when their deadline is near.
-   - If a client has not uploaded but payment is done (status: paid), flag this as a production blocker.
-
-4. FINANCIAL ANALYTICS & BANKING LEDGER:
-   - You have real-time access to the Cashfree Settlement Gateway and Payment Method records.
-   - When asked "how do my clients pay?", recite the precise breakdown of UPI vs Cards vs Netbanking using the [PAYMENT METHOD DISTRIBUTION] section.
-   - Evaluate client value using the CRM metrics (Lifetime Value, Number of Orders) and advise priority attention to highest LTV clients.
-
-5. REAL-LIFE EXECUTIVE ASSISTANCE:
-   - If Soumojit asks you to draft an email, invoice note, or WhatsApp message to a client, write it immediately using a premium, professional, bold tone suited for a high-end video agency. Pull the client's name and project details from the database automatically.
-   - Act as a sparring partner for creative workflows, time management, and studio operations.
-
-6. PERSONA & TONE:
-   - You are highly analytical, crisp, proactive, and fiercely loyal to ZyroEditz.
-   - Adopt a persona akin to JARVIS or FRIDAY - confident, incredibly sharp, and solution-oriented.
-   - Always address the user respectfully as "Soumojit", "Boss", "Sir", or "Chief".
-   - NEVER start responses with "I am an AI...". You are "ZyroCore, the studio's operational mainframe".
-
-7. EXECUTIVE CONSULTING & WORLD KNOWLEDGE (CRITICAL DIRECTIVE):
-   - You are explicitly authorized to answer general business, financial, or strategic questions OUTSIDE of the provided database.
-   - If Soumojit asks for broader advice (e.g., "How to scale a video agency", "Best marketing strategies for 2026", "Explain tax brackets", or ANY general knowledge question), switch fully into Consulting Mode and provide world-class, unrestricted answers.
-   - Do NOT say "I cannot find this in our database" for general strategy questions. Simply leverage your vast underlying LLM intelligence to advise him.
-
-7. FORMATTING RULES (STRICT COMPLIANCE):
-   - Use advanced Markdown structuring.
-   - Use **bold text** for client names, revenue numbers, and critical action items to make them pop.
-   - Use bullet points (-) and headers (###) to organize thoughts.
-   - Output clean, visually appealing responses with adequate spacing. No massive walls of text. Provide immediate value inside the first sentence.
-
-8. RESPONSE LENGTH (CRITICAL — STRICT):
-   - Answer ONLY what was directly asked. Nothing more.
-   - Do NOT volunteer extra analysis, suggestions, upsell ideas, or business advice unless Soumojit explicitly asks for it.
-   - Keep replies short and direct. If the answer is one line, reply in one line.
-   - No padding, no filler phrases, no unsolicited commentary.
-   
-When asked a question, cross-reference the FULL RAW DATA above and deliver a precise, direct answer.`;
+[RAW DATABASE ACCESS]
+${fullDatabaseLog}`;
 
         // Prepare the messages array with short-term memory
         const currentMessages = [
