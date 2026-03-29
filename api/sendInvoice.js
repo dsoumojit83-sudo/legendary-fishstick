@@ -1,7 +1,31 @@
 const nodemailer = require("nodemailer");
 const PDFDocument = require("pdfkit");
 
-// ADDED: Strip all characters outside printable ASCII (0x20–0x7E).
+// ─── STRUCTURED LOGGER ───────────────────────────────────────────────────────
+// All logs use a prefix so they are easy to filter in the Vercel logs dashboard.
+// Format: [ZYRO][sendInvoice][<level>] <timestamp> | order=<id> | <message>
+function log(level, orderId, message, extra) {
+    const ts = new Date().toISOString();
+    const orderTag = orderId ? `order=${orderId}` : 'order=UNKNOWN';
+    const prefix = `[ZYRO][sendInvoice][${level}] ${ts} | ${orderTag} |`;
+    if (level === 'ERROR' && extra) {
+        // Print full error detail so it surfaces in Vercel function logs
+        console.error(prefix, message);
+        console.error(prefix, 'Error name   :', extra.name);
+        console.error(prefix, 'Error message:', extra.message);
+        console.error(prefix, 'Error code   :', extra.code);
+        console.error(prefix, 'Error stack  :', extra.stack);
+        if (extra.response) console.error(prefix, 'SMTP response:', extra.response);
+        if (extra.responseCode) console.error(prefix, 'SMTP code    :', extra.responseCode);
+    } else if (level === 'ERROR') {
+        console.error(prefix, message);
+    } else {
+        console.log(prefix, message);
+    }
+}
+
+// ─── TEXT HELPERS ─────────────────────────────────────────────────────────────
+// Strip all characters outside printable ASCII (0x20–0x7E).
 // Prevents hidden Unicode, emoji, currency symbols (e.g. ¹, ₹, ✅, smart quotes)
 // from breaking PDFKit's Helvetica renderer and producing corrupted output.
 function sanitizeText(value) {
@@ -11,22 +35,29 @@ function sanitizeText(value) {
         .trim();
 }
 
-// ADDED: Extract only numeric digits and a single decimal point from raw amount.
+// Extract only numeric digits and a single decimal point from raw amount.
 // Handles prefixes like '₹', '¹', currency symbols, spaces, or any junk.
 // Examples: '¹1' → '1.00' | '₹1000' → '1000.00' | '' → '0.00'
 function safeAmount(value) {
     if (value === null || value === undefined) return '0.00';
-    // Keep only digits and a single decimal separator
     const cleaned = String(value).replace(/[^0-9.]/g, '');
     const parsed = parseFloat(cleaned);
     return Number.isFinite(parsed) ? parsed.toFixed(2) : '0.00';
 }
 
 async function sendInvoice(order) {
+    const orderId = order?.order_id || 'UNKNOWN';
+
+    log('INFO', orderId, `sendInvoice() called for client: ${order?.client_email}`);
+
     // Guard: fail fast with a clear error if email credentials are missing
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        throw new Error('[sendInvoice] EMAIL_USER or EMAIL_PASS not configured in environment variables.');
+        const msg = 'CRITICAL: EMAIL_USER or EMAIL_PASS env vars are NOT set. Emails cannot be sent.';
+        log('ERROR', orderId, msg);
+        throw new Error(`[sendInvoice] ${msg}`);
     }
+
+    log('INFO', orderId, `Using sender: ${process.env.EMAIL_USER}`);
 
     // Create transporter INSIDE the function so it reads live env vars on every call.
     // If created at module load (top-level), Vercel serverless may not have env vars yet.
@@ -38,9 +69,12 @@ async function sendInvoice(order) {
         }
     });
 
-    // Verify SMTP connection before attempting to build the PDF.
-    // This will throw immediately with a clear error if credentials are wrong.
-    await transporter.verify();
+    // NOTE: transporter.verify() is intentionally REMOVED.
+    // On Vercel serverless (hobby/pro tier), outbound SMTP port connections
+    // (465/587) are frequently blocked at the network layer, causing verify()
+    // to throw even when credentials are 100% correct. This was silently
+    // aborting all invoice emails. We skip verify() and attempt sendMail directly.
+    // Any real credential errors will still surface from sendMail itself.
 
     return new Promise((resolve, reject) => {
         try {
@@ -64,6 +98,7 @@ async function sendInvoice(order) {
             doc.on("end", async () => {
                 try {
                     const pdfData = Buffer.concat(buffers);
+                    log('INFO', orderId, `PDF generated successfully (${pdfData.length} bytes). Attempting email send...`);
 
                     // --- 2. EMAIL TRANSMISSION ENGINE ---
                     await transporter.sendMail({
@@ -121,10 +156,10 @@ async function sendInvoice(order) {
                         ]
                     });
 
-                    console.log(`✅ Premium Invoice sent to ${order.client_email}`);
+                    log('INFO', orderId, `SUCCESS: Invoice email delivered to ${order.client_email}`);
                     resolve();
                 } catch (err) {
-                    console.error("❌ Email send error:", err);
+                    log('ERROR', orderId, 'FAILED: transporter.sendMail() threw an error.', err);
                     reject(err);
                 }
             });
@@ -201,9 +236,11 @@ async function sendInvoice(order) {
             doc.font('Helvetica-Bold')
                .text('ZyroEditz | Cinematic Editing & Motion Graphics', 50, 782, {align: 'center', width: 495});
 
+            log('INFO', orderId, 'PDF build complete. Waiting for doc.end() to flush buffers...');
             doc.end();
 
         } catch (err) {
+            log('ERROR', orderId, 'FAILED: PDF generation threw an error before doc.end().', err);
             reject(err);
         }
     });
