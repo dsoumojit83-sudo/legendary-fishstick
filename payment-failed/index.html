@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed | ZyroEditz</title>
+
+    <!-- X / Cross Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23050505'/%3E%3Cpath d='M30 30 L70 70 M70 30 L30 70' fill='none' stroke='%23ff1a1a' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E">
+    <meta name="theme-color" content="#050505">
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* ── Pulsing red glow behind the X icon ── */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 30px 10px rgba(255,26,26,0.15); }
+            50%       { box-shadow: 0 0 60px 20px rgba(255,26,26,0.40); }
+        }
+        .icon-ring { animation: pulse-glow 2s ease-in-out infinite; }
+
+        /* ── Shake animation for the X icon ── */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            10%       { transform: translateX(-4px) rotate(-3deg); }
+            20%       { transform: translateX(4px) rotate(3deg); }
+            30%       { transform: translateX(-4px) rotate(-2deg); }
+            40%       { transform: translateX(4px) rotate(2deg); }
+            50%       { transform: translateX(-2px) rotate(-1deg); }
+            60%       { transform: translateX(2px) rotate(1deg); }
+            70%       { transform: translateX(-2px); }
+            80%       { transform: translateX(2px); }
+        }
+        .shake-icon { animation: shake 1.2s ease-in-out 0.3s 1; }
+
+
+
+        /* ── Scanline overlay ── */
+        .scanlines::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 3px,
+                rgba(0,0,0,0.08) 3px,
+                rgba(0,0,0,0.08) 4px
+            );
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* ── Flickering red noise in background ── */
+        @keyframes flicker {
+            0%, 19.9%, 22%, 62.9%, 64%, 100% { opacity: 0.03; }
+            20%, 21.9%, 63%, 63.9% { opacity: 0.07; }
+        }
+        .noise-flicker {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+            animation: flicker 4s infinite;
+        }
+
+        /* ── Status badge blink ── */
+        @keyframes blink-dot {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.2; }
+        }
+        .blink { animation: blink-dot 1s ease-in-out infinite; }
+
+        /* ── Try Again button shimmer ── */
+        @keyframes shimmer {
+            0%   { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        .btn-shimmer {
+            background: linear-gradient(90deg, #ff1a1a 0%, #ff4444 40%, #ff8888 50%, #ff4444 60%, #ff1a1a 100%);
+            background-size: 200% auto;
+            animation: shimmer 2.5s linear infinite;
+        }
+        .btn-shimmer:hover {
+            background: #ffffff;
+            background-size: unset;
+            animation: none;
+            color: #000;
+        }
+
+        /* ── Fade-in-up ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.6s ease forwards; }
+        .fade-up-2 { animation: fadeUp 0.6s 0.15s ease both; }
+        .fade-up-3 { animation: fadeUp 0.6s 0.30s ease both; }
+        .fade-up-4 { animation: fadeUp 0.6s 0.45s ease both; }
+
+        /* ── Error code mono style ── */
+        .error-code {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.1em;
+            color: #ff1a1a;
+        }
+    </style>
+
+    <!-- Vercel Analytics -->
+    <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-6 relative scanlines">
+
+    <!-- Background grid (same as success page) -->
+    <div class="fixed inset-0 pointer-events-none opacity-10 z-0"
+         style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 50px 50px;">
+    </div>
+
+    <!-- Red ambient glow blob -->
+    <div class="fixed w-[700px] h-[700px] rounded-full blur-[120px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"
+         style="background: radial-gradient(circle, rgba(255,26,26,0.12) 0%, transparent 70%);">
+    </div>
+
+    <!-- Noise overlay -->
+    <div class="fixed inset-0 z-0 pointer-events-none noise-flicker"></div>
+
+    <!-- ═══════════ MAIN CARD ═══════════ -->
+    <div class="max-w-lg w-full text-center relative z-10 pt-10 pb-10">
+
+        <!-- ── X Icon ── -->
+        <div class="fade-up flex justify-center mb-6">
+            <div class="icon-ring shake-icon inline-flex items-center justify-center w-24 h-24 rounded-full border-2 border-[#ff1a1a]/50"
+                 style="background: radial-gradient(circle, rgba(255,26,26,0.15) 0%, rgba(5,5,5,0.9) 80%);">
+                <svg class="w-12 h-12 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- ── Headline ── -->
+        <h1 class="fade-up-2 text-5xl md:text-6xl font-black tracking-tight mb-2">
+            Payment <span class="text-[#ff1a1a]" style="text-shadow: 0 0 20px rgba(255,26,26,0.5);">Failed.</span>
+        </h1>
+        <p class="fade-up-2 text-gray-500 text-sm uppercase tracking-[0.35em] mb-8">Transaction Not Completed</p>
+
+        <!-- ── Error Detail Card ── -->
+        <div class="fade-up-3 mb-6 rounded-2xl p-6 text-left relative overflow-hidden"
+             style="background: linear-gradient(135deg, rgba(255,26,26,0.05) 0%, rgba(5,5,5,0.95) 100%); border: 1px solid rgba(255,26,26,0.2);">
+
+            <!-- Top glow line -->
+            <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/60 to-transparent"></div>
+
+            <!-- Status badge -->
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-2">
+                    <span class="blink w-2 h-2 rounded-full bg-[#ff1a1a] inline-block"></span>
+                    <span class="text-xs uppercase tracking-widest text-[#ff1a1a] font-bold">Live Status</span>
+                </div>
+                <span class="error-code text-xs bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 px-3 py-1 rounded-full" id="orderIdDisplay">---</span>
+            </div>
+
+            <!-- Reason rows -->
+            <div class="space-y-3 mb-5">
+                <div class="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-white/5">
+                    <i data-lucide="wifi-off" class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-white">Transaction Incomplete</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Your payment was not authorised or was cancelled before completion.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-white/5">
+                    <i data-lucide="shield-x" class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-white">No Charges Applied</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Your account has not been debited. It is completely safe to try again.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-white/5">
+                    <i data-lucide="refresh-ccw" class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-white">Restart Required</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Use the button below to go back and re-initiate your order fresh.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom glow line -->
+            <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/40 to-transparent"></div>
+        </div>
+
+        <!-- ── CTA Button ── -->
+        <div class="fade-up-4 space-y-3">
+            <a href="https://zyroeditz.vercel.app/#pricing" id="tryAgainBtn"
+               class="btn-shimmer w-full flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm py-4 rounded-xl text-black transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,26,26,0.5)]">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                Try Again
+            </a>
+
+            <a href="https://zyroeditz.vercel.app"
+               class="w-full flex items-center justify-center gap-2 font-medium text-sm py-3 rounded-xl text-gray-500 hover:text-white border border-white/5 hover:border-white/20 transition-all duration-300">
+                <i data-lucide="home" class="w-4 h-4"></i>
+                Back to Home
+            </a>
+        </div>
+
+        <!-- ── Footer tagline ── -->
+        <p class="mt-10 text-gray-700 text-[10px] uppercase tracking-widest fade-up-4">
+            Speed. Motion. Precision. — Soumojit Das
+        </p>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Show order ID if present in URL (for traceability)
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order_id');
+        const display = document.getElementById('orderIdDisplay');
+        if (orderId) {
+            display.textContent = orderId;
+        } else {
+            display.textContent = 'NO ORDER ID';
+        }
+
+        // ── FALLING ✕ CROSSES / CRASH ANIMATION ──────────────────────────────
+        window.addEventListener('load', function () {
+
+            // Register a custom ✕ cross shape using an SVG path.
+            const crossShape = confetti.shapeFromPath({
+                path: 'M 30 0 L 50 20 L 70 0 L 100 30 L 80 50 L 100 70 L 70 100 L 50 80 L 30 100 L 0 70 L 20 50 L 0 30 Z'
+            });
+
+            const debrisColors = ['#ff1a1a', '#cc0000', '#880000', '#ffffff'];
+            const ashColors    = ['#880000', '#440000', '#cc0000'];
+
+            // ── STAGE 1: Central implosion burst ─────────────────────────────
+            confetti({
+                particleCount: 60,
+                spread: 360,
+                startVelocity: 28,
+                decay: 0.88,
+                gravity: 2.5,
+                scalar: 2,
+                ticks: 100,
+                origin: { x: 0.5, y: 0.3 },
+                colors: debrisColors,
+                shapes: [crossShape],
+                disableForReducedMotion: true
+            });
+
+            // ── STAGE 2: Continuous ✕ streams from the top corners ───────────
+            const duration     = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+
+            (function fallFrame() {
+                // Top-left stream — falls diagonally right
+                confetti({
+                    particleCount: 2,
+                    angle: 285,
+                    spread: 40,
+                    startVelocity: 18,
+                    decay: 0.9,
+                    gravity: 2.0,
+                    scalar: 1.8,
+                    ticks: 90,
+                    origin: { x: 0.04, y: 0 },
+                    colors: debrisColors,
+                    shapes: [crossShape],
+                    disableForReducedMotion: true
+                });
+
+                // Top-right stream — falls diagonally left
+                confetti({
+                    particleCount: 2,
+                    angle: 255,
+                    spread: 40,
+                    startVelocity: 18,
+                    decay: 0.9,
+                    gravity: 2.0,
+                    scalar: 1.8,
+                    ticks: 90,
+                    origin: { x: 0.96, y: 0 },
+                    colors: debrisColors,
+                    shapes: [crossShape],
+                    disableForReducedMotion: true
+                });
+
+                if (Date.now() < animationEnd) {
+                    requestAnimationFrame(fallFrame);
+                } else {
+                    // ── STAGE 3: Dying ✕ drizzle — sparse, slow, dark ────────
+                    let tick = 0;
+                    (function drizzle() {
+                        if (tick >= 12) return;
+                        tick++;
+                        confetti({
+                            particleCount: 1,
+                            angle: 270,
+                            spread: 80,
+                            startVelocity: 5,
+                            decay: 0.83,
+                            gravity: 1.4,
+                            scalar: 1.5,
+                            ticks: 65,
+                            origin: { x: Math.random(), y: 0 },
+                            colors: ashColors,
+                            shapes: [crossShape],
+                            disableForReducedMotion: true
+                        });
+                        setTimeout(drizzle, 250);
+                    })();
+                }
+            })();
+        });
+    </script>
+</body>
+</html>
