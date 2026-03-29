@@ -177,52 +177,135 @@
         (async function verifyAndSendInvoice() {
             if (!orderId || orderId === 'ZYRO_MANUAL') return;
             try {
-                await fetch('/api/verify-payment', {
+                const res = await fetch('/api/verify-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ order_id: orderId })
                 });
-                // Response is intentionally ignored here — the API handles
-                // the DB update and email internally. Double-send is protected
-                // by the status === 'paid' guard inside verify-payment.js.
+                const data = await res.json();
+
+                // If the payment is not confirmed as paid, redirect to failure page.
+                // This covers: user closed the payment window, payment was declined,
+                // or user navigated back from Cashfree without completing the flow.
+                if (!data.success || (data.status && data.status !== 'paid')) {
+                    window.location.replace(
+                        `/payment-failed?order_id=${encodeURIComponent(orderId)}`
+                    );
+                    return;
+                }
             } catch (err) {
                 console.warn('[ZyroEditz] Payment verification request failed silently:', err);
+                // On network error we keep the user here — don't punish them for a connectivity issue.
             }
         })();
 
-        // 1. Post-Purchase Confetti
-        window.addEventListener('load', function() {
-            const duration = 3 * 1000; // 3 seconds
+        // 1. Post-Purchase Confetti — 4-Stage Premium Celebration
+        window.addEventListener('load', function () {
+
+            // Rich palette: ZyroEditz red + gold sparks + white
+            const celebColors = ['#ff1a1a', '#ffffff', '#ffcc00', '#ff6666', '#ffaa00', '#ff4444'];
+            const goldSparks  = ['#ffcc00', '#ffdd44', '#ffe97a', '#ffffff', '#ff1a1a'];
+            const redWhite    = ['#ff1a1a', '#ffffff', '#ff4444'];
+
+            // ── STAGE 1: Instant center starburst ───────────────────────────
+            confetti({
+                particleCount: 160,
+                spread: 360,
+                startVelocity: 45,
+                decay: 0.92,
+                gravity: 0.8,
+                scalar: 0.9,
+                ticks: 120,
+                origin: { x: 0.5, y: 0.55 },
+                colors: celebColors,
+                shapes: ['star', 'circle', 'square'],
+                disableForReducedMotion: true
+            });
+
+            // ── STAGE 2: Dual continuous cannons — left & right ─────────────
+            const duration    = 4 * 1000;
             const animationEnd = Date.now() + duration;
-            const colors = ['#ff1a1a', '#ffffff', '#000000'];
 
-            function randomInRange(min, max) {
-                return Math.random() * (max - min) + min;
-            }
-
-            // Left cannon
-            (function frame() {
+            (function cannonFrame() {
                 confetti({
-                    particleCount: 2,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: colors
+                    particleCount: 6,
+                    angle: 65,
+                    spread: 60,
+                    startVelocity: 55,
+                    decay: 0.91,
+                    gravity: 0.9,
+                    scalar: 0.85,
+                    ticks: 110,
+                    origin: { x: 0, y: 0.9 },
+                    colors: celebColors,
+                    shapes: ['star', 'circle'],
+                    disableForReducedMotion: true
                 });
-
-                // Right cannon
                 confetti({
-                    particleCount: 2,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: colors
+                    particleCount: 6,
+                    angle: 115,
+                    spread: 60,
+                    startVelocity: 55,
+                    decay: 0.91,
+                    gravity: 0.9,
+                    scalar: 0.85,
+                    ticks: 110,
+                    origin: { x: 1, y: 0.9 },
+                    colors: celebColors,
+                    shapes: ['star', 'circle'],
+                    disableForReducedMotion: true
                 });
-
-                if (Date.now() < animationEnd) {
-                    requestAnimationFrame(frame);
-                }
+                if (Date.now() < animationEnd) requestAnimationFrame(cannonFrame);
             })();
+
+            // ── STAGE 3: Surprise gold star burst at 1.5s ───────────────────
+            setTimeout(function () {
+                confetti({
+                    particleCount: 80,
+                    angle: 80,
+                    spread: 70,
+                    startVelocity: 50,
+                    decay: 0.9,
+                    gravity: 0.85,
+                    scalar: 0.8,
+                    ticks: 100,
+                    origin: { x: 0.25, y: 0.85 },
+                    colors: goldSparks,
+                    shapes: ['star'],
+                    disableForReducedMotion: true
+                });
+                confetti({
+                    particleCount: 80,
+                    angle: 100,
+                    spread: 70,
+                    startVelocity: 50,
+                    decay: 0.9,
+                    gravity: 0.85,
+                    scalar: 0.8,
+                    ticks: 100,
+                    origin: { x: 0.75, y: 0.85 },
+                    colors: goldSparks,
+                    shapes: ['star'],
+                    disableForReducedMotion: true
+                });
+            }, 1500);
+
+            // ── STAGE 4: Grand finale — red & white rain from the top ────────
+            setTimeout(function () {
+                confetti({
+                    particleCount: 200,
+                    spread: 160,
+                    startVelocity: 30,
+                    decay: 0.93,
+                    gravity: 1.1,
+                    scalar: 0.7,
+                    ticks: 130,
+                    origin: { x: 0.5, y: 0 },
+                    colors: redWhite,
+                    shapes: ['square', 'circle'],
+                    disableForReducedMotion: true
+                });
+            }, 3500);
         });
 
         // 2. Auto-Save Failsafe & 3. Character Counter
