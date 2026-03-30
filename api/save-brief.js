@@ -6,6 +6,27 @@ const supabase = createClient(
 );
 
 module.exports = async function(req, res) {
+
+    // ── PUBLIC: GET /api/save-brief → returns studio online/offline status ──
+    // (No auth needed — this is read-only and public so the website can check it)
+    if (req.method === 'GET') {
+        try {
+            const { data, error } = await supabase
+                .from('studio_config')
+                .select('is_online')
+                .eq('id', 1)
+                .single();
+
+            if (error || !data) {
+                // Default to online if table not set up yet
+                return res.status(200).json({ is_online: true });
+            }
+            return res.status(200).json({ is_online: data.is_online });
+        } catch (e) {
+            return res.status(200).json({ is_online: true });
+        }
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
