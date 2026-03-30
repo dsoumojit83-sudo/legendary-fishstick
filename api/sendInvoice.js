@@ -83,7 +83,10 @@ async function sendInvoice(order) {
             const formattedToday = new Date().toLocaleDateString('en-US', dateOptions);
             let formattedDeadline = "TBD";
             if (order.deadline_date) {
-                formattedDeadline = new Date(order.deadline_date).toLocaleDateString('en-US', dateOptions);
+                // Parse YYYY-MM-DD as a LOCAL date (not UTC midnight) to avoid
+                // timezone off-by-one day on the PDF invoice.
+                const [dy, dm, dd] = order.deadline_date.split('-').map(Number);
+                formattedDeadline = new Date(dy, dm - 1, dd).toLocaleDateString('en-US', dateOptions);
             }
 
             // --- 1. PDF GENERATION ENGINE ---
