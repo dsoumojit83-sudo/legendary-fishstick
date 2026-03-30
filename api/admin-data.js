@@ -98,9 +98,14 @@ module.exports = async function (req, res) {
             }
         });
 
-        // Check B2 for each order to set has_files flag — batched in parallel for speed
+        // Check B2 for ACTIVE orders only (pending/in_progress/paid) — not every historical order.
+        // This prevents a Vercel timeout as the total order count grows over time.
+        const activeOrders = orders.filter(o =>
+            o.status === 'pending' || o.status === 'in_progress' || o.status === 'paid'
+        );
+
         const fileCheckResults = await Promise.allSettled(
-            orders.map(o =>
+            activeOrders.map(o =>
                 b2.send(new ListObjectsV2Command({
                     Bucket: B2_BUCKET,
                     Prefix: `${o.order_id}/`,
