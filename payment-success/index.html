@@ -36,6 +36,33 @@
             height: 18px; 
             display: inline-block; 
         }
+
+        /* ── Payment Verification Gate ──────────────────────────────────────── */
+        /* Hide page content until payment is verified server-side.             */
+        /* Prevents the flash-of-success before the redirect fires.             */
+        #page-content { visibility: hidden; opacity: 0; transition: opacity 0.35s ease; }
+        #page-content.verified { visibility: visible; opacity: 1; }
+
+        #verify-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: #050505;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 20px;
+            transition: opacity 0.3s ease;
+        }
+        #verify-overlay.hidden { opacity: 0; pointer-events: none; }
+        .verify-ring {
+            width: 52px; height: 52px;
+            border: 3px solid rgba(255,26,26,0.2);
+            border-top-color: #ff1a1a;
+            border-radius: 50%;
+            animation: yt-spin 0.9s linear infinite;
+        }
+        .verify-label {
+            font-size: 12px; letter-spacing: 0.25em;
+            text-transform: uppercase; color: rgba(255,255,255,0.35);
+        }
     </style>
     
     <!-- Vercel Web Analytics -->
@@ -51,12 +78,18 @@
     <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
 <body class="min-h-screen flex items-center justify-center p-6 relative">
+
+    <!-- Verification gate overlay — visible until server confirms payment -->
+    <div id="verify-overlay">
+        <div class="verify-ring"></div>
+        <p class="verify-label">Verifying payment…</p>
+    </div>
     <div class="fixed inset-0 pointer-events-none opacity-10 z-0" 
          style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 50px 50px;">
     </div>
     <div class="fixed w-[600px] h-[600px] bg-[#ff1a1a]/5 rounded-full blur-[100px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
-    <div class="max-w-2xl w-full text-center relative z-10 pt-10 pb-10">
+    <div id="page-content" class="max-w-2xl w-full text-center relative z-10 pt-10 pb-10">
         <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 mb-6 shadow-[0_0_30px_rgba(255,26,26,0.2)]">
             <svg class="w-10 h-10 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -169,13 +202,31 @@
         const orderId = urlParams.get('order_id') || 'ZYRO_MANUAL';
         document.getElementById('orderIdDisplay').textContent = orderId;
 
+        // ── Helper: dismiss overlay and reveal the page content ──────────────
+        function revealPage() {
+            const overlay = document.getElementById('verify-overlay');
+            const content = document.getElementById('page-content');
+            overlay.classList.add('hidden');
+            // Small rAF delay so the CSS transition on the overlay fires first
+            requestAnimationFrame(function () {
+                content.classList.add('verified');
+            });
+            // Fire confetti ONLY once we know the payment is genuine
+            triggerCelebration();
+            // Remove overlay from DOM after transition completes
+            setTimeout(function () { overlay.remove(); }, 400);
+        }
+
         // =====================================================================
-        // CRITICAL: Verify payment with Cashfree server-side and trigger invoice.
-        // This is the only place that fires sendInvoice() → client email.
-        // Must run immediately on page load, right after Cashfree redirects here.
+        // CRITICAL: Verify payment with Cashfree server-side BEFORE showing page.
+        // Page content stays hidden behind the overlay until this resolves.
         // =====================================================================
         (async function verifyAndSendInvoice() {
-            if (!orderId || orderId === 'ZYRO_MANUAL') return;
+            // No real order → just show the page (manual / dev mode)
+            if (!orderId || orderId === 'ZYRO_MANUAL') {
+                revealPage();
+                return;
+            }
             try {
                 const res = await fetch('/api/verify-payment', {
                     method: 'POST',
@@ -185,22 +236,26 @@
                 const data = await res.json();
 
                 // If the payment is not confirmed as paid, redirect to failure page.
-                // This covers: user closed the payment window, payment was declined,
-                // or user navigated back from Cashfree without completing the flow.
+                // Page content never becomes visible — user sees the overlay then the redirect.
                 if (!data.success || (data.status && data.status !== 'paid')) {
                     window.location.replace(
                         `/payment-failed?order_id=${encodeURIComponent(orderId)}`
                     );
                     return;
                 }
+
+                // Payment confirmed ✅ — reveal the page
+                revealPage();
             } catch (err) {
                 console.warn('[ZyroEditz] Payment verification request failed silently:', err);
-                // On network error we keep the user here — don't punish them for a connectivity issue.
+                // On network error keep the user on the success page — reveal it as a safe fallback
+                revealPage();
             }
         })();
 
         // 1. Post-Purchase Confetti — 4-Stage Premium Celebration
-        window.addEventListener('load', function () {
+        // Called by revealPage() only after payment is verified.
+        function triggerCelebration() {
 
             // Rich palette: ZyroEditz red + gold sparks + white
             const celebColors = ['#ff1a1a', '#ffffff', '#ffcc00', '#ff6666', '#ffaa00', '#ff4444'];
@@ -306,7 +361,7 @@
                     disableForReducedMotion: true
                 });
             }, 3500);
-        });
+        }
 
         // 2. Auto-Save Failsafe & 3. Character Counter
         const projectBrief = document.getElementById('projectBrief');
