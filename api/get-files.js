@@ -1,9 +1,17 @@
-const { createClient } = require('@supabase/supabase-js');
+const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+// ── Backblaze B2 S3-compatible client ────────────────────────────────────────
+const b2 = new S3Client({
+    region: 'auto',
+    endpoint: process.env.B2_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.B2_KEY_ID,
+        secretAccessKey: process.env.B2_APPLICATION_KEY,
+    },
+});
 
-// Supabase Storage bucket name — must match what upload-files uses
-const BUCKET = 'orders';
+const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
 
 module.exports = async function (req, res) {
     // 🔒 Admin-only — same password header as other admin APIs
@@ -22,37 +30,41 @@ module.exports = async function (req, res) {
     }
 
     try {
-        // List all files inside orders/<orderId>/ folder in Supabase Storage
-        const { data: fileList, error } = await supabase.storage
-            .from(BUCKET)
-            .list(orderId, { limit: 100, offset: 0 });
+        // List all files inside orders1/<orderId>/ folder in B2
+        const listResp = await b2.send(new ListObjectsV2Command({
+            Bucket: B2_BUCKET,
+            Prefix: `${orderId}/`,
+            MaxKeys: 100,
+        }));
 
-        if (error) throw error;
+        const objects = listResp.Contents || [];
 
-        if (!fileList || fileList.length === 0) {
+        if (objects.length === 0) {
             return res.status(200).json({ files: [] });
         }
 
-        // Build public URLs for each file so admin can open/download directly
-        const files = fileList
-            .filter(f => f.name !== '.emptyFolderPlaceholder') // skip Supabase placeholder files
-            .map(f => {
-                const { data: publicUrlData } = supabase.storage
-                    .from(BUCKET)
-                    .getPublicUrl(`${orderId}/${f.name}`);
-
+        // Generate pre-signed URLs (1-hour expiry) for each file
+        const files = await Promise.all(
+            objects.map(async (obj) => {
+                const name = obj.Key.replace(`${orderId}/`, ''); // strip prefix → just filename
+                const signedUrl = await getSignedUrl(
+                    b2,
+                    new GetObjectCommand({ Bucket: B2_BUCKET, Key: obj.Key }),
+                    { expiresIn: 3600 } // 1 hour
+                );
                 return {
-                    name: f.name,
-                    url: publicUrlData.publicUrl,
-                    size: f.metadata?.size || null,
-                    created_at: f.created_at || null
+                    name,
+                    url: signedUrl,
+                    size: obj.Size || null,
+                    created_at: obj.LastModified ? obj.LastModified.toISOString() : null,
                 };
-            });
+            })
+        );
 
         return res.status(200).json({ files });
 
     } catch (err) {
-        console.error('[get-files] Supabase Storage error:', err);
+        console.error('[get-files] B2 Storage error:', err);
         return res.status(500).json({ error: 'Failed to fetch files from storage.' });
     }
 };
