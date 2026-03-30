@@ -1,9 +1,20 @@
 const { createClient } = require('@supabase/supabase-js');
+const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 
-// Connect to Supabase
+// Connect to Supabase (DB only)
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const BUCKET = 'orders'; // Supabase Storage bucket name
+// ── Backblaze B2 S3-compatible client ────────────────────────────────────────
+const b2 = new S3Client({
+    region: 'auto',
+    endpoint: process.env.B2_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.B2_KEY_ID,
+        secretAccessKey: process.env.B2_APPLICATION_KEY,
+    },
+});
+
+const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
 
 module.exports = async function (req, res) {
     // Prevent 304 Browser/Vercel Caching
@@ -87,17 +98,18 @@ module.exports = async function (req, res) {
             }
         });
 
-        // Check Supabase Storage for each order to set has_files flag
-        // This is batched in parallel for speed
+        // Check B2 for each order to set has_files flag — batched in parallel for speed
         const fileCheckResults = await Promise.allSettled(
             orders.map(o =>
-                supabase.storage
-                    .from(BUCKET)
-                    .list(o.order_id, { limit: 1 })
-                    .then(({ data }) => ({
-                        order_id: o.order_id,
-                        has_files: Array.isArray(data) && data.filter(f => f.name !== '.emptyFolderPlaceholder').length > 0
-                    }))
+                b2.send(new ListObjectsV2Command({
+                    Bucket: B2_BUCKET,
+                    Prefix: `${o.order_id}/`,
+                    MaxKeys: 1,
+                }))
+                .then(data => ({
+                    order_id: o.order_id,
+                    has_files: (data.KeyCount || 0) > 0
+                }))
             )
         );
 
