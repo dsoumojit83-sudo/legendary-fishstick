@@ -1597,8 +1597,10 @@
                 </div>
                 <div>
                     <h3 class="text-white text-sm font-bold">Zyro Assistant</h3>
-                    <p class="text-[10px] text-[#ff1a1a] uppercase tracking-wider flex items-center gap-1"><span
-                            class="w-1.5 h-1.5 rounded-full bg-[#ff1a1a] animate-pulse"></span>Online</p>
+                    <p class="text-[10px] uppercase tracking-wider flex items-center gap-1" id="chatbot-status-row">
+                        <span id="chatbot-status-dot" class="w-1.5 h-1.5 rounded-full bg-[#ff1a1a] animate-pulse transition-colors duration-500"></span>
+                        <span id="chatbot-status-text" class="text-[#ff1a1a]">Online</span>
+                    </p>
                 </div>
             </div>
             <button id="chatbotClose" class="text-gray-400 hover:text-white transition-colors">
@@ -2323,6 +2325,31 @@
             initCanvasBackground();
             initPreloader();
             initChatbot();
+
+            // ── Real studio online/offline status from Supabase via API ──────
+            async function syncStudioStatus() {
+                try {
+                    const res = await fetch('/api/save-brief', { cache: 'no-store' });
+                    const data = await res.json();
+                    const isOnline = data.is_online !== false;
+                    const dot = document.getElementById('chatbot-status-dot');
+                    const label = document.getElementById('chatbot-status-text');
+                    if (!dot || !label) return;
+                    if (isOnline) {
+                        dot.style.background = '#ff1a1a';
+                        dot.classList.add('animate-pulse');
+                        label.textContent = 'Online';
+                        label.style.color = '#ff1a1a';
+                    } else {
+                        dot.style.background = '#6b7280';
+                        dot.classList.remove('animate-pulse');
+                        label.textContent = 'Away';
+                        label.style.color = '#9ca3af';
+                    }
+                } catch { /* silently fail */ }
+            }
+            syncStudioStatus();
+            setInterval(syncStudioStatus, 30000); // poll every 30s
         });
     </script>
 </body>
