@@ -884,11 +884,11 @@
             <div
                 class="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 mb-8 mt-24 reveal">
                 <span class="relative flex h-2 w-2">
-                    <span
+                    <span id="avail-ping"
                         class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
+                    <span id="avail-dot" class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
                 </span>
-                <span class="text-xs uppercase tracking-widest text-gray-300">Available for projects</span>
+                <span id="avail-text" class="text-xs uppercase tracking-widest text-gray-300">Available for projects</span>
             </div>
 
             <h1 class="reveal"
@@ -2086,6 +2086,11 @@
                     if (isOpen) {
                         windowEl.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
                         windowEl.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+                        // If studio is Away, wipe content and show away message
+                        if (window.__studioIsOnline === false) {
+                            messages.innerHTML = '';
+                            renderAwayMessage();
+                        }
                     } else {
                         windowEl.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
                         windowEl.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
@@ -2102,6 +2107,15 @@
                 window.openZyroChat = function () {
                     if (!isOpen) toggleChat();
                 };
+
+                // Away-mode: shown instead of normal chatbot when studio is offline
+                function renderAwayMessage() {
+                    messages.innerHTML = '';
+                    addBotMessage(`
+                        <p class="font-bold text-white mb-2">Hey! 👋</p>
+                        <p class="text-gray-400 text-xs leading-relaxed">I'm currently away and not taking new orders right now. Drop an email at <span class="text-[#ff1a1a]">zyroeditz@gmail.com</span> and I'll get back to you soon! 🙏</p>
+                    `);
+                }
 
                 window.startSpecificOrder = function (serviceName, price) {
                     if (!isOpen) toggleChat();
@@ -2332,24 +2346,49 @@
                     const res = await fetch('/api/save-brief', { cache: 'no-store' });
                     const data = await res.json();
                     const isOnline = data.is_online !== false;
+                    window.__studioIsOnline = isOnline;
+
+                    // ── Chatbot header dot ────────────────────────────────────
                     const dot = document.getElementById('chatbot-status-dot');
                     const label = document.getElementById('chatbot-status-text');
-                    if (!dot || !label) return;
-                    if (isOnline) {
-                        dot.style.background = '#ff1a1a';
-                        dot.classList.add('animate-pulse');
-                        label.textContent = 'Online';
-                        label.style.color = '#ff1a1a';
-                    } else {
-                        dot.style.background = '#6b7280';
-                        dot.classList.remove('animate-pulse');
-                        label.textContent = 'Away';
-                        label.style.color = '#9ca3af';
+                    if (dot && label) {
+                        if (isOnline) {
+                            dot.style.background = '#ff1a1a';
+                            dot.classList.add('animate-pulse');
+                            label.textContent = 'Online';
+                            label.style.color = '#ff1a1a';
+                        } else {
+                            dot.style.background = '#6b7280';
+                            dot.classList.remove('animate-pulse');
+                            label.textContent = 'Away';
+                            label.style.color = '#9ca3af';
+                        }
+                    }
+
+                    // ── "Available for Projects" badge ───────────────────────
+                    const ping  = document.getElementById('avail-ping');
+                    const avDot = document.getElementById('avail-dot');
+                    const avTxt = document.getElementById('avail-text');
+                    if (ping && avDot && avTxt) {
+                        if (isOnline) {
+                            ping.style.display = '';
+                            avDot.style.background = '#ff1a1a';
+                            avTxt.textContent = 'Available for projects';
+                            avTxt.style.color = '';
+                        } else {
+                            ping.style.display = 'none';
+                            avDot.style.background = '#6b7280';
+                            avTxt.textContent = 'Currently away';
+                            avTxt.style.color = '#6b7280';
+                        }
                     }
                 } catch { /* silently fail */ }
             }
             syncStudioStatus();
             setInterval(syncStudioStatus, 30000); // poll every 30s
+
+            // Track away state globally for chatbot to check
+            window.__studioIsOnline = true;
         });
     </script>
 </body>
