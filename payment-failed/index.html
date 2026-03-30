@@ -130,8 +130,20 @@
                 <span id="fileNameDisplay" class="mt-2 text-[#ff1a1a] text-xs font-mono text-center hidden"></span>
             </label>
 
+            <!-- Upload Progress Bar (hidden until upload starts) -->
+            <div id="uploadProgressWrapper" class="hidden mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span id="uploadProgressLabel" class="text-xs font-mono text-gray-400 uppercase tracking-widest">Uploading to Vault...</span>
+                    <span id="uploadProgressPct" class="text-xs font-mono text-[#ff1a1a] font-bold tracking-widest">0%</span>
+                </div>
+                <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/10">
+                    <div id="uploadProgressBar" class="h-full bg-gradient-to-r from-[#ff1a1a] to-[#ff6644] rounded-full" style="width: 0%; transition: width 0.15s ease-out;"></div>
+                </div>
+                <div id="uploadFileCount" class="text-[10px] text-gray-600 font-mono mt-1.5 uppercase tracking-widest text-right"></div>
+            </div>
+
             <button id="submitBriefBtn" class="w-full relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(255,26,26,0.4)]">
-                <span id="btnText">Submit & Upload</span>
+                <span id="btnText">Submit &amp; Upload</span>
                 <i id="btnIcon" data-lucide="cloud-upload" class="w-5 h-5 group-hover:translate-y-[-2px] transition-transform"></i>
             </button>
             <div id="statusMsg" class="mt-3 text-center text-xs font-mono hidden"></div>
@@ -149,59 +161,69 @@
         const orderId = urlParams.get('order_id') || 'ZYRO_MANUAL';
         document.getElementById('orderIdDisplay').textContent = orderId;
 
+        // Brief auto-save + character counter
         const projectBrief = document.getElementById('projectBrief');
         const charCount = document.getElementById('charCount');
         const storageKey = `zyro_brief_${orderId}`;
-
         const savedBrief = localStorage.getItem(storageKey);
-        if (savedBrief) {
-            projectBrief.value = savedBrief;
-            updateCharCount();
-        }
-
-        projectBrief.addEventListener('input', function() {
-            localStorage.setItem(storageKey, this.value);
-            updateCharCount();
-        });
-
+        if (savedBrief) { projectBrief.value = savedBrief; updateCharCount(); }
+        projectBrief.addEventListener('input', function() { localStorage.setItem(storageKey, this.value); updateCharCount(); });
         function updateCharCount() {
             const length = projectBrief.value.length;
             charCount.textContent = `${length} chars`;
-            if (length > 0) {
-                charCount.classList.remove('text-gray-500');
-                charCount.classList.add('text-[#ff1a1a]');
-            } else {
-                charCount.classList.remove('text-[#ff1a1a]');
-                charCount.classList.add('text-gray-500');
-            }
+            charCount.classList.toggle('text-[#ff1a1a]', length > 0);
+            charCount.classList.toggle('text-gray-500', length === 0);
         }
+        updateCharCount();
 
+        // File picker — show selected names
         document.getElementById('fileInput').addEventListener('change', function() {
             const display = document.getElementById('fileNameDisplay');
             if (this.files && this.files.length > 0) {
-                const names = Array.from(this.files).map(f => f.name).join(', ');
-                display.textContent = `${this.files.length} file${this.files.length > 1 ? 's' : ''} selected: ${names}`;
+                display.textContent = `${this.files.length} file${this.files.length > 1 ? 's' : ''} selected: ${Array.from(this.files).map(f => f.name).join(', ')}`;
                 display.classList.remove('hidden');
             } else {
                 display.classList.add('hidden');
             }
             if (window.lucide) lucide.createIcons();
         });
-        
+
+        // ── Upload a single file via pre-signed B2 URL using XHR for progress ─
+        function uploadFileDirect(file, presignedUrl, onProgress) {
+            return new Promise(function(resolve, reject) {
+                const xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) { if (e.lengthComputable) onProgress(e.loaded); });
+                xhr.addEventListener('load', function() { xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('B2 HTTP ' + xhr.status)); });
+                xhr.addEventListener('error', function() { reject(new Error('Network error')); });
+                xhr.addEventListener('abort', function() { reject(new Error('Aborted')); });
+                xhr.open('PUT', presignedUrl);
+                xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+                xhr.send(file);
+            });
+        }
+
+        // Submit handler — saves brief then uploads each file with live progress
         document.getElementById('submitBriefBtn').addEventListener('click', async function() {
             const briefContent = document.getElementById('projectBrief').value.trim();
             const btn = this;
             const btnText = document.getElementById('btnText');
             const btnIcon = document.getElementById('btnIcon');
             const statusMsg = document.getElementById('statusMsg');
+            const progressWrapper = document.getElementById('uploadProgressWrapper');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const progressLabel = document.getElementById('uploadProgressLabel');
+            const progressPct = document.getElementById('uploadProgressPct');
+            const fileCountEl = document.getElementById('uploadFileCount');
 
             btn.disabled = true;
             btn.classList.add('opacity-80', 'cursor-not-allowed');
             btnIcon.classList.add('hidden');
             btnText.innerHTML = `<span class="yt-spinner mr-2"></span> SAVING TO STUDIO CORE...`;
             statusMsg.classList.add('hidden');
+            progressWrapper.classList.add('hidden');
 
             try {
+                // Step 1: Save brief
                 if (briefContent) {
                     await fetch('/api/save-brief', {
                         method: 'POST',
@@ -211,43 +233,79 @@
                     localStorage.removeItem(storageKey);
                 }
 
+                // Step 2: Upload files directly to B2 via pre-signed URLs
                 const fileInput = document.getElementById('fileInput');
                 let uploadError = null;
 
                 if (fileInput.files && fileInput.files.length > 0) {
-                    btnText.innerHTML = `<span class="yt-spinner mr-2"></span> Uploading files...`;
-                    const formData = new FormData();
-                    formData.append('orderId', orderId);
-                    Array.from(fileInput.files).forEach(file => formData.append('files', file));
+                    const files = Array.from(fileInput.files);
+                    const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+                    const bytesPerFile = new Array(files.length).fill(0);
 
-                    try {
-                        const uploadResponse = await fetch('/api/upload-files', { method: 'POST', body: formData });
-                        if (!uploadResponse.ok) throw new Error("Upload failed.");
-                    } catch (err) {
-                        uploadError = "⚠️ Brief saved, but file upload failed. Please try again.";
+                    progressWrapper.classList.remove('hidden');
+                    progressBar.style.width = '0%';
+                    progressPct.textContent = '0%';
+
+                    function updateProgress() {
+                        const done = bytesPerFile.reduce((a, b) => a + b, 0);
+                        const pct = totalBytes > 0 ? Math.round((done / totalBytes) * 100) : 0;
+                        progressBar.style.width = pct + '%';
+                        progressPct.textContent = pct + '%';
+                    }
+
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        btnText.innerHTML = `<span class="yt-spinner mr-2"></span> UPLOADING TO VAULT...`;
+                        progressLabel.textContent = `Uploading file ${i + 1} of ${files.length}...`;
+                        fileCountEl.textContent = file.name;
+
+                        try {
+                            const urlRes = await fetch('/api/upload-files', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ orderId, fileName: file.name, contentType: file.type || 'application/octet-stream' })
+                            });
+                            if (!urlRes.ok) throw new Error('Could not get upload URL.');
+                            const { uploadUrl } = await urlRes.json();
+
+                            await uploadFileDirect(file, uploadUrl, function(loaded) {
+                                bytesPerFile[i] = loaded;
+                                updateProgress();
+                            });
+
+                            bytesPerFile[i] = file.size;
+                            updateProgress();
+                        } catch (fileErr) {
+                            console.error('Upload error for', file.name, fileErr);
+                            uploadError = `⚠️ Brief saved, but "${file.name}" failed to upload. Please retry.`;
+                            break;
+                        }
+                    }
+
+                    if (!uploadError) {
+                        progressLabel.textContent = 'Upload complete ✓';
+                        fileCountEl.textContent = `${files.length} file${files.length > 1 ? 's' : ''} sent to Vault`;
                     }
                 }
 
-                btnText.innerHTML = `Submit & Upload`;
+                // Restore button
+                btnText.innerHTML = `Submit &amp; Upload`;
                 btnIcon.classList.remove('hidden');
                 btn.disabled = false;
                 btn.classList.remove('opacity-80', 'cursor-not-allowed');
 
-                if (uploadError) {
-                    statusMsg.textContent = uploadError;
-                    statusMsg.classList.remove('hidden', 'text-[#22c55e]');
-                    statusMsg.classList.add('text-[#ff1a1a]');
-                } else {
-                    statusMsg.textContent = '✅ ZyroEditz has received your brief and raw files!';
-                    statusMsg.classList.remove('hidden', 'text-[#ff1a1a]');
-                    statusMsg.classList.add('text-[#22c55e]');
-                }
+                statusMsg.textContent = uploadError || '✅ ZyroEditz has received your brief and raw files!';
+                statusMsg.classList.remove('hidden');
+                statusMsg.classList.toggle('text-[#ff1a1a]', !!uploadError);
+                statusMsg.classList.toggle('text-[#22c55e]', !uploadError);
+
             } catch (error) {
-                btnText.innerHTML = `Submit & Upload`;
+                console.error('Submit error:', error);
+                btnText.innerHTML = `Submit &amp; Upload`;
                 btnIcon.classList.remove('hidden');
                 btn.disabled = false;
                 btn.classList.remove('opacity-80', 'cursor-not-allowed');
-                statusMsg.textContent = "⚠️ Error saving brief. Please try again.";
+                statusMsg.textContent = '⚠️ Error saving brief. Please try again.';
                 statusMsg.classList.remove('hidden', 'text-[#22c55e]');
                 statusMsg.classList.add('text-[#ff1a1a]');
             }
