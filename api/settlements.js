@@ -8,7 +8,7 @@ module.exports = async function (req, res) {
 
     // Admin security
     const authHeader = req.headers["x-admin-password"];
-    if (authHeader !== process.env.ADMIN_PASSWORD) {
+    if (!process.env.ADMIN_PASSWORD || authHeader !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ error: "Unauthorized Access. Core Locked." });
     }
 
