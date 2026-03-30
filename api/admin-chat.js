@@ -195,8 +195,8 @@ module.exports = async function (req, res) {
         let totalGatewayFees = 0;
 
         try {
-            // 1. Apply global API MDR fee physics (1.95% + 18% GST)
-            const globalBaseMdr = totalRev * 0.0195;
+            // 1. Apply global API MDR fee physics (2.25% + 18% GST)
+            const globalBaseMdr = totalRev * 0.0225;
             totalGatewayFees = globalBaseMdr + (globalBaseMdr * 0.18);
             const globalNet = totalRev - totalGatewayFees;
 
@@ -209,7 +209,7 @@ module.exports = async function (req, res) {
                     if (o.status === 'paid' || o.status === 'completed') {
                         const txTime = new Date(o.created_at).getTime();
                         const rawAmt = Number(o.amount) || 0;
-                        const mdr = (rawAmt * 0.0195) * 1.18;
+                        const mdr = (rawAmt * 0.0225) * 1.18;
                         const netAmt = rawAmt - mdr;
 
                         if ((currentMs - txTime) < FIFTEEN_MINS_MS) {
