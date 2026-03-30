@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import formidable from 'formidable';
 import fs from 'fs';
 
@@ -8,10 +8,17 @@ export const config = {
   },
 };
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+// ── Backblaze B2 S3-compatible client ────────────────────────────────────────
+const b2 = new S3Client({
+  region: 'auto',
+  endpoint: process.env.B2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.B2_KEY_ID,
+    secretAccessKey: process.env.B2_APPLICATION_KEY,
+  },
+});
+
+const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -25,33 +32,37 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'File parsing failed' });
     }
 
-    const orderId = fields.orderId;
+    const orderId = Array.isArray(fields.orderId) ? fields.orderId[0] : fields.orderId;
 
     if (!orderId) {
       return res.status(400).json({ error: 'Missing orderId' });
     }
 
     try {
-      const uploaded = [];
       const fileArray = Array.isArray(files.files) ? files.files : [files.files];
 
-      for (const file of fileArray) {
-        const data = fs.readFileSync(file.filepath);
-        const fileName = `${Date.now()}-${file.originalFilename}`;
+      // Upload all files in parallel to B2
+      const uploadResults = await Promise.all(
+        fileArray.map(async (file) => {
+          const data = fs.readFileSync(file.filepath);
+          const fileName = `${Date.now()}-${file.originalFilename}`;
+          const key = `${orderId}/${fileName}`;
 
-        const { error } = await supabase.storage
-          .from('orders')
-          .upload(`${orderId}/${fileName}`, data);
+          await b2.send(new PutObjectCommand({
+            Bucket: B2_BUCKET,
+            Key: key,
+            Body: data,
+            ContentType: file.mimetype || 'application/octet-stream',
+          }));
 
-        if (error) throw error;
+          return fileName;
+        })
+      );
 
-        uploaded.push(fileName);
-      }
-
-      return res.status(200).json({ success: true, files: uploaded });
+      return res.status(200).json({ success: true, files: uploadResults });
 
     } catch (e) {
-      console.error(e);
+      console.error('[upload-files] B2 upload error:', e);
       return res.status(500).json({ error: 'Upload failed' });
     }
   });
