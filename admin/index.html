@@ -26,7 +26,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet">
 
     <script src="https://unpkg.com/lucide@latest" defer></script>
@@ -170,34 +170,72 @@
         }
 
         .terminal-msg {
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.75rem;
-            font-size: 0.875rem;
-            line-height: 1.5;
+            margin-bottom: 0.875rem;
             word-wrap: break-word;
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+            font-family: 'Inter', sans-serif;
         }
 
         .msg-ai {
-            background: rgba(255, 26, 26, 0.05);
-            border-left: 2px solid var(--brand-red);
-            color: #e5e5e5;
+            flex-direction: row;
+        }
+
+        .msg-ai .bubble {
+            background: rgba(255, 26, 26, 0.08);
+            border: 1px solid rgba(255, 26, 26, 0.12);
+            border-radius: 0 1rem 1rem 1rem;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.82rem;
+            line-height: 1.65;
+            color: #e0e0e0;
+            max-width: 90%;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+        }
+
+        .msg-ai .avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 26, 26, 0.15);
+            border: 1px solid rgba(255, 26, 26, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #ff1a1a;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0;
         }
 
         .msg-user {
-            background: rgba(255, 255, 255, 0.03);
-            border-right: 2px solid #fff;
-            color: #a3a3a3;
-            text-align: right;
-            margin-left: auto;
-            max-width: 85%;
+            flex-direction: row-reverse;
         }
 
-        .typing-indicator span {
+        .msg-user .bubble {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem 0 1rem 1rem;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.82rem;
+            line-height: 1.65;
+            color: #aaaaaa;
+            max-width: 85%;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+        }
+
+        .typing-indicator.bubble span {
             display: inline-block;
-            width: 4px;
-            height: 4px;
-            background-color: var(--brand-red);
+            width: 5px;
+            height: 5px;
+            background-color: rgba(255, 26, 26, 0.6);
             border-radius: 50%;
             margin: 0 2px;
             animation: bounce 1.4s infinite ease-in-out both;
@@ -420,15 +458,23 @@
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
                         </span>
                     </button>
-                    <div
-                        class="hidden sm:flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
-                        <span class="w-2 h-2 rounded-full bg-green-500 live-pulse"></span>
-                        <span class="text-xs font-medium text-gray-300">zyroeditz.com <span
-                                class="text-gray-500 ml-1">Live</span></span>
-                        <span class="text-[10px] text-green-400 font-mono ml-2 border-l border-white/10 pl-3"
-                            id="latency-ms">24ms</span>
-                        <span class="text-[10px] text-[#ff1a1a] font-mono ml-3 border-l border-white/10 pl-3"
-                            id="digital-clock">00:00:00</span>
+                    <!-- Studio Online/Offline Toggle -->
+                    <div class="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                        <span id="studio-status-dot" class="w-2 h-2 rounded-full bg-green-500 transition-colors duration-500"></span>
+                        <span class="text-xs font-medium text-gray-300">Studio
+                            <span id="studio-status-label" class="ml-1 text-green-400">Online</span>
+                        </span>
+                        <!-- Toggle switch -->
+                        <button id="studio-toggle-btn" onclick="toggleStudioStatus()"
+                            title="Toggle studio online/offline"
+                            class="relative inline-flex h-5 w-9 items-center rounded-full border border-white/10 transition-all duration-300 focus:outline-none ml-1"
+                            style="background: rgba(34,197,94,0.3);">
+                            <span id="studio-toggle-knob"
+                                class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-300"
+                                style="transform: translateX(18px);"></span>
+                        </button>
+                        <span class="text-[10px] text-green-400 font-mono border-l border-white/10 pl-3" id="latency-ms">—ms</span>
+                        <span class="text-[10px] text-[#ff1a1a] font-mono border-l border-white/10 pl-3" id="digital-clock">00:00:00</span>
                     </div>
                     <button
                         class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-[#ff1a1a] transition-all relative"
@@ -1148,8 +1194,8 @@
                         </span>
                     </div>
                     <div>
-                        <h3 class="font-bold text-sm text-white">Zyro Core AI</h3>
-                        <p class="text-[9px] text-[#ff1a1a] uppercase tracking-widest font-mono">System Online</p>
+                        <h3 class="font-bold text-sm text-white" style="font-family:'Inter',sans-serif;">Zyro Core AI</h3>
+                        <p class="text-[9px] text-[#ff1a1a] uppercase tracking-widest" style="font-family:'Inter',sans-serif; letter-spacing:0.12em;">Online · Ready</p>
                     </div>
                 </div>
                 <button onclick="toggleTerminal()"
@@ -1158,18 +1204,19 @@
                 </button>
             </div>
 
-            <div id="terminal-body" class="flex-1 p-5 overflow-y-auto flex flex-col gap-2 font-mono relative">
+            <div id="terminal-body" class="flex-1 p-4 overflow-y-auto flex flex-col gap-1 relative">
                 <div class="terminal-msg msg-ai">
-                    <span class="text-[#ff1a1a] font-bold">CORE></span> Initialization complete. Secure connection to
-                    Supabase established. How can I analyze the studio data today?
+                    <div class="avatar">ZC</div>
+                    <div class="bubble">Hey! I'm all connected and ready. What do you want to know about ZyroEditz today?</div>
                 </div>
             </div>
 
             <div class="p-4 border-t border-white/10 bg-black/80 backdrop-blur-md shrink-0">
                 <form id="ai-form" class="relative">
                     <input type="text" id="ai-input"
-                        class="w-full bg-black border border-white/20 rounded-lg py-3 pl-4 pr-12 text-sm text-white font-mono focus:outline-none focus:border-[#ff1a1a] transition-all shadow-inner"
-                        placeholder="Ask about revenue, projects..." autocomplete="off">
+                        class="w-full bg-black border border-white/20 rounded-xl py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-all shadow-inner"
+                        style="font-family:'Inter',sans-serif; font-size:0.83rem; letter-spacing:0.01em;"
+                        placeholder="Ask anything about your studio..." autocomplete="off">
                     <button type="submit" id="ai-submit"
                         class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#ff1a1a] hover:bg-[#ff1a1a]/10 rounded transition-colors">
                         <i data-lucide="send" class="w-4 h-4"></i>
@@ -1336,27 +1383,114 @@
         function initializeApp() {
             initAnimations();
             fetchDashboardData();
-            fetchLedgerData(); // populates banking KPIs on dashboard
+            fetchLedgerData();
 
             setInterval(updateDigitalClock, 1000);
             updateDigitalClock();
 
-            setInterval(() => {
-                const latency = Math.floor(Math.random() * 15) + 18;
-                const el = document.getElementById('latency-ms');
-                if (el) el.innerText = latency + 'ms';
-            }, 3000);
+            // Real latency ping (pings the site itself)
+            pingLatency();
+            setInterval(pingLatency, 10000); // every 10s
+
+            // Studio status — load current + poll every 30s
+            fetchStudioStatus();
+            setInterval(fetchStudioStatus, 30000);
         }
 
         function updateDigitalClock() {
             const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
+            let hours = now.getHours();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12; // 0 → 12
+            const hh = String(hours).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
             const clockElement = document.getElementById('digital-clock');
-            if (clockElement) {
-                clockElement.textContent = `${hours}:${minutes}:${seconds}`;
+            if (clockElement) clockElement.textContent = `${hh}:${mm}:${ss} ${ampm}`;
+        }
+
+        // ==================== REAL LATENCY PING ====================
+        async function pingLatency() {
+            const el = document.getElementById('latency-ms');
+            if (!el) return;
+            try {
+                const start = performance.now();
+                await fetch('/', { method: 'HEAD', cache: 'no-store' });
+                const ms = Math.round(performance.now() - start);
+                el.textContent = ms + 'ms';
+                el.style.color = ms < 300 ? '#4ade80' : ms < 800 ? '#facc15' : '#f87171';
+            } catch {
+                el.textContent = 'offline';
+                el.style.color = '#f87171';
             }
+        }
+
+        // ==================== STUDIO STATUS ====================
+        let studioIsOnline = true;
+
+        function applyStudioUI(isOnline) {
+            studioIsOnline = isOnline;
+            const dot   = document.getElementById('studio-status-dot');
+            const label = document.getElementById('studio-status-label');
+            const btn   = document.getElementById('studio-toggle-btn');
+            const knob  = document.getElementById('studio-toggle-knob');
+            if (!dot || !label || !btn || !knob) return;
+            if (isOnline) {
+                dot.style.background = '#22c55e';
+                label.textContent = 'Online'; label.style.color = '#4ade80';
+                btn.style.background = 'rgba(34,197,94,0.3)';
+                btn.style.borderColor = 'rgba(34,197,94,0.3)';
+                knob.style.transform = 'translateX(18px)';
+            } else {
+                dot.style.background = '#6b7280';
+                label.textContent = 'Away'; label.style.color = '#9ca3af';
+                btn.style.background = 'rgba(107,114,128,0.2)';
+                btn.style.borderColor = 'rgba(107,114,128,0.3)';
+                knob.style.transform = 'translateX(2px)';
+            }
+        }
+
+        async function fetchStudioStatus() {
+            try {
+                const res = await fetch('/api/save-brief');
+                const data = await res.json();
+                applyStudioUI(data.is_online !== false);
+            } catch { /* keep last state */ }
+        }
+
+        window.toggleStudioStatus = async function () {
+            const newState = !studioIsOnline;
+            applyStudioUI(newState);
+            try {
+                const res = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+                    body: JSON.stringify({ action: 'set_studio_status', is_online: newState })
+                });
+                if (!res.ok) {
+                    applyStudioUI(!newState);
+                    showToast('Failed to update studio status', false);
+                } else {
+                    showToast(newState ? 'Studio is now Online ✅' : 'Studio set to Away 🟡', newState);
+                }
+            } catch {
+                applyStudioUI(!newState);
+                showToast('Network error — status not saved', false);
+            }
+        };
+
+        function showToast(message, isGreen = true) {
+            const toast = document.getElementById('toast-notification');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.style.background = isGreen ? '#22c55e' : '#ef4444';
+            toast.style.color = isGreen ? 'black' : 'white';
+            toast.classList.remove('hidden', 'translate-y-full', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.add('translate-y-full', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 400);
+            }, 3000);
         }
 
         // ==================== DATA FETCHING & RENDERING ====================
@@ -2394,11 +2528,13 @@
         };
 
         // ==================== AI TERMINAL LOGIC ====================
+        // Stable session ID for this tab — keeps memory scoped to this session
+        const chatSessionId = 'sess_' + Math.random().toString(36).slice(2, 10);
         function formatAIText(text) {
             return text
-                .replace(/### (.*?)(?=\n|$)/g, '<div class="text-[#ff1a1a] font-bold mt-5 mb-1 uppercase tracking-widest text-[10px] border-b border-white/10 pb-1">$1</div>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
-                .replace(/(?:^|\n)-\s+(.*?)(?=\n|$)/g, '<br><span class="text-[#ff1a1a] mr-2">►</span>$1')
+                .replace(/### (.*?)(?=\n|$)/g, '<div style="font-family:Inter,sans-serif;" class="text-[#ff1a1a] font-semibold mt-3 mb-1 text-[11px] border-b border-white/10 pb-1">$1</div>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
+                .replace(/(?:^|\n)-\s+(.*?)(?=\n|$)/g, '<br><span class="text-[#ff1a1a] mr-1.5 opacity-70">•</span>$1')
                 .replace(/\n/g, '<br>');
         }
 
@@ -2435,14 +2571,15 @@
             const text = aiInput.value.trim();
             if (!text) return;
 
-            terminalBody.innerHTML += `<div class="terminal-msg msg-user">${text}</div>`;
+            terminalBody.innerHTML += `<div class="terminal-msg msg-user"><div class="bubble">${text}</div></div>`;
             aiInput.value = '';
             terminalBody.scrollTop = terminalBody.scrollHeight;
 
             const typingId = 'typing-' + Date.now();
             terminalBody.innerHTML += `
-                <div id="${typingId}" class="terminal-msg msg-ai typing-indicator">
-                    <span class="text-[#ff1a1a] font-bold mr-2">CORE></span> <span></span><span></span><span></span>
+                <div id="${typingId}" class="terminal-msg msg-ai">
+                    <div class="avatar">ZC</div>
+                    <div class="bubble typing-indicator"><span></span><span></span><span></span></div>
                 </div>`;
             terminalBody.scrollTop = terminalBody.scrollHeight;
 
@@ -2450,21 +2587,42 @@
                 const res = await fetch('/api/admin-chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
-                    body: JSON.stringify({ prompt: text })
+                    body: JSON.stringify({ prompt: text, sessionId: chatSessionId })
                 });
 
                 const aiResponse = await res.json();
                 document.getElementById(typingId).remove();
 
                 if (res.status === 401) {
-                    terminalBody.innerHTML += `<div class="terminal-msg msg-ai border-red-500 text-red-400"><span class="text-red-500 font-bold">SECURITY ALERT></span> Unauthorized token detected.</div>`;
+                    terminalBody.innerHTML += `<div class="terminal-msg msg-ai"><div class="avatar" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#ef4444;">!</div><div class="bubble" style="border-color:rgba(239,68,68,0.2);color:#f87171;">Unauthorized. Please log in again.</div></div>`;
                 } else {
                     const formattedReply = formatAIText(aiResponse.reply);
-                    terminalBody.innerHTML += `<div class="terminal-msg msg-ai leading-relaxed"><span class="text-[#ff1a1a] font-bold">CORE></span> ${formattedReply}</div>`;
+                    terminalBody.innerHTML += `<div class="terminal-msg msg-ai"><div class="avatar">ZC</div><div class="bubble">${formattedReply}</div></div>`;
+
+                    // ── If the AI executed an action, show a confirmation card ──
+                    if (aiResponse.action) {
+                        const act = aiResponse.action;
+                        const isSuccess = act.success !== false;
+                        const cardColor = isSuccess ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+                        const borderColor = isSuccess ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)';
+                        const iconColor = isSuccess ? '#22c55e' : '#ef4444';
+                        const label = isSuccess
+                            ? `✓ Status updated → <strong style="color:#22c55e">${act.newStatus}</strong> <span style="color:#555;font-size:10px;margin-left:6px;">${act.orderId}</span>`
+                            : `✗ Action failed: ${act.error || 'Unknown error'}`;
+                        terminalBody.innerHTML += `
+                            <div style="margin-left:2rem;margin-bottom:0.75rem;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid ${borderColor};background:${cardColor};font-size:0.75rem;color:${iconColor};font-family:Inter,sans-serif;">
+                                ${label}
+                            </div>`;
+
+                        // Auto-refresh dashboard data so the UI reflects the change
+                        if (isSuccess && typeof loadData === 'function') {
+                            setTimeout(() => loadData(), 800);
+                        }
+                    }
                 }
             } catch (error) {
                 document.getElementById(typingId).remove();
-                terminalBody.innerHTML += `<div class="terminal-msg msg-ai border-red-500 text-red-400"><span class="text-red-500 font-bold">ERROR></span> Neural link to backend failed.</div>`;
+                terminalBody.innerHTML += `<div class="terminal-msg msg-ai"><div class="avatar" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#ef4444;">!</div><div class="bubble" style="border-color:rgba(239,68,68,0.2);color:#f87171;">Couldn't reach the backend. Check your connection.</div></div>`;
             } finally {
                 terminalBody.scrollTop = terminalBody.scrollHeight;
             }
