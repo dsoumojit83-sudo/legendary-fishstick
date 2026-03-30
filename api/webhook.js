@@ -1,10 +1,46 @@
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const sendInvoice = require('./sendInvoice');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+// ── Cashfree Webhook Signature Verification ───────────────────────────────────
+// Cashfree signs every webhook using HMAC-SHA256 with your CASHFREE_SECRET_KEY.
+// Message format: timestamp + rawBody (Cashfree's official specification)
+// We re-stringify the parsed body since Vercel auto-parses JSON bodies.
+function verifyWebhookSignature(req) {
+    const timestamp = req.headers['x-webhook-timestamp'];
+    const receivedSig = req.headers['x-webhook-signature'];
+
+    if (!timestamp || !receivedSig || !process.env.CASHFREE_SECRET_KEY) return false;
+
+    const rawBody = JSON.stringify(req.body);
+    const message = timestamp + rawBody;
+
+    const computedSig = crypto
+        .createHmac('sha256', process.env.CASHFREE_SECRET_KEY)
+        .update(message)
+        .digest('base64');
+
+    try {
+        // Timing-safe comparison prevents timing attacks
+        return crypto.timingSafeEqual(
+            Buffer.from(computedSig),
+            Buffer.from(receivedSig)
+        );
+    } catch {
+        return false; // Buffer length mismatch = definitely invalid
+    }
+}
+
 module.exports = async function(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    // 🔒 Verify the webhook came from Cashfree — reject spoofed payloads
+    if (!verifyWebhookSignature(req)) {
+        console.warn(`[ZYRO][webhook][SECURITY] ${new Date().toISOString()} | Signature verification FAILED. Rejecting request.`);
+        return res.status(401).json({ error: 'Invalid webhook signature.' });
+    }
 
     try {
         // --- CASHFREE WEBHOOK HANDLER ---
@@ -43,7 +79,7 @@ module.exports = async function(req, res) {
                 } else {
                     console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | DB updated to 'paid'. Firing sendInvoice()...`);
                     try {
-                        await sendInvoice(orderData); // Pass the full order object
+                        await sendInvoice(orderData);
                         console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | Invoice email sent successfully.`);
                     } catch (invoiceErr) {
                         console.error(`[ZYRO][webhook][ERROR] ${new Date().toISOString()} | order=${orderId} | sendInvoice() FAILED:`, invoiceErr.message);
@@ -51,7 +87,7 @@ module.exports = async function(req, res) {
                 }
             }
         }
-        
+
         // Always return 200 OK so Cashfree stops retrying
         return res.status(200).send('Webhook Processed');
 
@@ -60,3 +96,4 @@ module.exports = async function(req, res) {
         return res.status(500).json({ error: "Webhook processing encountered a fatal error." });
     }
 };
+
