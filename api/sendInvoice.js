@@ -191,20 +191,21 @@ async function sendInvoice(order) {
             doc.rect(0, 140, 595.28, 4).fill('#ff1a1a');
 
             // ── BILLED TO ──
-            doc.rect(50, 165, 220, 82).fill('#f8f8f8');
-            doc.rect(50, 165, 4, 82).fill('#ff1a1a');
+            doc.rect(50, 165, 220, 98).fill('#f8f8f8');
+            doc.rect(50, 165, 4, 98).fill('#ff1a1a');
             doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('BILLED TO:', 64, 175);
             doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(sanitizeText(order.client_name) || 'Zyro Client', 64, 193); // UPDATED
             doc.fillColor('#555555').fontSize(12).font('Helvetica').text(sanitizeText(order.client_email), 64, 212); // UPDATED
             doc.fillColor('#555555').fontSize(12).text(sanitizeText(order.client_phone), 64, 228); // UPDATED
 
             // ── PAYABLE TO ──
-            doc.rect(325, 165, 220, 82).fill('#f8f8f8');
-            doc.rect(541, 165, 4, 82).fill('#050505');
+            doc.rect(325, 165, 220, 98).fill('#f8f8f8');
+            doc.rect(541, 165, 4, 98).fill('#050505');
             doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('PAYABLE TO:', 325, 175, {width: 212, align: 'right'});
             doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz Studio', 325, 193, {width: 212, align: 'right'});
-            doc.fillColor('#555555').fontSize(12).font('Helvetica').text('zyroeditz.official@gmail.com', 325, 212, {width: 212, align: 'right'});
-            doc.fillColor('#555555').fontSize(12).text('Malda, West Bengal, India', 325, 228, {width: 212, align: 'right'});
+            doc.fillColor('#555555').fontSize(12).font('Helvetica').text('+91 8900229800', 325, 212, {width: 212, align: 'right'});
+            doc.fillColor('#555555').fontSize(12).text('zyroeditz.official@gmail.com', 325, 228, {width: 212, align: 'right'});
+            doc.fillColor('#555555').fontSize(12).text('Malda, West Bengal, India', 325, 244, {width: 212, align: 'right'});
 
             // ── TABLE HEADER ──
             doc.rect(50, 270, 495, 36).fill('#050505');
