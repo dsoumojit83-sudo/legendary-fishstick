@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
         body { background-color: #050505; color: #fff; font-family: 'Outfit', sans-serif; overflow-x: hidden; }
         .glow { text-shadow: 0 0 20px rgba(255, 26, 26, 0.5); }
@@ -144,55 +144,6 @@
 
     <script>
         lucide.createIcons();
-        
-        // 1. Post-Purchase Confetti — 4-Stage Premium Celebration
-        window.addEventListener('load', function () {
-            const celebColors = ['#ff1a1a', '#ffffff', '#ffcc00', '#ff6666', '#ffaa00', '#ff4444'];
-            const goldSparks  = ['#ffcc00', '#ffdd44', '#ffe97a', '#ffffff', '#ff1a1a'];
-            const redWhite    = ['#ff1a1a', '#ffffff', '#ff4444'];
-
-            // ── STAGE 1: Instant center starburst ───────────────────────────
-            confetti({
-                particleCount: 160, spread: 360, startVelocity: 45, decay: 0.92, gravity: 0.8, scalar: 0.9, ticks: 120,
-                origin: { x: 0.5, y: 0.55 }, colors: celebColors, shapes: ['star', 'circle', 'square'],
-                disableForReducedMotion: true
-            });
-
-            // ── STAGE 2: Dual continuous cannons ───────────────────────────
-            const duration = 4 * 1000;
-            const animationEnd = Date.now() + duration;
-            (function cannonFrame() {
-                confetti({
-                    particleCount: 6, angle: 65, spread: 60, startVelocity: 55, decay: 0.91, gravity: 0.9, scalar: 0.85, ticks: 110,
-                    origin: { x: 0, y: 0.9 }, colors: celebColors, shapes: ['star', 'circle'], disableForReducedMotion: true
-                });
-                confetti({
-                    particleCount: 6, angle: 115, spread: 60, startVelocity: 55, decay: 0.91, gravity: 0.9, scalar: 0.85, ticks: 110,
-                    origin: { x: 1, y: 0.9 }, colors: celebColors, shapes: ['star', 'circle'], disableForReducedMotion: true
-                });
-                if (Date.now() < animationEnd) requestAnimationFrame(cannonFrame);
-            })();
-
-            // ── STAGE 3: Surprise gold star burst at 1.5s ───────────────────
-            setTimeout(function () {
-                confetti({
-                    particleCount: 80, angle: 80, spread: 70, startVelocity: 50, decay: 0.9, gravity: 0.85, scalar: 0.8, ticks: 100,
-                    origin: { x: 0.25, y: 0.85 }, colors: goldSparks, shapes: ['star'], disableForReducedMotion: true
-                });
-                confetti({
-                    particleCount: 80, angle: 100, spread: 70, startVelocity: 50, decay: 0.9, gravity: 0.85, scalar: 0.8, ticks: 100,
-                    origin: { x: 0.75, y: 0.85 }, colors: goldSparks, shapes: ['star'], disableForReducedMotion: true
-                });
-            }, 1500);
-
-            // ── STAGE 4: Grand finale — red & white rain from the top ────────
-            setTimeout(function () {
-                confetti({
-                    particleCount: 200, spread: 160, startVelocity: 30, decay: 0.93, gravity: 1.1, scalar: 0.7, ticks: 130,
-                    origin: { x: 0.5, y: 0 }, colors: redWhite, shapes: ['square', 'circle'], disableForReducedMotion: true
-                });
-            }, 3500);
-        });
 
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order_id') || 'ZYRO_MANUAL';
