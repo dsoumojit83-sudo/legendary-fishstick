@@ -1,5 +1,6 @@
 const OpenAI = require('openai');
 const { createClient } = require('@supabase/supabase-js');
+const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const groq = new OpenAI({
@@ -7,7 +8,17 @@ const groq = new OpenAI({
     apiKey: process.env.GROQ_API_KEY
 });
 
-const BUCKET = 'orders';
+// ── Backblaze B2 S3-compatible client ────────────────────────────────────────
+const b2 = new S3Client({
+    region: 'auto',
+    endpoint: process.env.B2_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.B2_KEY_ID,
+        secretAccessKey: process.env.B2_APPLICATION_KEY,
+    },
+});
+
+const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
 const axios = require('axios');
 let adminMemory = []; // Global memory (Short-term context)
 
@@ -118,16 +129,18 @@ module.exports = async function (req, res) {
             .filter(name => crmMap[name].totalSpent > 1000 || crmMap[name].count >= 3)
             .map(name => `${name} (LTV: Rs.${crmMap[name].totalSpent})`);
 
-        // --- CHECK SUPABASE STORAGE FOR FILE UPLOADS (parallel across all active orders) ---
+        // --- CHECK B2 STORAGE FOR FILE UPLOADS (parallel across all active orders) ---
         const fileCheckResults = await Promise.allSettled(
             activeOrders.map(o =>
-                supabase.storage
-                    .from(BUCKET)
-                    .list(o.order_id, { limit: 1 })
-                    .then(({ data }) => ({
-                        order_id: o.order_id,
-                        has_files: Array.isArray(data) && data.filter(f => f.name !== '.emptyFolderPlaceholder').length > 0
-                    }))
+                b2.send(new ListObjectsV2Command({
+                    Bucket: B2_BUCKET,
+                    Prefix: `${o.order_id}/`,
+                    MaxKeys: 1,
+                }))
+                .then(data => ({
+                    order_id: o.order_id,
+                    has_files: (data.KeyCount || 0) > 0
+                }))
             )
         );
 
@@ -301,7 +314,7 @@ ${awaitingFiles.length > 0 ? awaitingFiles.join('\n') : "None."}
 3. EXECUTIVE PARTNER: Advise on scaling. If projects are slow, suggest pitching 'Retainers' to Whale Clients.
 4. 2026 MARKET INTEL: The industry is moving toward "Retention-First" editing. Advise Soumojit to focus on hook-rates and average view duration for all Short-form clients.
 5. RESPONSE LENGTH: Keep your answers concise, typically between **1 to 3 sentences**. Provide enough detail to be useful but do not exceed this range unless Soumojit explicitly asks for a deep dive or a script.
-6. NO FILLER: No introductory fluff (like "Based on the database..."). Be crisp, analytical, and JARVIS-like. Always address the user as "Chief", "Sir", or "Boss".
+6. NO FILLER: No introductory fluff (like "Based on the database..."). Be crisp, analytical, and JARVIS-like. Always address the user as "Soumojit", "Sir", or "Boss".
 
 [RAW DATABASE ACCESS]
 ${fullDatabaseLog}`;
