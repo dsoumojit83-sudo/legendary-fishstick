@@ -181,8 +181,20 @@
                 <span id="fileNameDisplay" class="mt-2 text-[#ff1a1a] text-xs font-mono text-center hidden"></span>
             </label>
 
+            <!-- Upload Progress Bar (hidden until upload starts) -->
+            <div id="uploadProgressWrapper" class="hidden mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span id="uploadProgressLabel" class="text-xs font-mono text-gray-400 uppercase tracking-widest">Uploading to Vault...</span>
+                    <span id="uploadProgressPct" class="text-xs font-mono text-[#ff1a1a] font-bold tracking-widest">0%</span>
+                </div>
+                <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/10">
+                    <div id="uploadProgressBar" class="h-full bg-gradient-to-r from-[#ff1a1a] to-[#ff6644] rounded-full" style="width: 0%; transition: width 0.15s ease-out;"></div>
+                </div>
+                <div id="uploadFileCount" class="text-[10px] text-gray-600 font-mono mt-1.5 uppercase tracking-widest text-right"></div>
+            </div>
+
             <button id="submitBriefBtn" class="w-full relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(255,26,26,0.4)]">
-                <span id="btnText">Submit & Upload</span>
+                <span id="btnText">Submit &amp; Upload</span>
                 <i id="btnIcon" data-lucide="cloud-upload" class="w-5 h-5 group-hover:translate-y-[-2px] transition-transform"></i>
             </button>
             <div id="statusMsg" class="mt-3 text-center text-xs font-mono hidden"></div>
@@ -207,26 +219,16 @@
             const overlay = document.getElementById('verify-overlay');
             const content = document.getElementById('page-content');
             overlay.classList.add('hidden');
-            // Small rAF delay so the CSS transition on the overlay fires first
-            requestAnimationFrame(function () {
-                content.classList.add('verified');
-            });
-            // Fire confetti ONLY once we know the payment is genuine
+            requestAnimationFrame(function () { content.classList.add('verified'); });
             triggerCelebration();
-            // Remove overlay from DOM after transition completes
             setTimeout(function () { overlay.remove(); }, 400);
         }
 
         // =====================================================================
-        // CRITICAL: Verify payment with Cashfree server-side BEFORE showing page.
-        // Page content stays hidden behind the overlay until this resolves.
+        // CRITICAL: Verify payment server-side BEFORE showing page.
         // =====================================================================
         (async function verifyAndSendInvoice() {
-            // No real order → just show the page (manual / dev mode)
-            if (!orderId || orderId === 'ZYRO_MANUAL') {
-                revealPage();
-                return;
-            }
+            if (!orderId || orderId === 'ZYRO_MANUAL') { revealPage(); return; }
             try {
                 const res = await fetch('/api/verify-payment', {
                     method: 'POST',
@@ -234,272 +236,181 @@
                     body: JSON.stringify({ order_id: orderId })
                 });
                 const data = await res.json();
-
-                // If the payment is not confirmed as paid, redirect to failure page.
-                // Page content never becomes visible — user sees the overlay then the redirect.
                 if (!data.success || (data.status && data.status !== 'paid')) {
-                    window.location.replace(
-                        `/payment-failed?order_id=${encodeURIComponent(orderId)}`
-                    );
+                    window.location.replace(`/payment-failed?order_id=${encodeURIComponent(orderId)}`);
                     return;
                 }
-
-                // Payment confirmed ✅ — reveal the page
                 revealPage();
             } catch (err) {
-                console.warn('[ZyroEditz] Payment verification request failed silently:', err);
-                // On network error keep the user on the success page — reveal it as a safe fallback
+                console.warn('[ZyroEditz] Payment verification failed silently:', err);
                 revealPage();
             }
         })();
 
         // 1. Post-Purchase Confetti — 4-Stage Premium Celebration
-        // Called by revealPage() only after payment is verified.
         function triggerCelebration() {
-
-            // Rich palette: ZyroEditz red + gold sparks + white
             const celebColors = ['#ff1a1a', '#ffffff', '#ffcc00', '#ff6666', '#ffaa00', '#ff4444'];
             const goldSparks  = ['#ffcc00', '#ffdd44', '#ffe97a', '#ffffff', '#ff1a1a'];
             const redWhite    = ['#ff1a1a', '#ffffff', '#ff4444'];
-
-            // ── STAGE 1: Instant center starburst ───────────────────────────
-            confetti({
-                particleCount: 160,
-                spread: 360,
-                startVelocity: 45,
-                decay: 0.92,
-                gravity: 0.8,
-                scalar: 0.9,
-                ticks: 120,
-                origin: { x: 0.5, y: 0.55 },
-                colors: celebColors,
-                shapes: ['star', 'circle', 'square'],
-                disableForReducedMotion: true
-            });
-
-            // ── STAGE 2: Dual continuous cannons — left & right ─────────────
-            const duration    = 4 * 1000;
-            const animationEnd = Date.now() + duration;
-
+            confetti({ particleCount: 160, spread: 360, startVelocity: 45, decay: 0.92, gravity: 0.8, scalar: 0.9, ticks: 120, origin: { x: 0.5, y: 0.55 }, colors: celebColors, shapes: ['star', 'circle', 'square'], disableForReducedMotion: true });
+            const duration = 4 * 1000, animationEnd = Date.now() + duration;
             (function cannonFrame() {
-                confetti({
-                    particleCount: 6,
-                    angle: 65,
-                    spread: 60,
-                    startVelocity: 55,
-                    decay: 0.91,
-                    gravity: 0.9,
-                    scalar: 0.85,
-                    ticks: 110,
-                    origin: { x: 0, y: 0.9 },
-                    colors: celebColors,
-                    shapes: ['star', 'circle'],
-                    disableForReducedMotion: true
-                });
-                confetti({
-                    particleCount: 6,
-                    angle: 115,
-                    spread: 60,
-                    startVelocity: 55,
-                    decay: 0.91,
-                    gravity: 0.9,
-                    scalar: 0.85,
-                    ticks: 110,
-                    origin: { x: 1, y: 0.9 },
-                    colors: celebColors,
-                    shapes: ['star', 'circle'],
-                    disableForReducedMotion: true
-                });
+                confetti({ particleCount: 6, angle: 65, spread: 60, startVelocity: 55, decay: 0.91, gravity: 0.9, scalar: 0.85, ticks: 110, origin: { x: 0, y: 0.9 }, colors: celebColors, shapes: ['star', 'circle'], disableForReducedMotion: true });
+                confetti({ particleCount: 6, angle: 115, spread: 60, startVelocity: 55, decay: 0.91, gravity: 0.9, scalar: 0.85, ticks: 110, origin: { x: 1, y: 0.9 }, colors: celebColors, shapes: ['star', 'circle'], disableForReducedMotion: true });
                 if (Date.now() < animationEnd) requestAnimationFrame(cannonFrame);
             })();
-
-            // ── STAGE 3: Surprise gold star burst at 1.5s ───────────────────
             setTimeout(function () {
-                confetti({
-                    particleCount: 80,
-                    angle: 80,
-                    spread: 70,
-                    startVelocity: 50,
-                    decay: 0.9,
-                    gravity: 0.85,
-                    scalar: 0.8,
-                    ticks: 100,
-                    origin: { x: 0.25, y: 0.85 },
-                    colors: goldSparks,
-                    shapes: ['star'],
-                    disableForReducedMotion: true
-                });
-                confetti({
-                    particleCount: 80,
-                    angle: 100,
-                    spread: 70,
-                    startVelocity: 50,
-                    decay: 0.9,
-                    gravity: 0.85,
-                    scalar: 0.8,
-                    ticks: 100,
-                    origin: { x: 0.75, y: 0.85 },
-                    colors: goldSparks,
-                    shapes: ['star'],
-                    disableForReducedMotion: true
-                });
+                confetti({ particleCount: 80, angle: 80, spread: 70, startVelocity: 50, decay: 0.9, gravity: 0.85, scalar: 0.8, ticks: 100, origin: { x: 0.25, y: 0.85 }, colors: goldSparks, shapes: ['star'], disableForReducedMotion: true });
+                confetti({ particleCount: 80, angle: 100, spread: 70, startVelocity: 50, decay: 0.9, gravity: 0.85, scalar: 0.8, ticks: 100, origin: { x: 0.75, y: 0.85 }, colors: goldSparks, shapes: ['star'], disableForReducedMotion: true });
             }, 1500);
-
-            // ── STAGE 4: Grand finale — red & white rain from the top ────────
             setTimeout(function () {
-                confetti({
-                    particleCount: 200,
-                    spread: 160,
-                    startVelocity: 30,
-                    decay: 0.93,
-                    gravity: 1.1,
-                    scalar: 0.7,
-                    ticks: 130,
-                    origin: { x: 0.5, y: 0 },
-                    colors: redWhite,
-                    shapes: ['square', 'circle'],
-                    disableForReducedMotion: true
-                });
+                confetti({ particleCount: 200, spread: 160, startVelocity: 30, decay: 0.93, gravity: 1.1, scalar: 0.7, ticks: 130, origin: { x: 0.5, y: 0 }, colors: redWhite, shapes: ['square', 'circle'], disableForReducedMotion: true });
             }, 3500);
         }
 
-        // 2. Auto-Save Failsafe & 3. Character Counter
+        // 2. Brief auto-save + character counter
         const projectBrief = document.getElementById('projectBrief');
         const charCount = document.getElementById('charCount');
         const storageKey = `zyro_brief_${orderId}`;
-
-        // Load saved brief on page load
         const savedBrief = localStorage.getItem(storageKey);
-        if (savedBrief) {
-            projectBrief.value = savedBrief;
-            updateCharCount();
-        }
-
-        // Auto-save on input and update character counter
-        projectBrief.addEventListener('input', function() {
-            const value = this.value;
-            
-            // Auto-save to localStorage
-            localStorage.setItem(storageKey, value);
-            
-            // Update character counter
-            updateCharCount();
-        });
-
+        if (savedBrief) { projectBrief.value = savedBrief; updateCharCount(); }
+        projectBrief.addEventListener('input', function() { localStorage.setItem(storageKey, this.value); updateCharCount(); });
         function updateCharCount() {
             const length = projectBrief.value.length;
             charCount.textContent = `${length} chars`;
-            
-            // Change color based on character count
-            if (length > 0) {
-                charCount.classList.remove('text-gray-500');
-                charCount.classList.add('text-[#ff1a1a]');
-            } else {
-                charCount.classList.remove('text-[#ff1a1a]');
-                charCount.classList.add('text-gray-500');
-            }
+            charCount.classList.toggle('text-[#ff1a1a]', length > 0);
+            charCount.classList.toggle('text-gray-500', length === 0);
         }
-
-        // Initialize character counter on load
         updateCharCount();
 
-        // Show selected file names inside the drop-zone when user picks files
+        // 3. File picker — show selected file names
         document.getElementById('fileInput').addEventListener('change', function() {
             const display = document.getElementById('fileNameDisplay');
             if (this.files && this.files.length > 0) {
-                const names = Array.from(this.files).map(f => f.name).join(', ');
-                display.textContent = `${this.files.length} file${this.files.length > 1 ? 's' : ''} selected: ${names}`;
+                display.textContent = `${this.files.length} file${this.files.length > 1 ? 's' : ''} selected: ${Array.from(this.files).map(f => f.name).join(', ')}`;
                 display.classList.remove('hidden');
             } else {
                 display.textContent = '';
                 display.classList.add('hidden');
             }
-            // Re-init Lucide so any new icons render correctly
             if (window.lucide) lucide.createIcons();
         });
-        
+
+        // ── Upload a single file via pre-signed B2 URL (XHR for progress bar) ─
+        function uploadFileDirect(file, presignedUrl, onProgress) {
+            return new Promise(function(resolve, reject) {
+                const xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) { if (e.lengthComputable) onProgress(e.loaded, e.total); });
+                xhr.addEventListener('load', function() { xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('B2 HTTP ' + xhr.status)); });
+                xhr.addEventListener('error', function() { reject(new Error('Network error')); });
+                xhr.addEventListener('abort', function() { reject(new Error('Aborted')); });
+                xhr.open('PUT', presignedUrl);
+                xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+                xhr.send(file);
+            });
+        }
+
+        // 4. Submit handler — saves brief then direct-uploads each file to B2 with live progress
         document.getElementById('submitBriefBtn').addEventListener('click', async function() {
             const briefContent = document.getElementById('projectBrief').value.trim();
             const btn = this;
             const btnText = document.getElementById('btnText');
             const btnIcon = document.getElementById('btnIcon');
             const statusMsg = document.getElementById('statusMsg');
+            const progressWrapper = document.getElementById('uploadProgressWrapper');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const progressLabel = document.getElementById('uploadProgressLabel');
+            const progressPct = document.getElementById('uploadProgressPct');
+            const fileCountEl = document.getElementById('uploadFileCount');
 
-            // UI Loading State
             btn.disabled = true;
             btn.classList.add('opacity-80', 'cursor-not-allowed');
             btnIcon.classList.add('hidden');
             btnText.innerHTML = `<span class="yt-spinner mr-2"></span> SAVING TO STUDIO CORE...`;
             statusMsg.classList.add('hidden');
+            progressWrapper.classList.add('hidden');
 
             try {
-                // Step 1: Save brief to API
+                // Step 1: Save brief
                 if (briefContent) {
                     const response = await fetch('/api/save-brief', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ orderId: orderId, notes: briefContent })
                     });
-
-                    if (!response.ok) throw new Error("Failed to save brief.");
-
-                    // Cleanup: Remove localStorage after successful save
+                    if (!response.ok) throw new Error('Failed to save brief.');
                     localStorage.removeItem(storageKey);
                 }
 
-                // Step 2: Upload files (if any are selected)
+                // Step 2: Upload files directly to B2 via pre-signed URLs
                 const fileInput = document.getElementById('fileInput');
                 let uploadError = null;
 
                 if (fileInput.files && fileInput.files.length > 0) {
-                    btnText.innerHTML = `<span class="yt-spinner mr-2"></span> Uploading files...`;
+                    const files = Array.from(fileInput.files);
+                    const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+                    const bytesUploaded = new Array(files.length).fill(0);
 
-                    const formData = new FormData();
-                    formData.append('orderId', orderId);
-                    Array.from(fileInput.files).forEach(file => {
-                        formData.append('files', file);
-                    });
+                    progressWrapper.classList.remove('hidden');
+                    progressBar.style.width = '0%';
+                    progressPct.textContent = '0%';
 
-                    try {
-                        // Do NOT set Content-Type manually — browser sets multipart/form-data + boundary automatically
-                        const uploadResponse = await fetch('/api/upload-files', {
-                            method: 'POST',
-                            body: formData
-                        });
+                    function updateProgress() {
+                        const done = bytesUploaded.reduce((a, b) => a + b, 0);
+                        const pct = totalBytes > 0 ? Math.min(100, Math.round((done / totalBytes) * 100)) : 0;
+                        progressBar.style.width = pct + '%';
+                        progressPct.textContent = pct + '%';
+                    }
 
-                        if (!uploadResponse.ok) throw new Error("Upload failed.");
-                    } catch (err) {
-                        console.error("File upload error:", err);
-                        uploadError = "⚠️ Brief saved, but file upload failed. Please try uploading again.";
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        btnText.innerHTML = `<span class="yt-spinner mr-2"></span> UPLOADING TO VAULT...`;
+                        progressLabel.textContent = `Uploading file ${i + 1} of ${files.length}...`;
+                        fileCountEl.textContent = file.name;
+                        try {
+                            const urlRes = await fetch('/api/upload-files', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ orderId, fileName: file.name, contentType: file.type || 'application/octet-stream' })
+                            });
+                            if (!urlRes.ok) throw new Error('Could not get upload URL.');
+                            const { uploadUrl } = await urlRes.json();
+                            await uploadFileDirect(file, uploadUrl, function(loaded) {
+                                bytesUploaded[i] = loaded;
+                                updateProgress();
+                            });
+                            bytesUploaded[i] = file.size;
+                            updateProgress();
+                        } catch (fileErr) {
+                            console.error('Upload error for', file.name, fileErr);
+                            uploadError = `⚠️ Brief saved, but "${file.name}" failed to upload. Please retry.`;
+                            break;
+                        }
+                    }
+                    if (!uploadError) {
+                        progressLabel.textContent = 'Upload complete ✓';
+                        fileCountEl.textContent = `${files.length} file${files.length > 1 ? 's' : ''} delivered to Vault`;
                     }
                 }
 
-                // Step 3: Restore button and show result
-                btnText.innerHTML = `Submit & Upload`;
+                // Restore button
+                btnText.innerHTML = `Submit &amp; Upload`;
                 btnIcon.classList.remove('hidden');
                 btn.disabled = false;
                 btn.classList.remove('opacity-80', 'cursor-not-allowed');
 
-                if (uploadError) {
-                    statusMsg.textContent = uploadError;
-                    statusMsg.classList.remove('hidden');
-                    statusMsg.classList.add('text-[#ff1a1a]');
-                    statusMsg.classList.remove('text-[#22c55e]');
-                } else {
-                    statusMsg.textContent = '✅ ZyroEditz has received your brief and raw files!';
-                    statusMsg.classList.remove('hidden');
-                    statusMsg.classList.add('text-[#22c55e]');
-                    statusMsg.classList.remove('text-[#ff1a1a]');
-                }
+                statusMsg.textContent = uploadError || '✅ ZyroEditz has received your brief and raw files!';
+                statusMsg.classList.remove('hidden');
+                statusMsg.classList.toggle('text-[#ff1a1a]', !!uploadError);
+                statusMsg.classList.toggle('text-[#22c55e]', !uploadError);
 
             } catch (error) {
-                console.error("Error:", error);
-                // Re-enable button so user can retry
-                btnText.innerHTML = `Submit & Upload`;
+                console.error('Submit error:', error);
+                btnText.innerHTML = `Submit &amp; Upload`;
                 btnIcon.classList.remove('hidden');
                 btn.disabled = false;
                 btn.classList.remove('opacity-80', 'cursor-not-allowed');
-                statusMsg.textContent = "⚠️ Error saving brief. Please try again.";
+                statusMsg.textContent = '⚠️ Error saving brief. Please try again.';
                 statusMsg.classList.remove('hidden');
                 statusMsg.classList.add('text-[#ff1a1a]');
                 statusMsg.classList.remove('text-[#22c55e]');
