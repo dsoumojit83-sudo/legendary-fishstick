@@ -115,11 +115,11 @@ async function sendInvoice(order) {
                     await transporter.sendMail({
                         from: `"ZyroEditz" <${process.env.EMAIL_USER}>`,
                         to: order.client_email,
-                        subject: `Payment Secured: Your ZyroEditz Invoice #${order.order_id}`,
+                        subject: `Payment Secured: Your ZyroEditz™ Invoice #${order.order_id}`,
                         html: `
                             <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #050505; color: #ffffff; border: 1px solid #222222; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
                                 <div style="background-color: #111111; padding: 40px 30px; text-align: center; border-bottom: 2px solid #ff1a1a;">
-                                    <h1 style="margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -1px;">Zyro<span style="color: #ff1a1a;">Editz</span></h1>
+                                    <h1 style="margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -1px;">Zyro<span style="color: #ff1a1a;">Editz</span>&trade;</h1>
                                     <p style="margin: 5px 0 0; color: #888888; font-size: 10px; text-transform: uppercase; letter-spacing: 4px;">Speed. Motion. Precision.</p>
                                 </div>
                                 
@@ -154,7 +154,7 @@ async function sendInvoice(order) {
                                 </div>
 
                                 <div style="background-color: #0a0a0a; padding: 25px 30px; text-align: center; border-top: 1px solid #1a1a1a;">
-                                    <p style="margin: 0; color: #666666; font-size: 12px;">© ${new Date().getFullYear()} ZyroEditz. All rights reserved.</p>
+                                    <p style="margin: 0; color: #666666; font-size: 12px;">© ${new Date().getFullYear()} ZyroEditz&trade;. All rights reserved.</p>
                                     <p style="margin: 5px 0 0; color: #444444; font-size: 11px;">If you have any questions, reply to this email or contact <a href="mailto:zyroeditz.official@gmail.com" style="color: #ff1a1a; text-decoration: none;">zyroeditz.official@gmail.com</a>.</p>
                                 </div>
                             </div>
@@ -182,7 +182,7 @@ async function sendInvoice(order) {
 
             // Brand logo (left): "Zyro" white, "Editz" red
             doc.fillColor('#ffffff').fontSize(42).font('Helvetica-Bold').text('Zyro', 50, 45, {continued: true})
-               .fillColor('#ff1a1a').text('Editz');
+               .fillColor('#ff1a1a').text('Editz™');
             doc.fillColor('#888888').fontSize(10).font('Helvetica').text('Speed. Motion. Precision.', 50, 92, {letterSpacing: 4});
 
             // Invoice title (right)
@@ -205,7 +205,7 @@ async function sendInvoice(order) {
             doc.rect(325, 165, 220, 98).fill('#f8f8f8');
             doc.rect(541, 165, 4, 98).fill('#050505');
             doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('PAYABLE TO:', 325, 175, {width: 212, align: 'right'});
-            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz Studio', 325, 193, {width: 212, align: 'right'});
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz™ Studio', 325, 193, {width: 212, align: 'right'});
             doc.fillColor('#555555').fontSize(12).font('Helvetica').text('+91 8900229800', 325, 212, {width: 212, align: 'right'});
             doc.fillColor('#555555').fontSize(12).text('zyroeditz.official@gmail.com', 325, 228, {width: 212, align: 'right'});
             doc.fillColor('#555555').fontSize(12).text('Malda, West Bengal, India', 325, 244, {width: 212, align: 'right'});
@@ -246,7 +246,7 @@ async function sendInvoice(order) {
             doc.fillColor('#888888').fontSize(10).font('Helvetica')
                .text('This is a computer-generated document. No signature is required.', 50, 766, {align: 'center', width: 495});
             doc.font('Helvetica-Bold')
-               .text('ZyroEditz | Cinematic Editing & Motion Graphics', 50, 782, {align: 'center', width: 495});
+               .text('ZyroEditz™ | Cinematic Editing & Motion Graphics', 50, 782, {align: 'center', width: 495});
 
             log('INFO', orderId, 'PDF build complete. Waiting for doc.end() to flush buffers...');
             doc.end();
