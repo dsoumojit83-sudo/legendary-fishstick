@@ -1,11 +1,10 @@
-const { S3Client, PutObjectCommand, PutBucketCorsCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 // ── Backblaze B2 S3-compatible client ────────────────────────────────────────
-// NOTE: B2 requires the actual region (e.g. 'us-west-004'), not 'auto'.
-// Extract it from the endpoint: https://s3.us-west-004.backblazeb2.com → us-west-004
+// NOTE: B2 requires the actual region (e.g. 'us-east-005'), not 'auto'.
 const B2_ENDPOINT = process.env.B2_ENDPOINT || '';
-const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-west-004';
+const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-east-005';
 
 const b2 = new S3Client({
     region: extractedRegion,
@@ -14,53 +13,90 @@ const b2 = new S3Client({
         accessKeyId: process.env.B2_KEY_ID,
         secretAccessKey: process.env.B2_APPLICATION_KEY,
     },
-    forcePathStyle: true, // B2 requires path-style addressing
+    forcePathStyle: true,
+    // ── CRITICAL: Disable SDK v3 automatic CRC32 checksums ──────────────
+    // AWS SDK v3 adds x-amz-checksum-crc32 and x-amz-sdk-checksum-algorithm
+    // to presigned URLs by default. B2 does NOT support these — they cause
+    // signature mismatches and upload failures. Setting to WHEN_REQUIRED
+    // prevents the SDK from injecting them.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
 });
 
 const B2_BUCKET = process.env.B2_BUCKET_NAME;
 
-// ── Apply CORS rules on cold start so browsers can PUT files directly to B2 ──
-// This runs once per serverless instance. It is idempotent — safe to repeat.
-let corsApplied = false;
+// ── Apply CORS via B2 NATIVE API (not S3-compatible PutBucketCors) ──────────
+// The S3-compatible PutBucketCorsCommand silently fails on B2 when native CORS
+// rules already exist, or when the application key lacks writeBucketCors.
+// The native B2 API (b2_update_bucket) is far more reliable.
+// Runs once per cold start. Idempotent — safe to repeat.
 (async () => {
     try {
-        await b2.send(new PutBucketCorsCommand({
-            Bucket: B2_BUCKET,
-            CORSConfiguration: {
-                CORSRules: [{
-                    AllowedOrigins: [
+        const keyId = process.env.B2_KEY_ID;
+        const appKey = process.env.B2_APPLICATION_KEY;
+        if (!keyId || !appKey || !B2_BUCKET) {
+            console.warn('[upload-files] ⚠️ Missing B2 credentials — skipping CORS setup.');
+            return;
+        }
+
+        // Step 1: Authorize with B2 native API
+        const authRes = await fetch('https://api.backblazeb2.com/b2api/v2/b2_authorize_account', {
+            headers: {
+                'Authorization': 'Basic ' + Buffer.from(keyId + ':' + appKey).toString('base64')
+            }
+        });
+        if (!authRes.ok) throw new Error('b2_authorize_account HTTP ' + authRes.status);
+        const auth = await authRes.json();
+
+        // Step 2: Get bucket ID
+        const listRes = await fetch(`${auth.apiUrl}/b2api/v2/b2_list_buckets`, {
+            method: 'POST',
+            headers: { 'Authorization': auth.authorizationToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountId: auth.accountId, bucketName: B2_BUCKET })
+        });
+        if (!listRes.ok) throw new Error('b2_list_buckets HTTP ' + listRes.status);
+        const buckets = await listRes.json();
+        const bucket = (buckets.buckets || []).find(b => b.bucketName === B2_BUCKET);
+        if (!bucket) throw new Error('Bucket "' + B2_BUCKET + '" not found');
+
+        // Step 3: Set CORS rules via b2_update_bucket
+        const updateRes = await fetch(`${auth.apiUrl}/b2api/v2/b2_update_bucket`, {
+            method: 'POST',
+            headers: { 'Authorization': auth.authorizationToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                accountId: auth.accountId,
+                bucketId: bucket.bucketId,
+                corsRules: [{
+                    corsRuleName: 'allowBrowserUploads',
+                    allowedOrigins: [
                         'https://zyroeditz.vercel.app',
                         'https://www.zyroeditz.com',
                         'https://zyroeditz.com',
                     ],
-                    // B2 requires explicit header names for preflight — wildcard may not work
-                    AllowedHeaders: [
-                        'content-type',
-                        'Content-Type',
-                        'authorization',
-                        'Authorization',
-                        'x-amz-content-sha256',
-                        'x-amz-date',
-                        'x-amz-security-token',
-                        'x-amz-user-agent',
-                        'x-bz-content-sha1',
-                        'x-bz-file-name',
-                        '*',
+                    allowedOperations: [
+                        's3_put',
+                        's3_get',
+                        's3_head',
+                        's3_post',
+                        's3_delete',
                     ],
-                    AllowedMethods: ['PUT', 'POST', 'GET', 'HEAD', 'DELETE'],
-                    ExposeHeaders:  ['ETag', 'x-amz-request-id', 'x-bz-content-sha1'],
-                    MaxAgeSeconds:  86400,
+                    allowedHeaders: ['*'],
+                    exposeHeaders: ['ETag', 'x-amz-request-id', 'x-bz-content-sha1'],
+                    maxAgeSeconds: 86400,
                 }],
-            },
-        }));
-        corsApplied = true;
-        console.log('[upload-files] ✅ B2 CORS rules applied via S3 API.');
+            })
+        });
+
+        if (!updateRes.ok) {
+            const errBody = await updateRes.text();
+            throw new Error('b2_update_bucket HTTP ' + updateRes.status + ': ' + errBody);
+        }
+
+        console.log('[upload-files] ✅ B2 CORS configured via native API.');
     } catch (err) {
-        // Common: bucket may already have native B2 CORS rules, which conflict
-        // with S3-compatible CORS. Log full error for debugging.
-        console.warn('[upload-files] ⚠️ S3 CORS setup failed:', err.Code || err.name, err.message);
-        console.warn('[upload-files] ℹ️ If uploads fail with CORS errors, set CORS via B2 CLI:');
-        console.warn('  b2 bucket update --cors-rules \'[{"corsRuleName":"allow-uploads","allowedOrigins":["https://zyroeditz.vercel.app","https://www.zyroeditz.com","https://zyroeditz.com"],"allowedOperations":["s3_put","s3_get","s3_head"],"allowedHeaders":["*"],"exposeHeaders":["ETag","x-amz-request-id"],"maxAgeSeconds":86400}]\' ' + (B2_BUCKET || '<bucket-name>'));
+        console.warn('[upload-files] ⚠️ Native CORS setup failed:', err.message);
+        console.warn('[upload-files] ℹ️ Manual fix — run this once via B2 CLI:');
+        console.warn(`  b2 bucket update --cors-rules '[{"corsRuleName":"allowBrowserUploads","allowedOrigins":["https://zyroeditz.vercel.app","https://www.zyroeditz.com","https://zyroeditz.com"],"allowedOperations":["s3_put","s3_get","s3_head"],"allowedHeaders":["*"],"exposeHeaders":["ETag","x-amz-request-id"],"maxAgeSeconds":86400}]' ${B2_BUCKET || '<bucket>'}`);
     }
 })();
 
@@ -76,8 +112,6 @@ module.exports = async function (req, res) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
     // ── Handle CORS preflight from the browser ──────────────────────────
-    // This is for the /api/upload-files endpoint itself (Vercel function),
-    // NOT for B2. Vercel usually handles this, but explicit is safer.
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -91,10 +125,6 @@ module.exports = async function (req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // 🔒 Auth — same header used by all admin APIs
-    // NOTE: Clients on payment-success use their orderId as the auth token
-    // instead of the admin password so they can upload their own files only.
-    // We validate the orderId is present and non-empty as a lightweight guard.
     const { orderId, fileName, contentType } = req.body || {};
 
     if (!orderId || !fileName) {
@@ -112,7 +142,7 @@ module.exports = async function (req, res) {
             ContentType: contentType || 'application/octet-stream',
         });
 
-        // Pre-signed URL valid for 3 hours — covers 1–3 GB uploads even on slow connections
+        // Pre-signed URL valid for 3 hours — covers large uploads on slow connections
         const uploadUrl = await getSignedUrl(b2, command, { expiresIn: 10800 });
 
         return res.status(200).json({ uploadUrl, key });
