@@ -2,13 +2,17 @@ const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/c
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 // ── Backblaze B2 S3-compatible client ────────────────────────────────────────
+const B2_ENDPOINT = process.env.B2_ENDPOINT || '';
+const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-west-004';
+
 const b2 = new S3Client({
-    region: 'auto',
-    endpoint: process.env.B2_ENDPOINT,
+    region: extractedRegion,
+    endpoint: B2_ENDPOINT,
     credentials: {
         accessKeyId: process.env.B2_KEY_ID,
         secretAccessKey: process.env.B2_APPLICATION_KEY,
     },
+    forcePathStyle: true,
 });
 
 const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
