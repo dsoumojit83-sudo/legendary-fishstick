@@ -16,6 +16,8 @@ const b2 = new S3Client({
         secretAccessKey: process.env.B2_APPLICATION_KEY,
     },
     forcePathStyle: true,
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
 });
 
 const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
