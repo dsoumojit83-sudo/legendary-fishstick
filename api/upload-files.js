@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, PutBucketCorsCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 // ── Backblaze B2 S3-compatible client ────────────────────────────────────────
@@ -12,6 +12,33 @@ const b2 = new S3Client({
 });
 
 const B2_BUCKET = process.env.B2_BUCKET_NAME;
+
+// ── Apply CORS rules on cold start so browsers can PUT files directly to B2 ──
+// This runs once per serverless instance. It is idempotent — safe to repeat.
+(async () => {
+    try {
+        await b2.send(new PutBucketCorsCommand({
+            Bucket: B2_BUCKET,
+            CORSConfiguration: {
+                CORSRules: [{
+                    AllowedOrigins: [
+                        'https://zyroeditz.vercel.app',
+                        'https://www.zyroeditz.com',
+                        'https://zyroeditz.com',
+                    ],
+                    AllowedHeaders: ['*'],
+                    AllowedMethods: ['PUT', 'GET', 'HEAD'],
+                    ExposeHeaders:  ['ETag'],
+                    MaxAgeSeconds:  3600,
+                }],
+            },
+        }));
+        console.log('[upload-files] ✅ B2 CORS rules applied.');
+    } catch (err) {
+        // Log but never crash — pre-sign still works even if CORS update fails
+        console.warn('[upload-files] ⚠️ CORS setup skipped:', err.message);
+    }
+})();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/upload-files
@@ -50,8 +77,8 @@ module.exports = async function (req, res) {
             ContentType: contentType || 'application/octet-stream',
         });
 
-        // Pre-signed URL valid for 10 minutes — enough for large video uploads
-        const uploadUrl = await getSignedUrl(b2, command, { expiresIn: 600 });
+        // Pre-signed URL valid for 3 hours — covers 1–3 GB uploads even on slow connections
+        const uploadUrl = await getSignedUrl(b2, command, { expiresIn: 10800 });
 
         return res.status(200).json({ uploadUrl, key });
 
