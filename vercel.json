@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/upload-files.js":    { "maxDuration": 10 },
+    "api/upload-files.js":    { "maxDuration": 20 },
     "api/admin-chat.js":      { "maxDuration": 60 },
     "api/admin-data.js":      { "maxDuration": 30 },
     "api/webhook.js":         { "maxDuration": 30 },
