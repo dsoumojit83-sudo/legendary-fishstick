@@ -1,5 +1,10 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const PDFDocument = require("pdfkit");
+const { createClient } = require('@supabase/supabase-js');
+const { default: makeWASocket, DisconnectReason, initAuthCreds, BufferJSON } = require('@whiskeysockets/baileys');
+const pino = require('pino');
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // ─── STRUCTURED LOGGER ───────────────────────────────────────────────────────
 // All logs use a prefix so they are easy to filter in the Vercel logs dashboard.
@@ -45,36 +50,155 @@ function safeAmount(value) {
     return Number.isFinite(parsed) ? parsed.toFixed(2) : '0.00';
 }
 
+// ─── WHATSAPP INTEGRATION ───────────────────────────────────────────────────
+
+const useSupabaseAuthState = async () => {
+    const { data } = await supabase.from('whatsapp_auth').select('*');
+    let creds;
+    let keys = {};
+    if (data && data.length > 0) {
+        for (const row of data) {
+            if (row.key === 'creds') {
+                creds = JSON.parse(row.value, BufferJSON.reviver);
+            } else {
+                keys[row.key] = JSON.parse(row.value, BufferJSON.reviver);
+            }
+        }
+    }
+    if (!creds) creds = initAuthCreds();
+
+    return {
+        state: {
+            creds,
+            keys: {
+                get: (type, ids) => {
+                    const key = keys || {};
+                    return ids.reduce((dict, id) => {
+                        let value = key[`${type}-${id}`];
+                        if (value) {
+                            if (type === 'app-state-sync-key') {
+                                value = require('@whiskeysockets/baileys').proto.Message.AppStateSyncKeyData.fromObject(value);
+                            }
+                            dict[id] = value;
+                        }
+                        return dict;
+                    }, {});
+                },
+                set: async (data) => {
+                    const tasks = [];
+                    for (const category of Object.keys(data)) {
+                        for (const id of Object.keys(data[category])) {
+                            const value = data[category][id];
+                            const sKey = `${category}-${id}`;
+                            if (value) {
+                                keys[sKey] = value;
+                                tasks.push(
+                                    supabase.from('whatsapp_auth').upsert({
+                                        key: sKey,
+                                        value: JSON.stringify(value, BufferJSON.replacer)
+                                    }, { onConflict: 'key' })
+                                );
+                            } else {
+                                delete keys[sKey];
+                                tasks.push(supabase.from('whatsapp_auth').delete().eq('key', sKey));
+                            }
+                        }
+                    }
+                    await Promise.all(tasks);
+                }
+            }
+        },
+        saveCreds: async () => {
+            await supabase.from('whatsapp_auth').upsert({
+                key: 'creds',
+                value: JSON.stringify(creds, BufferJSON.replacer)
+            }, { onConflict: 'key' });
+        }
+    };
+};
+
+async function sendWhatsAppInvoice(order, orderId, formattedDeadline) {
+    try {
+        log('INFO', orderId, 'Starting WhatsApp Baileys Boot sequence...');
+        const { state, saveCreds } = await useSupabaseAuthState();
+        const logger = pino({ level: 'silent' });
+        
+        const sock = makeWASocket({
+            logger,
+            printQRInTerminal: false,
+            auth: state,
+            browser: ['ZyroEditz Bot', 'Chrome', '1.0.0']
+        });
+
+        sock.ev.on('creds.update', saveCreds);
+
+        return new Promise((resolve, reject) => {
+            sock.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, qr } = update;
+                
+                if (qr) {
+                     log('INFO', orderId, 'ACTION REQUIRED: Open the link below in your web browser and scan the QR code to log into WhatsApp!');
+                     log('INFO', orderId, `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`);
+                }
+
+                if (connection === 'close') {
+                    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
+                    log('ERROR', orderId, 'WhatsApp connection closed:', lastDisconnect.error);
+                    reject(lastDisconnect.error || new Error('Closed'));
+                } else if (connection === 'open') {
+                    log('INFO', orderId, 'WhatsApp connected successfully!');
+                    try {
+                        let phoneStr = String(order.client_phone || '').replace(/\D/g, '');
+                        if (phoneStr.length === 10) phoneStr = '91' + phoneStr;
+                        if (!phoneStr) {
+                            sock.end(undefined);
+                            return resolve();
+                        }
+                        
+                        const jid = phoneStr + '@s.whatsapp.net';
+                        const [result] = await sock.onWhatsApp(jid);
+                        if (!result) {
+                            log('INFO', orderId, 'Client phone is not on WhatsApp.');
+                            sock.end(undefined);
+                            return resolve();
+                        }
+
+                        const waMsg = `*ZyroEditz™ Payment Confirmation* ⚡\n\nHello! Your payment has been successfully processed and your project is now in our pipeline.\n\n*Order ID:* #${sanitizeText(order.order_id)}\n*Amount Paid:* Rs. ${safeAmount(order.amount)}\n*Est. Delivery:* ${formattedDeadline}\n\nPlease check your email inbox for your official PDF invoice. \nThank you for trusting ZyroEditz!`;
+
+                        await sock.sendMessage(jid, { text: waMsg });
+                        log('INFO', orderId, `WhatsApp message successfully sent to ${phoneStr}!`);
+                        
+                        setTimeout(() => sock.end(undefined), 2000); // Disconnect cleanly after 2s
+                        resolve();
+                    } catch (msgErr) {
+                        log('ERROR', orderId, 'Error sending WhatsApp message:', msgErr);
+                        sock.end(undefined);
+                        reject(msgErr);
+                    }
+                }
+            });
+        });
+    } catch (e) {
+        log('ERROR', orderId, 'WhatsApp Boot Error:', e);
+    }
+}
+
 async function sendInvoice(order) {
     const orderId = order?.order_id || 'UNKNOWN';
 
     log('INFO', orderId, `sendInvoice() called for client: ${order?.client_email}`);
 
-    // Guard: fail fast with a clear error if email credentials are missing
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        const msg = 'CRITICAL: EMAIL_USER or EMAIL_PASS env vars are NOT set. Emails cannot be sent.';
+    // Guard: fail fast with a clear error if Resend API key is missing
+    if (!process.env.RESEND_API_KEY) {
+        const msg = 'CRITICAL: RESEND_API_KEY env var is NOT set. Emails cannot be sent.';
         log('ERROR', orderId, msg);
         throw new Error(`[sendInvoice] ${msg}`);
     }
 
-    log('INFO', orderId, `Using sender: ${process.env.EMAIL_USER}`);
+    log('INFO', orderId, `Using Resend API for email delivery`);
 
-    // Create transporter INSIDE the function so it reads live env vars on every call.
-    // If created at module load (top-level), Vercel serverless may not have env vars yet.
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS   // Must be a Gmail App Password, NOT your real password
-        }
-    });
-
-    // NOTE: transporter.verify() is intentionally REMOVED.
-    // On Vercel serverless (hobby/pro tier), outbound SMTP port connections
-    // (465/587) are frequently blocked at the network layer, causing verify()
-    // to throw even when credentials are 100% correct. This was silently
-    // aborting all invoice emails. We skip verify() and attempt sendMail directly.
-    // Any real credential errors will still surface from sendMail itself.
+    // Initialize Resend instance
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     return new Promise((resolve, reject) => {
         try {
@@ -112,9 +236,10 @@ async function sendInvoice(order) {
                     log('INFO', orderId, `PDF generated successfully (${pdfData.length} bytes). Attempting email send...`);
 
                     // --- 2. EMAIL TRANSMISSION ENGINE ---
-                    await transporter.sendMail({
-                        from: `"ZyroEditz" <${process.env.EMAIL_USER}>`,
+                    const { data, error } = await resend.emails.send({
+                        from: 'ZyroEditz™ <billing@zyroeditz.xyz>',
                         to: order.client_email,
+                        reply_to: 'zyroeditz.official@gmail.com',
                         subject: `Payment Secured: Your ZyroEditz™ Invoice #${order.order_id}`,
                         html: `
                             <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #050505; color: #ffffff; border: 1px solid #222222; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
@@ -166,11 +291,23 @@ async function sendInvoice(order) {
                             }
                         ]
                     });
+                    
+                    if (error) {
+                        log('ERROR', orderId, 'FAILED: resend.emails.send() returned an error.', error);
+                        return reject(error);
+                    }
 
-                    log('INFO', orderId, `SUCCESS: Invoice email delivered to ${order.client_email}`);
+                    log('INFO', orderId, `SUCCESS: Invoice email delivered to ${order.client_email} via Resend. ID: ${data?.id}`);
+                    
+                    try {
+                        await sendWhatsAppInvoice(order, orderId, formattedDeadline);
+                    } catch (waErr) {
+                        log('ERROR', orderId, 'WhatsApp failed, but invoice email generated successfully.', waErr);
+                    }
+
                     resolve();
                 } catch (err) {
-                    log('ERROR', orderId, 'FAILED: transporter.sendMail() threw an error.', err);
+                    log('ERROR', orderId, 'FAILED: Email delivery threw an error.', err);
                     reject(err);
                 }
             });
