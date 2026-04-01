@@ -120,15 +120,19 @@ const useSupabaseAuthState = async () => {
 async function sendWhatsAppInvoice(order, orderId, formattedDeadline) {
     try {
         log('INFO', orderId, 'Starting WhatsApp Baileys Boot sequence...');
-        const { default: makeWASocket } = await import('@whiskeysockets/baileys');
+        const { default: makeWASocket, fetchLatestBaileysVersion, Browsers } = await import('@whiskeysockets/baileys');
         const { state, saveCreds } = await useSupabaseAuthState();
         const logger = pino({ level: 'silent' });
 
+        const { version, isLatest } = await fetchLatestBaileysVersion();
+        log('INFO', orderId, `Using WA v${version.join('.')} (isLatest: ${isLatest})`);
+
         const sock = makeWASocket({
+            version,
             logger,
             printQRInTerminal: false,
             auth: state,
-            browser: ['Mac OS', 'Chrome', '121.0.0']
+            browser: Browsers.macOS('Desktop')
         });
 
         sock.ev.on('creds.update', saveCreds);
