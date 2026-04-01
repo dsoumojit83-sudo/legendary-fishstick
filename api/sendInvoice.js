@@ -1,7 +1,6 @@
 const { Resend } = require("resend");
 const PDFDocument = require("pdfkit");
 const { createClient } = require('@supabase/supabase-js');
-const { default: makeWASocket, DisconnectReason, initAuthCreds, BufferJSON } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -53,6 +52,7 @@ function safeAmount(value) {
 // ─── WHATSAPP INTEGRATION ───────────────────────────────────────────────────
 
 const useSupabaseAuthState = async () => {
+    const { initAuthCreds, BufferJSON, proto } = await import('@whiskeysockets/baileys');
     const { data } = await supabase.from('whatsapp_auth').select('*');
     let creds;
     let keys = {};
@@ -77,7 +77,7 @@ const useSupabaseAuthState = async () => {
                         let value = key[`${type}-${id}`];
                         if (value) {
                             if (type === 'app-state-sync-key') {
-                                value = require('@whiskeysockets/baileys').proto.Message.AppStateSyncKeyData.fromObject(value);
+                                value = proto.Message.AppStateSyncKeyData.fromObject(value);
                             }
                             dict[id] = value;
                         }
@@ -120,6 +120,7 @@ const useSupabaseAuthState = async () => {
 async function sendWhatsAppInvoice(order, orderId, formattedDeadline) {
     try {
         log('INFO', orderId, 'Starting WhatsApp Baileys Boot sequence...');
+        const { default: makeWASocket } = await import('@whiskeysockets/baileys');
         const { state, saveCreds } = await useSupabaseAuthState();
         const logger = pino({ level: 'silent' });
         
