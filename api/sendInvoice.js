@@ -123,7 +123,7 @@ async function sendWhatsAppInvoice(order, orderId, formattedDeadline) {
         const { default: makeWASocket } = await import('@whiskeysockets/baileys');
         const { state, saveCreds } = await useSupabaseAuthState();
         const logger = pino({ level: 'silent' });
-        
+
         const sock = makeWASocket({
             logger,
             printQRInTerminal: false,
@@ -136,10 +136,17 @@ async function sendWhatsAppInvoice(order, orderId, formattedDeadline) {
         return new Promise((resolve, reject) => {
             sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
-                
+
                 if (qr) {
-                     log('INFO', orderId, 'ACTION REQUIRED: Open the link below in your web browser and scan the QR code to log into WhatsApp!');
-                     log('INFO', orderId, `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`);
+                    log('INFO', orderId, 'ACTION REQUIRED: Open the link below in your web browser and scan the QR code to log into WhatsApp!');
+                    log('INFO', orderId, `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`);
+                    log('INFO', orderId, 'CRITICAL: Vercel will freeze this background process in 8 seconds to prevent browser timeouts. SCAN FAST!');
+                    
+                    // Force Vercel to wait and Keep-Alive the websocket connection for exactly 8 seconds
+                    setTimeout(() => {
+                        log('ERROR', orderId, 'QR scan window closed. Resolving early to prevent frontend crash. If you missed it, try a test checkout again!');
+                        resolve();
+                    }, 8000);
                 }
 
                 if (connection === 'close') {
@@ -155,7 +162,7 @@ async function sendWhatsAppInvoice(order, orderId, formattedDeadline) {
                             sock.end(undefined);
                             return resolve();
                         }
-                        
+
                         const jid = phoneStr + '@s.whatsapp.net';
                         const [result] = await sock.onWhatsApp(jid);
                         if (!result) {
@@ -168,7 +175,7 @@ async function sendWhatsAppInvoice(order, orderId, formattedDeadline) {
 
                         await sock.sendMessage(jid, { text: waMsg });
                         log('INFO', orderId, `WhatsApp message successfully sent to ${phoneStr}!`);
-                        
+
                         setTimeout(() => sock.end(undefined), 2000); // Disconnect cleanly after 2s
                         resolve();
                     } catch (msgErr) {
@@ -222,7 +229,7 @@ async function sendInvoice(order) {
 
             let buffers = [];
             doc.on("data", buffers.push.bind(buffers));
-            
+
             // --- CATCH ASYNC STREAM ERRORS ---
             // Without this, if PDFKit silently crashes during generation,
             // the promise hangs forever causing Vercel to timeout (504).
@@ -292,14 +299,14 @@ async function sendInvoice(order) {
                             }
                         ]
                     });
-                    
+
                     if (error) {
                         log('ERROR', orderId, 'FAILED: resend.emails.send() returned an error.', error);
                         return reject(error);
                     }
 
                     log('INFO', orderId, `SUCCESS: Invoice email delivered to ${order.client_email} via Resend. ID: ${data?.id}`);
-                    
+
                     try {
                         await sendWhatsAppInvoice(order, orderId, formattedDeadline);
                     } catch (waErr) {
@@ -319,14 +326,14 @@ async function sendInvoice(order) {
             doc.rect(0, 0, 595.28, 140).fill('#050505');
 
             // Brand logo (left): "Zyro" white, "Editz" red
-            doc.fillColor('#ffffff').fontSize(42).font('Helvetica-Bold').text('Zyro', 50, 45, {continued: true})
-               .fillColor('#ff1a1a').text('Editz™');
-            doc.fillColor('#888888').fontSize(10).font('Helvetica').text('Speed. Motion. Precision.', 50, 92, {letterSpacing: 4});
+            doc.fillColor('#ffffff').fontSize(42).font('Helvetica-Bold').text('Zyro', 50, 45, { continued: true })
+                .fillColor('#ff1a1a').text('Editz™');
+            doc.fillColor('#888888').fontSize(10).font('Helvetica').text('Speed. Motion. Precision.', 50, 92, { letterSpacing: 4 });
 
             // Invoice title (right)
-            doc.fillColor('#ff1a1a').fontSize(32).font('Helvetica-Bold').text('INVOICE', 0, 45, {align: 'right', width: 545});
-            doc.fillColor('#cccccc').fontSize(12).font('Courier').text(`#${sanitizeText(order.order_id)}`, 0, 82, {align: 'right', width: 545}); // UPDATED
-            doc.fillColor('#cccccc').font('Helvetica').fontSize(12).text(`Date: ${formattedToday}`, 0, 100, {align: 'right', width: 545});
+            doc.fillColor('#ff1a1a').fontSize(32).font('Helvetica-Bold').text('INVOICE', 0, 45, { align: 'right', width: 545 });
+            doc.fillColor('#cccccc').fontSize(12).font('Courier').text(`#${sanitizeText(order.order_id)}`, 0, 82, { align: 'right', width: 545 }); // UPDATED
+            doc.fillColor('#cccccc').font('Helvetica').fontSize(12).text(`Date: ${formattedToday}`, 0, 100, { align: 'right', width: 545 });
 
             // Red accent border under header
             doc.rect(0, 140, 595.28, 4).fill('#ff1a1a');
@@ -342,25 +349,25 @@ async function sendInvoice(order) {
             // ── PAYABLE TO ──
             doc.rect(325, 165, 220, 98).fill('#f8f8f8');
             doc.rect(541, 165, 4, 98).fill('#050505');
-            doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('PAYABLE TO:', 325, 175, {width: 212, align: 'right'});
-            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz™ Studio', 325, 193, {width: 212, align: 'right'});
-            doc.fillColor('#555555').fontSize(12).font('Helvetica').text('+91 8900229800', 325, 212, {width: 212, align: 'right'});
-            doc.fillColor('#555555').fontSize(12).text('zyroeditz.official@gmail.com', 325, 228, {width: 212, align: 'right'});
-            doc.fillColor('#555555').fontSize(12).text('Malda, West Bengal, India', 325, 244, {width: 212, align: 'right'});
+            doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('PAYABLE TO:', 325, 175, { width: 212, align: 'right' });
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz™ Studio', 325, 193, { width: 212, align: 'right' });
+            doc.fillColor('#555555').fontSize(12).font('Helvetica').text('+91 8900229800', 325, 212, { width: 212, align: 'right' });
+            doc.fillColor('#555555').fontSize(12).text('zyroeditz.official@gmail.com', 325, 228, { width: 212, align: 'right' });
+            doc.fillColor('#555555').fontSize(12).text('Malda, West Bengal, India', 325, 244, { width: 212, align: 'right' });
 
             // ── TABLE HEADER ──
             doc.rect(50, 270, 495, 36).fill('#050505');
             doc.fillColor('#ffffff').fontSize(12).font('Helvetica-Bold')
-               .text('DESCRIPTION', 65, 283)
-               .text('EST. DELIVERY', 295, 283, {width: 120, align: 'center'})
-               .text('AMOUNT', 430, 283, {width: 100, align: 'right'});
+                .text('DESCRIPTION', 65, 283)
+                .text('EST. DELIVERY', 295, 283, { width: 120, align: 'center' })
+                .text('AMOUNT', 430, 283, { width: 100, align: 'right' });
 
             // ── TABLE ROW ──
             doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(`${sanitizeText(order.service)} Package`, 65, 323); // UPDATED
             doc.fillColor('#666666').fontSize(10).font('Helvetica')
-               .text('Premium cinematic editing and post-production. Includes 1 free revision.', 65, 341, {width: 220});
-            doc.fillColor('#000000').fontSize(14).font('Helvetica').text(formattedDeadline, 295, 331, {width: 120, align: 'center'});
-            doc.fillColor('#000000').fontSize(14).text(`Rs.${safeAmount(order.amount)}`, 430, 331, {width: 100, align: 'right'}); // UPDATED: safeAmount strips \u00B9/\u20B9 junk; Rs. is ASCII-safe
+                .text('Premium cinematic editing and post-production. Includes 1 free revision.', 65, 341, { width: 220 });
+            doc.fillColor('#000000').fontSize(14).font('Helvetica').text(formattedDeadline, 295, 331, { width: 120, align: 'center' });
+            doc.fillColor('#000000').fontSize(14).text(`Rs.${safeAmount(order.amount)}`, 430, 331, { width: 100, align: 'right' }); // UPDATED: safeAmount strips \u00B9/\u20B9 junk; Rs. is ASCII-safe
 
             // Row divider
             doc.moveTo(50, 382).lineTo(545, 382).lineWidth(1).strokeColor('#eeeeee').stroke();
@@ -369,22 +376,22 @@ async function sendInvoice(order) {
             doc.rect(50, 394, 495, 44).fill('#f8f8f8');
             doc.moveTo(50, 438).lineTo(545, 438).lineWidth(2).strokeColor('#050505').stroke();
             doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold')
-               .text('TOTAL PAID:', 50, 409, {width: 370, align: 'right'});
+                .text('TOTAL PAID:', 50, 409, { width: 370, align: 'right' });
             doc.fillColor('#ff1a1a').fontSize(18).font('Helvetica-Bold')
-               .text(`Rs.${safeAmount(order.amount)}`, 390, 405, {width: 150, align: 'right'}); // UPDATED
+                .text(`Rs.${safeAmount(order.amount)}`, 390, 405, { width: 150, align: 'right' }); // UPDATED
 
             // ── PAYMENT STATUS ──
             doc.fillColor('#888888').fontSize(12).font('Helvetica-Bold').text('PAYMENT STATUS', 50, 502);
-            doc.fillColor('#22c55e').fontSize(18).font('Helvetica-Bold').text('Paid in Full', 50, 520, {continued: false}); // UPDATED: continued:false kills stray PDFKit cursor bleed from earlier {continued:true} chain
+            doc.fillColor('#22c55e').fontSize(18).font('Helvetica-Bold').text('Paid in Full', 50, 520, { continued: false }); // UPDATED: continued:false kills stray PDFKit cursor bleed from earlier {continued:true} chain
             doc.fillColor('#888888').fontSize(12).font('Helvetica-Oblique')
-               .text('Thanks for giving us a chance to serve you.', 50, 544);
+                .text('Thanks for giving us a chance to serve you.', 50, 544);
 
             // ── FOOTER ──
             doc.moveTo(50, 750).lineTo(545, 750).lineWidth(1).strokeColor('#cccccc').stroke();
             doc.fillColor('#888888').fontSize(10).font('Helvetica')
-               .text('This is a computer-generated document. No signature is required.', 50, 766, {align: 'center', width: 495});
+                .text('This is a computer-generated document. No signature is required.', 50, 766, { align: 'center', width: 495 });
             doc.font('Helvetica-Bold')
-               .text('ZyroEditz™ | Cinematic Editing & Motion Graphics', 50, 782, {align: 'center', width: 495});
+                .text('ZyroEditz™ | Cinematic Editing & Motion Graphics', 50, 782, { align: 'center', width: 495 });
 
             log('INFO', orderId, 'PDF build complete. Waiting for doc.end() to flush buffers...');
             doc.end();
