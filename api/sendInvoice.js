@@ -128,7 +128,7 @@ async function sendWhatsAppInvoice(order, orderId, formattedDeadline) {
             logger,
             printQRInTerminal: false,
             auth: state,
-            browser: ['ZyroEditz Bot', 'Chrome', '1.0.0']
+            browser: ['Mac OS', 'Chrome', '121.0.0']
         });
 
         sock.ev.on('creds.update', saveCreds);
