@@ -1713,7 +1713,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const cashfree = Cashfree({ mode: "production" }); // Cashfree Setup
+
+            // ── CASHFREE SDK: Lazy initializer ────────────────────────────────────
+            // The SDK script loads with `defer` — on slow mobile connections it may
+            // not have executed yet by the time DOMContentLoaded fires. Calling
+            // Cashfree() eagerly here causes a ReferenceError that silently crashes
+            // the entire DOMContentLoaded block. Instead: init lazily at pay-time,
+            // with a 3-retry backoff poll so mobile network delays are handled.
+            let _cf = null;
+            async function getCashfree() {
+                if (_cf) return _cf;
+                for (let i = 0; i < 3; i++) {
+                    if (typeof Cashfree !== 'undefined') {
+                        try { _cf = Cashfree({ mode: 'production' }); return _cf; } catch(e) {}
+                    }
+                    await new Promise(r => setTimeout(r, 300)); // wait 300ms, retry
+                }
+                return null; // SDK failed to load after 900ms
+            }
 
             // ==================== INITIALIZATION FUNCTIONS ====================
             function initCustomCursor() {
@@ -2454,21 +2471,21 @@
                                     document.querySelectorAll('.orb, .grid-bg, .noise, .video-bg, canvas').forEach(el => el.remove());
                                 } catch(e) { }
 
-                                // ── SDK checkout (all devices) ──────────────────────────────
+                                // ── SDK checkout (all devices) ─────────────────────────────
                                 // redirectTarget "_top" does a full-page redirect — works on
                                 // both desktop and mobile (Chrome Android, Safari iOS, Brave).
-                                // The CSP frame-src now allows sdk.cashfree.com so SDK iframes
-                                // are no longer blocked. Direct URL bypass is NOT used because
-                                // Cashfree's payment page requires SDK session initialization
-                                // before navigating (sets auth tokens the raw URL jump skips).
-                                try {
-                                    if (typeof cashfree === 'undefined' || !cashfree) {
-                                        // SDK failed to load — fall back to direct URL
-                                        window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
-                                        return;
-                                    }
+                                // getCashfree() polls for the SDK with 3×300ms retries so
+                                // slow mobile network delays don't cause a ReferenceError.
+                                const cfInstance = await getCashfree();
+                                if (!cfInstance) {
+                                    // SDK genuinely unavailable after retries → direct URL
+                                    console.warn('Cashfree SDK unavailable, falling back to direct URL');
+                                    window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
+                                    return;
+                                }
 
-                                    const checkoutPromise = cashfree.checkout({
+                                try {
+                                    const checkoutPromise = cfInstance.checkout({
                                         paymentSessionId: data.paymentSessionId,
                                         redirectTarget: "_top"
                                     });
@@ -2479,13 +2496,11 @@
                                                 statusEl.innerText = "Payment Error: " + result.error.message;
                                             }
                                         }).catch(function(err) {
-                                            // SDK failed mid-way — fall back to direct URL
                                             console.warn('Cashfree SDK checkout failed, falling back to direct URL:', err);
                                             window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
                                         });
                                     }
                                 } catch (e) {
-                                    // Any SDK exception → fall back to direct URL
                                     console.warn('Cashfree SDK exception, falling back to direct URL:', e);
                                     window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
                                 }
