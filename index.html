@@ -2385,10 +2385,11 @@
                             const data = await response.json();
 
                             if (data.paymentSessionId) {
-                                statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to Cashfree...`;
+                                statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to secure portal...`;
+                                const isMobile = window.innerWidth < 768 || window.matchMedia('(pointer: coarse)').matches;
                                 cashfree.checkout({
                                     paymentSessionId: data.paymentSessionId,
-                                    redirectTarget: "_self"
+                                    redirectTarget: isMobile ? "_self" : "_modal"
                                 });
                             } else {
                                 throw new Error(data.reply || "Could not retrieve payment session.");
