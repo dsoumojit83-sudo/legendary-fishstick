@@ -1691,7 +1691,7 @@
 
     <!-- Scroll to top - styled like Start Project button -->
     <button id="scrollTopBtn"
-        class="btn-glow btn-shine fixed bottom-8 right-8 w-14 h-14 bg-[#ff1a1a] text-black rounded-full shadow-lg shadow-[#ff1a1a]/40 flex items-center justify-center opacity-0 invisible z-40 transition-all duration-300 hover:bg-white hover:scale-110 pointer-events-none"
+        class="btn-glow fixed bottom-8 right-8 w-14 h-14 bg-[#ff1a1a] text-black rounded-full shadow-lg shadow-[#ff1a1a]/40 flex items-center justify-center opacity-0 invisible z-40 transition-all duration-300 active:bg-white active:scale-110 pointer-events-none"
         aria-label="Scroll to top">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
@@ -2176,22 +2176,33 @@
                     }
                     _canvasAnimId = requestAnimationFrame(animateCanvas);
                 }
+                // On mobile, visibilitychange fires spuriously during address-bar
+                // animation and scroll — cancelling RAF causes the stop/start flicker.
+                // Only pause if truly backgrounded (minimized, app-switched).
                 document.addEventListener('visibilitychange', () => {
                     if (document.hidden) {
                         cancelAnimationFrame(_canvasAnimId);
                         _canvasAnimId = null;
                     } else if (!_canvasAnimId) {
-                        animateCanvas(); // resume on tab focus
+                        // Short delay so burst visibilitychange events don't spawn multiple loops
+                        setTimeout(() => { if (!_canvasAnimId) animateCanvas(); }, 50);
                     }
                 });
 
+                // Debounced resize — address bar animation fires resize 30+ times/sec.
+                // initCanvas() clears the canvas each call, causing flicker.
+                // Wait 120ms after resize stops before reinitialising.
                 let lastHeight = window.innerHeight;
+                let _resizeTimer = null;
                 window.addEventListener('resize', () => {
-                    const newW = window.innerWidth, newH = window.innerHeight;
-                    if (newW !== lastWidth || Math.abs(newH - lastHeight) > 50) {
-                        lastWidth = newW; lastHeight = newH;
-                        initCanvas();
-                    }
+                    clearTimeout(_resizeTimer);
+                    _resizeTimer = setTimeout(() => {
+                        const newW = window.innerWidth, newH = window.innerHeight;
+                        if (newW !== lastWidth || Math.abs(newH - lastHeight) > 50) {
+                            lastWidth = newW; lastHeight = newH;
+                            initCanvas();
+                        }
+                    }, 120);
                 });
                 initCanvas(); animateCanvas();
             }
@@ -2473,6 +2484,16 @@
 
                             if (data.paymentSessionId) {
                                 statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to secure portal...`;
+
+                                // ── TRANSITION OVERLAY ─────────────────────────────────────────
+                                // Covers the white browser flash that appears between leaving
+                                // our dark page and Cashfree's page loading.
+                                const _overlay = document.createElement('div');
+                                _overlay.style.cssText = 'position:fixed;inset:0;background:#050505;z-index:99999;transition:opacity 0.15s ease;opacity:0;';
+                                document.body.appendChild(_overlay);
+                                requestAnimationFrame(() => { _overlay.style.opacity = '1'; });
+                                // Remove overlay if user comes back (payment cancelled)
+                                window.addEventListener('pageshow', () => _overlay.remove(), { once: true });
 
                                 // Free up GPU memory before redirect
                                 try {
