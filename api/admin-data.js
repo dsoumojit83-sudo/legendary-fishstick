@@ -22,6 +22,29 @@ const b2 = new S3Client({
 
 const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
 
+// ── B2 file-check cache (60s TTL) ────────────────────────────────────────────
+// MEDIUM FIX #5: admin-data.js was firing N concurrent ListObjectsV2 calls per
+// dashboard load with zero caching. This is the same pattern as admin-chat.js
+// (which uses a 5-min cache). 60s is appropriate here since the dashboard auto-refreshes
+// and admins need to see recent uploads faster than the AI assistant does.
+let _adminDataFilesCache = { data: {}, expiresAt: 0 };
+const ADMIN_DATA_CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+async function getCachedFilesMap(activeOrders) {
+    const now = Date.now();
+    if (now < _adminDataFilesCache.expiresAt) return _adminDataFilesCache.data;
+    const results = await Promise.allSettled(
+        activeOrders.map(o =>
+            b2.send(new ListObjectsV2Command({ Bucket: B2_BUCKET, Prefix: `${o.order_id}/`, MaxKeys: 1 }))
+              .then(data => ({ order_id: o.order_id, has_files: (data.KeyCount || 0) > 0 }))
+        )
+    );
+    const fresh = {};
+    results.forEach(r => { if (r.status === 'fulfilled') fresh[r.value.order_id] = r.value.has_files; });
+    _adminDataFilesCache = { data: fresh, expiresAt: now + ADMIN_DATA_CACHE_TTL_MS };
+    return fresh;
+}
+
 module.exports = async function (req, res) {
     // CORS headers — required when admin panel is served from a different origin
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
@@ -113,31 +136,13 @@ module.exports = async function (req, res) {
 
         // Check B2 for ACTIVE orders only (pending/in_progress/paid) — not every historical order.
         // This prevents a Vercel timeout as the total order count grows over time.
+        // Uses the 60s module-level cache to avoid N concurrent B2 calls per dashboard refresh.
         const activeOrders = orders.filter(o =>
             o.status === 'pending' || o.status === 'in_progress' || o.status === 'paid'
         );
 
-        const fileCheckResults = await Promise.allSettled(
-            activeOrders.map(o =>
-                b2.send(new ListObjectsV2Command({
-                    Bucket: B2_BUCKET,
-                    Prefix: `${o.order_id}/`,
-                    MaxKeys: 1,
-                }))
-                .then(data => ({
-                    order_id: o.order_id,
-                    has_files: (data.KeyCount || 0) > 0
-                }))
-            )
-        );
-
-        // Build a quick lookup map: order_id -> has_files
-        const filesMap = {};
-        fileCheckResults.forEach(result => {
-            if (result.status === 'fulfilled') {
-                filesMap[result.value.order_id] = result.value.has_files;
-            }
-        });
+        // Build a quick lookup map: order_id -> has_files (result from cache or fresh B2 calls)
+        const filesMap = await getCachedFilesMap(activeOrders);
 
         // Secure Payload Delivery
         return res.status(200).json({
