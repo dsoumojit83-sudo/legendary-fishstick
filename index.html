@@ -2386,10 +2386,10 @@
 
                             if (data.paymentSessionId) {
                                 statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to secure portal...`;
-                                const isMobile = window.innerWidth < 768 || window.matchMedia('(pointer: coarse)').matches;
+                                // Forcing _top universally to prevent iframe OOM GPU crashes on mobile browsers
                                 cashfree.checkout({
                                     paymentSessionId: data.paymentSessionId,
-                                    redirectTarget: isMobile ? "_self" : "_modal"
+                                    redirectTarget: "_top"
                                 });
                             } else {
                                 throw new Error(data.reply || "Could not retrieve payment session.");
