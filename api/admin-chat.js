@@ -50,7 +50,7 @@ async function getFilesMap(activeOrders) {
     const fileCheckResults = await Promise.allSettled(
         activeOrders.map(o =>
             b2.send(new ListObjectsV2Command({ Bucket: B2_BUCKET, Prefix: `${o.order_id}/`, MaxKeys: 1 }))
-              .then(data => ({ order_id: o.order_id, has_files: (data.KeyCount || 0) > 0 }))
+                .then(data => ({ order_id: o.order_id, has_files: (data.KeyCount || 0) > 0 }))
         )
     );
     const freshMap = {};
@@ -65,8 +65,8 @@ const formatDate = (dateStr) => {
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return 'Invalid Date';
         const day = d.getUTCDate();
-        const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-        const suffix = [11,12,13].includes(day) ? 'th' : ['st','nd','rd'][((day%10)-1)] || 'th';
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const suffix = [11, 12, 13].includes(day) ? 'th' : ['st', 'nd', 'rd'][((day % 10) - 1)] || 'th';
         return `${day}${suffix} ${months[d.getUTCMonth()]}, ${d.getUTCFullYear()}`;
     } catch { return 'Error'; }
 };
@@ -343,14 +343,16 @@ Valid Action Formats (add exactly these blocks at the end of your reply):
 4. Create New Order (Requires minimum fields):
 <<<ACTION: {"type": "create_order", "record": {"client_name": "John", "amount": 1000, "service": "Reel Edit"}} >>>
 
-Rules for Actions:
-1. ONLY use an action block if Soumojit clearly asks for a change. ALWAYS ask Soumojit to confirm before using an action block.
-2. For bulk actions (e.g. "delete all these 5 orders"), output an action block for EVERY single order in the same response.
-3. Use the exact order_id from the database — never guess it.
-4. For "mark as complete" or "mark as done" → status = "completed"
-5. For "start working" or "move to in progress" → status = "in_progress"
-6. If asked to delete an order, use the "delete_order" action.
-7. Always confirm what you did in plain English ("Done — deleted all the specified orders.")
+Rules for Actions (Strict CRM Guidelines):
+1. THE GOLDEN RULE: ALWAYS ask "Please confirm if I should proceed" and summarize the specific changes BEFORE outputting ANY action block. Do not execute until Soumojit replies "yes" or similar.
+2. NEW ORDERS: You MUST collect client_name, client_email, client_phone, service, and amount. If any are missing, ask for them. Never guess contact info.
+3. CUSTOM PRICING: If the requested amount for a new order differs from your known standard pricing (e.g., Short Form for Rs.500 instead of Rs.200), explicitly call out the discrepancy and ask him to confirm the custom price before proceeding.
+4. TARGET VERIFICATION: If asked to apply a change to "the last order" or a specific client's name without an ID, find the exact matching order and show the order ID in your confirmation question to prevent acting on the wrong record.
+5. BULK DELETIONS: If asked to delete multiple orders at once, add an extra warning line in your confirmation (e.g., "WARNING: You are about to permanently delete 5 orders.").
+6. SAFE UPDATES: If asked to add notes or update text, only update the relevant field without altering other existing fields on the record.
+7. WORKFLOW DISTINCTION: "Mark as done" or "completed" means status='completed' (creative workflow). "Mark as paid" means status='paid' (finance workflow). Treat them distinctly.
+8. FORMATTING: Automatically lowercase client emails before inserting them into an action block.
+9. AFTER EXECUTION: For bulk actions, output an action block for EVERY single order in the same response once confirmed, and provide a single plain English summary of what was done.
 
 ---
 
