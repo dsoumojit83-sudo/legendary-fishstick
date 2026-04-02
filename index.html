@@ -1980,7 +1980,19 @@
                 });
 
                 const scrollTopBtn = document.getElementById('scrollTopBtn');
-                if (scrollTopBtn) scrollTopBtn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+                if (scrollTopBtn) scrollTopBtn.addEventListener('click', function () {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    // Force canvas resize + immediate redraw — mobile Chrome changes
+                    // innerHeight when the address bar reappears after scrolling up,
+                    // which leaves a white gap if the canvas doesn't resize.
+                    setTimeout(() => {
+                        const cv = document.getElementById('cinematicCanvas');
+                        if (cv && cv.getContext) {
+                            cv.width = window.innerWidth;
+                            cv.height = window.innerHeight;
+                        }
+                    }, 400);
+                });
 
                 (function () {
                     const ids = ['home', 'about', 'services', 'blogs', 'contact', 'legal'];
@@ -2109,13 +2121,8 @@
             function initCanvasBackground() {
                 const canvas = document.getElementById('cinematicCanvas');
                 if (!canvas) return;
-                // Skip canvas on mobile (saves battery + GPU) or if motion is reduced
-                const isMobile = window.matchMedia('(pointer: coarse)').matches ||
-                                 window.innerWidth < 768;
-                if (prefersReducedMotion || isMobile) {
-                    canvas.style.display = 'none';
-                    return;
-                }
+                if (prefersReducedMotion) { canvas.style.display = 'none'; return; }
+
                 const ctx = canvas.getContext('2d');
                 let width, height, particles;
                 let lastWidth = window.innerWidth;
@@ -2178,9 +2185,11 @@
                     }
                 });
 
+                let lastHeight = window.innerHeight;
                 window.addEventListener('resize', () => {
-                    if (window.innerWidth !== lastWidth) {
-                        lastWidth = window.innerWidth;
+                    const newW = window.innerWidth, newH = window.innerHeight;
+                    if (newW !== lastWidth || Math.abs(newH - lastHeight) > 50) {
+                        lastWidth = newW; lastHeight = newH;
                         initCanvas();
                     }
                 });
