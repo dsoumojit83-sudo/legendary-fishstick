@@ -50,8 +50,19 @@ function safeAmount(value) {
 }
 
 
-
-
+// ─── HTML ESCAPER for email body ──────────────────────────────────────────────
+// sanitizeText() is used for the PDF (strips non-ASCII). For the HTML email body
+// we need to escape HTML special chars so that user-supplied names/services can't
+// break the email HTML structure or trigger XSS in email clients that render scripts.
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 async function sendInvoice(order) {
     const orderId = order?.order_id || 'UNKNOWN';
@@ -120,7 +131,7 @@ async function sendInvoice(order) {
                                 
                                 <div style="padding: 40px 30px;">
                                     <h2 style="margin-top: 0; color: #ffffff; font-size: 24px;">Payment Secured. ⚡</h2>
-                                    <p style="color: #cccccc; font-size: 15px; line-height: 1.6;">Hi <strong>${order.client_name}</strong>,</p>
+                                    <p style="color: #cccccc; font-size: 15px; line-height: 1.6;">Hi <strong>${escapeHtml(order.client_name)}</strong>,</p>
                                     <p style="color: #cccccc; font-size: 15px; line-height: 1.6;">Your payment has been successfully processed and your project is officially in our pipeline. Your official invoice is attached to this email as a PDF.</p>
                                     
                                     <div style="background-color: #111111; border: 1px solid #333333; border-radius: 8px; padding: 20px; margin: 30px 0;">
@@ -131,7 +142,7 @@ async function sendInvoice(order) {
                                             </tr>
                                             <tr>
                                                 <td style="padding: 10px 0; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-top: 1px solid #222222;">Service</td>
-                                                <td style="padding: 10px 0; color: #ffffff; font-weight: bold; text-align: right; border-top: 1px solid #222222; font-size: 14px;">${order.service}</td>
+                                                <td style="padding: 10px 0; color: #ffffff; font-weight: bold; text-align: right; border-top: 1px solid #222222; font-size: 14px;">${escapeHtml(order.service)}</td>
                                             </tr>
                                             <tr>
                                                 <td style="padding: 10px 0; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-top: 1px solid #222222;">Total Paid</td>
