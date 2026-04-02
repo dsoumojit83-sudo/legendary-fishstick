@@ -100,6 +100,12 @@ async function executeAction(action) {
         const { orderId, updates } = action;
         if (!orderId || !updates || typeof updates !== 'object') return { success: false, error: 'Missing orderId or updates' };
 
+        // SECURITY: Block AI from updating financial amounts to prevent gateway desync
+        if ('amount' in updates) {
+            delete updates.amount;
+            if (Object.keys(updates).length === 0) return { success: false, error: 'Cannot update financial amounts' };
+        }
+
         const { error } = await supabase
             .from('orders')
             .update(updates)
@@ -124,22 +130,7 @@ async function executeAction(action) {
             : { success: true, orderId, actionType: 'deleted' };
     }
 
-    if (action.type === 'create_order') {
-        const { record } = action;
-        if (!record || typeof record !== 'object') return { success: false, error: 'Missing record details' };
 
-        if (!record.order_id) {
-            record.order_id = 'ZYRO' + Date.now().toString(16).toUpperCase() + Math.random().toString(16).substring(2, 6).toUpperCase();
-        }
-
-        const { error } = await supabase
-            .from('orders')
-            .insert(record);
-
-        return error
-            ? { success: false, error: error.message }
-            : { success: true, orderId: record.order_id, actionType: 'created' };
-    }
 
     return null;
 }
@@ -164,10 +155,25 @@ function extractActions(text) {
 }
 
 module.exports = async function (req, res) {
-    // CORS headers — required when admin panel is served from a different origin
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    // CORS FIX: Lock to known production origins — never expose with wildcard '*' on an
+    // authenticated endpoint. An open CORS header allows any website to make credentialed
+    // preflight requests and extract information from error responses.
+    const _allowedOrigins = [
+        'https://zyroeditz.xyz',
+        'https://www.zyroeditz.xyz',
+        'https://zyroeditz.vercel.app',
+        'https://admin.zyroeditz.xyz',
+    ];
+    const _reqOrigin = req.headers.origin || '';
+    const _corsOrigin = _allowedOrigins.includes(_reqOrigin)
+        ? _reqOrigin
+        : (_reqOrigin.startsWith('http://localhost') || _reqOrigin.startsWith('http://127.0.0.1')
+            ? _reqOrigin
+            : _allowedOrigins[0]);
+    res.setHeader('Access-Control-Allow-Origin', _corsOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -241,8 +247,27 @@ module.exports = async function (req, res) {
         });
 
         // ── Full DB for complete access ───────────────────────────────────────
+        // PII FIX: Mask email and phone before injecting into the Groq LLM prompt.
+        // Client PII is stored in Supabase (controlled environment) — it must NOT be
+        // forwarded verbatim to a third-party LLM API on every chat turn.
+        // Soumojit can ask "show me [client]'s email" and the AI will surface the masked
+        // value; if he needs the raw contact, he checks the admin dashboard directly.
+        function maskEmail(email) {
+            if (!email || !email.includes('@')) return email || 'N/A';
+            const [local, domain] = email.split('@');
+            return local.length <= 2
+                ? `${local[0]}***@${domain}`
+                : `${local[0]}${local[1]}***@${domain}`;
+        }
+        function maskPhone(phone) {
+            if (!phone) return 'N/A';
+            const p = String(phone).replace(/\D/g, '');
+            return p.length >= 6
+                ? 'X'.repeat(p.length - 4) + p.slice(-4)
+                : phone;
+        }
         const fullDatabaseLog = orders ? orders.map(o =>
-            `[ID:${o.order_id}|Client:${o.client_name || 'N/A'}|Email:${o.client_email || 'N/A'}|Phone:${o.client_phone || 'N/A'}|Service:${o.service || 'N/A'}|Amt:Rs.${o.amount || 0}|Status:${o.status}|Booked:${formatDate(o.created_at)}|Due:${formatDate(o.deadline_date)}|Files:${filesMap[o.order_id] ? 'uploaded' : 'pending'}|Notes:${o.project_notes || 'None'}]`
+            `[ID:${o.order_id}|Client:${o.client_name || 'N/A'}|Email:${maskEmail(o.client_email)}|Phone:${maskPhone(o.client_phone)}|Service:${o.service || 'N/A'}|Amt:Rs.${o.amount || 0}|Status:${o.status}|Booked:${formatDate(o.created_at)}|Due:${formatDate(o.deadline_date)}|Files:${filesMap[o.order_id] ? 'uploaded' : 'pending'}|Notes:${o.project_notes || 'None'}]`
         ).join('\n') : 'No records.';
 
         // ── Settlement physics ────────────────────────────────────────────────
@@ -325,8 +350,8 @@ ${fullDatabaseLog}
 
 ---
 
-ACTIONS YOU CAN TAKE WITH THE DATABASE (FULL CRUD):
-When Soumojit asks you to edit the database (delete orders, change amounts, edit clients, mark as paid, create a new order, etc.), you MUST execute it by outputting an action block. 
+ACTIONS YOU CAN TAKE WITH THE DATABASE (SAFE MODES):
+When Soumojit asks you to edit the database (delete orders, edit notes, mark as paid, etc.), you MUST execute it by outputting an action block. 
 You can output MULTIPLE action blocks seamlessly for bulk actions.
 
 Valid Action Formats (add exactly these blocks at the end of your reply):
@@ -334,25 +359,20 @@ Valid Action Formats (add exactly these blocks at the end of your reply):
 1. Update Order Status (Statuses: pending, in_progress, paid, completed):
 <<<ACTION: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
 
-2. Update General Fields (amount, client_name, deadline_date, project_notes, etc):
-<<<ACTION: {"type": "update_order", "orderId": "exact_order_id", "updates": {"amount": 5000, "project_notes": "Urgent"}} >>>
+2. Update General Fields (client_name, deadline_date, project_notes, etc) - DO NOT update financial amounts:
+<<<ACTION: {"type": "update_order", "orderId": "exact_order_id", "updates": {"project_notes": "Urgent"}} >>>
 
 3. Delete Order (Hard delete from database):
 <<<ACTION: {"type": "delete_order", "orderId": "exact_order_id"} >>>
 
-4. Create New Order (Requires minimum fields):
-<<<ACTION: {"type": "create_order", "record": {"client_name": "John", "amount": 1000, "service": "Reel Edit"}} >>>
-
 Rules for Actions (Strict CRM Guidelines):
 1. THE GOLDEN RULE: ALWAYS ask "Please confirm if I should proceed" and summarize the specific changes BEFORE outputting ANY action block. Do not execute until Soumojit replies "yes" or similar.
-2. NEW ORDERS: You MUST collect client_name, client_email, client_phone, service, and amount. If any are missing, ask for them. Never guess contact info.
-3. CUSTOM PRICING: If the requested amount for a new order differs from your known standard pricing (e.g., Short Form for Rs.500 instead of Rs.200), explicitly call out the discrepancy and ask him to confirm the custom price before proceeding.
-4. TARGET VERIFICATION: If asked to apply a change to "the last order" or a specific client's name without an ID, find the exact matching order and show the order ID in your confirmation question to prevent acting on the wrong record.
-5. BULK DELETIONS: If asked to delete multiple orders at once, add an extra warning line in your confirmation (e.g., "WARNING: You are about to permanently delete 5 orders.").
-6. SAFE UPDATES: If asked to add notes or update text, only update the relevant field without altering other existing fields on the record.
-7. WORKFLOW DISTINCTION: "Mark as done" or "completed" means status='completed' (creative workflow). "Mark as paid" means status='paid' (finance workflow). Treat them distinctly.
-8. FORMATTING: Automatically lowercase client emails before inserting them into an action block.
-9. AFTER EXECUTION: For bulk actions, output an action block for EVERY single order in the same response once confirmed, and provide a single plain English summary of what was done.
+2. RESTRICTION: You CANNOT create new orders, and you CANNOT edit the amount of existing orders. If asked, tell Soumojit to do that via the main interface so an invoice is generated properly.
+3. TARGET VERIFICATION: If asked to apply a change to "the last order" or a specific client's name without an ID, find the exact matching order and show the order ID in your confirmation question to prevent acting on the wrong record.
+4. BULK DELETIONS: If asked to delete multiple orders at once, add an extra warning line in your confirmation (e.g., "WARNING: You are about to permanently delete 5 orders.").
+5. SAFE UPDATES: If asked to add notes or update text, only update the relevant field without altering other existing fields on the record.
+6. WORKFLOW DISTINCTION: "Mark as done" or "completed" means status='completed' (creative workflow). "Mark as paid" means status='paid' (finance workflow). Treat them distinctly.
+7. AFTER EXECUTION: For bulk actions, output an action block for EVERY single order in the same response once confirmed, and provide a single plain English summary of what was done.
 
 ---
 
