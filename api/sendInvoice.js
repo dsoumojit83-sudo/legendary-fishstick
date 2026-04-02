@@ -196,7 +196,8 @@ async function sendInvoice(order) {
 
             // Brand logo (left): "Zyro" white, "Editz" red
             doc.fillColor('#ffffff').fontSize(42).font('Helvetica-Bold').text('Zyro', 50, 45, { continued: true })
-                .fillColor('#ff1a1a').text('Editz™');
+                .fillColor('#ff1a1a').text('Editz', { continued: true })
+                .fillColor('#ffffff').fontSize(20).text('\u2122', { continued: false });
             doc.fillColor('#888888').fontSize(10).font('Helvetica').text('Speed. Motion. Precision.', 50, 92, { letterSpacing: 4 });
 
             // Invoice title (right)
