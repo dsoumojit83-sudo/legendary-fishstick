@@ -77,8 +77,10 @@ async function executeAction(action) {
     if (!action || !action.type) return null;
 
     if (action.type === 'update_status') {
-        const { orderId, status } = action;
+        let { orderId, status } = action;
         if (!orderId || !status) return { success: false, error: 'Missing orderId or status' };
+
+        if (status === 'working') status = 'in_progress';
 
         const validStatuses = ['pending', 'in_progress', 'paid', 'completed'];
         if (!validStatuses.includes(status)) return { success: false, error: `Invalid status: ${status}` };
@@ -243,7 +245,8 @@ module.exports = async function (req, res) {
                 const diff = (new Date(o.deadline_date).getTime() + IST_OFFSET_MS - nowMs) / (1000 * 60 * 60 * 24);
                 daysLeft = diff < 0 ? `OVERDUE by ${Math.abs(Math.floor(diff))} days` : `${Math.ceil(diff)} days left`;
             }
-            return `[ID:${o.order_id} | Client:${o.client_name || 'N/A'} | Service:${o.service} | Status:${o.status} | Due:${formatDate(o.deadline_date)} (${daysLeft}) | Files:${fileStatus} | Notes:${o.project_notes || 'None'}]`;
+            const displayStatus = o.status === 'in_progress' ? 'working' : o.status;
+            return `[ID:${o.order_id} | Client:${o.client_name || 'N/A'} | Service:${o.service} | Status:${displayStatus} | Due:${formatDate(o.deadline_date)} (${daysLeft}) | Files:${fileStatus} | Notes:${o.project_notes || 'None'}]`;
         });
 
         // ── Full DB for complete access ───────────────────────────────────────
@@ -356,7 +359,7 @@ You can output MULTIPLE action blocks seamlessly for bulk actions.
 
 Valid Action Formats (add exactly these blocks at the end of your reply):
 
-1. Update Order Status (Statuses: pending, in_progress, paid, completed):
+1. Update Order Status (Statuses: pending, working, paid, completed):
 <<<ACTION: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
 
 2. Update General Fields (client_name, deadline_date, project_notes, etc) - DO NOT update financial amounts:
