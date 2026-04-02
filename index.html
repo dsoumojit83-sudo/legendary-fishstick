@@ -841,13 +841,6 @@
                 bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;
             }
 
-            /* ── Mobile chat FAB ─────────────────────────────────────────────
-               A persistent floating chat button so mobile users don't have
-               to scroll down to find the "Start Project" / "Open Assistant" buttons. */
-            #mobileChatFab {
-                display: flex !important;
-            }
-
             /* ── Pricing card labels: allow wrap on 2-col grid ───────────────
                whitespace-nowrap on the Short Form label clips on small phones. */
             .price-card .text-\[10px\] {
@@ -855,10 +848,6 @@
             }
         }
 
-        /* Mobile FAB hidden by default (shown only via media query above) */
-        #mobileChatFab {
-            display: none;
-        }
         /* ===== END MOBILE PERFORMANCE ===== */
     </style>
 
@@ -1709,16 +1698,6 @@
         </svg>
     </button>
 
-    <!-- MOBILE CHAT FAB: Visible only on mobile (md:hidden via CSS). Gives mobile users
-         a persistent floating button to open the Zyro Assistant chat without scrolling. -->
-    <button id="mobileChatFab" onclick="if(window.openZyroChat) window.openZyroChat()"
-        class="btn-glow fixed bottom-8 left-6 w-14 h-14 bg-[#ff1a1a] text-black rounded-full shadow-lg shadow-[#ff1a1a]/40 items-center justify-center z-40 transition-all duration-300 hover:bg-white hover:scale-110"
-        aria-label="Open Zyro Assistant chat" title="Open Chat Assistant">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.862 9.862 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-    </button>
 
     <!-- GSAP: deferred so preload hint (in head) starts download during body render -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
@@ -2026,11 +2005,7 @@
                     });
                 });
 
-                // PERF FIX (Mobile): Skip decorative scroll-parallax on touch devices.
-                // Shape/orb scroll-trigger anims create GPU compositor layers and scrub
-                // on every scroll event — expensive on mobile, zero functional value.
-                const _isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-                if (!prefersReducedMotion && window.ScrollTrigger && !_isCoarsePointer) {
+                if (!prefersReducedMotion && window.ScrollTrigger) {
                     gsap.to('#orb1', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: 600, x: 200, ease: 'none' });
                     gsap.to('#orb2', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -500, x: -300, ease: 'none' });
                     gsap.to('#orb3', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -550, x: -200, ease: 'none' });
@@ -2043,11 +2018,7 @@
                     });
                 }
 
-                // PERF FIX (Mobile): Skip infinite orb animations on touch devices.
-                // These are purely decorative blur blobs — animating them drains
-                // battery and wastes GPU cycles on mobile with zero visual benefit.
-                const _isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
-                if (!prefersReducedMotion && !_isTouchDevice) {
+                if (!prefersReducedMotion) {
                     gsap.to('#orb1', { duration: 12, x: '+=100', y: '+=50', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
                     gsap.to('#orb2', { duration: 15, x: '-=80', y: '-=60', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
                     gsap.to('#orb3', { duration: 10, x: '+=60', y: '-=70', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
@@ -2448,11 +2419,6 @@
 
                         // MOBILE FIX: Detect touch/mobile device — Cashfree SDK popup is
                         // unreliable on mobile browsers (causes white "sad page" error).
-                        // On mobile we bypass the SDK entirely and use direct URL redirect.
-                        const _isMobilePayment = window.matchMedia('(pointer: coarse)').matches ||
-                                                  ('ontouchstart' in window) ||
-                                                  window.innerWidth < 768;
-
                         // PERF FIX: Set 30s timeout on the fetch — prevents infinite spinner
                         // on slow mobile cellular connections.
                         const _payAbortCtrl = new AbortController();
@@ -2461,7 +2427,6 @@
                         try {
                             statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Generating secure payment link...`;
 
-                            // FIXED: Payload aligned with chat.js expectations
                             const response = await fetch('/api/chat', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -2489,19 +2454,13 @@
                                     document.querySelectorAll('.orb, .grid-bg, .noise, .video-bg, canvas').forEach(el => el.remove());
                                 } catch(e) { }
 
-                                // ── CASHFREE MOBILE FIX ────────────────────────────────────────
-                                // The Cashfree SDK uses an iframe/popup mechanism that mobile
-                                // browsers (Chrome Android, Safari iOS) block or crash, resulting
-                                // in the white "sad pager" error page.
-                                // On mobile: bypass SDK → direct URL redirect (100% reliable).
-                                // On desktop: use SDK checkout for the inline experience.
-                                if (_isMobilePayment) {
-                                    // Direct redirect — works on all mobile browsers, no SDK needed
-                                    window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
-                                    return;
-                                }
-
-                                // ── DESKTOP: Use SDK checkout ───────────────────────────────
+                                // ── SDK checkout (all devices) ──────────────────────────────
+                                // redirectTarget "_top" does a full-page redirect — works on
+                                // both desktop and mobile (Chrome Android, Safari iOS, Brave).
+                                // The CSP frame-src now allows sdk.cashfree.com so SDK iframes
+                                // are no longer blocked. Direct URL bypass is NOT used because
+                                // Cashfree's payment page requires SDK session initialization
+                                // before navigating (sets auth tokens the raw URL jump skips).
                                 try {
                                     if (typeof cashfree === 'undefined' || !cashfree) {
                                         // SDK failed to load — fall back to direct URL
