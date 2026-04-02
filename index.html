@@ -848,6 +848,17 @@
             }
         }
 
+        /* ── Scroll-to-top: always red on mobile ─────────────────────────────
+           Desktop uses hover:bg-white for the color-flip effect.
+           On mobile that hover state can stick after a tap — force red always. */
+        @media (max-width: 767px) {
+            #scrollTopBtn,
+            #scrollTopBtn:active,
+            #scrollTopBtn:focus {
+                background-color: #ff1a1a !important;
+            }
+        }
+
         /* ===== END MOBILE PERFORMANCE ===== */
     </style>
 
@@ -2484,16 +2495,6 @@
 
                             if (data.paymentSessionId) {
                                 statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to secure portal...`;
-
-                                // ── TRANSITION OVERLAY ─────────────────────────────────────────
-                                // Covers the white browser flash that appears between leaving
-                                // our dark page and Cashfree's page loading.
-                                const _overlay = document.createElement('div');
-                                _overlay.style.cssText = 'position:fixed;inset:0;background:#050505;z-index:99999;transition:opacity 0.15s ease;opacity:0;';
-                                document.body.appendChild(_overlay);
-                                requestAnimationFrame(() => { _overlay.style.opacity = '1'; });
-                                // Remove overlay if user comes back (payment cancelled)
-                                window.addEventListener('pageshow', () => _overlay.remove(), { once: true });
 
                                 // Free up GPU memory before redirect
                                 try {
