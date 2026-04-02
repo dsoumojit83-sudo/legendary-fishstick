@@ -1,0 +1,25 @@
+{
+  "name": "zyroeditz-backend",
+  "version": "1.0.0",
+  "description": "ZyroEditz AI Assistant",
+  "main": "api/chat.js",
+  "scripts": {
+    "start": "node api/chat.js",
+    "build": "tailwindcss -i ./src/input.css -o ./tailwind.css --config ./tailwind.config.js --minify"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "axios": "^1.6.0",
+    "openai": "^4.0.0",
+    "pdfkit": "^0.18.0",
+    "resend": "^3.2.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}
