@@ -795,6 +795,69 @@
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
             }
+
+            /* ── INPUT ZOOM PREVENTION (iOS Safari) ──────────────────────────
+               iOS zooms the viewport when an input has font-size < 16px.
+               Force 16px on ALL inputs, selects, textareas site-wide. */
+            input, select, textarea,
+            .input-field {
+                font-size: 16px !important;
+            }
+
+            /* ── SVG will-change strip ────────────────────────────────────────
+               The global svg{} rule sets will-change:transform on every SVG.
+               On mobile this creates hundreds of compositor layers — pure waste.
+               Override to auto so the GPU only promotes layers that actually move. */
+            svg {
+                will-change: auto !important;
+            }
+
+            /* ── Hero H1 size cap for narrow phones (≤375px) ─────────────────
+               --text-9xl goes up to 7.5rem but on 320px that overflows.
+               Clamp it tighter for mobile viewports. */
+            :root {
+                --text-9xl: clamp(3rem, 15vw, 4.5rem);
+                --text-8xl: clamp(2.5rem, 12vw, 3.75rem);
+            }
+
+            /* ── Tagline: prevent overflow + improve legibility ───────────────
+               letter-spacing:0.5em makes the tagline very wide on small screens. */
+            #home p[style*="letter-spacing"] {
+                letter-spacing: 0.2em !important;
+                word-break: break-word;
+                font-size: clamp(0.6rem, 3vw, 1rem) !important;
+            }
+
+            /* ── Footer nav: wrap on small screens ───────────────────────────
+               The footer link row has gap-6 and 5 links — overflows on 375px. */
+            footer .flex.items-center.gap-6 {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.75rem;
+            }
+
+            /* ── Chatbot window: safe-area inset for iPhone notch/home bar ─── */
+            #chatbotWindow {
+                bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            /* ── Mobile chat FAB ─────────────────────────────────────────────
+               A persistent floating chat button so mobile users don't have
+               to scroll down to find the "Start Project" / "Open Assistant" buttons. */
+            #mobileChatFab {
+                display: flex !important;
+            }
+
+            /* ── Pricing card labels: allow wrap on 2-col grid ───────────────
+               whitespace-nowrap on the Short Form label clips on small phones. */
+            .price-card .text-\[10px\] {
+                white-space: normal !important;
+            }
+        }
+
+        /* Mobile FAB hidden by default (shown only via media query above) */
+        #mobileChatFab {
+            display: none;
         }
         /* ===== END MOBILE PERFORMANCE ===== */
     </style>
@@ -1646,6 +1709,17 @@
         </svg>
     </button>
 
+    <!-- MOBILE CHAT FAB: Visible only on mobile (md:hidden via CSS). Gives mobile users
+         a persistent floating button to open the Zyro Assistant chat without scrolling. -->
+    <button id="mobileChatFab" onclick="if(window.openZyroChat) window.openZyroChat()"
+        class="btn-glow fixed bottom-8 left-6 w-14 h-14 bg-[#ff1a1a] text-black rounded-full shadow-lg shadow-[#ff1a1a]/40 items-center justify-center z-40 transition-all duration-300 hover:bg-white hover:scale-110"
+        aria-label="Open Zyro Assistant chat" title="Open Chat Assistant">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.862 9.862 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+    </button>
+
     <!-- GSAP: deferred so preload hint (in head) starts download during body render -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer></script>
@@ -1952,7 +2026,11 @@
                     });
                 });
 
-                if (!prefersReducedMotion && window.ScrollTrigger) {
+                // PERF FIX (Mobile): Skip decorative scroll-parallax on touch devices.
+                // Shape/orb scroll-trigger anims create GPU compositor layers and scrub
+                // on every scroll event — expensive on mobile, zero functional value.
+                const _isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+                if (!prefersReducedMotion && window.ScrollTrigger && !_isCoarsePointer) {
                     gsap.to('#orb1', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: 600, x: 200, ease: 'none' });
                     gsap.to('#orb2', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -500, x: -300, ease: 'none' });
                     gsap.to('#orb3', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -550, x: -200, ease: 'none' });
@@ -1965,7 +2043,11 @@
                     });
                 }
 
-                if (!prefersReducedMotion) {
+                // PERF FIX (Mobile): Skip infinite orb animations on touch devices.
+                // These are purely decorative blur blobs — animating them drains
+                // battery and wastes GPU cycles on mobile with zero visual benefit.
+                const _isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+                if (!prefersReducedMotion && !_isTouchDevice) {
                     gsap.to('#orb1', { duration: 12, x: '+=100', y: '+=50', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
                     gsap.to('#orb2', { duration: 15, x: '-=80', y: '-=60', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
                     gsap.to('#orb3', { duration: 10, x: '+=60', y: '-=70', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
@@ -2364,6 +2446,18 @@
                         const statusEl = document.getElementById('wizPayStatus');
                         statusEl.classList.remove('hidden');
 
+                        // MOBILE FIX: Detect touch/mobile device — Cashfree SDK popup is
+                        // unreliable on mobile browsers (causes white "sad page" error).
+                        // On mobile we bypass the SDK entirely and use direct URL redirect.
+                        const _isMobilePayment = window.matchMedia('(pointer: coarse)').matches ||
+                                                  ('ontouchstart' in window) ||
+                                                  window.innerWidth < 768;
+
+                        // PERF FIX: Set 30s timeout on the fetch — prevents infinite spinner
+                        // on slow mobile cellular connections.
+                        const _payAbortCtrl = new AbortController();
+                        const _payTimeout = setTimeout(() => _payAbortCtrl.abort(), 30000);
+
                         try {
                             statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Generating secure payment link...`;
 
@@ -2371,6 +2465,7 @@
                             const response = await fetch('/api/chat', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                signal: _payAbortCtrl.signal,
                                 body: JSON.stringify({
                                     message: `Client ready to pay. INITIATE_CHECKOUT_NOW`,
                                     selectedService: orderData.service,
@@ -2382,31 +2477,70 @@
                                 })
                             });
 
+                            clearTimeout(_payTimeout);
                             const data = await response.json();
 
                             if (data.paymentSessionId) {
                                 statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to secure portal...`;
-                                
-                                // FATAL MOBILE CRASH HOTFIX: Aggressively free up mobile GPU memory 
-                                // before standard Cashfree initialization to prevent "Aw, Snap!" OOM errors.
+
+                                // Free up GPU memory before redirect
                                 try {
                                     if (window.gsap) gsap.killTweensOf('*');
                                     document.querySelectorAll('.orb, .grid-bg, .noise, .video-bg, canvas').forEach(el => el.remove());
                                 } catch(e) { }
 
-                                // Wait 1 frame so garbage collection can clear GPU layers
-                                setTimeout(() => {
-                                    cashfree.checkout({
+                                // ── CASHFREE MOBILE FIX ────────────────────────────────────────
+                                // The Cashfree SDK uses an iframe/popup mechanism that mobile
+                                // browsers (Chrome Android, Safari iOS) block or crash, resulting
+                                // in the white "sad pager" error page.
+                                // On mobile: bypass SDK → direct URL redirect (100% reliable).
+                                // On desktop: use SDK checkout for the inline experience.
+                                if (_isMobilePayment) {
+                                    // Direct redirect — works on all mobile browsers, no SDK needed
+                                    window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
+                                    return;
+                                }
+
+                                // ── DESKTOP: Use SDK checkout ───────────────────────────────
+                                try {
+                                    if (typeof cashfree === 'undefined' || !cashfree) {
+                                        // SDK failed to load — fall back to direct URL
+                                        window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
+                                        return;
+                                    }
+
+                                    const checkoutPromise = cashfree.checkout({
                                         paymentSessionId: data.paymentSessionId,
                                         redirectTarget: "_top"
                                     });
-                                }, 50);
+
+                                    if (checkoutPromise && typeof checkoutPromise.then === 'function') {
+                                        checkoutPromise.then(function(result) {
+                                            if (result && result.error) {
+                                                statusEl.innerText = "Payment Error: " + result.error.message;
+                                            }
+                                        }).catch(function(err) {
+                                            // SDK failed mid-way — fall back to direct URL
+                                            console.warn('Cashfree SDK checkout failed, falling back to direct URL:', err);
+                                            window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
+                                        });
+                                    }
+                                } catch (e) {
+                                    // Any SDK exception → fall back to direct URL
+                                    console.warn('Cashfree SDK exception, falling back to direct URL:', e);
+                                    window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
+                                }
                             } else {
                                 throw new Error(data.reply || "Could not retrieve payment session.");
                             }
                         } catch (err) {
+                            clearTimeout(_payTimeout);
                             console.error("Payment Error:", err);
-                            statusEl.innerText = "System error. Please contact support via email.";
+                            if (err.name === 'AbortError') {
+                                statusEl.innerText = "Request timed out. Please check your connection and try again.";
+                            } else {
+                                statusEl.innerText = "System error. Please contact support via email.";
+                            }
                             this.disabled = false;
                             this.classList.remove('opacity-50');
                         }
