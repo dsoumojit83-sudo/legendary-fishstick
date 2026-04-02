@@ -157,7 +157,9 @@ function extractActions(text) {
         try { actions.push(JSON.parse(m[1])); } catch { /* skip malformed */ }
     }
     // Strip every action block from the text shown to the user
-    const cleanText = text.replace(/<<<ACTION:\s*\{[\s\S]*?\}\s*>>>/g, '').trim();
+    let cleanText = text.replace(/<<<ACTION:\s*\{[\s\S]*?\}\s*>>>/g, '').trim();
+    // Collapse any massive empty gaps left behind by stripped blocks
+    cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
     return { cleanText, actions };
 }
 
@@ -403,7 +405,7 @@ Refund policy: Full refund if client isn't happy with the final cut.`;
 
         return res.status(200).json({
             reply: cleanText,
-            action: actionResult  // null if no action taken, {success, orderId, newStatus} if executed
+            actions: actionResults  // array of all action results
         });
 
     } catch (err) {
