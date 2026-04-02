@@ -8,7 +8,6 @@
     <meta name="robots" content="noindex, nofollow">
     
     <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" sizes="128x128" href="/favicon.png">
     <meta name="theme-color" content="#ff1a1a">
 
@@ -176,6 +175,20 @@
         .verify-label {
             font-size: 12px; letter-spacing: 0.25em;
             text-transform: uppercase; color: rgba(255,255,255,0.35);
+        }
+        /* ── Mobile: strip backdrop-filter from glass card ────────────────────
+           backdrop-blur creates a GPU compositor layer. On low-end phones this
+           drops frames while users are trying to upload files post-payment. */
+        @media (max-width: 767px) {
+            input, select, textarea { font-size: 16px !important; }
+            .backdrop-blur-\[20px\] {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+            #uploadProgressWrapper {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
         }
     </style>
     
