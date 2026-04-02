@@ -2557,7 +2557,10 @@
 
                             if (data.paymentSessionId) {
                                 const payOverlay = document.getElementById('payRedirectOverlay');
-                                if (payOverlay) payOverlay.style.display = 'flex'; // direct style beats inline display:none
+                                // Clear the white status spinner before showing the red overlay
+                                statusEl.innerHTML = '';
+                                statusEl.classList.add('hidden');
+                                if (payOverlay) payOverlay.style.display = 'flex';
                                 // Collapse chatbot UI so it doesn't float over the overlay
                                 windowEl.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
                                 windowEl.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
