@@ -1741,10 +1741,10 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
         </svg>
-
+    </button>
 
     <!-- Payment redirect overlay — shown while Cashfree SDK is initialising -->
-    <div id="payRedirectOverlay" style="position:fixed;inset:0;z-index:99999;background:#050505;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+    <div id="payRedirectOverlay" style="position:fixed;inset:0;z-index:99999;background:#050505;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
         <div class="pay-redirect-ring"></div>
         <p class="pay-redirect-label">Securing payment portal…</p>
     </div>
@@ -2410,8 +2410,9 @@
                             inp.style.borderColor = '#ff1a1a';
                             err.classList.remove('hidden');
                             inp.classList.remove('wiz-shake');
-                            void inp.offsetWidth; // reflow to restart animation
+                            void inp.offsetWidth;
                             inp.classList.add('wiz-shake');
+                            inp.addEventListener('animationend', () => inp.classList.remove('wiz-shake'), { once: true });
                             inp.focus();
                             return;
                         }
@@ -2555,9 +2556,8 @@
                             const data = await response.json();
 
                             if (data.paymentSessionId) {
-                                // Show full-screen redirect overlay (matches payment-success verify screen)
                                 const payOverlay = document.getElementById('payRedirectOverlay');
-                                if (payOverlay) payOverlay.classList.add('active');
+                                if (payOverlay) payOverlay.style.display = 'flex'; // direct style beats inline display:none
                                 // Collapse chatbot UI so it doesn't float over the overlay
                                 windowEl.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
                                 windowEl.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
@@ -2597,7 +2597,7 @@
                                             window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
                                         });
                                     }
-                                } catch (e) {
+                                 } catch (e) {
                                     console.warn('Cashfree SDK exception, falling back to direct URL:', e);
                                     window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
                                 }
@@ -2607,6 +2607,12 @@
                         } catch (err) {
                             clearTimeout(_payTimeout);
                             console.error("Payment Error:", err);
+                            // Hide the redirect overlay so user can see the error
+                            const _errOverlay = document.getElementById('payRedirectOverlay');
+                            if (_errOverlay) _errOverlay.style.display = 'none';
+                            // Re-show chatbot so user can see the status message
+                            windowEl.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+                            windowEl.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
                             if (err.name === 'AbortError') {
                                 statusEl.innerText = "Request timed out. Please check your connection and try again.";
                             } else {
