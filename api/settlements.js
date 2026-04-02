@@ -17,9 +17,19 @@ module.exports = async function (req, res) {
     try {
         const { startDate, endDate, cursor = null } = req.body;
 
-        // Validate input
+        // Validate input — both fields required
         if (!startDate || !endDate) {
             return res.status(400).json({ error: "startDate and endDate required" });
+        }
+        // MEDIUM FIX #8: Validate date format before forwarding to Cashfree API.
+        // Without this, malformed input (e.g. SQL-like strings, wrong format) propagates
+        // to Cashfree and returns a confusing 400/422 gateway error instead of a clean local one.
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+            return res.status(400).json({ error: "Dates must be in YYYY-MM-DD format." });
+        }
+        if (new Date(startDate) > new Date(endDate)) {
+            return res.status(400).json({ error: "startDate must be before or equal to endDate." });
         }
 
         // Call Cashfree LIVE API
