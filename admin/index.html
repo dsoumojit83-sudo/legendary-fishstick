@@ -2731,27 +2731,47 @@
                     const formattedReply = formatAIText(aiResponse.reply);
                     terminalBody.innerHTML += `<div class="terminal-msg msg-ai"><div class="avatar">ZC</div><div class="bubble">${formattedReply}</div></div>`;
 
-                    // ── If the AI executed an action, show a confirmation card ──
-                    if (aiResponse.action) {
-                        const act = aiResponse.action;
+                    // ── If the AI executed actions, show confirmation cards ──
+                    const actionsToRender = aiResponse.actions || [];
+                    if (aiResponse.action) actionsToRender.push(aiResponse.action); // fallback
+
+                    if (actionsToRender.length === 1) {
+                        const act = actionsToRender[0];
                         const isSuccess = act.success !== false;
                         const cardColor = isSuccess ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
                         const borderColor = isSuccess ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)';
                         const iconColor = isSuccess ? '#22c55e' : '#ef4444';
-                        // BUG FIX: Escape act.error — Supabase/API error messages could contain HTML characters
+                        
                         const safeError = escapeHtml(String(act.error || 'Unknown error'));
+                        let actionDesc = act.newStatus ? `Status updated → <strong style="color:#22c55e">${act.newStatus}</strong>` : 
+                                         act.actionType ? `Action completed → <strong style="color:#22c55e">${act.actionType}</strong>` : 
+                                         'Action completed';
+
                         const label = isSuccess
-                            ? `✓ Status updated → <strong style="color:#22c55e">${act.newStatus}</strong> <span style="color:#555;font-size:10px;margin-left:6px;">${act.orderId}</span>`
+                            ? `✓ ${actionDesc} <span style="color:#555;font-size:10px;margin-left:6px;">${act.orderId || ''}</span>`
                             : `✗ Action failed: ${safeError}`;
+                        
                         terminalBody.innerHTML += `
                             <div style="margin-left:2rem;margin-bottom:0.75rem;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid ${borderColor};background:${cardColor};font-size:0.75rem;color:${iconColor};font-family:Inter,sans-serif;">
                                 ${label}
                             </div>`;
-
-                        // BUG FIX A3: loadData() was never defined — use fetchDashboardData()
-                        if (isSuccess) {
-                            setTimeout(() => fetchDashboardData(), 800);
-                        }
+                    } else if (actionsToRender.length > 1) {
+                        const successCount = actionsToRender.filter(a => a.success !== false).length;
+                        const failCount = actionsToRender.length - successCount;
+                        const isAllSuccess = failCount === 0;
+                        
+                        const cardColor = isAllSuccess ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+                        const borderColor = isAllSuccess ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)';
+                        const iconColor = isAllSuccess ? '#22c55e' : '#ef4444';
+                        
+                        const label = isAllSuccess
+                            ? `✓ Bulk Action Completed → <strong style="color:#22c55e">${successCount} successful</strong>`
+                            : `⚠ Bulk Action Partial → <strong style="color:#22c55e">${successCount} succeeded</strong>, <strong style="color:#ef4444">${failCount} failed</strong>`;
+                        
+                        terminalBody.innerHTML += `
+                            <div style="margin-left:2rem;margin-bottom:0.75rem;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid ${borderColor};background:${cardColor};font-size:0.75rem;color:${iconColor};font-family:Inter,sans-serif;">
+                                ${label}
+                            </div>`;
                     }
                 }
             } catch (error) {
