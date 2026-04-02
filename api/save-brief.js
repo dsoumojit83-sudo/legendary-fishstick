@@ -10,6 +10,10 @@ module.exports = async function(req, res) {
     // ── PUBLIC: GET /api/save-brief → returns studio online/offline status ──
     // (No auth needed — this is read-only and public so the website can check it)
     if (req.method === 'GET') {
+        // MOBILE PERF FIX: Cache the studio status response at the CDN/edge for 15s.
+        // Mobile devices poll every 60s — this allows Vercel's edge to serve cached
+        // responses without hitting Supabase on every single poll from every device.
+        res.setHeader('Cache-Control', 'public, s-maxage=15, stale-while-revalidate=30');
         try {
             const { data, error } = await supabase
                 .from('studio_config')
