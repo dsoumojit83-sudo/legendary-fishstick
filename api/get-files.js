@@ -1,5 +1,9 @@
 const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { createClient } = require('@supabase/supabase-js');
+
+// ── Supabase client — used for JWT auth (same pattern as all other admin APIs) ─
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // ── Backblaze B2 S3-compatible client ────────────────────────────────────────
 const B2_ENDPOINT = process.env.B2_ENDPOINT || '';
@@ -20,14 +24,22 @@ const b2 = new S3Client({
 const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
 
 module.exports = async function (req, res) {
-    // BUG FIX #11: Method check BEFORE auth check — prevents leaking that the endpoint
-    // exists and is protected when a non-GET request arrives without credentials.
+    // Method check BEFORE auth — prevents leaking that the endpoint exists
+    // when a non-GET request arrives without credentials.
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed.' });
     }
 
-    // 🔒 Admin-only — same password header as other admin APIs
-    if (!process.env.ADMIN_PASSWORD || req.headers['x-admin-password'] !== process.env.ADMIN_PASSWORD) {
+    // 🔒 SECURITY FIX: Replaced static ADMIN_PASSWORD header (never expires, single point of
+    // failure if leaked) with Supabase JWT Bearer token — the same pattern used by every other
+    // admin endpoint (admin-data.js, admin-chat.js, payments.js, settlements.js, update-status.js).
+    // JWT tokens expire automatically and are invalidated on logout.
+    const authHeader = req.headers['authorization'];
+    if (!authHeader?.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized.' });
+    }
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
+    if (authError || !user) {
         return res.status(401).json({ error: 'Unauthorized.' });
     }
 
