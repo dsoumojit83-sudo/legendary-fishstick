@@ -96,21 +96,69 @@ async function executeAction(action) {
             : { success: true, orderId, newStatus: status };
     }
 
+    if (action.type === 'update_order') {
+        const { orderId, updates } = action;
+        if (!orderId || !updates || typeof updates !== 'object') return { success: false, error: 'Missing orderId or updates' };
+
+        const { error } = await supabase
+            .from('orders')
+            .update(updates)
+            .eq('order_id', orderId);
+
+        return error
+            ? { success: false, error: error.message }
+            : { success: true, orderId, actionType: 'updated fields' };
+    }
+
+    if (action.type === 'delete_order') {
+        const { orderId } = action;
+        if (!orderId) return { success: false, error: 'Missing orderId' };
+
+        const { error } = await supabase
+            .from('orders')
+            .delete()
+            .eq('order_id', orderId);
+
+        return error
+            ? { success: false, error: error.message }
+            : { success: true, orderId, actionType: 'deleted' };
+    }
+
+    if (action.type === 'create_order') {
+        const { record } = action;
+        if (!record || typeof record !== 'object') return { success: false, error: 'Missing record details' };
+
+        if (!record.order_id) {
+            record.order_id = 'ZYRO' + Date.now().toString(16).toUpperCase() + Math.random().toString(16).substring(2, 6).toUpperCase();
+        }
+
+        const { error } = await supabase
+            .from('orders')
+            .insert(record);
+
+        return error
+            ? { success: false, error: error.message }
+            : { success: true, orderId: record.order_id, actionType: 'created' };
+    }
+
     return null;
 }
 
-// ─── Parse action block out of AI response ──────────────────────────────────
+// ─── Parse ALL action blocks out of AI response ─────────────────────────────
 // The AI wraps actions in: <<<ACTION: {...} >>>
-function extractAction(text) {
-    const match = text.match(/<<<ACTION:\s*(\{[\s\S]*?\})\s*>>>/);
-    if (!match) return { cleanText: text, action: null };
-    try {
-        const action = JSON.parse(match[1]);
-        const cleanText = text.replace(match[0], '').trim();
-        return { cleanText, action };
-    } catch {
-        return { cleanText: text, action: null };
+// When it acts on multiple orders it emits one block per order.
+// The original single-match version left the extra blocks in the reply text,
+// which the browser rendered as broken HTML (<<> artifacts).
+function extractActions(text) {
+    const regex = /<<<ACTION:\s*(\{[\s\S]*?\})\s*>>>/g;
+    const actions = [];
+    let m;
+    while ((m = regex.exec(text)) !== null) {
+        try { actions.push(JSON.parse(m[1])); } catch { /* skip malformed */ }
     }
+    // Strip every action block from the text shown to the user
+    const cleanText = text.replace(/<<<ACTION:\s*\{[\s\S]*?\}\s*>>>/g, '').trim();
+    return { cleanText, actions };
 }
 
 module.exports = async function (req, res) {
@@ -275,21 +323,32 @@ ${fullDatabaseLog}
 
 ---
 
-ACTIONS YOU CAN TAKE:
-When Soumojit asks you to change something in the database (like "mark [project] as complete", "set [order] to in progress", "mark it as paid"), you MUST execute it by including a structured action block in your response.
+ACTIONS YOU CAN TAKE WITH THE DATABASE (FULL CRUD):
+When Soumojit asks you to edit the database (delete orders, change amounts, edit clients, mark as paid, create a new order, etc.), you MUST execute it by outputting an action block. 
+You can output MULTIPLE action blocks seamlessly for bulk actions.
 
-Action format (add exactly this at the end of your reply, nothing else after it):
-<<<ACTION: {"type": "update_status", "orderId": "the_exact_order_id", "status": "completed"} >>>
+Valid Action Formats (add exactly these blocks at the end of your reply):
 
-Valid statuses: pending, in_progress, paid, completed
+1. Update Order Status (Statuses: pending, in_progress, paid, completed):
+<<<ACTION: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
 
-Rules for actions:
-1. Only include the action block if Soumojit clearly asks for a change.
-2. Use the exact order_id from the database — never guess it.
-3. For "mark as complete" or "mark as done" → status = "completed"
-4. For "start working" or "move to in progress" → status = "in_progress"
-5. If you're not sure which order they mean, ask them to confirm the order ID before acting.
-6. After acting, confirm what you did in plain English ("Done — marked [Client Name]'s [Service] as completed.")
+2. Update General Fields (amount, client_name, deadline_date, project_notes, etc):
+<<<ACTION: {"type": "update_order", "orderId": "exact_order_id", "updates": {"amount": 5000, "project_notes": "Urgent"}} >>>
+
+3. Delete Order (Hard delete from database):
+<<<ACTION: {"type": "delete_order", "orderId": "exact_order_id"} >>>
+
+4. Create New Order (Requires minimum fields):
+<<<ACTION: {"type": "create_order", "record": {"client_name": "John", "amount": 1000, "service": "Reel Edit"}} >>>
+
+Rules for Actions:
+1. ONLY use an action block if Soumojit clearly asks for a change.
+2. For bulk actions (e.g. "delete all these 5 orders"), output an action block for EVERY single order in the same response.
+3. Use the exact order_id from the database — never guess it.
+4. For "mark as complete" or "mark as done" → status = "completed"
+5. For "start working" or "move to in progress" → status = "in_progress"
+6. If asked to delete an order, use the "delete_order" action.
+7. Always confirm what you did in plain English ("Done — deleted all the specified orders.")
 
 ---
 
@@ -304,10 +363,13 @@ PERSONALITY & STYLE:
 
 SERVICES & PRICING:
 - Short Form: Rs.200 — YouTube Shorts, Reels
-- Long Form: Rs.500 — Full YouTube videos, vlogs  
+- Long Form: Rs.500 — Full YouTube videos, vlogs
 - Motion Graphics: Rs.400 — Effects, branding
 - Thumbnails: Rs.100 — Standalone designs
+- Sound Design: Rs.200 — Audio editing, SFX, music sync
+- Color Grading & Correction: Rs.175 — Cinematic color work, correction
 
+Revision policy: 1 free revision included with every order.
 Refund policy: Full refund if client isn't happy with the final cut.`;
 
         // ── Build messages with memory ────────────────────────────────────────
@@ -326,12 +388,12 @@ Refund policy: Full refund if client isn't happy with the final cut.`;
 
         const rawContent = aiResponse.choices[0].message.content;
 
-        // ── Extract + execute action if present ───────────────────────────────
-        const { cleanText, action } = extractAction(rawContent);
-        let actionResult = null;
-        if (action) {
-            actionResult = await executeAction(action);
-        }
+        // ── Extract + execute ALL actions if present ──────────────────────────
+        const { cleanText, actions } = extractActions(rawContent);
+        const actionResults = actions.length > 0
+            ? (await Promise.allSettled(actions.map(executeAction))).map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean)
+            : [];
+        const actionResult = actionResults.length > 0 ? actionResults[actionResults.length - 1] : null;
 
         // ── Update memory ─────────────────────────────────────────────────────
         sessionMemory.push({ role: 'user', content: prompt, timestamp: now });

@@ -1483,6 +1483,33 @@
             // PERF FIX: Studio status poll every 60s (was 30s) — admin page, less critical than public site
             fetchStudioStatus();
             setInterval(fetchStudioStatus, 60000);
+
+            // ── Supabase Realtime: live order updates via WebSocket ──────────────────
+            // Any INSERT/UPDATE/DELETE on the orders table instantly refreshes the dashboard.
+            // Debounce 800ms: if the AI deletes 8 orders at once, we wait until all
+            // changes settle before fetching — prevents 8 simultaneous API calls.
+            if (supabaseClient) {
+                let realtimeDebounce = null;
+                supabaseClient
+                    .channel('admin-orders-live')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+                        clearTimeout(realtimeDebounce);
+                        realtimeDebounce = setTimeout(() => {
+                            fetchDashboardData();
+                            // Also refresh ledger if user is on that tab
+                            const ledgerView = document.getElementById('view-ledger');
+                            if (ledgerView && ledgerView.style.display !== 'none' && ledgerView.classList.contains('active')) {
+                                fetchLedgerData();
+                            }
+                        }, 800);
+                    })
+                    .subscribe((status) => {
+                        const indicator = document.getElementById('latency-ms');
+                        if (status === 'SUBSCRIBED' && indicator) {
+                            indicator.title = 'Live — Supabase Realtime connected';
+                        }
+                    });
+            }
         }
 
         function updateDigitalClock() {
