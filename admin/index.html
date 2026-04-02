@@ -1785,7 +1785,7 @@
             // Fetch files from /api/get-files
             try {
                 const res = await fetch(`/api/get-files?orderId=${encodeURIComponent(orderId)}`, {
-                    headers: { 'x-admin-password': adminPassword }
+                    headers: { 'Authorization': 'Bearer ' + authToken }
                 });
 
                 if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -1828,8 +1828,24 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         };
 
-        window.markProjectCompleted = async function (orderId) {
-            if (!confirm("Are you sure you want to mark this project as fully completed?")) return;
+        // ── Status display labels ────────────────────────────────────────────
+        // The DB stores snake_case (in_progress). The badge renders the raw value
+        // with text-transform:uppercase, but underscores stay visible. This maps
+        // raw status → clean display text.
+        function statusLabel(status) {
+            const map = { in_progress: 'IN PROGRESS', pending: 'PENDING', paid: 'PAID', completed: 'COMPLETED' };
+            return map[status] || (status || '').toUpperCase().replace(/_/g, ' ');
+        }
+
+        // ── 2-step project status toggle ───────────────────────────────────
+        // 1st click (pending/paid): sets status to in_progress (no confirm needed)
+        // 2nd click (in_progress):  sets status to completed (confirm required)
+        window.markProjectCompleted = async function (orderId, currentStatus) {
+            const nextStatus = (currentStatus === 'in_progress') ? 'completed' : 'in_progress';
+
+            if (nextStatus === 'completed') {
+                if (!confirm(`Mark project ${orderId} as COMPLETED?`)) return;
+            }
 
             try {
                 const response = await fetch('/api/update-status', {
@@ -1838,18 +1854,23 @@
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + authToken
                     },
-                    body: JSON.stringify({ orderId: orderId, status: 'completed' })
+                    body: JSON.stringify({ orderId: orderId, status: nextStatus })
                 });
 
                 if (response.ok) {
-                    showToast(`Project ${orderId} marked as completed!`);
+                    showToast(
+                        nextStatus === 'completed'
+                            ? `✅ Project ${orderId} marked as COMPLETED`
+                            : `⏳ Project ${orderId} set to IN PROGRESS`,
+                        nextStatus === 'completed'
+                    );
                     fetchDashboardData();
                 } else {
-                    showToast("Failed to update project status.");
+                    showToast('Failed to update project status.', false);
                 }
             } catch (err) {
-                console.error("Completion error:", err);
-                showToast("Network error. Could not complete project.", "error");
+                console.error('Status update error:', err);
+                showToast('Network error. Could not update status.', false);
             }
         };
 
@@ -1890,9 +1911,14 @@
 
                 let completeBtnHTML = '';
                 if (order.status !== 'completed') {
+                    const isInProgress = order.status === 'in_progress';
                     completeBtnHTML = `
-                        <button onclick="markProjectCompleted('${order.id}')" class="p-1.5 rounded bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/50 text-gray-400 hover:text-green-500 transition-all" title="Mark Project as Completed">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <button onclick="markProjectCompleted('${order.id}', '${order.status}')"
+                            class="p-1.5 rounded border transition-all ${isInProgress
+                                ? 'bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 hover:border-orange-500/60 text-orange-400 hover:text-orange-300'
+                                : 'bg-white/5 hover:bg-blue-500/20 border-white/10 hover:border-blue-500/50 text-gray-400 hover:text-blue-400'}"
+                            title="${isInProgress ? 'Click to mark as COMPLETED' : 'Click to mark as IN PROGRESS'}">
+                            <i data-lucide="${isInProgress ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
                         </button>
                     `;
                 }
@@ -1932,7 +1958,7 @@
                             <td class="p-3 hidden sm:table-cell">${deadlineBadge}</td>
                             <td class="p-3 text-right">
                                 <div class="flex items-center justify-end gap-3">
-                                    <span class="status-badge ${badgeClass}">${order.status}</span>
+                                    <span class="status-badge ${badgeClass}">${statusLabel(order.status)}</span>
                                     ${actionBtn}
                                 </div>
                             </td>
@@ -1961,7 +1987,7 @@
                         </td>
                         <td class="p-4 text-right">
                             <div class="flex items-center justify-end gap-3">
-                                <span class="status-badge ${badgeClass}">${order.status}</span>
+                                <span class="status-badge ${badgeClass}">${statusLabel(order.status)}</span>
                                 ${actionBtn}
                             </div>
                         </td>
@@ -2249,7 +2275,14 @@
 
                 let completeBtnHTML = '';
                 if (order.status !== 'completed') {
-                    completeBtnHTML = `<button onclick="markProjectCompleted('${order.id}')" class="p-1.5 rounded bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/50 text-gray-400 hover:text-green-500 transition-all" title="Mark Completed"><i data-lucide="check-circle" class="w-4 h-4"></i></button>`;
+                    const isInProgress = order.status === 'in_progress';
+                    completeBtnHTML = `<button onclick="markProjectCompleted('${order.id}', '${order.status}')"
+                        class="p-1.5 rounded border transition-all ${isInProgress
+                            ? 'bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 hover:border-orange-500/60 text-orange-400 hover:text-orange-300'
+                            : 'bg-white/5 hover:bg-blue-500/20 border-white/10 hover:border-blue-500/50 text-gray-400 hover:text-blue-400'}"
+                        title="${isInProgress ? 'Click to mark as COMPLETED' : 'Click to mark as IN PROGRESS'}">
+                        <i data-lucide="${isInProgress ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
+                    </button>`;
                 }
 
                 const filesBtn = order.has_files
@@ -2264,7 +2297,7 @@
                     <td class="p-4 text-gray-300 text-sm font-medium">${hl(order.service)}</td>
                     <td class="p-4 font-bold text-[#ff1a1a]">₹${hl(String(order.amount))}</td>
                     <td class="p-4"><div class="flex flex-col gap-1"><span class="text-[10px] text-gray-500">Booked: ${orderDate}</span>${deadlineBadge}</div></td>
-                    <td class="p-4 text-right"><div class="flex items-center justify-end gap-3"><span class="status-badge ${badgeClass}">${hl(order.status)}</span>${actionBtn}</div></td>
+                    <td class="p-4 text-right"><div class="flex items-center justify-end gap-3"><span class="status-badge ${badgeClass}">${statusLabel(hl(order.status))}</span>${actionBtn}</div></td>
                 </tr>`;
             });
 
