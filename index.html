@@ -2565,18 +2565,25 @@
                                 windowEl.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
                                 windowEl.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
 
+                                // Lock page background dark so browser shows #050505
+                                // (not white) during the navigation unload flash
+                                document.documentElement.style.background = '#050505';
+                                document.body.style.background = '#050505';
+
                                 // Free up GPU memory before redirect
                                 try {
                                     if (window.gsap) gsap.killTweensOf('*');
                                     document.querySelectorAll('.orb, .grid-bg, .noise, .video-bg, canvas').forEach(el => el.remove());
                                 } catch(e) { }
 
-                                // ── SDK checkout (all devices) ─────────────────────────────
-                                // redirectTarget "_top" does a full-page redirect — works on
-                                // both desktop and mobile (Chrome Android, Safari iOS, Brave).
-                                // getCashfree() polls for the SDK with 3×300ms retries so
-                                // slow mobile network delays don't cause a ReferenceError.
-                                const cfInstance = await getCashfree();
+                                // ── Minimum overlay hold (1.5s) so the user sees the portal
+                                // screen on fast PCs where getCashfree() resolves instantly.
+                                // getCashfree() polls the SDK in parallel — whichever takes
+                                // longer wins, so slow mobile networks are unaffected.
+                                const [cfInstance] = await Promise.all([
+                                    getCashfree(),
+                                    new Promise(res => setTimeout(res, 1500))
+                                ]);
                                 if (!cfInstance) {
                                     // SDK genuinely unavailable after retries → direct URL
                                     console.warn('Cashfree SDK unavailable, falling back to direct URL');
