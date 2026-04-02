@@ -859,6 +859,40 @@
             }
         }
 
+        /* ── Chatbot input shake animation ───────────────────────────────────
+           Fires when user submits an invalid name / email / phone.            */
+        @keyframes wiz-shake {
+            0%, 100% { transform: translateX(0); }
+            20%       { transform: translateX(-6px); }
+            40%       { transform: translateX(6px); }
+            60%       { transform: translateX(-4px); }
+            80%       { transform: translateX(4px); }
+        }
+        .wiz-shake { animation: wiz-shake 0.35s ease; }
+
+        /* ── Payment redirect overlay ────────────────────────────────────────
+           Full-screen dark screen with pulsing ring — shown when Cashfree SDK
+           is initialising so the user never sees a white browser flash.       */
+        #payRedirectOverlay {
+            position: fixed; inset: 0; z-index: 99999;
+            background: #050505;
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 20px;
+        }
+        #payRedirectOverlay.active { display: flex; }
+        .pay-redirect-ring {
+            width: 52px; height: 52px;
+            border: 3px solid rgba(255,26,26,0.2);
+            border-top-color: #ff1a1a;
+            border-radius: 50%;
+            animation: yt-spin 0.9s linear infinite;
+        }
+        .pay-redirect-label {
+            font-size: 12px; letter-spacing: 0.25em;
+            text-transform: uppercase; color: rgba(255,255,255,0.35);
+        }
+
         /* ===== END MOBILE PERFORMANCE ===== */
     </style>
 
@@ -1707,7 +1741,13 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
         </svg>
-    </button>
+
+
+    <!-- Payment redirect overlay — shown while Cashfree SDK is initialising -->
+    <div id="payRedirectOverlay" style="position:fixed;inset:0;z-index:99999;background:#050505;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+        <div class="pay-redirect-ring"></div>
+        <p class="pay-redirect-label">Securing payment portal…</p>
+    </div>
 
 
     <!-- GSAP: deferred so preload hint (in head) starts download during body render -->
@@ -2356,21 +2396,31 @@
                         <p class="mb-3">Awesome choice! What is your name?</p>
                         <div class="flex flex-col gap-2">
                             <input type="text" id="wizName" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Your Name" autocomplete="off">
+                            <p id="wizNameErr" class="text-[#ff1a1a] text-[10px] hidden">⚠ Please enter your full name</p>
                             <button id="wizNameBtn" class="bg-[#ff1a1a] text-black px-3 py-2 rounded text-xs font-bold hover:bg-white transition-colors">Next</button>
                         </div>
                     `;
                     addBotMessage(content);
 
                     document.getElementById('wizNameBtn').addEventListener('click', function () {
-                        const name = document.getElementById('wizName').value.trim();
-                        if (name) {
-                            document.getElementById('wizName').disabled = true;
-                            this.disabled = true;
-                            this.classList.add('opacity-50');
-                            orderData.name = name;
-                            addUserMessage(name);
-                            setTimeout(renderStep2, 400);
+                        const inp = document.getElementById('wizName');
+                        const err = document.getElementById('wizNameErr');
+                        const name = inp.value.trim();
+                        if (!name || name.length < 2) {
+                            inp.style.borderColor = '#ff1a1a';
+                            err.classList.remove('hidden');
+                            inp.classList.remove('wiz-shake');
+                            void inp.offsetWidth; // reflow to restart animation
+                            inp.classList.add('wiz-shake');
+                            inp.focus();
+                            return;
                         }
+                        inp.disabled = true;
+                        this.disabled = true;
+                        this.classList.add('opacity-50');
+                        orderData.name = name;
+                        addUserMessage(name);
+                        setTimeout(renderStep2, 400);
                     });
                 }
 
@@ -2381,21 +2431,27 @@
                         <p class="mb-3">What's your email? (We'll send your receipt and project link here).</p>
                         <div class="flex flex-col gap-2">
                             <input type="email" id="wizEmail" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="email@example.com" autocomplete="off">
+                            <p id="wizEmailErr" class="text-[#ff1a1a] text-[10px] hidden">⚠ Please enter a valid email address (e.g. you@example.com)</p>
                             <button id="wizEmailBtn" class="bg-[#ff1a1a] text-black px-3 py-2 rounded text-xs font-bold hover:bg-white transition-colors">Next</button>
                         </div>
                     `;
                     addBotMessage(content);
 
                     document.getElementById('wizEmailBtn').addEventListener('click', function () {
-                        const email = document.getElementById('wizEmail').value.trim();
-                        // BUG FIX #3: Validate with proper email regex (not just .includes('@'))
+                        const inp = document.getElementById('wizEmail');
+                        const err = document.getElementById('wizEmailErr');
+                        const email = inp.value.trim();
                         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                         if (!emailRegex.test(email)) {
-                            const inp = document.getElementById('wizEmail');
-                            if (inp) { inp.style.borderColor = '#ff1a1a'; inp.placeholder = 'Enter a valid email address'; inp.focus(); }
+                            inp.style.borderColor = '#ff1a1a';
+                            err.classList.remove('hidden');
+                            inp.classList.remove('wiz-shake');
+                            void inp.offsetWidth;
+                            inp.classList.add('wiz-shake');
+                            inp.focus();
                             return;
                         }
-                        document.getElementById('wizEmail').disabled = true;
+                        inp.disabled = true;
                         this.disabled = true;
                         this.classList.add('opacity-50');
                         orderData.email = email;
@@ -2408,23 +2464,28 @@
                     const content = `
                         <p class="mb-3">Got it! What is your phone number?</p>
                         <div class="flex flex-col gap-2">
-                            <input type="tel" id="wizPhone" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="0000000000" autocomplete="off">
+                            <input type="tel" id="wizPhone" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="10-digit mobile number" autocomplete="off">
+                            <p id="wizPhoneErr" class="text-[#ff1a1a] text-[10px] hidden">⚠ Please enter a valid 10-digit Indian mobile number</p>
                             <button id="wizPhoneBtn" class="bg-[#ff1a1a] text-black px-3 py-2 rounded text-xs font-bold hover:bg-white transition-colors">Next</button>
                         </div>
                     `;
                     addBotMessage(content);
 
                     document.getElementById('wizPhoneBtn').addEventListener('click', function () {
-                        const phone = document.getElementById('wizPhone').value.trim();
-                        // BUG FIX #2: Match backend's strict 10-digit-only regex
-                        // Previously: phone.length >= 10 allowed 'aaaaaaaaaa' or '+++++++++++'
+                        const inp = document.getElementById('wizPhone');
+                        const err = document.getElementById('wizPhoneErr');
+                        const phone = inp.value.trim();
                         const phoneRegex = /^[0-9]{10}$/;
                         if (!phoneRegex.test(phone)) {
-                            const inp = document.getElementById('wizPhone');
-                            if (inp) { inp.style.borderColor = '#ff1a1a'; inp.placeholder = 'Enter valid 10-digit number'; inp.focus(); }
+                            inp.style.borderColor = '#ff1a1a';
+                            err.classList.remove('hidden');
+                            inp.classList.remove('wiz-shake');
+                            void inp.offsetWidth;
+                            inp.classList.add('wiz-shake');
+                            inp.focus();
                             return;
                         }
-                        document.getElementById('wizPhone').disabled = true;
+                        inp.disabled = true;
                         this.disabled = true;
                         this.classList.add('opacity-50');
                         orderData.phone = phone;
@@ -2494,7 +2555,12 @@
                             const data = await response.json();
 
                             if (data.paymentSessionId) {
-                                statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to secure portal...`;
+                                // Show full-screen redirect overlay (matches payment-success verify screen)
+                                const payOverlay = document.getElementById('payRedirectOverlay');
+                                if (payOverlay) payOverlay.classList.add('active');
+                                // Collapse chatbot UI so it doesn't float over the overlay
+                                windowEl.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+                                windowEl.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
 
                                 // Free up GPU memory before redirect
                                 try {
