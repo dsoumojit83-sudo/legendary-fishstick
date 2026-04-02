@@ -1833,7 +1833,7 @@
         // with text-transform:uppercase, but underscores stay visible. This maps
         // raw status → clean display text.
         function statusLabel(status) {
-            const map = { in_progress: 'IN PROGRESS', pending: 'PENDING', paid: 'PAID', completed: 'COMPLETED' };
+            const map = { in_progress: 'WORKING', pending: 'PENDING', paid: 'PAID', completed: 'COMPLETED' };
             return map[status] || (status || '').toUpperCase().replace(/_/g, ' ');
         }
 
