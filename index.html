@@ -2386,11 +2386,21 @@
 
                             if (data.paymentSessionId) {
                                 statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to secure portal...`;
-                                // Forcing _top universally to prevent iframe OOM GPU crashes on mobile browsers
-                                cashfree.checkout({
-                                    paymentSessionId: data.paymentSessionId,
-                                    redirectTarget: "_top"
-                                });
+                                
+                                // FATAL MOBILE CRASH HOTFIX: Aggressively free up mobile GPU memory 
+                                // before standard Cashfree initialization to prevent "Aw, Snap!" OOM errors.
+                                try {
+                                    if (window.gsap) gsap.killTweensOf('*');
+                                    document.querySelectorAll('.orb, .grid-bg, .noise, .video-bg, canvas').forEach(el => el.remove());
+                                } catch(e) { }
+
+                                // Wait 1 frame so garbage collection can clear GPU layers
+                                setTimeout(() => {
+                                    cashfree.checkout({
+                                        paymentSessionId: data.paymentSessionId,
+                                        redirectTarget: "_top"
+                                    });
+                                }, 50);
                             } else {
                                 throw new Error(data.reply || "Could not retrieve payment session.");
                             }
