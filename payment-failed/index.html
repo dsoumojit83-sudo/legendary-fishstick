@@ -8,7 +8,6 @@
     <meta name="robots" content="noindex, nofollow">
     
     <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" sizes="128x128" href="/favicon.png">
     <meta name="theme-color" content="#ff1a1a">
 
@@ -169,6 +168,20 @@
             0%, 100% { opacity: 0.5; transform: scale(1);    }
             50%       { opacity: 1;   transform: scale(1.15); }
         }
+        /* ── Mobile: strip backdrop-filter from glass card ────────────────────
+           backdrop-blur creates a GPU compositor layer. On low-end phones this
+           drops frames while users are uploading files. */
+        @media (max-width: 767px) {
+            input, select, textarea { font-size: 16px !important; }
+            .backdrop-blur-\[20px\] {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+            #uploadProgressWrapper {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+        }
     </style>
     
     <script>
@@ -297,8 +310,15 @@
         lucide.createIcons();
 
         const urlParams = new URLSearchParams(window.location.search);
-        const orderId = urlParams.get('order_id') || 'ZYRO_MANUAL';
-        document.getElementById('orderIdDisplay').textContent = orderId;
+        const orderId = urlParams.get('order_id');
+
+        // LOW FIX: Redirect to home if no order_id in URL (direct navigation).
+        // Previously showed a form tied to 'ZYRO_MANUAL' which hit a 404 on submit.
+        if (!orderId || orderId === 'ZYRO_MANUAL') {
+            window.location.replace('/');
+        }
+
+        document.getElementById('orderIdDisplay').textContent = orderId || 'ZYRO_MANUAL';
 
         // Brief auto-save + character counter
         const projectBrief = document.getElementById('projectBrief');
