@@ -1914,9 +1914,7 @@
                     const isInProgress = order.status === 'in_progress';
                     completeBtnHTML = `
                         <button onclick="markProjectCompleted('${order.id}', '${order.status}')"
-                            class="p-1.5 rounded border transition-all ${isInProgress
-                                ? 'bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 hover:border-orange-500/60 text-orange-400 hover:text-orange-300'
-                                : 'bg-white/5 hover:bg-blue-500/20 border-white/10 hover:border-blue-500/50 text-gray-400 hover:text-blue-400'}"
+                            class="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
                             title="${isInProgress ? 'Click to mark as COMPLETED' : 'Click to mark as IN PROGRESS'}">
                             <i data-lucide="${isInProgress ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
                         </button>
@@ -2277,9 +2275,7 @@
                 if (order.status !== 'completed') {
                     const isInProgress = order.status === 'in_progress';
                     completeBtnHTML = `<button onclick="markProjectCompleted('${order.id}', '${order.status}')"
-                        class="p-1.5 rounded border transition-all ${isInProgress
-                            ? 'bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 hover:border-orange-500/60 text-orange-400 hover:text-orange-300'
-                            : 'bg-white/5 hover:bg-blue-500/20 border-white/10 hover:border-blue-500/50 text-gray-400 hover:text-blue-400'}"
+                        class="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
                         title="${isInProgress ? 'Click to mark as COMPLETED' : 'Click to mark as IN PROGRESS'}">
                         <i data-lucide="${isInProgress ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
                     </button>`;
