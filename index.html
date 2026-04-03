@@ -362,79 +362,117 @@
             perspective: 400px;
         }
 
+        /* ============================================================
+           CINEMATIC PRELOADER
+        ============================================================ */
         #preloader {
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
+            position: fixed; inset: 0; z-index: 99999;
             background: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
         }
-
-        .preloader-ring {
-            position: absolute;
-            width: 200px; height: 200px;
-            border: 1px solid rgba(255,26,26,0.15);
-            border-top-color: #ff1a1a;
+        /* Letterbox bars */
+        .pl-bar-top, .pl-bar-bottom {
+            position: absolute; left: 0; width: 100%;
+            background: #000;
+            z-index: 2;
+            transition: height 0.9s cubic-bezier(0.76,0,0.24,1);
+        }
+        .pl-bar-top { top: 0; height: 22vh; }
+        .pl-bar-bottom { bottom: 0; height: 22vh; }
+        /* Corner crosshair marks */
+        .pl-corner {
+            position: absolute; width: 18px; height: 18px;
+            z-index: 3;
+            opacity: 0.35;
+        }
+        .pl-corner::before, .pl-corner::after {
+            content: ''; position: absolute;
+            background: #ff1a1a;
+        }
+        .pl-corner::before { width: 100%; height: 1px; top: 50%; left: 0; }
+        .pl-corner::after  { width: 1px; height: 100%; left: 50%; top: 0; }
+        .pl-tl { top: 28px; left: 28px; }
+        .pl-tr { top: 28px; right: 28px; }
+        .pl-bl { bottom: 28px; left: 28px; }
+        .pl-br { bottom: 28px; right: 28px; }
+        /* Frame counter */
+        .pl-frame-counter {
+            position: absolute; bottom: 38px; right: 38px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px; letter-spacing: 0.3em;
+            color: rgba(255,26,26,0.5);
+            z-index: 3;
+            user-select: none;
+        }
+        /* Center content */
+        .pl-center {
+            position: relative; z-index: 4;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 1.2rem;
+            opacity: 0;
+        }
+        /* Spinning reel */
+        .pl-reel {
+            width: 48px; height: 48px;
             border-radius: 50%;
-            animation: preloaderSpin 1.8s linear infinite;
-            opacity: 0.5;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-top-color: #ff1a1a;
+            border-left-color: rgba(255,26,26,0.4);
+            animation: plSpin 0.9s linear infinite;
         }
-        @keyframes preloaderSpin { to { transform: rotate(360deg); } }
-
-        .preloader-tagline {
-            font-size: 10px;
-            letter-spacing: 0.4em;
+        @keyframes plSpin { to { transform: rotate(360deg); } }
+        /* Logo */
+        .pl-logo {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(2.8rem, 9vw, 5.5rem);
+            font-weight: 900; letter-spacing: -0.04em;
+            color: #fff; line-height: 1;
+        }
+        .pl-logo span { color: #ff1a1a; }
+        .pl-logo sup {
+            font-size: 0.32em; vertical-align: super;
+            font-weight: 300; color: #888;
+            letter-spacing: normal;
+        }
+        /* Subtitle */
+        .pl-sub {
+            font-size: 9px; letter-spacing: 0.5em;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.25);
+            color: rgba(255,255,255,0.2);
             font-weight: 400;
         }
-
-        /* Brand name: Roboto (same as all bold/heading text) */
-        .brand-name {
-            font-family: 'Roboto', sans-serif !important;
-        }
-
-        .preloader-logo {
-            font-size: clamp(2.5rem, 8vw, 5rem);
-            font-weight: 900;
-            letter-spacing: -0.05em;
-            font-family: 'Roboto', sans-serif;
-            position: relative;
-            z-index: 2;
-        }
-
-        .preloader-logo span {
-            color: #ff1a1a;
-        }
-
-        .preloader-bar {
-            width: 180px;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.08);
+        /* Progress */
+        .pl-bar-wrap {
+            width: 200px; height: 1px;
+            background: rgba(255,255,255,0.06);
             overflow: hidden;
-            position: relative;
-            z-index: 2;
         }
-
-        .preloader-fill {
-            height: 100%;
-            width: 0%;
+        .pl-bar-fill {
+            height: 100%; width: 0%;
             background: linear-gradient(90deg, #ff1a1a, #ff6060);
             transition: width 0.05s linear;
         }
+        .pl-pct {
+            font-family: 'Courier New', monospace;
+            font-size: 9px; letter-spacing: 0.25em;
+            color: rgba(255,26,26,0.6);
+        }
+        /* Horizontal scan sweep */
+        .pl-scanline {
+            position: absolute; left: 0; width: 100%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,26,26,0.4), transparent);
+            top: 50%; z-index: 3;
+            animation: plScan 3s ease-in-out infinite;
+            opacity: 0.6;
+        }
+        @keyframes plScan {
+            0%   { transform: translateY(-40vh); opacity: 0; }
+            20%  { opacity: 0.6; }
+            80%  { opacity: 0.6; }
+            100% { transform: translateY(40vh); opacity: 0; }
+        }
 
-        /* Iris wipe reveal */
-        .iris-wipe {
-            clip-path: circle(0% at 50% 50%);
-            transition: clip-path 1.4s cubic-bezier(0.65, 0, 0.35, 1);
-        }
-        .iris-wipe.open {
-            clip-path: circle(150% at 50% 50%);
-        }
 
         #scrollProgress {
             position: fixed;
@@ -954,12 +992,28 @@
     <div class="custom-cursor-dot" id="customCursorDot"></div>
 
     <div id="preloader" aria-hidden="true">
-        <div class="preloader-ring" id="preloaderRing"></div>
-        <div class="preloader-logo tracking-tight">Zyro<span class="text-[#ff1a1a]">Editz</span><sup style="font-size:0.38em; vertical-align:super; letter-spacing:normal; -webkit-text-fill-color:#ffffff; color:#ffffff; font-weight:400;">&trade;</sup></div>
-        <div class="preloader-tagline" id="preloaderTagline">Speed. Motion. Precision.</div>
-        <div class="preloader-bar">
-            <div class="preloader-fill" id="preloaderFill"></div>
+        <!-- Letterbox bars -->
+        <div class="pl-bar-top" id="plBarTop"></div>
+        <div class="pl-bar-bottom" id="plBarBottom"></div>
+        <!-- Corner crosshairs -->
+        <div class="pl-corner pl-tl"></div>
+        <div class="pl-corner pl-tr"></div>
+        <div class="pl-corner pl-bl"></div>
+        <div class="pl-corner pl-br"></div>
+        <!-- Frame counter -->
+        <div class="pl-frame-counter" id="plFrameCounter">001</div>
+        <!-- Center content -->
+        <div class="pl-center" id="plCenter">
+            <div class="pl-reel" id="plReel"></div>
+            <div class="pl-logo" id="plLogo">Zyro<span>Editz</span><sup>&trade;</sup></div>
+            <div class="pl-sub" id="plSub">Speed &middot; Motion &middot; Precision</div>
+            <div class="pl-bar-wrap">
+                <div class="pl-bar-fill" id="preloaderFill"></div>
+            </div>
+            <div class="pl-pct" id="plPct">0%</div>
         </div>
+        <!-- Horizontal scan line -->
+        <div class="pl-scanline" id="plScanline"></div>
     </div>
     <div id="scrollProgress" aria-hidden="true"></div>
     <div class="scanlines" aria-hidden="true"></div>
@@ -2197,48 +2251,76 @@
             function initPreloader() {
                 (function () {
                     try {
-                        const pl = document.getElementById('preloader');
-                        const fill = document.getElementById('preloaderFill');
-                        const ring = document.getElementById('preloaderRing');
-                        const mainContent = document.querySelector('nav, #home, .noise, .grid-bg, .orb, .video-bg, .video-overlay');
+                        const pl    = document.getElementById('preloader');
+                        const fill  = document.getElementById('preloaderFill');
+                        const pct   = document.getElementById('plPct');
+                        const cnt   = document.getElementById('plFrameCounter');
+                        const center = document.getElementById('plCenter');
+                        const barTop = document.getElementById('plBarTop');
+                        const barBot = document.getElementById('plBarBottom');
+
                         if (!pl || !fill) { if (pl) pl.style.display = 'none'; return; }
                         if (prefersReducedMotion) { pl.style.display = 'none'; return; }
 
-                        // Add iris-wipe class to body (content hidden initially)
-                        document.body.classList.add('iris-wipe');
+                        // Animate letterbox in → center content fade in
+                        if (window.gsap) {
+                            gsap.to(center, { opacity: 1, duration: 0.6, delay: 0.2, ease: 'power2.out' });
+                        } else {
+                            center.style.opacity = 1;
+                        }
+
+                        // Frame counter flicker
+                        let frame = 1;
+                        const counterInterval = setInterval(() => {
+                            frame = Math.min(999, frame + Math.floor(Math.random() * 12 + 3));
+                            if (cnt) cnt.textContent = String(frame).padStart(3, '0');
+                        }, 80);
 
                         let p = 0;
                         function step() {
                             try {
                                 p = Math.min(100, p + Math.random() * 18 + 4);
-                                if (fill) fill.style.width = p + '%';
-                                if (p < 100) { setTimeout(step, 55 + Math.random() * 40); } else {
+                                fill.style.width = p + '%';
+                                if (pct) pct.textContent = Math.round(p) + '%';
+                                if (p < 100) {
+                                    setTimeout(step, 55 + Math.random() * 40);
+                                } else {
+                                    clearInterval(counterInterval);
+                                    if (cnt) cnt.textContent = '999';
                                     setTimeout(function () {
                                         try {
                                             if (window.gsap && typeof gsap.to === 'function') {
-                                                // Phase 1: Fade out preloader content
-                                                gsap.to([fill.parentElement, ring], { opacity: 0, duration: 0.3 });
-                                                gsap.to('.preloader-logo', { scale: 1.1, opacity: 0, duration: 0.6, ease: 'power2.in', delay: 0.1 });
-                                                gsap.to('.preloader-tagline', { opacity: 0, y: -10, duration: 0.4, delay: 0.1 });
-                                                // Phase 2: Iris wipe open the content
-                                                gsap.to(pl, {
-                                                    opacity: 0, duration: 0.8, ease: 'power2.inOut', delay: 0.5,
-                                                    onStart: function() {
-                                                        document.body.classList.add('open');
-                                                    },
-                                                    onComplete: function () {
-                                                        pl.style.display = 'none';
-                                                        document.body.classList.remove('iris-wipe', 'open');
-                                                    }
-                                                });
-                                            } else { pl.style.display = 'none'; }
+                                                const tl = gsap.timeline();
+                                                // Collapse letterbox bars outward
+                                                tl.to(barTop, { height: 0, duration: 0.8, ease: 'expo.inOut' }, 0);
+                                                tl.to(barBot, { height: 0, duration: 0.8, ease: 'expo.inOut' }, 0);
+                                                // Fade center content up
+                                                tl.to(center, { opacity: 0, y: -20, duration: 0.5, ease: 'power2.in' }, 0);
+                                                // Flash white then dissolve
+                                                tl.to(pl, { backgroundColor: '#111', duration: 0.15, ease: 'none' }, 0.55);
+                                                tl.to(pl, { opacity: 0, duration: 0.6, ease: 'power2.inOut',
+                                                    onComplete: function () { pl.style.display = 'none'; }
+                                                }, 0.65);
+                                                // Hero cinematic zoom-in settle
+                                                gsap.fromTo('#home',
+                                                    { scale: 1.08, filter: 'blur(12px)', opacity: 0.6 },
+                                                    { scale: 1, filter: 'blur(0px)', opacity: 1, duration: 1.4, ease: 'power3.out', delay: 0.6 }
+                                                );
+                                                // Navbar drops in
+                                                gsap.fromTo('nav',
+                                                    { y: -60, opacity: 0 },
+                                                    { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out', delay: 0.9 }
+                                                );
+                                            } else {
+                                                pl.style.display = 'none';
+                                            }
                                         } catch (e) { pl.style.display = 'none'; }
                                     }, 260);
                                 }
-                            } catch (e) { console.error('Preloader error:', e); const pl = document.getElementById('preloader'); if (pl) pl.style.display = 'none'; }
+                            } catch (e) { pl.style.display = 'none'; }
                         }
-                        setTimeout(step, 100);
-                    } catch (e) { console.error('Preloader error:', e); const pl = document.getElementById('preloader'); if (pl) pl.style.display = 'none'; }
+                        setTimeout(step, 400);
+                    } catch (e) { const pl = document.getElementById('preloader'); if (pl) pl.style.display = 'none'; }
                 })();
             }
 
