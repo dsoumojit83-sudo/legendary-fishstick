@@ -38,7 +38,8 @@
     <!-- Twitter / X Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="ZyroEditz™ | Professional Video Editing &amp; Motion Graphics">
-    <meta name="twitter:description" content="Premium video editing and motion graphics studio for brands that demand excellence.">
+    <meta name="twitter:description"
+        content="Premium video editing and motion graphics studio for brands that demand excellence.">
     <meta name="twitter:image" content="https://zyroeditz.xyz/og-image.png">
     <meta name="twitter:image:alt" content="ZyroEditz™ — Professional Video Editing Studio">
 
@@ -374,91 +375,320 @@
            MONOLITH AWAKENING — Cinematic Preloader v4
         ============================================================ */
         #preloader {
-            position: fixed; inset: 0; z-index: 99999;
-            background: #000; overflow: hidden;
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #000;
+            overflow: hidden;
         }
-        #plCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; }
-        .pl-lb { position: absolute; left: 0; width: 100%; background: #000; z-index: 8; }
-        .pl-lb-t { top: 0; height: 13vh; }
-        .pl-lb-b { bottom: 0; height: 13vh; }
-        .pl-vig { position: absolute; inset: 0; z-index: 2; pointer-events: none;
-            background: radial-gradient(ellipse 65% 65% at 50% 50%, transparent 20%, rgba(0,0,0,0.95) 100%); }
-        .pl-heat { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
-            background: radial-gradient(ellipse 55% 30% at 50% 50%, rgba(139,0,0,0.14) 0%, transparent 70%); }
-        .pl-corner { position: absolute; width: 20px; height: 20px; z-index: 9; opacity: 0; }
-        .pl-corner::before, .pl-corner::after { content: ''; position: absolute; background: rgba(255,26,26,0.55); }
-        .pl-corner::before { width: 100%; height: 1px; top: 50%; left: 0; }
-        .pl-corner::after  { width: 1px; height: 100%; left: 50%; top: 0; }
-        .pl-tl { top: 18px; left: 18px; } .pl-tr { top: 18px; right: 18px; }
-        .pl-bl { bottom: 18px; left: 18px; } .pl-br { bottom: 18px; right: 18px; }
-        .pl-fc { position: absolute; bottom: 48px; right: 20px;
-            font-family: 'Courier New',monospace; font-size: 10px; letter-spacing: 0.3em;
-            color: rgba(255,26,26,0.35); z-index: 9; opacity: 0; }
-        .pl-tc { position: absolute; top: 20px; left: 46px;
-            font-family: 'Courier New',monospace; font-size: 9px; letter-spacing: 0.2em;
-            color: rgba(255,255,255,0.08); z-index: 9; opacity: 0; }
-        .pl-center { position: absolute; inset: 0; z-index: 5; display: flex;
-            flex-direction: column; align-items: center; justify-content: center;
-            gap: 1rem; pointer-events: none; }
+
+        #plCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0;
+        }
+
+        .pl-lb {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            background: #000;
+            z-index: 8;
+        }
+
+        .pl-lb-t {
+            top: 0;
+            height: 13vh;
+        }
+
+        .pl-lb-b {
+            bottom: 0;
+            height: 13vh;
+        }
+
+        .pl-vig {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: radial-gradient(ellipse 65% 65% at 50% 50%, transparent 20%, rgba(0, 0, 0, 0.95) 100%);
+        }
+
+        .pl-heat {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(ellipse 55% 30% at 50% 50%, rgba(139, 0, 0, 0.14) 0%, transparent 70%);
+        }
+
+        .pl-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            z-index: 9;
+            opacity: 0;
+        }
+
+        .pl-corner::before,
+        .pl-corner::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 26, 26, 0.55);
+        }
+
+        .pl-corner::before {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+        }
+
+        .pl-corner::after {
+            width: 1px;
+            height: 100%;
+            left: 50%;
+            top: 0;
+        }
+
+        .pl-tl {
+            top: 18px;
+            left: 18px;
+        }
+
+        .pl-tr {
+            top: 18px;
+            right: 18px;
+        }
+
+        .pl-bl {
+            bottom: 18px;
+            left: 18px;
+        }
+
+        .pl-br {
+            bottom: 18px;
+            right: 18px;
+        }
+
+        .pl-fc {
+            position: absolute;
+            bottom: 48px;
+            right: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            letter-spacing: 0.3em;
+            color: rgba(255, 26, 26, 0.35);
+            z-index: 9;
+            opacity: 0;
+        }
+
+        .pl-tc {
+            position: absolute;
+            top: 20px;
+            left: 46px;
+            font-family: 'Courier New', monospace;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.08);
+            z-index: 9;
+            opacity: 0;
+        }
+
+        .pl-center {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            pointer-events: none;
+        }
+
         .pl-logo-shadow {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-            z-index: 4; white-space: nowrap;
-            font-family: 'Roboto',sans-serif; font-size: clamp(2.2rem,12vw,7.5rem);
-            font-weight: 900; letter-spacing: 0.15em;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 4;
+            white-space: nowrap;
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(2.2rem, 12vw, 7.5rem);
+            font-weight: 900;
+            letter-spacing: 0.15em;
             color: #8b0000;
             /* static blur only — GSAP never animates filter on mobile */
-            filter: blur(28px); opacity: 0;
-            user-select: none; pointer-events: none;
-            will-change: opacity; /* only opacity changes */
+            filter: blur(28px);
+            opacity: 0;
+            user-select: none;
+            pointer-events: none;
+            will-change: opacity;
+            /* only opacity changes */
         }
+
         .pl-logo {
-            font-family: 'Roboto',sans-serif;
-            font-size: clamp(2.2rem,12vw,7.5rem);
-            font-weight: 900; letter-spacing: 0.15em; color: #fff; line-height: 1;
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(2.2rem, 12vw, 7.5rem);
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            color: #fff;
+            line-height: 1;
             /* NO CSS transform here — GSAP owns the matrix fully via gsap.set()
                Mixing CSS transform + GSAP transform causes a position jump on mobile
                because GSAP re-parses the matrix and may mis-decode translate3d syntax */
             opacity: 0;
-            text-shadow: none; will-change: transform, opacity;
-            -webkit-text-stroke: 0.5px rgba(255,255,255,0.08);
-            position: relative; z-index: 5;
+            text-shadow: none;
+            will-change: transform, opacity;
+            -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.08);
+            position: relative;
+            z-index: 5;
         }
+
         /* blur wrapper: NOT using backdrop-filter — causes compositor layer on mobile */
-        #plLogoBlur { display: none; }
-        .pl-logo span { color: #ff1a1a; -webkit-text-stroke: 0.5px rgba(255,26,26,0.15); }
-        .pl-sub { font-size: 9px; letter-spacing: 0.65em; text-transform: uppercase;
-            color: transparent; font-weight: 300; opacity: 0; position: relative; z-index: 5;
-            white-space: nowrap; min-height: 1.2em; }
+        #plLogoBlur {
+            display: none;
+        }
+
+        .pl-logo span {
+            color: #ff1a1a;
+            -webkit-text-stroke: 0.5px rgba(255, 26, 26, 0.15);
+        }
+
+        .pl-sub {
+            font-size: 9px;
+            letter-spacing: 0.65em;
+            text-transform: uppercase;
+            color: transparent;
+            font-weight: 300;
+            opacity: 0;
+            position: relative;
+            z-index: 5;
+            white-space: nowrap;
+            min-height: 1.2em;
+        }
+
         /* anamorphic lens flare — sharp, not glowy */
         .pl-flare {
-            position: absolute; top: 50%; left: -110%; width: 110%; height: 1px; z-index: 6;
+            position: absolute;
+            top: 50%;
+            left: -110%;
+            width: 110%;
+            height: 1px;
+            z-index: 6;
             background: linear-gradient(90deg,
-                transparent 0%, rgba(255,255,255,0.01) 10%,
-                rgba(255,255,255,0.8) 48%, #fff 50%, rgba(255,255,255,0.8) 52%,
-                rgba(255,255,255,0.01) 90%, transparent 100%);
-            box-shadow: 0 0 12px 2px rgba(255,255,255,0.2);
-            opacity: 0; transform: translateY(-50%); pointer-events: none;
+                    transparent 0%, rgba(255, 255, 255, 0.01) 10%,
+                    rgba(255, 255, 255, 0.8) 48%, #fff 50%, rgba(255, 255, 255, 0.8) 52%,
+                    rgba(255, 255, 255, 0.01) 90%, transparent 100%);
+            box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.2);
+            opacity: 0;
+            transform: translateY(-50%);
+            pointer-events: none;
         }
+
         .pl-flare::after {
-            content: ''; position: absolute; top: -20vh; left: 50%; width: 1px; height: 40vh;
-            background: linear-gradient(180deg, transparent, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.18) 55%, transparent);
+            content: '';
+            position: absolute;
+            top: -20vh;
+            left: 50%;
+            width: 1px;
+            height: 40vh;
+            background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.18) 45%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.18) 55%, transparent);
             transform: translateX(-50%);
         }
-        .pl-glint { position: absolute; width: 3px; height: 3px; background: #fff;
-            box-shadow: 0 0 6px 2px rgba(255,255,255,0.9); z-index: 6; opacity: 0; pointer-events: none; }
-        .pl-prog { position: absolute; bottom: 46px; left: 50%; transform: translateX(-50%);
-            z-index: 9; display: flex; flex-direction: column; align-items: center; gap: 5px; opacity: 0; }
-        .pl-bar-w { width: 140px; height: 1px; background: rgba(255,255,255,0.04); overflow: hidden; }
-        .pl-bar-f { height: 100%; width: 0%; background: linear-gradient(90deg, #8b0000, #ff1a1a); transition: width 0.08s linear; }
-        .pl-pct { font-family: 'Courier New',monospace; font-size: 9px; letter-spacing: 0.3em; color: rgba(255,26,26,0.35); }
-        .pl-scan { position: absolute; left: 0; width: 100%; height: 1px; z-index: 3;
-            background: linear-gradient(90deg, transparent, rgba(255,26,26,0.12), transparent);
-            animation: plScan 4s ease-in-out infinite; opacity: 0; }
-        @keyframes plScan { 0%{top:10%;opacity:0} 20%{opacity:0.2} 80%{opacity:0.2} 100%{top:90%;opacity:0} }
+
+        .pl-glint {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #fff;
+            box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.9);
+            z-index: 6;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pl-prog {
+            position: absolute;
+            bottom: 46px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            opacity: 0;
+        }
+
+        .pl-bar-w {
+            width: 140px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.04);
+            overflow: hidden;
+        }
+
+        .pl-bar-f {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #8b0000, #ff1a1a);
+            transition: width 0.08s linear;
+        }
+
+        .pl-pct {
+            font-family: 'Courier New', monospace;
+            font-size: 9px;
+            letter-spacing: 0.3em;
+            color: rgba(255, 26, 26, 0.35);
+        }
+
+        .pl-scan {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            z-index: 3;
+            background: linear-gradient(90deg, transparent, rgba(255, 26, 26, 0.12), transparent);
+            animation: plScan 4s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes plScan {
+            0% {
+                top: 10%;
+                opacity: 0
+            }
+
+            20% {
+                opacity: 0.2
+            }
+
+            80% {
+                opacity: 0.2
+            }
+
+            100% {
+                top: 90%;
+                opacity: 0
+            }
+        }
+
         /* breathing glow — for post-settle */
         @keyframes plBreathe {
-            0%,100% { text-shadow: 0 0 18px rgba(255,26,26,0.35), 0 0 40px rgba(139,0,0,0.2); }
-            50%      { text-shadow: 0 0 30px rgba(255,26,26,0.55), 0 0 70px rgba(139,0,0,0.3); }
+
+            0%,
+            100% {
+                text-shadow: 0 0 18px rgba(255, 26, 26, 0.35), 0 0 40px rgba(139, 0, 0, 0.2);
+            }
+
+            50% {
+                text-shadow: 0 0 30px rgba(255, 26, 26, 0.55), 0 0 70px rgba(139, 0, 0, 0.3);
+            }
         }
 
 
@@ -912,15 +1142,28 @@
                noise, grid-bg, and the cinematic canvas each create a GPU compositor
                layer. On mobile this fights the scroll compositor and causes frame drops.
                Hide them — the background color + vignette still looks great. */
-            .noise, .grid-bg { display: none !important; }
-            #cinematicCanvas { display: none !important; }
+            .noise,
+            .grid-bg {
+                display: none !important;
+            }
+
+            #cinematicCanvas {
+                display: none !important;
+            }
 
             /* ── Force momentum (inertia) scrolling on iOS ── */
-            html, body { -webkit-overflow-scrolling: touch; }
+            html,
+            body {
+                -webkit-overflow-scrolling: touch;
+            }
 
             /* ── Prevent orbs from creating compositor layers during scroll ── */
-            .orb { will-change: auto !important; filter: none !important;
-                   opacity: 0 !important; pointer-events: none; }
+            .orb {
+                will-change: auto !important;
+                filter: none !important;
+                opacity: 0 !important;
+                pointer-events: none;
+            }
         }
 
         /* ── Scroll-to-top: always red on mobile ─────────────────────────────
@@ -1047,7 +1290,9 @@
         <!-- depth shadow behind logo -->
         <div class="pl-logo-shadow" id="plShadow">ZyroEditz</div>
         <div class="pl-center">
-            <div class="pl-logo" id="plLogo">Zyro<span>Editz</span><sup style="font-size:0.35em;vertical-align:super;letter-spacing:normal;opacity:0.5;font-weight:400;">&#8482;</sup></div>
+            <div class="pl-logo" id="plLogo">Zyro<span>Editz</span><sup
+                    style="font-size:0.35em;vertical-align:super;letter-spacing:normal;opacity:0.5;font-weight:400;">&#8482;</sup>
+            </div>
             <div class="pl-sub" id="plSub">Speed &middot; Motion &middot; Precision</div>
         </div>
         <div class="pl-prog" id="plProg">
@@ -1540,10 +1785,13 @@
             <div class="mt-8 md:mt-16 relative overflow-hidden rounded-2xl bg-black/60 text-center reveal"
                 style="padding: clamp(2rem,6vw,3.5rem) clamp(1.25rem,5vw,3.5rem);">
                 <!-- subtle top edge accent only — no red bg -->
-                <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/30 to-transparent"></div>
+                <div
+                    class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/30 to-transparent">
+                </div>
                 <div class="relative z-10 max-w-xl mx-auto">
                     <p class="text-xs uppercase tracking-[0.4em] text-[#ff1a1a] mb-3 font-bold">Full Showcase</p>
-                    <h3 class="text-2xl md:text-4xl font-bold text-white mb-4 leading-tight">See the Complete Director's Vault</h3>
+                    <h3 class="text-2xl md:text-4xl font-bold text-white mb-4 leading-tight">See the Complete Director's
+                        Vault</h3>
                     <p class="text-gray-400 text-sm md:text-base mb-8 leading-relaxed">Explore our cinematic portfolio
                         — curated gallery, client testimonials, and our creative process.</p>
                     <a href="/portfolio/"
@@ -2328,21 +2576,26 @@
             function initPreloader() {
                 (function () {
                     try {
-                        var pl     = document.getElementById('preloader');
+                        // Hide scrollbar and scroll progress bar while preloader is active
+                        document.body.style.overflow = 'hidden';
+                        var _scrollProg = document.getElementById('scrollProgress');
+                        if (_scrollProg) _scrollProg.style.display = 'none';
+
+                        var pl = document.getElementById('preloader');
                         var canvas = document.getElementById('plCanvas');
-                        var fill   = document.getElementById('preloaderFill');
-                        var pct    = document.getElementById('plPct');
-                        var fc     = document.getElementById('plFC');
-                        var tc     = document.getElementById('plTC');
-                        var logo   = document.getElementById('plLogo');
+                        var fill = document.getElementById('preloaderFill');
+                        var pct = document.getElementById('plPct');
+                        var fc = document.getElementById('plFC');
+                        var tc = document.getElementById('plTC');
+                        var logo = document.getElementById('plLogo');
                         var shadow = document.getElementById('plShadow');
-                        var sub    = document.getElementById('plSub');
-                        var flare  = document.getElementById('plFlare');
-                        var prog   = document.getElementById('plProg');
-                        var heat   = document.getElementById('plHeat');
-                        var lbT    = document.getElementById('plLbT');
-                        var lbB    = document.getElementById('plLbB');
-                        var scan   = document.getElementById('plScan');
+                        var sub = document.getElementById('plSub');
+                        var flare = document.getElementById('plFlare');
+                        var prog = document.getElementById('plProg');
+                        var heat = document.getElementById('plHeat');
+                        var lbT = document.getElementById('plLbT');
+                        var lbB = document.getElementById('plLbB');
+                        var scan = document.getElementById('plScan');
                         // FIX: filter nulls — GSAP throws silently on null targets
                         var glints = [document.getElementById('plG1'), document.getElementById('plG2'), document.getElementById('plG3')].filter(Boolean);
 
@@ -2354,25 +2607,27 @@
                         // ── Canvas particles ──
                         // FIX: track RAF id so it can be properly cancelled (was leaking forever)
                         var ctx = canvas.getContext('2d');
-                        var W = canvas.width  = window.innerWidth;
+                        var W = canvas.width = window.innerWidth;
                         var H = canvas.height = window.innerHeight;
                         var parts = [];
                         var rafId = null; // FIX: named RAF id
                         var pCount = isMobile ? 20 : 45; // FIX: reduced count for 60fps headroom
                         for (var i = 0; i < pCount; i++) {
-                            parts.push({ x: Math.random()*W, y: Math.random()*H,
-                                vx:(Math.random()-0.5)*0.35, vy:-(Math.random()*0.5+0.08),
-                                r: Math.random()*1.2+0.3, a: Math.random()*0.35+0.05, life: Math.random() });
+                            parts.push({
+                                x: Math.random() * W, y: Math.random() * H,
+                                vx: (Math.random() - 0.5) * 0.35, vy: -(Math.random() * 0.5 + 0.08),
+                                r: Math.random() * 1.2 + 0.3, a: Math.random() * 0.35 + 0.05, life: Math.random()
+                            });
                         }
                         function drawFrame() {
-                            ctx.clearRect(0,0,W,H);
-                            for (var i=0;i<parts.length;i++) {
-                                var e=parts[i]; e.x+=e.vx; e.y+=e.vy; e.life-=0.003;
-                                if (e.life<=0||e.y<-10) { e.x=Math.random()*W; e.y=H+5; e.life=1; }
+                            ctx.clearRect(0, 0, W, H);
+                            for (var i = 0; i < parts.length; i++) {
+                                var e = parts[i]; e.x += e.vx; e.y += e.vy; e.life -= 0.003;
+                                if (e.life <= 0 || e.y < -10) { e.x = Math.random() * W; e.y = H + 5; e.life = 1; }
                                 var al = e.a * e.life;
                                 if (al < 0.01) continue; // FIX: skip invisible particles
-                                ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,6.28);
-                                ctx.fillStyle='rgba(255,26,26,'+al.toFixed(2)+')';
+                                ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, 6.28);
+                                ctx.fillStyle = 'rgba(255,26,26,' + al.toFixed(2) + ')';
                                 // NO shadowBlur — forces SW rasterization on mobile, kills 60fps
                                 ctx.fill();
                             }
@@ -2385,17 +2640,17 @@
                         }
 
                         // ── HUD timecode ──
-                        var frame=1, tcF=0;
-                        var cInt = setInterval(function(){
-                            frame = Math.min(999, frame + Math.floor(Math.random()*14+2));
-                            if (fc) fc.textContent = String(frame).padStart(3,'0');
+                        var frame = 1, tcF = 0;
+                        var cInt = setInterval(function () {
+                            frame = Math.min(999, frame + Math.floor(Math.random() * 14 + 2));
+                            if (fc) fc.textContent = String(frame).padStart(3, '0');
                             tcF++;
-                            if (tc) { var s=Math.floor(tcF/12); tc.textContent='00:00:'+String(s%60).padStart(2,'0')+':'+String(tcF%24).padStart(2,'0'); }
+                            if (tc) { var s = Math.floor(tcF / 12); tc.textContent = '00:00:' + String(s % 60).padStart(2, '0') + ':' + String(tcF % 24).padStart(2, '0'); }
                         }, 70);
 
                         // ── Glint positions ──
-                        var cx=W/2, cy=H/2;
-                        glints.forEach(function(g,i){ g.style.left=(cx+(i-1)*W*0.14)+'px'; g.style.top=(cy+(Math.random()-0.5)*50)+'px'; });
+                        var cx = W / 2, cy = H / 2;
+                        glints.forEach(function (g, i) { g.style.left = (cx + (i - 1) * W * 0.14) + 'px'; g.style.top = (cy + (Math.random() - 0.5) * 50) + 'px'; });
 
                         // FIX: gate — prevent exitPreloader firing before tl min time
                         var tlMinDone = false;
@@ -2413,7 +2668,7 @@
                         // ══════════════════════════════════════════════════
                         if (window.gsap) {
                             var tl = gsap.timeline({
-                                onComplete: function() {
+                                onComplete: function () {
                                     // NOTE: do NOT clear will-change here — dropping the GPU layer
                                     // before exit causes a visual snap on mobile. Cleanup happens
                                     // inside exitPreloader's onComplete, after display:none.
@@ -2423,94 +2678,102 @@
                             });
 
                             // 0.0–0.3 → pure black
-                            tl.to(prog,  { opacity:1, duration:0.25 }, 0.25);
-                            tl.to(fc,    { opacity:1, duration:0.2  }, 0.3);
-                            tl.to(tc,    { opacity:1, duration:0.2  }, 0.3);
-                            tl.to('.pl-corner', { opacity:0.4, duration:0.3, stagger:0.05 }, 0.3);
+                            tl.to(prog, { opacity: 1, duration: 0.25 }, 0.25);
+                            tl.to(fc, { opacity: 1, duration: 0.2 }, 0.3);
+                            tl.to(tc, { opacity: 1, duration: 0.2 }, 0.3);
+                            tl.to('.pl-corner', { opacity: 0.4, duration: 0.3, stagger: 0.05 }, 0.3);
 
                             // 0.3–1.4 → logo emerges: massive → normal, blur → sharp
                             // FIX: animate scale+y in ONE call (avoids GSAP merging two tweens
                             //      that target the same transform and causing a jump)
-                            tl.to(canvas, { opacity:0.25, duration:0.5, ease:'power1.inOut' }, 0.3);
-                            tl.to(shadow, { opacity:0.6,  duration:0.9, ease:'power2.out'   }, 0.35);
+                            tl.to(canvas, { opacity: 0.25, duration: 0.5, ease: 'power1.inOut' }, 0.3);
+                            tl.to(shadow, { opacity: 0.6, duration: 0.9, ease: 'power2.out' }, 0.35);
 
                             if (isMobile) {
-                                // MOBILE: skip filter animation entirely — use opacity only
-                                // filter:blur on transform+opacity is the #1 jank source on mobile GPUs
-                                gsap.set(logo, { opacity:0, scale:2.0, y:8, filter:'none' });
-                                tl.to(logo, { opacity:0.15, scale:1.7, y:5, duration:0.35, ease:'power1.out' }, 0.3);
-                                tl.to(logo, { opacity:1,    scale:1.0, y:0, duration:0.9,  ease:'expo.out'  }, 0.6);
+                                // MOBILE: scale+opacity only — NO y movement so logo never shifts position
+                                gsap.set(logo, { opacity: 0, scale: 2.0, y: 0, filter: 'none' });
+                                tl.to(logo, { opacity: 0.15, scale: 1.7, duration: 0.35, ease: 'power1.out' }, 0.3);
+                                tl.to(logo, { opacity: 1, scale: 1.0, duration: 0.9, ease: 'expo.out' }, 0.6);
                             } else {
                                 // DESKTOP: blur animation is fine
                                 tl.fromTo(logo,
-                                    { opacity:0,    scale:2.0, y:8, filter:'blur(14px)' },
-                                    { opacity:0.15, scale:1.7, y:5, filter:'blur(9px)',
-                                      duration:0.35, ease:'power1.out', clearProps:'none' }, 0.3);
+                                    { opacity: 0, scale: 2.0, y: 8, filter: 'blur(14px)' },
+                                    {
+                                        opacity: 0.15, scale: 1.7, y: 5, filter: 'blur(9px)',
+                                        duration: 0.35, ease: 'power1.out', clearProps: 'none'
+                                    }, 0.3);
                                 tl.to(logo,
-                                    { opacity:1, scale:1.0, y:0, filter:'blur(0px)',
-                                      duration:0.9, ease:'expo.out',
-                                      onComplete: function() {
-                                          if (logo) gsap.set(logo, { clearProps:'filter' });
-                                      }
+                                    {
+                                        opacity: 1, scale: 1.0, y: 0, filter: 'blur(0px)',
+                                        duration: 0.9, ease: 'expo.out',
+                                        onComplete: function () {
+                                            if (logo) gsap.set(logo, { clearProps: 'filter' });
+                                        }
                                     }, 0.6);
                             }
 
                             // 1.2 → sharp lens flare sweep
-                            tl.set(flare, { left:'-110%', opacity:1 }, 1.2);
-                            tl.to(flare,  { left:'120%',  duration:0.55, ease:'power2.inOut' }, 1.2);
-                            tl.to(flare,  { opacity:0,    duration:0.1                       }, 1.73);
+                            tl.set(flare, { left: '-110%', opacity: 1 }, 1.2);
+                            tl.to(flare, { left: '120%', duration: 0.55, ease: 'power2.inOut' }, 1.2);
+                            tl.to(flare, { opacity: 0, duration: 0.1 }, 1.73);
 
                             // 1.25–2.0 → red internal energy
-                            tl.to(shadow, { opacity:0.9, filter:'blur(22px)', duration:0.5, ease:'power2.out' }, 1.25);
+                            tl.to(shadow, { opacity: 0.9, filter: 'blur(22px)', duration: 0.5, ease: 'power2.out' }, 1.25);
                             tl.to(logo, {
-                                textShadow:'0 0 35px rgba(255,26,26,0.7),0 0 70px rgba(139,0,0,0.4),0 0 2px rgba(255,255,255,0.15)',
-                                duration:0.55, ease:'power2.out'
+                                textShadow: '0 0 35px rgba(255,26,26,0.7),0 0 70px rgba(139,0,0,0.4),0 0 2px rgba(255,255,255,0.15)',
+                                duration: 0.55, ease: 'power2.out'
                             }, 1.3);
-                            tl.to(heat, { opacity:0.65, duration:0.35 }, 1.3);
-                            tl.to(heat, { opacity:0,    duration:0.55 }, 1.65);
-                            tl.to(scan, { opacity:1,    duration:0.2  }, 1.3);
-                            tl.to(scan, { opacity:0,    duration:0.3  }, 1.85);
+                            tl.to(heat, { opacity: 0.65, duration: 0.35 }, 1.3);
+                            tl.to(heat, { opacity: 0, duration: 0.55 }, 1.65);
+                            tl.to(scan, { opacity: 1, duration: 0.2 }, 1.3);
+                            tl.to(scan, { opacity: 0, duration: 0.3 }, 1.85);
 
                             // FIX: camera shake — use gsap.set + very short tweens
                             //      avoids overlapping x-tweens fighting each other
                             if (!isMobile) {
-                                tl.to(pl,{x: 2.5, duration:0.04, ease:'none'      }, 1.42);
-                                tl.to(pl,{x:-2.0, duration:0.04, ease:'none'      }, 1.46);
-                                tl.to(pl,{x: 0.8, duration:0.04, ease:'none'      }, 1.50);
-                                tl.to(pl,{x: 0,   duration:0.07, ease:'power2.out'}, 1.54);
+                                tl.to(pl, { x: 2.5, duration: 0.04, ease: 'none' }, 1.42);
+                                tl.to(pl, { x: -2.0, duration: 0.04, ease: 'none' }, 1.46);
+                                tl.to(pl, { x: 0.8, duration: 0.04, ease: 'none' }, 1.50);
+                                tl.to(pl, { x: 0, duration: 0.07, ease: 'power2.out' }, 1.54);
                             }
 
                             // 2.0 → micro glints
                             if (glints.length) {
-                                tl.to(glints, { opacity:1, duration:0.06, stagger:0.08 }, 2.0);
-                                tl.to(glints, { opacity:0, duration:0.18, stagger:0.06 }, 2.18);
+                                tl.to(glints, { opacity: 1, duration: 0.06, stagger: 0.08 }, 2.0);
+                                tl.to(glints, { opacity: 0, duration: 0.18, stagger: 0.06 }, 2.18);
                             }
 
                             // 2.2–2.7 → FINAL LOCK: compress → punch → settle
-                            tl.to(logo, { scale:0.97, y: 2, duration:0.1,  ease:'power3.in'   }, 2.2);
-                            tl.to(logo, { scale:1.05, y: 0, duration:0.14, ease:'power3.out'  }, 2.3);
-                            tl.to(logo, { scale:1.0,        duration:0.18, ease:'power2.inOut'}, 2.44);
+                            // Mobile: scale only (no y) so logo never shifts vertically
+                            if (isMobile) {
+                                tl.to(logo, { scale: 0.97, duration: 0.1, ease: 'power3.in' }, 2.2);
+                                tl.to(logo, { scale: 1.05, duration: 0.14, ease: 'power3.out' }, 2.3);
+                            } else {
+                                tl.to(logo, { scale: 0.97, y: 2, duration: 0.1, ease: 'power3.in' }, 2.2);
+                                tl.to(logo, { scale: 1.05, y: 0, duration: 0.14, ease: 'power3.out' }, 2.3);
+                            }
+                            tl.to(logo, { scale: 1.0, duration: 0.18, ease: 'power2.inOut' }, 2.44);
                             // single red pulse
-                            tl.to(shadow, { opacity:1.0, filter:'blur(18px)', duration:0.15 }, 2.2);
+                            tl.to(shadow, { opacity: 1.0, filter: 'blur(18px)', duration: 0.15 }, 2.2);
                             tl.to(logo, {
-                                textShadow:'0 0 80px rgba(255,26,26,0.95),0 0 160px rgba(139,0,0,0.5),0 0 4px rgba(255,255,255,0.3)',
-                                duration:0.15, ease:'power3.out'
+                                textShadow: '0 0 80px rgba(255,26,26,0.95),0 0 160px rgba(139,0,0,0.5),0 0 4px rgba(255,255,255,0.3)',
+                                duration: 0.15, ease: 'power3.out'
                             }, 2.2);
                             // breathe settle
                             tl.to(logo, {
-                                textShadow:'0 0 18px rgba(255,26,26,0.35),0 0 40px rgba(139,0,0,0.2)',
-                                duration:0.4, ease:'power2.out'
+                                textShadow: '0 0 18px rgba(255,26,26,0.35),0 0 40px rgba(139,0,0,0.2)',
+                                duration: 0.4, ease: 'power2.out'
                             }, 2.35);
-                            tl.to(shadow, { opacity:0.5, duration:0.4 }, 2.35);
+                            tl.to(shadow, { opacity: 0.5, duration: 0.4 }, 2.35);
                             // subtitle
-                            tl.to(sub, { color:'rgba(255,255,255,0.18)', opacity:1, duration:0.4 }, 2.4);
+                            tl.to(sub, { color: 'rgba(255,255,255,0.18)', opacity: 1, duration: 0.4 }, 2.4);
                             // FIX: hold frame at 2.85 so exit can't fire during mid-punch
-                            tl.to({}, { duration:0.01 }, 2.85);
+                            tl.to({}, { duration: 0.01 }, 2.85);
 
                         } else {
                             // no GSAP fallback
-                            if (logo)  { logo.style.opacity='1'; logo.style.transform='scale(1) translate3d(0,0,0)'; logo.style.filter='none'; }
-                            if (prog)  { prog.style.opacity='1'; }
+                            if (logo) { logo.style.opacity = '1'; logo.style.transform = 'scale(1) translate3d(0,0,0)'; logo.style.filter = 'none'; }
+                            if (prog) { prog.style.opacity = '1'; }
                             tlMinDone = true;
                         }
 
@@ -2518,17 +2781,17 @@
                         var p = 0;
                         var stepTimer = null;
                         function step() {
-                            p = Math.min(100, p + Math.random()*10+3);
-                            if (fill) fill.style.width = p+'%';
-                            if (pct)  pct.textContent  = Math.round(p)+'%';
+                            p = Math.min(100, p + Math.random() * 10 + 3);
+                            if (fill) fill.style.width = p + '%';
+                            if (pct) pct.textContent = Math.round(p) + '%';
                             if (p < 100) {
-                                stepTimer = setTimeout(step, 70 + Math.random()*60);
+                                stepTimer = setTimeout(step, 70 + Math.random() * 60);
                             } else {
                                 clearInterval(cInt);
                                 if (fc) fc.textContent = '999';
                                 // FIX: wait for timeline minimum before firing exit
                                 if (tlMinDone) { setTimeout(exitPreloader, 400); }
-                                else           { exitQueued = true; }
+                                else { exitQueued = true; }
                             }
                         }
                         stepTimer = setTimeout(step, 350);
@@ -2540,41 +2803,50 @@
                             clearInterval(cInt);           // FIX: always clear timer
                             clearTimeout(stepTimer);       // FIX: clear step timer
                             stopCanvas();                  // FIX: stop RAF properly
+                            // Delay scroll restore 1.5s — lets landing page rack-in finish before scrollbar reappears
+                            setTimeout(function() {
+                                document.body.style.overflow = '';
+                                if (_scrollProg) _scrollProg.style.display = '';
+                            }, 1500);
 
                             if (!window.gsap) {
-                                pl.style.display='none';
+                                pl.style.display = 'none';
                                 return;
                             }
                             var ex = gsap.timeline({
-                                onComplete: function() {
+                                onComplete: function () {
                                     pl.style.display = 'none';
                                     // Clear will-change NOW — preloader is hidden, no visual snap possible
-                                    if (logo)   { logo.style.willChange   = 'auto'; }
+                                    if (logo) { logo.style.willChange = 'auto'; }
                                     if (shadow) { shadow.style.willChange = 'auto'; }
                                     // FIX: kill all lingering tweens on preloader elements
                                     gsap.killTweensOf([pl, logo, shadow, sub, prog, fc, tc, heat, scan, flare, canvas, lbT, lbB]);
                                 }
                             });
-                            ex.to([sub,prog,fc,tc,'.pl-corner'], { opacity:0, duration:0.28, ease:'power1.in' }, 0);
-                            ex.to(lbT,   { height:0, duration:0.5, ease:'expo.inOut' }, 0.08);
-                            ex.to(lbB,   { height:0, duration:0.5, ease:'expo.inOut' }, 0.08);
-                            ex.to(canvas,{ opacity:0, duration:0.35 }, 0.08);
-                            ex.to(pl,    { opacity:0, duration:0.45, ease:'power2.inOut' }, 0.3);
+                            ex.to([sub, prog, fc, tc, '.pl-corner'], { opacity: 0, duration: 0.28, ease: 'power1.in' }, 0);
+                            ex.to(lbT, { height: 0, duration: 0.5, ease: 'expo.inOut' }, 0.08);
+                            ex.to(lbB, { height: 0, duration: 0.5, ease: 'expo.inOut' }, 0.08);
+                            ex.to(canvas, { opacity: 0, duration: 0.35 }, 0.08);
+                            ex.to(pl, { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 0.3);
                             // hero rack-in — FIX: use set+to (not fromTo) to avoid flash if
                             //                     hero elements were partially animated already
-                            gsap.set('#home', { scale:1.07, filter:'blur(10px)', opacity:0.5 });
-                            gsap.to('#home',  { scale:1, filter:'blur(0px)', opacity:1,
-                                duration:1.3, ease:'power3.out', delay:0.35 });
-                            gsap.set('nav',   { y:-45, opacity:0 });
-                            gsap.to('nav',    { y:0, opacity:1,
-                                duration:0.7, ease:'power3.out', delay:0.75 });
+                            gsap.set('#home', { scale: 1.07, filter: 'blur(10px)', opacity: 0.5 });
+                            gsap.to('#home', {
+                                scale: 1, filter: 'blur(0px)', opacity: 1,
+                                duration: 1.3, ease: 'power3.out', delay: 0.35
+                            });
+                            gsap.set('nav', { y: -45, opacity: 0 });
+                            gsap.to('nav', {
+                                y: 0, opacity: 1,
+                                duration: 0.7, ease: 'power3.out', delay: 0.75
+                            });
                         }
 
-                    } catch(e) {
+                    } catch (e) {
                         // FIX: proper catch — never leave preloader blocking page
                         console.warn('[Preloader] Error:', e);
                         var _pl = document.getElementById('preloader');
-                        if (_pl) { _pl.style.opacity='0'; setTimeout(function(){ _pl.style.display='none'; }, 100); }
+                        if (_pl) { _pl.style.opacity = '0'; setTimeout(function () { _pl.style.display = 'none'; }, 100); }
                     }
                 })();
             }
