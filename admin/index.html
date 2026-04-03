@@ -1098,26 +1098,116 @@
                     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
                         <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
                             <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Total Entries</div>
-                            <div class="text-3xl font-bold text-white" id="pf-total">0</div>
+                            <div class="text-3xl font-bold text-white">5</div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
+                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Categories</div>
+                            <div class="text-3xl font-bold text-[#49c6ff]">3</div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
+                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Testimonials</div>
+                            <div class="text-3xl font-bold text-[#7a5cff]">4</div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
+                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Status</div>
+                            <div class="text-3xl font-bold text-green-400">Live</div>
                         </div>
                     </div>
+
                     <div class="glass-panel rounded-2xl p-6 border border-white/5 mb-6">
-                        <div class="flex justify-between items-center mb-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
                             <div>
-                                <h3 class="text-lg font-bold text-white">Portfolio Editor</h3>
-                                <p class="text-xs text-gray-400 mt-1">Manage public `/portfolio` gallery (Data is saved to local storage)</p>
+                                <h3 class="text-lg font-bold text-white">Portfolio Items</h3>
+                                <p class="text-xs text-gray-400 mt-1">Live entries displayed on <a href="/portfolio" target="_blank" class="text-[#49c6ff] hover:underline">/portfolio</a></p>
                             </div>
-                            <div class="flex gap-2">
-                                <button onclick="exportPortfolioJSON()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-white/10 flex items-center gap-2">
-                                    <i data-lucide="download" class="w-4 h-4"></i> Backup JSON
-                                </button>
-                                <button onclick="openPortfolioModal()" class="px-4 py-2 bg-[#ff1a1a] hover:bg-white text-black rounded-lg text-sm font-bold tracking-widest uppercase transition-colors flex items-center gap-2">
-                                    <i data-lucide="plus" class="w-4 h-4"></i> Edit Vault
-                                </button>
-                            </div>
+                            <a href="/portfolio" target="_blank" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-white/10 flex items-center gap-2">
+                                <i data-lucide="external-link" class="w-4 h-4"></i> View Live
+                            </a>
                         </div>
-                        <div class="text-center py-10 text-gray-500 font-mono text-sm border border-dashed border-white/10 rounded-xl">
-                            Live editing of portfolio/index.html via Admin will be wired later.<br>For now, modify <span class="text-white">c:/Users/dsoum/Downloads/website/portfolio/index.html</span> manually directly with AI.
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="border-b border-white/10 text-[10px] uppercase tracking-widest text-gray-500">
+                                        <th class="pb-3 pr-4">Project</th>
+                                        <th class="pb-3 pr-4">Category</th>
+                                        <th class="pb-3 pr-4">Video ID</th>
+                                        <th class="pb-3 pr-4">Grid Size</th>
+                                        <th class="pb-3 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm">
+                                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-4 pr-4 font-bold text-white">NEON NIGHTS</td>
+                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-[#7a5cff]/10 text-[#7a5cff] text-xs font-bold">Ads</span></td>
+                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">dQw4w9WgXcQ</td>
+                                        <td class="py-4 pr-4 text-gray-400">2×2 Featured</td>
+                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
+                                    </tr>
+                                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-4 pr-4 font-bold text-white">URBAN ECHO</td>
+                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-[#49c6ff]/10 text-[#49c6ff] text-xs font-bold">Short Film</span></td>
+                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">jNQXAC9IVRw</td>
+                                        <td class="py-4 pr-4 text-gray-400">1×1</td>
+                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
+                                    </tr>
+                                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-4 pr-4 font-bold text-white">RHYTHM</td>
+                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-[#9db4ff]/10 text-[#9db4ff] text-xs font-bold">Reels</span></td>
+                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">dQw4w9WgXcQ</td>
+                                        <td class="py-4 pr-4 text-gray-400">1×1</td>
+                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
+                                    </tr>
+                                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-4 pr-4 font-bold text-white">SPEED DYNAMICS</td>
+                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-white/10 text-gray-300 text-xs font-bold">Ads</span></td>
+                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">jNQXAC9IVRw</td>
+                                        <td class="py-4 pr-4 text-gray-400">2×1 Wide</td>
+                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
+                                    </tr>
+                                    <tr class="hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-4 pr-4 font-bold text-white">VIRAL CUTS</td>
+                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-[#49c6ff]/10 text-[#49c6ff] text-xs font-bold">Reels</span></td>
+                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">dQw4w9WgXcQ</td>
+                                        <td class="py-4 pr-4 text-gray-400">1×1</td>
+                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-2xl p-6 border border-white/5">
+                        <h3 class="text-lg font-bold text-white mb-4">Client Testimonials</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-xl bg-black/30 border border-white/5">
+                                <div class="flex justify-between items-start">
+                                    <div class="font-bold text-white text-sm">Vikram Sharma</div>
+                                    <span class="text-[#49c6ff] text-xs">★★★★★</span>
+                                </div>
+                                <div class="text-xs text-[#7a5cff] mt-1">Valuable Client</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-black/30 border border-white/5">
+                                <div class="flex justify-between items-start">
+                                    <div class="font-bold text-white text-sm">Priya Desai</div>
+                                    <span class="text-[#49c6ff] text-xs">★★★★★</span>
+                                </div>
+                                <div class="text-xs text-[#49c6ff] mt-1">Valuable Client</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-black/30 border border-white/5">
+                                <div class="flex justify-between items-start">
+                                    <div class="font-bold text-white text-sm">Arjun Malhotra</div>
+                                    <span class="text-[#49c6ff] text-xs">★★★★★</span>
+                                </div>
+                                <div class="text-xs text-[#9db4ff] mt-1">Valuable Client</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-black/30 border border-white/5">
+                                <div class="flex justify-between items-start">
+                                    <div class="font-bold text-white text-sm">Neha Krishnan</div>
+                                    <span class="text-[#49c6ff] text-xs">★★★★★</span>
+                                </div>
+                                <div class="text-xs text-[#7a5cff] mt-1">Valuable Client</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3445,4 +3535,5 @@
         };
     </script>
 </body>
+
 </html>
