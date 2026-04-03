@@ -393,15 +393,16 @@
         .pl-center { position: absolute; inset: 0; z-index: 5; display: flex;
             flex-direction: column; align-items: center; justify-content: center;
             gap: 1rem; pointer-events: none; }
-        /* depth shadow layer */
         .pl-logo-shadow {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
             z-index: 4; white-space: nowrap;
             font-family: 'Roboto',sans-serif; font-size: clamp(2.2rem,12vw,7.5rem);
             font-weight: 900; letter-spacing: 0.15em;
             color: #8b0000;
+            /* static blur only — GSAP never animates filter on mobile */
             filter: blur(28px); opacity: 0;
             user-select: none; pointer-events: none;
+            will-change: opacity; /* only opacity changes */
         }
         .pl-logo {
             font-family: 'Roboto',sans-serif;
@@ -413,13 +414,8 @@
             -webkit-text-stroke: 0.5px rgba(255,255,255,0.08);
             position: relative; z-index: 5;
         }
-        /* blur wrapper: separate element avoids filter+transform co-animation jank */
-        #plLogoBlur {
-            position: absolute; inset: 0; z-index: 5;
-            display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(0px); /* placeholder — driven by JS opacity fade */
-            pointer-events: none; opacity: 1;
-        }
+        /* blur wrapper: NOT using backdrop-filter — causes compositor layer on mobile */
+        #plLogoBlur { display: none; }
         .pl-logo span { color: #ff1a1a; -webkit-text-stroke: 0.5px rgba(255,26,26,0.15); }
         .pl-sub { font-size: 9px; letter-spacing: 0.65em; text-transform: uppercase;
             color: transparent; font-weight: 300; opacity: 0; position: relative; z-index: 5; }
@@ -1261,7 +1257,6 @@
     </div>
 
     <section id="services" class="relative z-10 px-6 py-24">
-        <span id="portfolio" style="position:absolute;margin-top:-80px;"></span>
         <div class="max-w-6xl mx-auto">
             <div class="text-center reveal">
                 <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">Services</p>
@@ -1450,7 +1445,7 @@
         </div>
     </section>
 
-    <section class="relative z-10 px-6 py-24">
+    <section id="portfolio" class="relative z-10 px-6 py-24">
         <div class="max-w-6xl mx-auto">
             <div class="text-center reveal">
                 <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">Portfolio</p>
@@ -1531,18 +1526,17 @@
             </div>
 
             <!-- Portfolio CTA Banner -->
-            <div
-                class="mt-16 relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-black via-[#ff1a1a]/5 to-black p-10 md:p-14 text-center reveal">
-                <div
-                    class="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff1a1a]/10 to-transparent opacity-50">
-                </div>
-                <div class="relative z-10">
+            <div class="mt-16 relative overflow-hidden rounded-2xl border border-white/8 bg-black/60 text-center reveal"
+                style="padding: clamp(2rem,6vw,3.5rem) clamp(1.25rem,5vw,3.5rem);">
+                <!-- subtle top edge accent only — no red bg -->
+                <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/30 to-transparent"></div>
+                <div class="relative z-10 max-w-xl mx-auto">
                     <p class="text-xs uppercase tracking-[0.4em] text-[#ff1a1a] mb-3 font-bold">Full Showcase</p>
-                    <h3 class="text-2xl md:text-4xl font-bold text-white mb-4">See the Complete Director's Vault</h3>
-                    <p class="text-gray-400 text-sm md:text-base max-w-xl mx-auto mb-8">Explore our cinematic portfolio
-                        — curated bento gallery, client testimonials, and our creative process.</p>
+                    <h3 class="text-2xl md:text-4xl font-bold text-white mb-4 leading-tight">See the Complete Director's Vault</h3>
+                    <p class="text-gray-400 text-sm md:text-base mb-8 leading-relaxed">Explore our cinematic portfolio
+                        — curated gallery, client testimonials, and our creative process.</p>
                     <a href="/portfolio/"
-                        class="inline-flex items-center gap-3 px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn btn-shine">
+                        class="inline-flex items-center gap-3 px-8 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn btn-shine">
                         Enter Portfolio
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -2368,8 +2362,8 @@
                                 if (al < 0.01) continue; // FIX: skip invisible particles
                                 ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,6.28);
                                 ctx.fillStyle='rgba(255,26,26,'+al.toFixed(2)+')';
-                                ctx.shadowBlur=4; ctx.shadowColor='rgba(255,26,26,0.2)';
-                                ctx.fill(); ctx.shadowBlur=0;
+                                // NO shadowBlur — forces SW rasterization on mobile, kills 60fps
+                                ctx.fill();
                             }
                             rafId = requestAnimationFrame(drawFrame); // FIX: store id
                         }
@@ -2428,20 +2422,27 @@
                             //      that target the same transform and causing a jump)
                             tl.to(canvas, { opacity:0.25, duration:0.5, ease:'power1.inOut' }, 0.3);
                             tl.to(shadow, { opacity:0.6,  duration:0.9, ease:'power2.out'   }, 0.35);
-                            // Step 1: brief ghost appear
-                            tl.fromTo(logo,
-                                { opacity:0,    scale:2.0, y:8, filter:'blur(14px)' },
-                                { opacity:0.15, scale:1.7, y:5, filter:'blur(9px)',
-                                  duration:0.35, ease:'power1.out', clearProps:'none' }, 0.3);
-                            // Step 2: full emerge — FIX: single tween owns all transform props
-                            tl.to(logo,
-                                { opacity:1, scale:1.0, y:0, filter:'blur(0px)',
-                                  duration:0.9, ease:'expo.out',
-                                  onComplete: function() {
-                                      // FIX: remove filter from will-change after it settles
-                                      if (logo) gsap.set(logo, { clearProps:'filter' });
-                                  }
-                                }, 0.6);
+
+                            if (isMobile) {
+                                // MOBILE: skip filter animation entirely — use opacity only
+                                // filter:blur on transform+opacity is the #1 jank source on mobile GPUs
+                                gsap.set(logo, { opacity:0, scale:2.0, y:8, filter:'none' });
+                                tl.to(logo, { opacity:0.15, scale:1.7, y:5, duration:0.35, ease:'power1.out' }, 0.3);
+                                tl.to(logo, { opacity:1,    scale:1.0, y:0, duration:0.9,  ease:'expo.out'  }, 0.6);
+                            } else {
+                                // DESKTOP: blur animation is fine
+                                tl.fromTo(logo,
+                                    { opacity:0,    scale:2.0, y:8, filter:'blur(14px)' },
+                                    { opacity:0.15, scale:1.7, y:5, filter:'blur(9px)',
+                                      duration:0.35, ease:'power1.out', clearProps:'none' }, 0.3);
+                                tl.to(logo,
+                                    { opacity:1, scale:1.0, y:0, filter:'blur(0px)',
+                                      duration:0.9, ease:'expo.out',
+                                      onComplete: function() {
+                                          if (logo) gsap.set(logo, { clearProps:'filter' });
+                                      }
+                                    }, 0.6);
+                            }
 
                             // 1.2 → sharp lens flare sweep
                             tl.set(flare, { left:'-110%', opacity:1 }, 1.2);
