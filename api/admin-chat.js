@@ -402,7 +402,7 @@ Refund policy: Full refund if client isn't happy with the final cut.`;
         // ── Build messages with memory ────────────────────────────────────────
         let finalPrompt = prompt || '';
         let hasImage = false;
-        let selectedModel = 'llama-3.3-70b-versatile';
+        let selectedModel = 'llama-3.3-70b-versatile'; // default text model
         let userMessageContent = finalPrompt;
 
         if (attachment) {
@@ -411,7 +411,7 @@ Refund policy: Full refund if client isn't happy with the final cut.`;
                 userMessageContent = finalPrompt;
             } else if (attachment.type === 'image') {
                 hasImage = true;
-                selectedModel = 'llama-3.2-90b-vision-preview';
+                selectedModel = 'meta-llama/llama-4-scout-17b-16e-instruct'; // Groq's current vision model (llama-3.2-90b-vision-preview deprecated)
                 userMessageContent = [
                     { type: 'text', text: finalPrompt || 'Please describe this image.' },
                     { type: 'image_url', image_url: { url: attachment.data } }
@@ -429,7 +429,7 @@ Refund policy: Full refund if client isn't happy with the final cut.`;
             model: selectedModel,
             messages: currentMessages,
             temperature: 0.55,   // More human-like variation (was 0.2 = very stiff)
-            max_tokens: 600
+            max_tokens: hasImage ? 1024 : 600
         });
 
         const rawContent = aiResponse.choices[0].message.content;
