@@ -363,115 +363,67 @@
         }
 
         /* ============================================================
-           CINEMATIC PRELOADER
+           MONOLITH CINEMATIC PRELOADER — Maximum VFX Edition
         ============================================================ */
         #preloader {
             position: fixed; inset: 0; z-index: 99999;
-            background: #000;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
+            background: #000; overflow: hidden;
         }
+        #plCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
         /* Letterbox bars */
-        .pl-bar-top, .pl-bar-bottom {
-            position: absolute; left: 0; width: 100%;
-            background: #000;
-            z-index: 2;
-            transition: height 0.9s cubic-bezier(0.76,0,0.24,1);
-        }
-        .pl-bar-top { top: 0; height: 22vh; }
-        .pl-bar-bottom { bottom: 0; height: 22vh; }
-        /* Corner crosshair marks */
-        .pl-corner {
-            position: absolute; width: 18px; height: 18px;
-            z-index: 3;
-            opacity: 0.35;
-        }
-        .pl-corner::before, .pl-corner::after {
-            content: ''; position: absolute;
-            background: #ff1a1a;
-        }
+        .pl-lb { position: absolute; left: 0; width: 100%; background: #000; z-index: 6; }
+        .pl-lb-t { top: 0; height: 14vh; }
+        .pl-lb-b { bottom: 0; height: 14vh; }
+        /* Corner crosshairs */
+        .pl-corner { position: absolute; width: 22px; height: 22px; z-index: 7; opacity: 0; }
+        .pl-corner::before, .pl-corner::after { content: ''; position: absolute; background: rgba(255,26,26,0.5); }
         .pl-corner::before { width: 100%; height: 1px; top: 50%; left: 0; }
         .pl-corner::after  { width: 1px; height: 100%; left: 50%; top: 0; }
-        .pl-tl { top: 28px; left: 28px; }
-        .pl-tr { top: 28px; right: 28px; }
-        .pl-bl { bottom: 28px; left: 28px; }
-        .pl-br { bottom: 28px; right: 28px; }
+        .pl-tl { top: 20px; left: 20px; } .pl-tr { top: 20px; right: 20px; }
+        .pl-bl { bottom: 20px; left: 20px; } .pl-br { bottom: 20px; right: 20px; }
         /* Frame counter */
-        .pl-frame-counter {
-            position: absolute; bottom: 38px; right: 38px;
-            font-family: 'Courier New', monospace;
-            font-size: 10px; letter-spacing: 0.3em;
-            color: rgba(255,26,26,0.5);
-            z-index: 3;
-            user-select: none;
-        }
-        /* Center content */
-        .pl-center {
-            position: relative; z-index: 4;
-            display: flex; flex-direction: column;
-            align-items: center; gap: 1.2rem;
-            opacity: 0;
-        }
-        /* Spinning reel */
-        .pl-reel {
-            width: 48px; height: 48px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-top-color: #ff1a1a;
-            border-left-color: rgba(255,26,26,0.4);
-            animation: plSpin 0.9s linear infinite;
-        }
-        @keyframes plSpin { to { transform: rotate(360deg); } }
-        /* Logo */
-        .pl-logo {
-            font-family: 'Roboto', sans-serif;
-            font-size: clamp(2.8rem, 9vw, 5.5rem);
-            font-weight: 900; letter-spacing: -0.04em;
-            color: #fff; line-height: 1;
-        }
-        .pl-logo span { color: #ff1a1a; }
-        .pl-logo sup {
-            font-size: 0.32em; vertical-align: super;
-            font-weight: 300; color: #888;
-            letter-spacing: normal;
-        }
-        /* Subtitle */
-        .pl-sub {
-            font-size: 9px; letter-spacing: 0.5em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.2);
-            font-weight: 400;
-        }
+        .pl-fc { position: absolute; bottom: 22px; right: 22px; font-family: 'Courier New',monospace;
+            font-size: 10px; letter-spacing: 0.3em; color: rgba(255,26,26,0.4); z-index: 7; opacity: 0; }
+        /* Timecode top-left */
+        .pl-tc { position: absolute; top: 22px; left: 50px; font-family: 'Courier New',monospace;
+            font-size: 9px; letter-spacing: 0.2em; color: rgba(255,255,255,0.12); z-index: 7; opacity: 0; }
+        /* Center stack */
+        .pl-center { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 0.8rem; pointer-events: none; }
+        .pl-logo { font-family: 'Roboto',sans-serif; font-size: clamp(2.2rem,12vw,7.5rem); font-weight: 900;
+            letter-spacing: 0.15em; color: #fff; line-height: 1; opacity: 0; transform: scale(1.5);
+            text-shadow: 0 0 0 transparent; will-change: transform, opacity, text-shadow, filter;
+            -webkit-text-stroke: 0.5px rgba(255,255,255,0.08); }
+        .pl-logo span { color: #ff1a1a; -webkit-text-stroke: 0.5px rgba(255,26,26,0.15); }
+        .pl-sub { font-size: 9px; letter-spacing: 0.6em; text-transform: uppercase;
+            color: rgba(255,255,255,0); font-weight: 300; }
+        /* Lens flare */
+        .pl-flare { position: absolute; top: 50%; width: 100%; height: 2px; z-index: 4;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 15%, #fff 48%, #fff 52%, rgba(255,255,255,0.03) 85%, transparent 100%);
+            box-shadow: 0 0 60px 10px rgba(255,255,255,0.2), 0 0 120px 4px rgba(255,255,255,0.06);
+            opacity: 0; transform: translateY(-50%); pointer-events: none; left: -100%; }
+        /* Edge glint (small white flash on corners of letters) */
+        .pl-glint { position: absolute; width: 3px; height: 3px; background: #fff; border-radius: 50%;
+            box-shadow: 0 0 8px 2px rgba(255,255,255,0.8); z-index: 4; opacity: 0; pointer-events: none; }
+        /* Heat distortion overlay */
+        .pl-heat { position: absolute; inset: 0; z-index: 2; pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 60%, rgba(255,26,26,0.03) 100%);
+            opacity: 0; }
         /* Progress */
-        .pl-bar-wrap {
-            width: 200px; height: 1px;
-            background: rgba(255,255,255,0.06);
-            overflow: hidden;
-        }
-        .pl-bar-fill {
-            height: 100%; width: 0%;
-            background: linear-gradient(90deg, #ff1a1a, #ff6060);
-            transition: width 0.05s linear;
-        }
-        .pl-pct {
-            font-family: 'Courier New', monospace;
-            font-size: 9px; letter-spacing: 0.25em;
-            color: rgba(255,26,26,0.6);
-        }
-        /* Horizontal scan sweep */
-        .pl-scanline {
-            position: absolute; left: 0; width: 100%; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,26,26,0.4), transparent);
-            top: 50%; z-index: 3;
-            animation: plScan 3s ease-in-out infinite;
-            opacity: 0.6;
-        }
-        @keyframes plScan {
-            0%   { transform: translateY(-40vh); opacity: 0; }
-            20%  { opacity: 0.6; }
-            80%  { opacity: 0.6; }
-            100% { transform: translateY(40vh); opacity: 0; }
-        }
+        .pl-prog { position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); z-index: 7;
+            display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0; }
+        .pl-bar-w { width: 180px; height: 1px; background: rgba(255,255,255,0.05); overflow: hidden; }
+        .pl-bar-f { height: 100%; width: 0%; background: linear-gradient(90deg, #8b0000, #ff1a1a); transition: width 0.06s linear; }
+        .pl-pct { font-family: 'Courier New',monospace; font-size: 9px; letter-spacing: 0.25em; color: rgba(255,26,26,0.45); }
+        /* Scan lines */
+        .pl-scan { position: absolute; left: 0; width: 100%; height: 1px; z-index: 2;
+            background: linear-gradient(90deg, transparent, rgba(255,26,26,0.3), transparent);
+            animation: plScan 2.5s ease-in-out infinite; opacity: 0.4; }
+        @keyframes plScan { 0%{top:8%;opacity:0} 12%{opacity:0.4} 88%{opacity:0.4} 100%{top:92%;opacity:0} }
+        .pl-scan2 { animation-delay: 1.3s; animation-duration: 3.2s; opacity: 0.2; }
+        /* Vignette */
+        .pl-vig { position: absolute; inset: 0; z-index: 2; pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%); }
 
 
         #scrollProgress {
@@ -992,28 +944,31 @@
     <div class="custom-cursor-dot" id="customCursorDot"></div>
 
     <div id="preloader" aria-hidden="true">
-        <!-- Letterbox bars -->
-        <div class="pl-bar-top" id="plBarTop"></div>
-        <div class="pl-bar-bottom" id="plBarBottom"></div>
-        <!-- Corner crosshairs -->
+        <canvas id="plCanvas"></canvas>
+        <div class="pl-vig"></div>
+        <div class="pl-heat" id="plHeat"></div>
+        <div class="pl-lb pl-lb-t" id="plLbT"></div>
+        <div class="pl-lb pl-lb-b" id="plLbB"></div>
         <div class="pl-corner pl-tl"></div>
         <div class="pl-corner pl-tr"></div>
         <div class="pl-corner pl-bl"></div>
         <div class="pl-corner pl-br"></div>
-        <!-- Frame counter -->
-        <div class="pl-frame-counter" id="plFrameCounter">001</div>
-        <!-- Center content -->
-        <div class="pl-center" id="plCenter">
-            <div class="pl-reel" id="plReel"></div>
-            <div class="pl-logo" id="plLogo">Zyro<span>Editz</span><sup>&trade;</sup></div>
+        <div class="pl-fc" id="plFC">001</div>
+        <div class="pl-tc" id="plTC">00:00:00:00</div>
+        <div class="pl-flare" id="plFlare"></div>
+        <div class="pl-glint" id="plG1"></div>
+        <div class="pl-glint" id="plG2"></div>
+        <div class="pl-glint" id="plG3"></div>
+        <div class="pl-center">
+            <div class="pl-logo" id="plLogo">ZYRO<span>EDITZ</span></div>
             <div class="pl-sub" id="plSub">Speed &middot; Motion &middot; Precision</div>
-            <div class="pl-bar-wrap">
-                <div class="pl-bar-fill" id="preloaderFill"></div>
-            </div>
+        </div>
+        <div class="pl-prog" id="plProg">
+            <div class="pl-bar-w"><div class="pl-bar-f" id="preloaderFill"></div></div>
             <div class="pl-pct" id="plPct">0%</div>
         </div>
-        <!-- Horizontal scan line -->
-        <div class="pl-scanline" id="plScanline"></div>
+        <div class="pl-scan"></div>
+        <div class="pl-scan pl-scan2"></div>
     </div>
     <div id="scrollProgress" aria-hidden="true"></div>
     <div class="scanlines" aria-hidden="true"></div>
@@ -2251,76 +2206,207 @@
             function initPreloader() {
                 (function () {
                     try {
-                        const pl    = document.getElementById('preloader');
-                        const fill  = document.getElementById('preloaderFill');
-                        const pct   = document.getElementById('plPct');
-                        const cnt   = document.getElementById('plFrameCounter');
-                        const center = document.getElementById('plCenter');
-                        const barTop = document.getElementById('plBarTop');
-                        const barBot = document.getElementById('plBarBottom');
-
-                        if (!pl || !fill) { if (pl) pl.style.display = 'none'; return; }
+                        const pl = document.getElementById('preloader');
+                        const canvas = document.getElementById('plCanvas');
+                        const fill = document.getElementById('preloaderFill');
+                        const pct = document.getElementById('plPct');
+                        const fc = document.getElementById('plFC');
+                        const tc = document.getElementById('plTC');
+                        const logo = document.getElementById('plLogo');
+                        const sub = document.getElementById('plSub');
+                        const flare = document.getElementById('plFlare');
+                        const prog = document.getElementById('plProg');
+                        const heat = document.getElementById('plHeat');
+                        const lbT = document.getElementById('plLbT');
+                        const lbB = document.getElementById('plLbB');
+                        if (!pl || !canvas) { if (pl) pl.style.display = 'none'; return; }
                         if (prefersReducedMotion) { pl.style.display = 'none'; return; }
 
-                        // Animate letterbox in → center content fade in
-                        if (window.gsap) {
-                            gsap.to(center, { opacity: 1, duration: 0.6, delay: 0.2, ease: 'power2.out' });
-                        } else {
-                            center.style.opacity = 1;
+                        var isMobile = window.innerWidth < 768;
+
+                        // ── Canvas: Embers + Debris ──
+                        var ctx = canvas.getContext('2d');
+                        var W = canvas.width = window.innerWidth;
+                        var H = canvas.height = window.innerHeight;
+                        var parts = [];
+                        var pCount = isMobile ? 35 : 80;
+                        for (var i = 0; i < pCount; i++) {
+                            parts.push({
+                                x: Math.random()*W, y: Math.random()*H,
+                                vx: (Math.random()-0.5)*0.5, vy: -(Math.random()*0.7+0.1),
+                                r: Math.random()*2+0.3,
+                                a: Math.random()*0.55+0.08,
+                                life: Math.random(),
+                                isDebris: Math.random() < 0.2
+                            });
                         }
-
-                        // Frame counter flicker
-                        let frame = 1;
-                        const counterInterval = setInterval(() => {
-                            frame = Math.min(999, frame + Math.floor(Math.random() * 12 + 3));
-                            if (cnt) cnt.textContent = String(frame).padStart(3, '0');
-                        }, 80);
-
-                        let p = 0;
-                        function step() {
-                            try {
-                                p = Math.min(100, p + Math.random() * 18 + 4);
-                                fill.style.width = p + '%';
-                                if (pct) pct.textContent = Math.round(p) + '%';
-                                if (p < 100) {
-                                    setTimeout(step, 55 + Math.random() * 40);
-                                } else {
-                                    clearInterval(counterInterval);
-                                    if (cnt) cnt.textContent = '999';
-                                    setTimeout(function () {
-                                        try {
-                                            if (window.gsap && typeof gsap.to === 'function') {
-                                                const tl = gsap.timeline();
-                                                // Collapse letterbox bars outward
-                                                tl.to(barTop, { height: 0, duration: 0.8, ease: 'expo.inOut' }, 0);
-                                                tl.to(barBot, { height: 0, duration: 0.8, ease: 'expo.inOut' }, 0);
-                                                // Fade center content up
-                                                tl.to(center, { opacity: 0, y: -20, duration: 0.5, ease: 'power2.in' }, 0);
-                                                // Flash white then dissolve
-                                                tl.to(pl, { backgroundColor: '#111', duration: 0.15, ease: 'none' }, 0.55);
-                                                tl.to(pl, { opacity: 0, duration: 0.6, ease: 'power2.inOut',
-                                                    onComplete: function () { pl.style.display = 'none'; }
-                                                }, 0.65);
-                                                // Hero cinematic zoom-in settle
-                                                gsap.fromTo('#home',
-                                                    { scale: 1.08, filter: 'blur(12px)', opacity: 0.6 },
-                                                    { scale: 1, filter: 'blur(0px)', opacity: 1, duration: 1.4, ease: 'power3.out', delay: 0.6 }
-                                                );
-                                                // Navbar drops in
-                                                gsap.fromTo('nav',
-                                                    { y: -60, opacity: 0 },
-                                                    { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out', delay: 0.9 }
-                                                );
-                                            } else {
-                                                pl.style.display = 'none';
-                                            }
-                                        } catch (e) { pl.style.display = 'none'; }
-                                    }, 260);
+                        var renderLoop = true;
+                        function drawFrame() {
+                            if (!renderLoop) return;
+                            ctx.clearRect(0,0,W,H);
+                            for (var i = 0; i < parts.length; i++) {
+                                var e = parts[i];
+                                e.x += e.vx; e.y += e.vy; e.life -= (e.isDebris ? 0.008 : 0.003);
+                                if (e.isDebris) { e.vy += 0.01; e.a *= 0.998; } // debris falls + fades
+                                if (e.life <= 0 || e.y < -10 || e.y > H+10) {
+                                    e.x = Math.random()*W; e.y = e.isDebris ? Math.random()*H*0.5 : H+10;
+                                    e.life = 1; e.a = Math.random()*0.5+0.1;
+                                    e.vy = e.isDebris ? Math.random()*0.3 : -(Math.random()*0.7+0.1);
                                 }
-                            } catch (e) { pl.style.display = 'none'; }
+                                var alpha = e.a * e.life;
+                                if (e.isDebris) {
+                                    // Black dust fragments
+                                    ctx.fillStyle = 'rgba(60,20,20,' + alpha.toFixed(2) + ')';
+                                    ctx.fillRect(e.x, e.y, e.r*1.5, e.r*0.8);
+                                } else {
+                                    // Red embers with glow
+                                    ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, 6.28);
+                                    ctx.fillStyle = 'rgba(255,26,26,' + alpha.toFixed(2) + ')';
+                                    ctx.shadowBlur = 6; ctx.shadowColor = 'rgba(255,26,26,0.3)';
+                                    ctx.fill(); ctx.shadowBlur = 0;
+                                }
+                            }
+                            requestAnimationFrame(drawFrame);
                         }
-                        setTimeout(step, 400);
-                    } catch (e) { const pl = document.getElementById('preloader'); if (pl) pl.style.display = 'none'; }
+                        drawFrame();
+
+                        // ── Frame counter + Timecode ──
+                        var frame = 1, tcF = 0;
+                        var cInt = setInterval(function() {
+                            frame = Math.min(999, frame + Math.floor(Math.random()*14+2));
+                            if (fc) fc.textContent = String(frame).padStart(3,'0');
+                            tcF++;
+                            if (tc) {
+                                var s = Math.floor(tcF/12), m = Math.floor(s/60);
+                                tc.textContent = '00:00:' + String(s%60).padStart(2,'0') + ':' + String(tcF%24).padStart(2,'0');
+                            }
+                        }, 70);
+
+                        // ── Edge glint positions (random around logo area) ──
+                        var glints = [document.getElementById('plG1'), document.getElementById('plG2'), document.getElementById('plG3')];
+                        var cx = W/2, cy = H/2;
+                        glints.forEach(function(g,i) {
+                            if (!g) return;
+                            g.style.left = (cx + (i-1)*W*0.15) + 'px';
+                            g.style.top = (cy + (Math.random()-0.5)*40) + 'px';
+                        });
+
+                        // ── GSAP entrance ──
+                        if (window.gsap) {
+                            var enter = gsap.timeline({ delay: 0.1 });
+                            // Crosshairs stagger in
+                            enter.to('.pl-corner', { opacity: 0.5, duration: 0.3, stagger: 0.06 }, 0);
+                            // Frame counter + timecode
+                            enter.to(fc, { opacity: 1, duration: 0.3 }, 0.05);
+                            enter.to(tc, { opacity: 1, duration: 0.3 }, 0.05);
+                            // Progress bar
+                            enter.to(prog, { opacity: 1, duration: 0.3 }, 0.1);
+                            // [0.2s] Logo emerges from void — scale 1.5 → 1
+                            enter.to(logo, { opacity: 0.15, scale: 1.2, duration: 0.5, ease: 'power2.out' }, 0.2);
+                            // [0.5s] Z silhouette becomes clearer
+                            enter.to(logo, { opacity: 1, scale: 1, duration: 1.0, ease: 'expo.out' }, 0.5);
+                            // [0.8s] Red cracks ignite beneath surface
+                            enter.to(logo, {
+                                textShadow: '0 0 30px rgba(255,26,26,0.6), 0 0 60px rgba(255,26,26,0.3), 0 0 2px rgba(255,255,255,0.2), inset 0 0 20px rgba(139,0,0,0.3)',
+                                duration: 0.7, ease: 'power2.out'
+                            }, 0.9);
+                            // [0.9s] White anamorphic lens flare sweeps across
+                            enter.set(flare, { left: '-100%', opacity: 0.95 }, 0.9);
+                            enter.to(flare, { left: '100%', duration: 0.6, ease: 'power1.inOut' }, 0.9);
+                            enter.to(flare, { opacity: 0, duration: 0.1 }, 1.4);
+                            // [1.0s] As flare passes, red sparks intensify (canvas handles this)
+                            // Edge glints flash
+                            enter.to(glints, { opacity: 1, duration: 0.08, stagger: 0.12 }, 1.1);
+                            enter.to(glints, { opacity: 0, duration: 0.15, stagger: 0.1 }, 1.3);
+                            // Camera shake (subtle)
+                            if (!isMobile) {
+                                enter.to(pl, { x: 2, duration: 0.04, ease: 'none' }, 1.0);
+                                enter.to(pl, { x: -2, duration: 0.04, ease: 'none' }, 1.04);
+                                enter.to(pl, { x: 1, duration: 0.04, ease: 'none' }, 1.08);
+                                enter.to(pl, { x: 0, duration: 0.06, ease: 'power2.out' }, 1.12);
+                            }
+                            // Heat distortion pulse
+                            enter.to(heat, { opacity: 0.6, duration: 0.3 }, 1.0);
+                            enter.to(heat, { opacity: 0, duration: 0.5 }, 1.3);
+                            // Subtitle
+                            enter.to(sub, { color: 'rgba(255,255,255,0.2)', duration: 0.5 }, 1.3);
+                            // Red energy pulses through cracks
+                            enter.to(logo, {
+                                textShadow: '0 0 50px rgba(255,26,26,0.8), 0 0 100px rgba(255,26,26,0.4), 0 0 3px rgba(255,255,255,0.2)',
+                                duration: 0.2, ease: 'power3.out'
+                            }, 1.6);
+                            enter.to(logo, {
+                                textShadow: '0 0 25px rgba(255,26,26,0.4), 0 0 50px rgba(255,26,26,0.2), 0 0 1px rgba(255,255,255,0.1)',
+                                duration: 0.4, ease: 'power2.out'
+                            }, 1.8);
+                        } else {
+                            logo.style.opacity = '1'; logo.style.transform = 'scale(1)';
+                            if (prog) prog.style.opacity = '1';
+                        }
+
+                        // ── Progress bar ──
+                        var p = 0;
+                        function step() {
+                            p = Math.min(100, p + Math.random()*14+3);
+                            if (fill) fill.style.width = p + '%';
+                            if (pct) pct.textContent = Math.round(p) + '%';
+                            if (p < 100) { setTimeout(step, 60 + Math.random()*50); }
+                            else {
+                                clearInterval(cInt);
+                                if (fc) fc.textContent = '999';
+                                setTimeout(exitPreloader, 300);
+                            }
+                        }
+                        setTimeout(step, 600);
+
+                        // ── Exit: FINAL LOCK + IMPACT ──
+                        function exitPreloader() {
+                            if (!window.gsap) { pl.style.display = 'none'; renderLoop = false; return; }
+                            var ex = gsap.timeline();
+                            // 1. Red veins pulse HARD once (synchronized)
+                            ex.to(logo, {
+                                textShadow: '0 0 100px rgba(255,26,26,1), 0 0 200px rgba(255,26,26,0.6), 0 0 6px rgba(255,255,255,0.4)',
+                                duration: 0.15, ease: 'power3.out'
+                            }, 0);
+                            ex.to(logo, {
+                                textShadow: '0 0 15px rgba(255,26,26,0.2), 0 0 30px rgba(255,26,26,0.1)',
+                                duration: 0.3
+                            }, 0.15);
+                            // 2. Heat distortion ripple
+                            ex.to(heat, { opacity: 0.5, scale: 1.02, duration: 0.2 }, 0.1);
+                            ex.to(heat, { opacity: 0, scale: 1, duration: 0.35 }, 0.3);
+                            // 3. Gravity compression → release
+                            ex.to(logo, { scale: 0.96, duration: 0.12, ease: 'power3.in' }, 0.3);
+                            ex.to(logo, { scale: 1.1, opacity: 0, filter: 'blur(4px)', duration: 0.4, ease: 'power3.out' }, 0.42);
+                            // 4. Edge glints flash on key corners
+                            ex.to(glints, { opacity: 1, duration: 0.06, stagger: 0.04 }, 0.32);
+                            ex.to(glints, { opacity: 0, duration: 0.2 }, 0.5);
+                            // 5. Camera shake on impact
+                            if (!isMobile) {
+                                ex.to(pl, { x: -3, y: 1, duration: 0.03 }, 0.3);
+                                ex.to(pl, { x: 3, y: -1, duration: 0.03 }, 0.33);
+                                ex.to(pl, { x: -1, y: 0, duration: 0.03 }, 0.36);
+                                ex.to(pl, { x: 0, y: 0, duration: 0.08, ease: 'power2.out' }, 0.39);
+                            }
+                            // 6. Fade everything
+                            ex.to([sub, prog, fc, tc, '.pl-corner'], { opacity: 0, duration: 0.25 }, 0.3);
+                            // 7. Letterbox bars collapse
+                            ex.to(lbT, { height: 0, duration: 0.6, ease: 'expo.inOut' }, 0.4);
+                            ex.to(lbB, { height: 0, duration: 0.6, ease: 'expo.inOut' }, 0.4);
+                            // 8. Dissolve preloader
+                            ex.to(pl, { opacity: 0, duration: 0.5, ease: 'power2.inOut',
+                                onComplete: function() { pl.style.display = 'none'; renderLoop = false; }
+                            }, 0.7);
+                            // Hero zoom-settle (camera racks into focus)
+                            gsap.fromTo('#home',
+                                { scale: 1.1, filter: 'blur(16px)', opacity: 0.3 },
+                                { scale: 1, filter: 'blur(0px)', opacity: 1, duration: 1.5, ease: 'power3.out', delay: 0.75 });
+                            // Navbar drops in
+                            gsap.fromTo('nav',
+                                { y: -60, opacity: 0 },
+                                { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out', delay: 1.1 });
+                        }
+                    } catch (e) { var pl = document.getElementById('preloader'); if (pl) pl.style.display = 'none'; }
                 })();
             }
 
