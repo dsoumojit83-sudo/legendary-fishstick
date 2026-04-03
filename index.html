@@ -407,10 +407,18 @@
             font-family: 'Roboto',sans-serif;
             font-size: clamp(2.2rem,12vw,7.5rem);
             font-weight: 900; letter-spacing: 0.15em; color: #fff; line-height: 1;
-            opacity: 0; transform: scale(2.0) translateY(8px); filter: blur(12px);
-            text-shadow: none; will-change: transform, opacity, filter;
+            /* GPU-friendly init: use translate3d so browser promotes to compositor layer immediately */
+            opacity: 0; transform: scale(2.0) translate3d(0,8px,0);
+            text-shadow: none; will-change: transform, opacity;
             -webkit-text-stroke: 0.5px rgba(255,255,255,0.08);
             position: relative; z-index: 5;
+        }
+        /* blur wrapper: separate element avoids filter+transform co-animation jank */
+        #plLogoBlur {
+            position: absolute; inset: 0; z-index: 5;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(0px); /* placeholder — driven by JS opacity fade */
+            pointer-events: none; opacity: 1;
         }
         .pl-logo span { color: #ff1a1a; -webkit-text-stroke: 0.5px rgba(255,26,26,0.15); }
         .pl-sub { font-size: 9px; letter-spacing: 0.65em; text-transform: uppercase;
@@ -1031,9 +1039,9 @@
         <div class="pl-glint" id="plG2"></div>
         <div class="pl-glint" id="plG3"></div>
         <!-- depth shadow behind logo -->
-        <div class="pl-logo-shadow" id="plShadow">ZYROEDITZ</div>
+        <div class="pl-logo-shadow" id="plShadow">ZyroEditz</div>
         <div class="pl-center">
-            <div class="pl-logo" id="plLogo">ZYRO<span>EDITZ</span></div>
+            <div class="pl-logo" id="plLogo">Zyro<span>Editz</span><sup style="font-size:0.35em;vertical-align:super;letter-spacing:normal;opacity:0.5;font-weight:400;">&#8482;</sup></div>
             <div class="pl-sub" id="plSub">Speed &middot; Motion &middot; Precision</div>
         </div>
         <div class="pl-prog" id="plProg">
@@ -1078,7 +1086,7 @@
                 class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">About</a>
             <a href="#services"
                 class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">Services</a>
-            <a href="/portfolio/"
+            <a href="#portfolio"
                 class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link text-[#ff1a1a]/90 hover:text-[#ff1a1a]">Portfolio</a>
 
             <a href="#contact"
@@ -1110,7 +1118,7 @@
             class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">About</a>
         <a href="#services"
             class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Services</a>
-        <a href="/portfolio/"
+        <a href="#portfolio"
             class="text-3xl uppercase tracking-widest text-[#ff1a1a]/90 hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Portfolio</a>
 
         <a href="#contact"
@@ -1253,6 +1261,7 @@
     </div>
 
     <section id="services" class="relative z-10 px-6 py-24">
+        <span id="portfolio" style="position:absolute;margin-top:-80px;"></span>
         <div class="max-w-6xl mx-auto">
             <div class="text-center reveal">
                 <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">Services</p>
@@ -2329,38 +2338,46 @@
                         var lbT    = document.getElementById('plLbT');
                         var lbB    = document.getElementById('plLbB');
                         var scan   = document.getElementById('plScan');
-                        var glints = [document.getElementById('plG1'), document.getElementById('plG2'), document.getElementById('plG3')];
+                        // FIX: filter nulls — GSAP throws silently on null targets
+                        var glints = [document.getElementById('plG1'), document.getElementById('plG2'), document.getElementById('plG3')].filter(Boolean);
 
                         if (!pl || !canvas) { if (pl) pl.style.display = 'none'; return; }
                         if (prefersReducedMotion) { pl.style.display = 'none'; return; }
 
                         var isMobile = window.innerWidth < 768;
 
-                        // ── Canvas particles (only visible early phase) ──
+                        // ── Canvas particles ──
+                        // FIX: track RAF id so it can be properly cancelled (was leaking forever)
                         var ctx = canvas.getContext('2d');
                         var W = canvas.width  = window.innerWidth;
                         var H = canvas.height = window.innerHeight;
-                        var parts = [], renderLoop = true;
-                        var pCount = isMobile ? 25 : 55;
+                        var parts = [];
+                        var rafId = null; // FIX: named RAF id
+                        var pCount = isMobile ? 20 : 45; // FIX: reduced count for 60fps headroom
                         for (var i = 0; i < pCount; i++) {
                             parts.push({ x: Math.random()*W, y: Math.random()*H,
-                                vx:(Math.random()-0.5)*0.4, vy:-(Math.random()*0.6+0.1),
-                                r: Math.random()*1.5+0.3, a: Math.random()*0.4+0.05, life: Math.random() });
+                                vx:(Math.random()-0.5)*0.35, vy:-(Math.random()*0.5+0.08),
+                                r: Math.random()*1.2+0.3, a: Math.random()*0.35+0.05, life: Math.random() });
                         }
                         function drawFrame() {
-                            if (!renderLoop) return;
                             ctx.clearRect(0,0,W,H);
                             for (var i=0;i<parts.length;i++) {
                                 var e=parts[i]; e.x+=e.vx; e.y+=e.vy; e.life-=0.003;
                                 if (e.life<=0||e.y<-10) { e.x=Math.random()*W; e.y=H+5; e.life=1; }
+                                var al = e.a * e.life;
+                                if (al < 0.01) continue; // FIX: skip invisible particles
                                 ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,6.28);
-                                ctx.fillStyle='rgba(255,26,26,'+(e.a*e.life).toFixed(2)+')';
-                                ctx.shadowBlur=5; ctx.shadowColor='rgba(255,26,26,0.25)';
+                                ctx.fillStyle='rgba(255,26,26,'+al.toFixed(2)+')';
+                                ctx.shadowBlur=4; ctx.shadowColor='rgba(255,26,26,0.2)';
                                 ctx.fill(); ctx.shadowBlur=0;
                             }
-                            requestAnimationFrame(drawFrame);
+                            rafId = requestAnimationFrame(drawFrame); // FIX: store id
                         }
-                        drawFrame();
+                        rafId = requestAnimationFrame(drawFrame);
+
+                        function stopCanvas() {
+                            if (rafId) { cancelAnimationFrame(rafId); rafId = null; } // FIX: clean cancel
+                        }
 
                         // ── HUD timecode ──
                         var frame=1, tcF=0;
@@ -2373,7 +2390,11 @@
 
                         // ── Glint positions ──
                         var cx=W/2, cy=H/2;
-                        glints.forEach(function(g,i){ if(!g) return; g.style.left=(cx+(i-1)*W*0.14)+'px'; g.style.top=(cy+(Math.random()-0.5)*50)+'px'; });
+                        glints.forEach(function(g,i){ g.style.left=(cx+(i-1)*W*0.14)+'px'; g.style.top=(cy+(Math.random()-0.5)*50)+'px'; });
+
+                        // FIX: gate — prevent exitPreloader firing before tl min time
+                        var tlMinDone = false;
+                        var exitQueued = false;
 
                         // ══════════════════════════════════════════════════
                         //  STRICT CINEMATIC TIMELINE
@@ -2383,36 +2404,51 @@
                         //  1.2–2.0  → red internal energy + heat
                         //  2.0      → micro glints
                         //  2.2–3.0  → final lock (bounce + red pulse)
-                        //  3.0–3.5  → fade out
+                        //  3.0+     → fade out
                         // ══════════════════════════════════════════════════
                         if (window.gsap) {
-                            var tl = gsap.timeline();
+                            var tl = gsap.timeline({
+                                onComplete: function() {
+                                    // FIX: clear will-change after animation ends to free GPU layer
+                                    if (logo) { logo.style.willChange = 'auto'; }
+                                    if (shadow) { shadow.style.willChange = 'auto'; }
+                                    tlMinDone = true;
+                                    if (exitQueued) exitPreloader();
+                                }
+                            });
 
-                            // 0.0–0.3 → pure black (nothing shown)
-                            // HUD elements appear late (subtle)
+                            // 0.0–0.3 → pure black
                             tl.to(prog,  { opacity:1, duration:0.25 }, 0.25);
                             tl.to(fc,    { opacity:1, duration:0.2  }, 0.3);
                             tl.to(tc,    { opacity:1, duration:0.2  }, 0.3);
                             tl.to('.pl-corner', { opacity:0.4, duration:0.3, stagger:0.05 }, 0.3);
 
-                            // 0.3–1.2 → logo emerges: massive → normal, blur → sharp, parallax Y
-                            tl.to(canvas, { opacity:0.28, duration:0.4 }, 0.3);
-                            tl.to(shadow, { opacity:0.6, duration:0.9, ease:'power2.out' }, 0.35);
-                            tl.to(logo, {
-                                opacity: 0.18, scale: 1.6, filter:'blur(8px)',
-                                y: '4px', duration: 0.35, ease:'power1.out'
-                            }, 0.3);
-                            tl.to(logo, {
-                                opacity: 1, scale: 1.0, filter:'blur(0px)',
-                                y: '0px', duration: 0.85, ease:'expo.out'
-                            }, 0.55);
+                            // 0.3–1.4 → logo emerges: massive → normal, blur → sharp
+                            // FIX: animate scale+y in ONE call (avoids GSAP merging two tweens
+                            //      that target the same transform and causing a jump)
+                            tl.to(canvas, { opacity:0.25, duration:0.5, ease:'power1.inOut' }, 0.3);
+                            tl.to(shadow, { opacity:0.6,  duration:0.9, ease:'power2.out'   }, 0.35);
+                            // Step 1: brief ghost appear
+                            tl.fromTo(logo,
+                                { opacity:0,    scale:2.0, y:8, filter:'blur(14px)' },
+                                { opacity:0.15, scale:1.7, y:5, filter:'blur(9px)',
+                                  duration:0.35, ease:'power1.out', clearProps:'none' }, 0.3);
+                            // Step 2: full emerge — FIX: single tween owns all transform props
+                            tl.to(logo,
+                                { opacity:1, scale:1.0, y:0, filter:'blur(0px)',
+                                  duration:0.9, ease:'expo.out',
+                                  onComplete: function() {
+                                      // FIX: remove filter from will-change after it settles
+                                      if (logo) gsap.set(logo, { clearProps:'filter' });
+                                  }
+                                }, 0.6);
 
-                            // 1.2 → sharp lens flare sweep (single, precise)
+                            // 1.2 → sharp lens flare sweep
                             tl.set(flare, { left:'-110%', opacity:1 }, 1.2);
-                            tl.to(flare,  { left:'110%', duration:0.55, ease:'power2.inOut' }, 1.2);
-                            tl.to(flare,  { opacity:0, duration:0.08 }, 1.72);
+                            tl.to(flare,  { left:'120%',  duration:0.55, ease:'power2.inOut' }, 1.2);
+                            tl.to(flare,  { opacity:0,    duration:0.1                       }, 1.73);
 
-                            // 1.2–2.0 → red internal energy (cracks inside monolith)
+                            // 1.25–2.0 → red internal energy
                             tl.to(shadow, { opacity:0.9, filter:'blur(22px)', duration:0.5, ease:'power2.out' }, 1.25);
                             tl.to(logo, {
                                 textShadow:'0 0 35px rgba(255,26,26,0.7),0 0 70px rgba(139,0,0,0.4),0 0 2px rgba(255,255,255,0.15)',
@@ -2420,88 +2456,111 @@
                             }, 1.3);
                             tl.to(heat, { opacity:0.65, duration:0.35 }, 1.3);
                             tl.to(heat, { opacity:0,    duration:0.55 }, 1.65);
-                            // scan line activates during energy phase only
-                            tl.to(scan, { opacity:1, duration:0.2 }, 1.3);
-                            tl.to(scan, { opacity:0, duration:0.3 }, 1.85);
+                            tl.to(scan, { opacity:1,    duration:0.2  }, 1.3);
+                            tl.to(scan, { opacity:0,    duration:0.3  }, 1.85);
 
-                            // subtle camera shake during energy activation (desktop only)
+                            // FIX: camera shake — use gsap.set + very short tweens
+                            //      avoids overlapping x-tweens fighting each other
                             if (!isMobile) {
-                                tl.to(pl,{x:2.5, duration:0.04,ease:'none'},1.4);
-                                tl.to(pl,{x:-2,  duration:0.04,ease:'none'},1.44);
-                                tl.to(pl,{x:1,   duration:0.04,ease:'none'},1.48);
-                                tl.to(pl,{x:0,   duration:0.06,ease:'power2.out'},1.52);
+                                tl.to(pl,{x: 2.5, duration:0.04, ease:'none'      }, 1.42);
+                                tl.to(pl,{x:-2.0, duration:0.04, ease:'none'      }, 1.46);
+                                tl.to(pl,{x: 0.8, duration:0.04, ease:'none'      }, 1.50);
+                                tl.to(pl,{x: 0,   duration:0.07, ease:'power2.out'}, 1.54);
                             }
 
-                            // 2.0 → micro white glints on edges
-                            tl.to(glints, { opacity:1, duration:0.06, stagger:0.08 }, 2.0);
-                            tl.to(glints, { opacity:0, duration:0.18, stagger:0.06 }, 2.18);
+                            // 2.0 → micro glints
+                            if (glints.length) {
+                                tl.to(glints, { opacity:1, duration:0.06, stagger:0.08 }, 2.0);
+                                tl.to(glints, { opacity:0, duration:0.18, stagger:0.06 }, 2.18);
+                            }
 
-                            // 2.2–3.0 → FINAL LOCK: scale punch + single red pulse
-                            // gravity compression feel
-                            tl.to(logo,{ scale:0.97, y:'2px', duration:0.1, ease:'power3.in'  }, 2.2);
-                            // punch outward
-                            tl.to(logo,{ scale:1.05, y:'0px', duration:0.15,ease:'power3.out' }, 2.3);
-                            // settle to 1.0 — final lock
-                            tl.to(logo,{ scale:1.0,           duration:0.2, ease:'power2.inOut'},2.45);
-                            // single strong red pulse at lock moment
-                            tl.to(shadow,{ opacity:1.0, filter:'blur(18px)', duration:0.15 }, 2.2);
-                            tl.to(logo,{
+                            // 2.2–2.7 → FINAL LOCK: compress → punch → settle
+                            tl.to(logo, { scale:0.97, y: 2, duration:0.1,  ease:'power3.in'   }, 2.2);
+                            tl.to(logo, { scale:1.05, y: 0, duration:0.14, ease:'power3.out'  }, 2.3);
+                            tl.to(logo, { scale:1.0,        duration:0.18, ease:'power2.inOut'}, 2.44);
+                            // single red pulse
+                            tl.to(shadow, { opacity:1.0, filter:'blur(18px)', duration:0.15 }, 2.2);
+                            tl.to(logo, {
                                 textShadow:'0 0 80px rgba(255,26,26,0.95),0 0 160px rgba(139,0,0,0.5),0 0 4px rgba(255,255,255,0.3)',
                                 duration:0.15, ease:'power3.out'
                             }, 2.2);
-                            // settle into breathing glow
-                            tl.to(logo,{
+                            // breathe settle
+                            tl.to(logo, {
                                 textShadow:'0 0 18px rgba(255,26,26,0.35),0 0 40px rgba(139,0,0,0.2)',
                                 duration:0.4, ease:'power2.out'
                             }, 2.35);
-                            tl.to(shadow,{ opacity:0.5, duration:0.4 }, 2.35);
-                            // subtitle appears at lock
-                            tl.to(sub,{ color:'rgba(255,255,255,0.18)', opacity:1, duration:0.4 }, 2.4);
+                            tl.to(shadow, { opacity:0.5, duration:0.4 }, 2.35);
+                            // subtitle
+                            tl.to(sub, { color:'rgba(255,255,255,0.18)', opacity:1, duration:0.4 }, 2.4);
+                            // FIX: hold frame at 2.85 so exit can't fire during mid-punch
+                            tl.to({}, { duration:0.01 }, 2.85);
 
                         } else {
                             // no GSAP fallback
-                            logo.style.opacity='1'; logo.style.transform='scale(1)'; logo.style.filter='none';
-                            if (prog) prog.style.opacity='1';
+                            if (logo)  { logo.style.opacity='1'; logo.style.transform='scale(1) translate3d(0,0,0)'; logo.style.filter='none'; }
+                            if (prog)  { prog.style.opacity='1'; }
+                            tlMinDone = true;
                         }
 
-                        // ── Progress bar drives the actual timing ──
+                        // ── Progress bar ──
                         var p = 0;
+                        var stepTimer = null;
                         function step() {
-                            p = Math.min(100, p + Math.random()*11+3);
+                            p = Math.min(100, p + Math.random()*10+3);
                             if (fill) fill.style.width = p+'%';
                             if (pct)  pct.textContent  = Math.round(p)+'%';
-                            if (p < 100) { setTimeout(step, 70 + Math.random()*60); }
-                            else { clearInterval(cInt); if(fc) fc.textContent='999'; setTimeout(exitPreloader, 700); }
+                            if (p < 100) {
+                                stepTimer = setTimeout(step, 70 + Math.random()*60);
+                            } else {
+                                clearInterval(cInt);
+                                if (fc) fc.textContent = '999';
+                                // FIX: wait for timeline minimum before firing exit
+                                if (tlMinDone) { setTimeout(exitPreloader, 400); }
+                                else           { exitQueued = true; }
+                            }
                         }
-                        // start progress after logo begins emerging
-                        setTimeout(step, 350);
+                        stepTimer = setTimeout(step, 350);
 
-                        // ── 3.0–3.5s → EXIT: clean fade out ──
+                        // ── EXIT: clean fade ──
+                        var exitFired = false; // FIX: prevent double-fire
                         function exitPreloader() {
-                            if (!window.gsap) { pl.style.display='none'; renderLoop=false; return; }
-                            var ex = gsap.timeline();
-                            // fade HUD
-                            ex.to([sub,prog,fc,tc,'.pl-corner'], { opacity:0, duration:0.3 }, 0);
-                            // letterbox collapse
-                            ex.to(lbT, { height:0, duration:0.55, ease:'expo.inOut' }, 0.1);
-                            ex.to(lbB, { height:0, duration:0.55, ease:'expo.inOut' }, 0.1);
-                            // canvas particles fade (visual noise suppressed at exit)
-                            ex.to(canvas, { opacity:0, duration:0.4 }, 0.1);
-                            // preloader dissolves
-                            ex.to(pl, { opacity:0, duration:0.5, ease:'power2.inOut',
-                                onComplete:function(){ pl.style.display='none'; renderLoop=false; }
-                            }, 0.35);
-                            // hero camera rack-in
-                            gsap.fromTo('#home',
-                                { scale:1.08, filter:'blur(12px)', opacity:0.4 },
-                                { scale:1, filter:'blur(0px)', opacity:1, duration:1.4, ease:'power3.out', delay:0.45 });
-                            // nav drop
-                            gsap.fromTo('nav',
-                                { y:-50, opacity:0 },
-                                { y:0, opacity:1, duration:0.75, ease:'power3.out', delay:0.8 });
+                            if (exitFired) return; exitFired = true;
+                            clearInterval(cInt);           // FIX: always clear timer
+                            clearTimeout(stepTimer);       // FIX: clear step timer
+                            stopCanvas();                  // FIX: stop RAF properly
+
+                            if (!window.gsap) {
+                                pl.style.display='none';
+                                return;
+                            }
+                            var ex = gsap.timeline({
+                                onComplete: function() {
+                                    pl.style.display = 'none';
+                                    // FIX: kill all lingering tweens on preloader elements
+                                    gsap.killTweensOf([pl, logo, shadow, sub, prog, fc, tc, heat, scan, flare, canvas, lbT, lbB]);
+                                }
+                            });
+                            ex.to([sub,prog,fc,tc,'.pl-corner'], { opacity:0, duration:0.28, ease:'power1.in' }, 0);
+                            ex.to(lbT,   { height:0, duration:0.5, ease:'expo.inOut' }, 0.08);
+                            ex.to(lbB,   { height:0, duration:0.5, ease:'expo.inOut' }, 0.08);
+                            ex.to(canvas,{ opacity:0, duration:0.35 }, 0.08);
+                            ex.to(pl,    { opacity:0, duration:0.45, ease:'power2.inOut' }, 0.3);
+                            // hero rack-in — FIX: use set+to (not fromTo) to avoid flash if
+                            //                     hero elements were partially animated already
+                            gsap.set('#home', { scale:1.07, filter:'blur(10px)', opacity:0.5 });
+                            gsap.to('#home',  { scale:1, filter:'blur(0px)', opacity:1,
+                                duration:1.3, ease:'power3.out', delay:0.35 });
+                            gsap.set('nav',   { y:-45, opacity:0 });
+                            gsap.to('nav',    { y:0, opacity:1,
+                                duration:0.7, ease:'power3.out', delay:0.75 });
                         }
 
-                    } catch(e) { var pl=document.getElementById('preloader'); if(pl) pl.style.display='none'; }
+                    } catch(e) {
+                        // FIX: proper catch — never leave preloader blocking page
+                        console.warn('[Preloader] Error:', e);
+                        var _pl = document.getElementById('preloader');
+                        if (_pl) { _pl.style.opacity='0'; setTimeout(function(){ _pl.style.display='none'; }, 100); }
+                    }
                 })();
             }
 
