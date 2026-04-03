@@ -2830,8 +2830,8 @@
                                 }
                             });
                             ex.to([sub, prog, fc, tc, '.pl-corner'], { opacity: 0, duration: 0.28, ease: 'power1.in' }, 0);
-                            ex.to(lbT, { height: 0, duration: 0.5, ease: 'expo.inOut' }, 0.08);
-                            ex.to(lbB, { height: 0, duration: 0.5, ease: 'expo.inOut' }, 0.08);
+                            ex.to(lbT, { scaleY: 0, transformOrigin: 'top center', duration: 0.5, ease: 'expo.inOut' }, 0.08);
+                            ex.to(lbB, { scaleY: 0, transformOrigin: 'bottom center', duration: 0.5, ease: 'expo.inOut' }, 0.08);
                             ex.to(canvas, { opacity: 0, duration: 0.35 }, 0.08);
                             ex.to(pl, { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 0.3);
                             // hero rack-in — skip blur on mobile (forces compositor re-layer = logo snap)
