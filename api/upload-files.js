@@ -60,10 +60,13 @@ const corsReady = (async () => {
             throw new Error('b2_authorize_account HTTP ' + authRes.status + ' — ' + body);
         }
         const auth = await authRes.json();
-        console.log('[upload-files] B2 auth OK. apiUrl:', auth.apiUrl);
+        // v3 response: apiUrl is nested at auth.apiInfo.storageApi.apiUrl (not top-level)
+        const apiUrl = auth.apiInfo?.storageApi?.apiUrl;
+        if (!apiUrl) throw new Error('b2_authorize_account response missing apiInfo.storageApi.apiUrl — check API key version.');
+        console.log('[upload-files] B2 auth OK. apiUrl:', apiUrl);
 
         // Step 2: Get bucket ID
-        const listRes = await fetch(`${auth.apiUrl}/b2api/v3/b2_list_buckets`, {
+        const listRes = await fetch(`${apiUrl}/b2api/v3/b2_list_buckets`, {
             method: 'POST',
             headers: { 'Authorization': auth.authorizationToken, 'Content-Type': 'application/json' },
             body: JSON.stringify({ accountId: auth.accountId, bucketName: B2_BUCKET })
@@ -100,7 +103,7 @@ const corsReady = (async () => {
         //   • https://zyroeditz.xyz     — apex / root domain
         //   • https://www.zyroeditz.xyz — www subdomain
         //   • https://admin.zyroeditz.xyz — admin panel subdomain
-        const updateRes = await fetch(`${auth.apiUrl}/b2api/v3/b2_update_bucket`, {
+        const updateRes = await fetch(`${apiUrl}/b2api/v3/b2_update_bucket`, {
             method: 'POST',
             headers: { 'Authorization': auth.authorizationToken, 'Content-Type': 'application/json' },
             body: JSON.stringify({
