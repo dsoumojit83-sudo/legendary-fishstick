@@ -500,9 +500,14 @@
         }
 
         .pl-center {
+            /* Flex centering wrapper — GSAP never touches this element.
+               The logo sits inside it; centering is always guaranteed. */
             position: absolute;
             inset: 0;
             z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             pointer-events: none;
         }
 
@@ -528,16 +533,10 @@
         }
 
         .pl-logo {
-            /* Centered via inset:0 + margin:auto — ZERO CSS transform.
-               GSAP owns transform 100%, no conflicts, no mobile shift. */
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            margin: auto;
-            width: max-content;
-            height: max-content;
+            /* position:relative inside flex — GSAP animates scale+opacity only.
+               The flex parent handles ALL centering. No CSS transform on this element.
+               GSAP has zero conflicts. */
+            position: relative;
             font-family: 'Roboto', sans-serif;
             font-size: clamp(2.2rem, 12vw, 7.5rem);
             font-weight: 900;
@@ -1299,8 +1298,8 @@
             <div class="pl-logo" id="plLogo">Zyro<span>Editz</span><sup
                     style="font-size:0.35em;vertical-align:super;letter-spacing:normal;opacity:0.5;font-weight:400;">&#8482;</sup>
             </div>
-            <div class="pl-sub" id="plSub">Speed &middot; Motion &middot; Precision</div>
         </div>
+        <div class="pl-sub" id="plSub">Speed &middot; Motion &middot; Precision</div>
         <div class="pl-prog" id="plProg">
             <div class="pl-bar-w">
                 <div class="pl-bar-f" id="preloaderFill"></div>
