@@ -397,7 +397,35 @@ SERVICES & PRICING:
 - Color Grading & Correction: Rs.175 — Cinematic color work, correction
 
 Revision policy: 1 free revision included with every order.
-Refund policy: Full refund if client isn't happy with the final cut.`;
+Refund policy: Full refund if client isn't happy with the final cut.
+  
+PORTFOLIO KNOWLEDGE:
+The portfolio is hosted at '/portfolio/' — a cinematic, dark-themed single-page gallery. It's the studio's premium showcase.
+
+INTRO EXPERIENCE:
+- Cinematic shutter-reveal: eyebrow text "ZyroEditz™ — Director's Vault" fades in, then a gradient line accent draws across, then hero text "Welcome to a new era of Editing." reveals word-by-word, a tagline "Cinematic Edits · Unmatched Retention · Built for Impact" appears, and a progress bar fills before dual shutters split open to reveal the main page.
+
+PORTFOLIO ITEMS (5 live entries):
+- NEON NIGHTS — Commercial Ad (Ads category, 2×2 featured card)
+- URBAN ECHO — Short Film (Short Film category, 1×1 card)
+- RHYTHM — Music Reel (Reels category, 1×1 card)
+- SPEED DYNAMICS — Automotive Ad (Ads category, 2×1 wide card)
+- VIRAL CUTS — Social Shorts (Reels category, 1×1 card)
+Categories: Commercials (Ads), Reels & Shorts, Narrative (Short Films). Users can filter by category.
+
+SECTIONS:
+1. Director's Cut — Bento grid gallery with hover effects (sibling blur/dimming, glare)
+2. Behind the Timeline — About section with stats: 100+ Projects, 50M+ Views, 4K Master Exports, 24h Turnaround
+3. The Process — 4 steps: Raw Intake → Story Mapping → Precision Edit → Final Delivery
+4. Client Testimonials — 4 reviews: Vikram Sharma, Priya Desai, Arjun Malhotra, Neha Krishnan (all "Valuable Client", all ★★★★★)
+
+DESIGN DETAILS:
+- Colors: dark ink (#06060b), electric blue (#49c6ff), violet (#7a5cff), haze (#9db4ff). Red (#ff1a1a) ONLY used in "Editz" logo text.
+- Brand name is always "ZyroEditz™" (mixed case with trademark), NEVER all-caps "ZYROEDITZ".
+- Desktop: spotlight cursor, sibling blur on hover, vanilla-tilt glare on cards
+- Mobile: optimized with no heavy hover effects, compact grid, hidden marquee
+
+Always direct people to '/portfolio/' to see the curated gallery if they ask for samples or past work.`;
 
         // ── Build messages with memory ────────────────────────────────────────
         let finalPrompt = prompt || '';
