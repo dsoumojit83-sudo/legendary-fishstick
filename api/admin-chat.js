@@ -187,7 +187,7 @@ module.exports = async function (req, res) {
     if (jwtErr || !jwtUser) return res.status(401).json({ error: 'Unauthorized' });
 
     try {
-        const { prompt, sessionId = 'default' } = req.body;
+        const { prompt, attachment, sessionId = 'default' } = req.body;
 
         // ── Fetch all orders ──────────────────────────────────────────────────
         const { data: orders } = await supabase.from('orders').select('*');
@@ -400,14 +400,33 @@ Revision policy: 1 free revision included with every order.
 Refund policy: Full refund if client isn't happy with the final cut.`;
 
         // ── Build messages with memory ────────────────────────────────────────
+        let finalPrompt = prompt || '';
+        let hasImage = false;
+        let selectedModel = 'llama-3.3-70b-versatile';
+        let userMessageContent = finalPrompt;
+
+        if (attachment) {
+            if (attachment.type === 'pdf') {
+                finalPrompt = `[Attached Document: ${attachment.name}]\n\n${attachment.data}\n\nUser Message:\n${finalPrompt}`;
+                userMessageContent = finalPrompt;
+            } else if (attachment.type === 'image') {
+                hasImage = true;
+                selectedModel = 'llama-3.2-90b-vision-preview';
+                userMessageContent = [
+                    { type: 'text', text: finalPrompt || 'Please describe this image.' },
+                    { type: 'image_url', image_url: { url: attachment.data } }
+                ];
+            }
+        }
+
         const currentMessages = [
             { role: 'system', content: systemPrompt },
             ...sessionMemory.map(m => ({ role: m.role, content: m.content })),
-            { role: 'user', content: prompt }
+            { role: 'user', content: userMessageContent }
         ];
 
         const aiResponse = await groq.chat.completions.create({
-            model: 'llama-3.3-70b-versatile',
+            model: selectedModel,
             messages: currentMessages,
             temperature: 0.55,   // More human-like variation (was 0.2 = very stiff)
             max_tokens: 600
@@ -423,7 +442,8 @@ Refund policy: Full refund if client isn't happy with the final cut.`;
         const actionResult = actionResults.length > 0 ? actionResults[actionResults.length - 1] : null;
 
         // ── Update memory ─────────────────────────────────────────────────────
-        sessionMemory.push({ role: 'user', content: prompt, timestamp: now });
+        // We only push text to memory to avoid blowing up the context window with huge base64 image strings.
+        sessionMemory.push({ role: 'user', content: finalPrompt + (hasImage ? ` [Attached Image: ${attachment.name}]` : ''), timestamp: now });
         sessionMemory.push({ role: 'assistant', content: rawContent, timestamp: now });
         if (sessionMemory.length > 20) sessionMemory.splice(0, 2);
         memoryStore[sessionId] = sessionMemory;
