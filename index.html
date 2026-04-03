@@ -2414,9 +2414,9 @@
                         if (window.gsap) {
                             var tl = gsap.timeline({
                                 onComplete: function() {
-                                    // FIX: clear will-change after animation ends to free GPU layer
-                                    if (logo) { logo.style.willChange = 'auto'; }
-                                    if (shadow) { shadow.style.willChange = 'auto'; }
+                                    // NOTE: do NOT clear will-change here — dropping the GPU layer
+                                    // before exit causes a visual snap on mobile. Cleanup happens
+                                    // inside exitPreloader's onComplete, after display:none.
                                     tlMinDone = true;
                                     if (exitQueued) exitPreloader();
                                 }
@@ -2548,6 +2548,9 @@
                             var ex = gsap.timeline({
                                 onComplete: function() {
                                     pl.style.display = 'none';
+                                    // Clear will-change NOW — preloader is hidden, no visual snap possible
+                                    if (logo)   { logo.style.willChange   = 'auto'; }
+                                    if (shadow) { shadow.style.willChange = 'auto'; }
                                     // FIX: kill all lingering tweens on preloader elements
                                     gsap.killTweensOf([pl, logo, shadow, sub, prog, fc, tc, heat, scan, flare, canvas, lbT, lbB]);
                                 }
@@ -3124,4 +3127,5 @@
         });
     </script>
 </body>
+
 </html>
