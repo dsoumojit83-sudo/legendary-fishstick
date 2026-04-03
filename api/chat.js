@@ -27,10 +27,12 @@ module.exports = async function (req, res) {
             return res.status(400).json({ reply: "Please select a valid service and pricing to proceed." });
         }
 
-        // ── BUG FIX #2: Validate user-supplied fields before sending to Cashfree / Supabase ──
-        // Cashfree strictly requires a 10-digit phone number — malformed values cause a 400 error.
+        // ── Validate user-supplied fields before sending to Cashfree / Supabase ──
+        // Cashfree strictly requires a valid 10-digit phone number.
         const phoneRegex = /^[0-9]{10}$/;
-        if (phone && !phoneRegex.test(String(phone).trim())) {
+        // B5 FIX: phone is now REQUIRED — reject if missing, not just if malformed.
+        // A fake default (9999999999) creates junk customer records in Cashfree.
+        if (!phone || !phoneRegex.test(String(phone).trim())) {
             return res.status(400).json({ reply: "Please provide a valid 10-digit phone number (no spaces or country code)." });
         }
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,7 +45,7 @@ module.exports = async function (req, res) {
 
         const safeName  = name  ? String(name).trim().substring(0, 100)  : "Zyro Client";
         const safeEmail = email ? String(email).trim().substring(0, 200) : "zyroeditz.official@gmail.com";
-        const safePhone = phone ? String(phone).trim()                   : "9999999999";
+        const safePhone = String(phone).trim(); // always valid — guarded above
 
         const orderId = generateOrderId();
         const numericAmount = parseFloat(amount);
