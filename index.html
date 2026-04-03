@@ -68,7 +68,8 @@
     <!-- Roboto: synchronous/blocking load — headings, bold and brand name never flicker -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@700;900&display=block">
     <!-- Outfit: display=optional — shows text immediately in fallback; uses Outfit if it arrives within ~100ms -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=optional">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=optional">
 
     <style>
         .reveal {
@@ -363,67 +364,88 @@
         }
 
         /* ============================================================
-           MONOLITH CINEMATIC PRELOADER — Maximum VFX Edition
+           MONOLITH AWAKENING — Cinematic Preloader v4
         ============================================================ */
         #preloader {
             position: fixed; inset: 0; z-index: 99999;
             background: #000; overflow: hidden;
         }
-        #plCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
-        /* Letterbox bars */
-        .pl-lb { position: absolute; left: 0; width: 100%; background: #000; z-index: 6; }
-        .pl-lb-t { top: 0; height: 14vh; }
-        .pl-lb-b { bottom: 0; height: 14vh; }
-        /* Corner crosshairs */
-        .pl-corner { position: absolute; width: 22px; height: 22px; z-index: 7; opacity: 0; }
-        .pl-corner::before, .pl-corner::after { content: ''; position: absolute; background: rgba(255,26,26,0.5); }
+        #plCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; }
+        .pl-lb { position: absolute; left: 0; width: 100%; background: #000; z-index: 8; }
+        .pl-lb-t { top: 0; height: 13vh; }
+        .pl-lb-b { bottom: 0; height: 13vh; }
+        .pl-vig { position: absolute; inset: 0; z-index: 2; pointer-events: none;
+            background: radial-gradient(ellipse 65% 65% at 50% 50%, transparent 20%, rgba(0,0,0,0.95) 100%); }
+        .pl-heat { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+            background: radial-gradient(ellipse 55% 30% at 50% 50%, rgba(139,0,0,0.14) 0%, transparent 70%); }
+        .pl-corner { position: absolute; width: 20px; height: 20px; z-index: 9; opacity: 0; }
+        .pl-corner::before, .pl-corner::after { content: ''; position: absolute; background: rgba(255,26,26,0.55); }
         .pl-corner::before { width: 100%; height: 1px; top: 50%; left: 0; }
         .pl-corner::after  { width: 1px; height: 100%; left: 50%; top: 0; }
-        .pl-tl { top: 20px; left: 20px; } .pl-tr { top: 20px; right: 20px; }
-        .pl-bl { bottom: 20px; left: 20px; } .pl-br { bottom: 20px; right: 20px; }
-        /* Frame counter */
-        .pl-fc { position: absolute; bottom: 22px; right: 22px; font-family: 'Courier New',monospace;
-            font-size: 10px; letter-spacing: 0.3em; color: rgba(255,26,26,0.4); z-index: 7; opacity: 0; }
-        /* Timecode top-left */
-        .pl-tc { position: absolute; top: 22px; left: 50px; font-family: 'Courier New',monospace;
-            font-size: 9px; letter-spacing: 0.2em; color: rgba(255,255,255,0.12); z-index: 7; opacity: 0; }
-        /* Center stack */
-        .pl-center { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 0.8rem; pointer-events: none; }
-        .pl-logo { font-family: 'Roboto',sans-serif; font-size: clamp(2.2rem,12vw,7.5rem); font-weight: 900;
-            letter-spacing: 0.15em; color: #fff; line-height: 1; opacity: 0; transform: scale(1.5);
-            text-shadow: 0 0 0 transparent; will-change: transform, opacity, text-shadow, filter;
-            -webkit-text-stroke: 0.5px rgba(255,255,255,0.08); }
+        .pl-tl { top: 18px; left: 18px; } .pl-tr { top: 18px; right: 18px; }
+        .pl-bl { bottom: 18px; left: 18px; } .pl-br { bottom: 18px; right: 18px; }
+        .pl-fc { position: absolute; bottom: 20px; right: 20px;
+            font-family: 'Courier New',monospace; font-size: 10px; letter-spacing: 0.3em;
+            color: rgba(255,26,26,0.35); z-index: 9; opacity: 0; }
+        .pl-tc { position: absolute; top: 20px; left: 46px;
+            font-family: 'Courier New',monospace; font-size: 9px; letter-spacing: 0.2em;
+            color: rgba(255,255,255,0.08); z-index: 9; opacity: 0; }
+        .pl-center { position: absolute; inset: 0; z-index: 5; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+            gap: 1rem; pointer-events: none; }
+        /* depth shadow layer */
+        .pl-logo-shadow {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            z-index: 4; white-space: nowrap;
+            font-family: 'Roboto',sans-serif; font-size: clamp(2.2rem,12vw,7.5rem);
+            font-weight: 900; letter-spacing: 0.15em;
+            color: #8b0000;
+            filter: blur(28px); opacity: 0;
+            user-select: none; pointer-events: none;
+        }
+        .pl-logo {
+            font-family: 'Roboto',sans-serif;
+            font-size: clamp(2.2rem,12vw,7.5rem);
+            font-weight: 900; letter-spacing: 0.15em; color: #fff; line-height: 1;
+            opacity: 0; transform: scale(2.0) translateY(8px); filter: blur(12px);
+            text-shadow: none; will-change: transform, opacity, filter;
+            -webkit-text-stroke: 0.5px rgba(255,255,255,0.08);
+            position: relative; z-index: 5;
+        }
         .pl-logo span { color: #ff1a1a; -webkit-text-stroke: 0.5px rgba(255,26,26,0.15); }
-        .pl-sub { font-size: 9px; letter-spacing: 0.6em; text-transform: uppercase;
-            color: rgba(255,255,255,0); font-weight: 300; }
-        /* Lens flare */
-        .pl-flare { position: absolute; top: 50%; width: 100%; height: 2px; z-index: 4;
-            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 15%, #fff 48%, #fff 52%, rgba(255,255,255,0.03) 85%, transparent 100%);
-            box-shadow: 0 0 60px 10px rgba(255,255,255,0.2), 0 0 120px 4px rgba(255,255,255,0.06);
-            opacity: 0; transform: translateY(-50%); pointer-events: none; left: -100%; }
-        /* Edge glint (small white flash on corners of letters) */
-        .pl-glint { position: absolute; width: 3px; height: 3px; background: #fff; border-radius: 50%;
-            box-shadow: 0 0 8px 2px rgba(255,255,255,0.8); z-index: 4; opacity: 0; pointer-events: none; }
-        /* Heat distortion overlay */
-        .pl-heat { position: absolute; inset: 0; z-index: 2; pointer-events: none;
-            background: radial-gradient(ellipse at center, transparent 60%, rgba(255,26,26,0.03) 100%);
-            opacity: 0; }
-        /* Progress */
-        .pl-prog { position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); z-index: 7;
-            display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0; }
-        .pl-bar-w { width: 180px; height: 1px; background: rgba(255,255,255,0.05); overflow: hidden; }
-        .pl-bar-f { height: 100%; width: 0%; background: linear-gradient(90deg, #8b0000, #ff1a1a); transition: width 0.06s linear; }
-        .pl-pct { font-family: 'Courier New',monospace; font-size: 9px; letter-spacing: 0.25em; color: rgba(255,26,26,0.45); }
-        /* Scan lines */
-        .pl-scan { position: absolute; left: 0; width: 100%; height: 1px; z-index: 2;
-            background: linear-gradient(90deg, transparent, rgba(255,26,26,0.3), transparent);
-            animation: plScan 2.5s ease-in-out infinite; opacity: 0.4; }
-        @keyframes plScan { 0%{top:8%;opacity:0} 12%{opacity:0.4} 88%{opacity:0.4} 100%{top:92%;opacity:0} }
-        .pl-scan2 { animation-delay: 1.3s; animation-duration: 3.2s; opacity: 0.2; }
-        /* Vignette */
-        .pl-vig { position: absolute; inset: 0; z-index: 2; pointer-events: none;
-            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%); }
+        .pl-sub { font-size: 9px; letter-spacing: 0.65em; text-transform: uppercase;
+            color: transparent; font-weight: 300; opacity: 0; position: relative; z-index: 5; }
+        /* anamorphic lens flare — sharp, not glowy */
+        .pl-flare {
+            position: absolute; top: 50%; left: -110%; width: 110%; height: 1px; z-index: 6;
+            background: linear-gradient(90deg,
+                transparent 0%, rgba(255,255,255,0.01) 10%,
+                rgba(255,255,255,0.8) 48%, #fff 50%, rgba(255,255,255,0.8) 52%,
+                rgba(255,255,255,0.01) 90%, transparent 100%);
+            box-shadow: 0 0 12px 2px rgba(255,255,255,0.2);
+            opacity: 0; transform: translateY(-50%); pointer-events: none;
+        }
+        .pl-flare::after {
+            content: ''; position: absolute; top: -20vh; left: 50%; width: 1px; height: 40vh;
+            background: linear-gradient(180deg, transparent, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.18) 55%, transparent);
+            transform: translateX(-50%);
+        }
+        .pl-glint { position: absolute; width: 3px; height: 3px; background: #fff;
+            box-shadow: 0 0 6px 2px rgba(255,255,255,0.9); z-index: 6; opacity: 0; pointer-events: none; }
+        .pl-prog { position: absolute; bottom: 46px; left: 50%; transform: translateX(-50%);
+            z-index: 9; display: flex; flex-direction: column; align-items: center; gap: 5px; opacity: 0; }
+        .pl-bar-w { width: 140px; height: 1px; background: rgba(255,255,255,0.04); overflow: hidden; }
+        .pl-bar-f { height: 100%; width: 0%; background: linear-gradient(90deg, #8b0000, #ff1a1a); transition: width 0.08s linear; }
+        .pl-pct { font-family: 'Courier New',monospace; font-size: 9px; letter-spacing: 0.3em; color: rgba(255,26,26,0.35); }
+        .pl-scan { position: absolute; left: 0; width: 100%; height: 1px; z-index: 3;
+            background: linear-gradient(90deg, transparent, rgba(255,26,26,0.12), transparent);
+            animation: plScan 4s ease-in-out infinite; opacity: 0; }
+        @keyframes plScan { 0%{top:10%;opacity:0} 20%{opacity:0.2} 80%{opacity:0.2} 100%{top:90%;opacity:0} }
+        /* breathing glow — for post-settle */
+        @keyframes plBreathe {
+            0%,100% { text-shadow: 0 0 18px rgba(255,26,26,0.35), 0 0 40px rgba(139,0,0,0.2); }
+            50%      { text-shadow: 0 0 30px rgba(255,26,26,0.55), 0 0 70px rgba(139,0,0,0.3); }
+        }
 
 
         #scrollProgress {
@@ -811,6 +833,7 @@
         /* backdrop-filter triggers a compositor layer on EVERY element that uses it. */
         /* On mobile GPUs this causes dropped frames and battery drain. */
         @media (max-width: 767px) {
+
             .service-card,
             #chatbotWindow,
             #mobileMenu {
@@ -821,7 +844,9 @@
             /* ── INPUT ZOOM PREVENTION (iOS Safari) ──────────────────────────
                iOS zooms the viewport when an input has font-size < 16px.
                Force 16px on ALL inputs, selects, textareas site-wide. */
-            input, select, textarea,
+            input,
+            select,
+            textarea,
             .input-field {
                 font-size: 16px !important;
             }
@@ -868,12 +893,27 @@
             .price-card .text-\[10px\] {
                 white-space: normal !important;
             }
+
+            /* ── SCROLL STUTTER FIX: kill heavy fixed compositor layers on mobile ──
+               noise, grid-bg, and the cinematic canvas each create a GPU compositor
+               layer. On mobile this fights the scroll compositor and causes frame drops.
+               Hide them — the background color + vignette still looks great. */
+            .noise, .grid-bg { display: none !important; }
+            #cinematicCanvas { display: none !important; }
+
+            /* ── Force momentum (inertia) scrolling on iOS ── */
+            html, body { -webkit-overflow-scrolling: touch; }
+
+            /* ── Prevent orbs from creating compositor layers during scroll ── */
+            .orb { will-change: auto !important; filter: none !important;
+                   opacity: 0 !important; pointer-events: none; }
         }
 
         /* ── Scroll-to-top: always red on mobile ─────────────────────────────
            Desktop uses hover:bg-white for the color-flip effect.
            On mobile that hover state can stick after a tap — force red always. */
         @media (max-width: 767px) {
+
             #scrollTopBtn,
             #scrollTopBtn:active,
             #scrollTopBtn:focus {
@@ -884,35 +924,66 @@
         /* ── Chatbot input shake animation ───────────────────────────────────
            Fires when user submits an invalid name / email / phone.            */
         @keyframes wiz-shake {
-            0%, 100% { transform: translateX(0); }
-            20%       { transform: translateX(-6px); }
-            40%       { transform: translateX(6px); }
-            60%       { transform: translateX(-4px); }
-            80%       { transform: translateX(4px); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-6px);
+            }
+
+            40% {
+                transform: translateX(6px);
+            }
+
+            60% {
+                transform: translateX(-4px);
+            }
+
+            80% {
+                transform: translateX(4px);
+            }
         }
-        .wiz-shake { animation: wiz-shake 0.35s ease; }
+
+        .wiz-shake {
+            animation: wiz-shake 0.35s ease;
+        }
 
         /* ── Payment redirect overlay ────────────────────────────────────────
            Full-screen dark screen with pulsing ring — shown when Cashfree SDK
            is initialising so the user never sees a white browser flash.       */
         #payRedirectOverlay {
-            position: fixed; inset: 0; z-index: 99999;
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
             background: #050505;
-            display: none; flex-direction: column;
-            align-items: center; justify-content: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             gap: 20px;
         }
-        #payRedirectOverlay.active { display: flex; }
+
+        #payRedirectOverlay.active {
+            display: flex;
+        }
+
         .pay-redirect-ring {
-            width: 52px; height: 52px;
-            border: 3px solid rgba(255,26,26,0.2);
+            width: 52px;
+            height: 52px;
+            border: 3px solid rgba(255, 26, 26, 0.2);
             border-top-color: #ff1a1a;
             border-radius: 50%;
             animation: yt-spin 0.9s linear infinite;
         }
+
         .pay-redirect-label {
-            font-size: 12px; letter-spacing: 0.25em;
-            text-transform: uppercase; color: rgba(255,255,255,0.35);
+            font-size: 12px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
         }
 
         /* ===== END MOBILE PERFORMANCE ===== */
@@ -959,16 +1030,19 @@
         <div class="pl-glint" id="plG1"></div>
         <div class="pl-glint" id="plG2"></div>
         <div class="pl-glint" id="plG3"></div>
+        <!-- depth shadow behind logo -->
+        <div class="pl-logo-shadow" id="plShadow">ZYROEDITZ</div>
         <div class="pl-center">
             <div class="pl-logo" id="plLogo">ZYRO<span>EDITZ</span></div>
             <div class="pl-sub" id="plSub">Speed &middot; Motion &middot; Precision</div>
         </div>
         <div class="pl-prog" id="plProg">
-            <div class="pl-bar-w"><div class="pl-bar-f" id="preloaderFill"></div></div>
+            <div class="pl-bar-w">
+                <div class="pl-bar-f" id="preloaderFill"></div>
+            </div>
             <div class="pl-pct" id="plPct">0%</div>
         </div>
-        <div class="pl-scan"></div>
-        <div class="pl-scan pl-scan2"></div>
+        <div class="pl-scan" id="plScan"></div>
     </div>
     <div id="scrollProgress" aria-hidden="true"></div>
     <div class="scanlines" aria-hidden="true"></div>
@@ -992,8 +1066,10 @@
 
     <nav
         class="fixed top-0 left-0 w-full z-50 px-8 py-5 flex justify-between items-center backdrop-blur-md bg-black/30">
-        <a href="#home" class="text-xl font-bold tracking-tight hover:text-[#ff1a1a] transition-colors brand-name">Zyro<span
-                class="text-[#ff1a1a]">Editz</span><sup style="font-size:0.4em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></a>
+        <a href="#home"
+            class="text-xl font-bold tracking-tight hover:text-[#ff1a1a] transition-colors brand-name">Zyro<span
+                class="text-[#ff1a1a]">Editz</span><sup
+                style="font-size:0.4em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></a>
 
         <div class="hidden md:flex items-center gap-8">
             <a href="#home"
@@ -1016,9 +1092,11 @@
         <!-- UPDATED: Hamburger button with animated bars -->
         <button class="md:hidden w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="mobileMenuToggle"
             aria-label="Toggle mobile menu" aria-expanded="false">
-            <span id="bar1" class="w-6 h-0.5 bg-white block origin-center" style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
+            <span id="bar1" class="w-6 h-0.5 bg-white block origin-center"
+                style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
             <span id="bar2" class="w-6 h-0.5 bg-white block" style="transition: opacity 0.25s ease;"></span>
-            <span id="bar3" class="w-6 h-0.5 bg-white block origin-center" style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
+            <span id="bar3" class="w-6 h-0.5 bg-white block origin-center"
+                style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
         </button>
     </nav>
 
@@ -1048,12 +1126,14 @@
                         class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
                     <span id="avail-dot" class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
                 </span>
-                <span id="avail-text" class="text-xs uppercase tracking-widest text-gray-300">Available for projects</span>
+                <span id="avail-text" class="text-xs uppercase tracking-widest text-gray-300">Available for
+                    projects</span>
             </div>
 
             <h1 class="reveal brand-name"
                 style="font-size: var(--text-9xl); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 1.5rem; background: linear-gradient(to bottom, #fff, #fff, rgba(255,255,255,0.2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                Zyro<span style="color: #ff1a1a; -webkit-text-fill-color: #ff1a1a;">Editz</span><sup style="font-size:0.3em; vertical-align:super; letter-spacing:normal; -webkit-text-fill-color:#aaaaaa; color:#aaaaaa; font-weight:300; position:relative; top:-0.1em;">&trade;</sup>
+                Zyro<span style="color: #ff1a1a; -webkit-text-fill-color: #ff1a1a;">Editz</span><sup
+                    style="font-size:0.3em; vertical-align:super; letter-spacing:normal; -webkit-text-fill-color:#aaaaaa; color:#aaaaaa; font-weight:300; position:relative; top:-0.1em;">&trade;</sup>
             </h1>
 
             <p class="reveal text-lg md:text-2xl font-light text-gray-400 uppercase mb-6 text-center"
@@ -1105,7 +1185,9 @@
                     class="text-[#ff1a1a]">Excellence</span></h2>
             <p class="reveal"
                 style="color: rgba(255,255,255,0.5); font-size: var(--text-base); max-width: 48rem; margin: 0 auto; line-height: 1.6;">
-                ZyroEditz<sup style="font-size:0.55em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup> is more than an edit studio. We are visual architects, engineering emotion through every
+                ZyroEditz<sup
+                    style="font-size:0.55em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>
+                is more than an edit studio. We are visual architects, engineering emotion through every
                 frame.<br>
                 Specializing in cinematic editing, color grading, and motion graphics for forward-thinking brands.
                 <br><br>
@@ -1227,12 +1309,16 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full lg:w-2/3">
                     <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5"
                         data-service="Short Form" data-price="200">
-                        <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider whitespace-nowrap">Short Form</div>
+                        <div
+                            class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider whitespace-nowrap">
+                            Short Form</div>
                         <div class="text-white font-bold text-lg">₹200</div>
                     </div>
                     <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5"
                         data-service="Long Form" data-price="500">
-                        <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider whitespace-nowrap">Long Form</div>
+                        <div
+                            class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider whitespace-nowrap">
+                            Long Form</div>
                         <div class="text-white font-bold text-lg">₹500</div>
                     </div>
                     <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5"
@@ -1436,15 +1522,23 @@
             </div>
 
             <!-- Portfolio CTA Banner -->
-            <div class="mt-16 relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-black via-[#ff1a1a]/5 to-black p-10 md:p-14 text-center reveal">
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff1a1a]/10 to-transparent opacity-50"></div>
+            <div
+                class="mt-16 relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-black via-[#ff1a1a]/5 to-black p-10 md:p-14 text-center reveal">
+                <div
+                    class="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff1a1a]/10 to-transparent opacity-50">
+                </div>
                 <div class="relative z-10">
                     <p class="text-xs uppercase tracking-[0.4em] text-[#ff1a1a] mb-3 font-bold">Full Showcase</p>
                     <h3 class="text-2xl md:text-4xl font-bold text-white mb-4">See the Complete Director's Vault</h3>
-                    <p class="text-gray-400 text-sm md:text-base max-w-xl mx-auto mb-8">Explore our cinematic portfolio — curated bento gallery, client testimonials, and our creative process.</p>
-                    <a href="/portfolio/" class="inline-flex items-center gap-3 px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn btn-shine">
+                    <p class="text-gray-400 text-sm md:text-base max-w-xl mx-auto mb-8">Explore our cinematic portfolio
+                        — curated bento gallery, client testimonials, and our creative process.</p>
+                    <a href="/portfolio/"
+                        class="inline-flex items-center gap-3 px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn btn-shine">
                         Enter Portfolio
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
                     </a>
                 </div>
             </div>
@@ -1503,8 +1597,10 @@
                     </div>
                     <div class="px-8 mt-4 text-center">
                         <p class="text-white text-sm leading-relaxed mb-6">
-                        "I sent my raw car footage to ZyroEditz<sup style="font-size:0.55em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>, and the final result was insane. The beat-syncing and
-                        color grading made it look like a high-end commercial. Engagement skyrocketed instantly."
+                            "I sent my raw car footage to ZyroEditz<sup
+                                style="font-size:0.55em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>,
+                            and the final result was insane. The beat-syncing and
+                            color grading made it look like a high-end commercial. Engagement skyrocketed instantly."
                         </p>
                     </div>
                     <div class="mt-6 h-px bg-gradient-to-r from-[#ff1a1a]/50 to-transparent"></div>
@@ -1644,7 +1740,8 @@
                         <div
                             class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
                             <svg class="w-6 h-6 text-[#ff1a1a]" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                                <path
+                                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                             </svg>
                         </div>
                         <div>
@@ -1659,7 +1756,9 @@
                         <div
                             class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
                             <svg class="w-5 h-5 text-[#ff1a1a]" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                                <path
+                                    d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z">
+                                </path>
                             </svg>
                         </div>
                         <div>
@@ -1730,8 +1829,10 @@
 
     <footer class="relative z-10 px-6 py-12 border-t border-white/10 bg-black">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <a href="#home" class="text-lg font-bold tracking-tight hover:text-[#ff1a1a] transition-colors brand-name">Zyro<span
-                    class="text-[#ff1a1a]">Editz</span><sup style="font-size:0.42em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></a>
+            <a href="#home"
+                class="text-lg font-bold tracking-tight hover:text-[#ff1a1a] transition-colors brand-name">Zyro<span
+                    class="text-[#ff1a1a]">Editz</span><sup
+                    style="font-size:0.42em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></a>
             <div class="text-xs uppercase tracking-[0.35em] text-gray-500 text-center">Precision. Motion. Speed.</div>
             <div class="flex items-center gap-6">
                 <a href="#about"
@@ -1749,10 +1850,15 @@
             </div>
         </div>
         <div class="max-w-6xl mx-auto mt-8 flex flex-col items-center justify-center gap-3">
-            <div class="text-center text-gray-600 text-xs">&copy; <span id="year"></span> ZyroEditz<sup style="font-size:0.7em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>.
+            <div class="text-center text-gray-600 text-xs">&copy; <span id="year"></span> ZyroEditz<sup
+                    style="font-size:0.7em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>.
                 All rights reserved.</div>
-            <div class="text-center text-xs tracking-[0.05em] text-gray-500/70 border border-white/5 rounded-full px-5 py-2 bg-white/[0.02]">
-                <span class="text-gray-400/80">ZyroEditz<sup style="font-size:0.7em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></span> is a digital brand owned and operated by <strong class="text-gray-300 font-medium tracking-widest uppercase text-[10px]">Soumojit Das</strong>.
+            <div
+                class="text-center text-xs tracking-[0.05em] text-gray-500/70 border border-white/5 rounded-full px-5 py-2 bg-white/[0.02]">
+                <span class="text-gray-400/80">ZyroEditz<sup
+                        style="font-size:0.7em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></span>
+                is a digital brand owned and operated by <strong
+                    class="text-gray-300 font-medium tracking-widest uppercase text-[10px]">Soumojit Das</strong>.
             </div>
         </div>
     </footer>
@@ -1776,7 +1882,8 @@
                 <div>
                     <h3 class="text-white text-sm font-bold">Zyro Assistant</h3>
                     <p class="text-[10px] uppercase tracking-wider flex items-center gap-1" id="chatbot-status-row">
-                        <span id="chatbot-status-dot" class="w-1.5 h-1.5 rounded-full bg-[#ff1a1a] animate-pulse transition-colors duration-500"></span>
+                        <span id="chatbot-status-dot"
+                            class="w-1.5 h-1.5 rounded-full bg-[#ff1a1a] animate-pulse transition-colors duration-500"></span>
                         <span id="chatbot-status-text" class="text-[#ff1a1a]">Online</span>
                     </p>
                 </div>
@@ -1805,7 +1912,8 @@
     </button>
 
     <!-- Payment redirect overlay — shown while Cashfree SDK is initialising -->
-    <div id="payRedirectOverlay" style="position:fixed;inset:0;z-index:99999;background:#050505;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+    <div id="payRedirectOverlay"
+        style="position:fixed;inset:0;z-index:99999;background:#050505;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
         <div class="pay-redirect-ring"></div>
         <p class="pay-redirect-label">Securing payment portal…</p>
     </div>
@@ -1817,7 +1925,7 @@
 
     <script>
         // Configure ScrollTrigger — runs after deferred GSAP executes
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', function () {
             if (window.gsap && window.ScrollTrigger) { ScrollTrigger.config({ limitCallbacks: true }); }
         });
         document.body.classList.add('reveal-loaded');
@@ -1837,7 +1945,7 @@
                 if (_cf) return _cf;
                 for (let i = 0; i < 3; i++) {
                     if (typeof Cashfree !== 'undefined') {
-                        try { _cf = Cashfree({ mode: 'production' }); return _cf; } catch(e) {}
+                        try { _cf = Cashfree({ mode: 'production' }); return _cf; } catch (e) { }
                     }
                     await new Promise(r => setTimeout(r, 300)); // wait 300ms, retry
                 }
@@ -2206,207 +2314,194 @@
             function initPreloader() {
                 (function () {
                     try {
-                        const pl = document.getElementById('preloader');
-                        const canvas = document.getElementById('plCanvas');
-                        const fill = document.getElementById('preloaderFill');
-                        const pct = document.getElementById('plPct');
-                        const fc = document.getElementById('plFC');
-                        const tc = document.getElementById('plTC');
-                        const logo = document.getElementById('plLogo');
-                        const sub = document.getElementById('plSub');
-                        const flare = document.getElementById('plFlare');
-                        const prog = document.getElementById('plProg');
-                        const heat = document.getElementById('plHeat');
-                        const lbT = document.getElementById('plLbT');
-                        const lbB = document.getElementById('plLbB');
+                        var pl     = document.getElementById('preloader');
+                        var canvas = document.getElementById('plCanvas');
+                        var fill   = document.getElementById('preloaderFill');
+                        var pct    = document.getElementById('plPct');
+                        var fc     = document.getElementById('plFC');
+                        var tc     = document.getElementById('plTC');
+                        var logo   = document.getElementById('plLogo');
+                        var shadow = document.getElementById('plShadow');
+                        var sub    = document.getElementById('plSub');
+                        var flare  = document.getElementById('plFlare');
+                        var prog   = document.getElementById('plProg');
+                        var heat   = document.getElementById('plHeat');
+                        var lbT    = document.getElementById('plLbT');
+                        var lbB    = document.getElementById('plLbB');
+                        var scan   = document.getElementById('plScan');
+                        var glints = [document.getElementById('plG1'), document.getElementById('plG2'), document.getElementById('plG3')];
+
                         if (!pl || !canvas) { if (pl) pl.style.display = 'none'; return; }
                         if (prefersReducedMotion) { pl.style.display = 'none'; return; }
 
                         var isMobile = window.innerWidth < 768;
 
-                        // ── Canvas: Embers + Debris ──
+                        // ── Canvas particles (only visible early phase) ──
                         var ctx = canvas.getContext('2d');
-                        var W = canvas.width = window.innerWidth;
+                        var W = canvas.width  = window.innerWidth;
                         var H = canvas.height = window.innerHeight;
-                        var parts = [];
-                        var pCount = isMobile ? 35 : 80;
+                        var parts = [], renderLoop = true;
+                        var pCount = isMobile ? 25 : 55;
                         for (var i = 0; i < pCount; i++) {
-                            parts.push({
-                                x: Math.random()*W, y: Math.random()*H,
-                                vx: (Math.random()-0.5)*0.5, vy: -(Math.random()*0.7+0.1),
-                                r: Math.random()*2+0.3,
-                                a: Math.random()*0.55+0.08,
-                                life: Math.random(),
-                                isDebris: Math.random() < 0.2
-                            });
+                            parts.push({ x: Math.random()*W, y: Math.random()*H,
+                                vx:(Math.random()-0.5)*0.4, vy:-(Math.random()*0.6+0.1),
+                                r: Math.random()*1.5+0.3, a: Math.random()*0.4+0.05, life: Math.random() });
                         }
-                        var renderLoop = true;
                         function drawFrame() {
                             if (!renderLoop) return;
                             ctx.clearRect(0,0,W,H);
-                            for (var i = 0; i < parts.length; i++) {
-                                var e = parts[i];
-                                e.x += e.vx; e.y += e.vy; e.life -= (e.isDebris ? 0.008 : 0.003);
-                                if (e.isDebris) { e.vy += 0.01; e.a *= 0.998; } // debris falls + fades
-                                if (e.life <= 0 || e.y < -10 || e.y > H+10) {
-                                    e.x = Math.random()*W; e.y = e.isDebris ? Math.random()*H*0.5 : H+10;
-                                    e.life = 1; e.a = Math.random()*0.5+0.1;
-                                    e.vy = e.isDebris ? Math.random()*0.3 : -(Math.random()*0.7+0.1);
-                                }
-                                var alpha = e.a * e.life;
-                                if (e.isDebris) {
-                                    // Black dust fragments
-                                    ctx.fillStyle = 'rgba(60,20,20,' + alpha.toFixed(2) + ')';
-                                    ctx.fillRect(e.x, e.y, e.r*1.5, e.r*0.8);
-                                } else {
-                                    // Red embers with glow
-                                    ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, 6.28);
-                                    ctx.fillStyle = 'rgba(255,26,26,' + alpha.toFixed(2) + ')';
-                                    ctx.shadowBlur = 6; ctx.shadowColor = 'rgba(255,26,26,0.3)';
-                                    ctx.fill(); ctx.shadowBlur = 0;
-                                }
+                            for (var i=0;i<parts.length;i++) {
+                                var e=parts[i]; e.x+=e.vx; e.y+=e.vy; e.life-=0.003;
+                                if (e.life<=0||e.y<-10) { e.x=Math.random()*W; e.y=H+5; e.life=1; }
+                                ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,6.28);
+                                ctx.fillStyle='rgba(255,26,26,'+(e.a*e.life).toFixed(2)+')';
+                                ctx.shadowBlur=5; ctx.shadowColor='rgba(255,26,26,0.25)';
+                                ctx.fill(); ctx.shadowBlur=0;
                             }
                             requestAnimationFrame(drawFrame);
                         }
                         drawFrame();
 
-                        // ── Frame counter + Timecode ──
-                        var frame = 1, tcF = 0;
-                        var cInt = setInterval(function() {
+                        // ── HUD timecode ──
+                        var frame=1, tcF=0;
+                        var cInt = setInterval(function(){
                             frame = Math.min(999, frame + Math.floor(Math.random()*14+2));
                             if (fc) fc.textContent = String(frame).padStart(3,'0');
                             tcF++;
-                            if (tc) {
-                                var s = Math.floor(tcF/12), m = Math.floor(s/60);
-                                tc.textContent = '00:00:' + String(s%60).padStart(2,'0') + ':' + String(tcF%24).padStart(2,'0');
-                            }
+                            if (tc) { var s=Math.floor(tcF/12); tc.textContent='00:00:'+String(s%60).padStart(2,'0')+':'+String(tcF%24).padStart(2,'0'); }
                         }, 70);
 
-                        // ── Edge glint positions (random around logo area) ──
-                        var glints = [document.getElementById('plG1'), document.getElementById('plG2'), document.getElementById('plG3')];
-                        var cx = W/2, cy = H/2;
-                        glints.forEach(function(g,i) {
-                            if (!g) return;
-                            g.style.left = (cx + (i-1)*W*0.15) + 'px';
-                            g.style.top = (cy + (Math.random()-0.5)*40) + 'px';
-                        });
+                        // ── Glint positions ──
+                        var cx=W/2, cy=H/2;
+                        glints.forEach(function(g,i){ if(!g) return; g.style.left=(cx+(i-1)*W*0.14)+'px'; g.style.top=(cy+(Math.random()-0.5)*50)+'px'; });
 
-                        // ── GSAP entrance ──
+                        // ══════════════════════════════════════════════════
+                        //  STRICT CINEMATIC TIMELINE
+                        //  0.0–0.3  → pure black
+                        //  0.3–1.2  → logo emerges (scale 2→1, blur→sharp)
+                        //  1.2      → sharp lens flare sweep
+                        //  1.2–2.0  → red internal energy + heat
+                        //  2.0      → micro glints
+                        //  2.2–3.0  → final lock (bounce + red pulse)
+                        //  3.0–3.5  → fade out
+                        // ══════════════════════════════════════════════════
                         if (window.gsap) {
-                            var enter = gsap.timeline({ delay: 0.1 });
-                            // Crosshairs stagger in
-                            enter.to('.pl-corner', { opacity: 0.5, duration: 0.3, stagger: 0.06 }, 0);
-                            // Frame counter + timecode
-                            enter.to(fc, { opacity: 1, duration: 0.3 }, 0.05);
-                            enter.to(tc, { opacity: 1, duration: 0.3 }, 0.05);
-                            // Progress bar
-                            enter.to(prog, { opacity: 1, duration: 0.3 }, 0.1);
-                            // [0.2s] Logo emerges from void — scale 1.5 → 1
-                            enter.to(logo, { opacity: 0.15, scale: 1.2, duration: 0.5, ease: 'power2.out' }, 0.2);
-                            // [0.5s] Z silhouette becomes clearer
-                            enter.to(logo, { opacity: 1, scale: 1, duration: 1.0, ease: 'expo.out' }, 0.5);
-                            // [0.8s] Red cracks ignite beneath surface
-                            enter.to(logo, {
-                                textShadow: '0 0 30px rgba(255,26,26,0.6), 0 0 60px rgba(255,26,26,0.3), 0 0 2px rgba(255,255,255,0.2), inset 0 0 20px rgba(139,0,0,0.3)',
-                                duration: 0.7, ease: 'power2.out'
-                            }, 0.9);
-                            // [0.9s] White anamorphic lens flare sweeps across
-                            enter.set(flare, { left: '-100%', opacity: 0.95 }, 0.9);
-                            enter.to(flare, { left: '100%', duration: 0.6, ease: 'power1.inOut' }, 0.9);
-                            enter.to(flare, { opacity: 0, duration: 0.1 }, 1.4);
-                            // [1.0s] As flare passes, red sparks intensify (canvas handles this)
-                            // Edge glints flash
-                            enter.to(glints, { opacity: 1, duration: 0.08, stagger: 0.12 }, 1.1);
-                            enter.to(glints, { opacity: 0, duration: 0.15, stagger: 0.1 }, 1.3);
-                            // Camera shake (subtle)
+                            var tl = gsap.timeline();
+
+                            // 0.0–0.3 → pure black (nothing shown)
+                            // HUD elements appear late (subtle)
+                            tl.to(prog,  { opacity:1, duration:0.25 }, 0.25);
+                            tl.to(fc,    { opacity:1, duration:0.2  }, 0.3);
+                            tl.to(tc,    { opacity:1, duration:0.2  }, 0.3);
+                            tl.to('.pl-corner', { opacity:0.4, duration:0.3, stagger:0.05 }, 0.3);
+
+                            // 0.3–1.2 → logo emerges: massive → normal, blur → sharp, parallax Y
+                            tl.to(canvas, { opacity:0.28, duration:0.4 }, 0.3);
+                            tl.to(shadow, { opacity:0.6, duration:0.9, ease:'power2.out' }, 0.35);
+                            tl.to(logo, {
+                                opacity: 0.18, scale: 1.6, filter:'blur(8px)',
+                                y: '4px', duration: 0.35, ease:'power1.out'
+                            }, 0.3);
+                            tl.to(logo, {
+                                opacity: 1, scale: 1.0, filter:'blur(0px)',
+                                y: '0px', duration: 0.85, ease:'expo.out'
+                            }, 0.55);
+
+                            // 1.2 → sharp lens flare sweep (single, precise)
+                            tl.set(flare, { left:'-110%', opacity:1 }, 1.2);
+                            tl.to(flare,  { left:'110%', duration:0.55, ease:'power2.inOut' }, 1.2);
+                            tl.to(flare,  { opacity:0, duration:0.08 }, 1.72);
+
+                            // 1.2–2.0 → red internal energy (cracks inside monolith)
+                            tl.to(shadow, { opacity:0.9, filter:'blur(22px)', duration:0.5, ease:'power2.out' }, 1.25);
+                            tl.to(logo, {
+                                textShadow:'0 0 35px rgba(255,26,26,0.7),0 0 70px rgba(139,0,0,0.4),0 0 2px rgba(255,255,255,0.15)',
+                                duration:0.55, ease:'power2.out'
+                            }, 1.3);
+                            tl.to(heat, { opacity:0.65, duration:0.35 }, 1.3);
+                            tl.to(heat, { opacity:0,    duration:0.55 }, 1.65);
+                            // scan line activates during energy phase only
+                            tl.to(scan, { opacity:1, duration:0.2 }, 1.3);
+                            tl.to(scan, { opacity:0, duration:0.3 }, 1.85);
+
+                            // subtle camera shake during energy activation (desktop only)
                             if (!isMobile) {
-                                enter.to(pl, { x: 2, duration: 0.04, ease: 'none' }, 1.0);
-                                enter.to(pl, { x: -2, duration: 0.04, ease: 'none' }, 1.04);
-                                enter.to(pl, { x: 1, duration: 0.04, ease: 'none' }, 1.08);
-                                enter.to(pl, { x: 0, duration: 0.06, ease: 'power2.out' }, 1.12);
+                                tl.to(pl,{x:2.5, duration:0.04,ease:'none'},1.4);
+                                tl.to(pl,{x:-2,  duration:0.04,ease:'none'},1.44);
+                                tl.to(pl,{x:1,   duration:0.04,ease:'none'},1.48);
+                                tl.to(pl,{x:0,   duration:0.06,ease:'power2.out'},1.52);
                             }
-                            // Heat distortion pulse
-                            enter.to(heat, { opacity: 0.6, duration: 0.3 }, 1.0);
-                            enter.to(heat, { opacity: 0, duration: 0.5 }, 1.3);
-                            // Subtitle
-                            enter.to(sub, { color: 'rgba(255,255,255,0.2)', duration: 0.5 }, 1.3);
-                            // Red energy pulses through cracks
-                            enter.to(logo, {
-                                textShadow: '0 0 50px rgba(255,26,26,0.8), 0 0 100px rgba(255,26,26,0.4), 0 0 3px rgba(255,255,255,0.2)',
-                                duration: 0.2, ease: 'power3.out'
-                            }, 1.6);
-                            enter.to(logo, {
-                                textShadow: '0 0 25px rgba(255,26,26,0.4), 0 0 50px rgba(255,26,26,0.2), 0 0 1px rgba(255,255,255,0.1)',
-                                duration: 0.4, ease: 'power2.out'
-                            }, 1.8);
+
+                            // 2.0 → micro white glints on edges
+                            tl.to(glints, { opacity:1, duration:0.06, stagger:0.08 }, 2.0);
+                            tl.to(glints, { opacity:0, duration:0.18, stagger:0.06 }, 2.18);
+
+                            // 2.2–3.0 → FINAL LOCK: scale punch + single red pulse
+                            // gravity compression feel
+                            tl.to(logo,{ scale:0.97, y:'2px', duration:0.1, ease:'power3.in'  }, 2.2);
+                            // punch outward
+                            tl.to(logo,{ scale:1.05, y:'0px', duration:0.15,ease:'power3.out' }, 2.3);
+                            // settle to 1.0 — final lock
+                            tl.to(logo,{ scale:1.0,           duration:0.2, ease:'power2.inOut'},2.45);
+                            // single strong red pulse at lock moment
+                            tl.to(shadow,{ opacity:1.0, filter:'blur(18px)', duration:0.15 }, 2.2);
+                            tl.to(logo,{
+                                textShadow:'0 0 80px rgba(255,26,26,0.95),0 0 160px rgba(139,0,0,0.5),0 0 4px rgba(255,255,255,0.3)',
+                                duration:0.15, ease:'power3.out'
+                            }, 2.2);
+                            // settle into breathing glow
+                            tl.to(logo,{
+                                textShadow:'0 0 18px rgba(255,26,26,0.35),0 0 40px rgba(139,0,0,0.2)',
+                                duration:0.4, ease:'power2.out'
+                            }, 2.35);
+                            tl.to(shadow,{ opacity:0.5, duration:0.4 }, 2.35);
+                            // subtitle appears at lock
+                            tl.to(sub,{ color:'rgba(255,255,255,0.18)', opacity:1, duration:0.4 }, 2.4);
+
                         } else {
-                            logo.style.opacity = '1'; logo.style.transform = 'scale(1)';
-                            if (prog) prog.style.opacity = '1';
+                            // no GSAP fallback
+                            logo.style.opacity='1'; logo.style.transform='scale(1)'; logo.style.filter='none';
+                            if (prog) prog.style.opacity='1';
                         }
 
-                        // ── Progress bar ──
+                        // ── Progress bar drives the actual timing ──
                         var p = 0;
                         function step() {
-                            p = Math.min(100, p + Math.random()*14+3);
-                            if (fill) fill.style.width = p + '%';
-                            if (pct) pct.textContent = Math.round(p) + '%';
-                            if (p < 100) { setTimeout(step, 60 + Math.random()*50); }
-                            else {
-                                clearInterval(cInt);
-                                if (fc) fc.textContent = '999';
-                                setTimeout(exitPreloader, 300);
-                            }
+                            p = Math.min(100, p + Math.random()*11+3);
+                            if (fill) fill.style.width = p+'%';
+                            if (pct)  pct.textContent  = Math.round(p)+'%';
+                            if (p < 100) { setTimeout(step, 70 + Math.random()*60); }
+                            else { clearInterval(cInt); if(fc) fc.textContent='999'; setTimeout(exitPreloader, 700); }
                         }
-                        setTimeout(step, 600);
+                        // start progress after logo begins emerging
+                        setTimeout(step, 350);
 
-                        // ── Exit: FINAL LOCK + IMPACT ──
+                        // ── 3.0–3.5s → EXIT: clean fade out ──
                         function exitPreloader() {
-                            if (!window.gsap) { pl.style.display = 'none'; renderLoop = false; return; }
+                            if (!window.gsap) { pl.style.display='none'; renderLoop=false; return; }
                             var ex = gsap.timeline();
-                            // 1. Red veins pulse HARD once (synchronized)
-                            ex.to(logo, {
-                                textShadow: '0 0 100px rgba(255,26,26,1), 0 0 200px rgba(255,26,26,0.6), 0 0 6px rgba(255,255,255,0.4)',
-                                duration: 0.15, ease: 'power3.out'
-                            }, 0);
-                            ex.to(logo, {
-                                textShadow: '0 0 15px rgba(255,26,26,0.2), 0 0 30px rgba(255,26,26,0.1)',
-                                duration: 0.3
-                            }, 0.15);
-                            // 2. Heat distortion ripple
-                            ex.to(heat, { opacity: 0.5, scale: 1.02, duration: 0.2 }, 0.1);
-                            ex.to(heat, { opacity: 0, scale: 1, duration: 0.35 }, 0.3);
-                            // 3. Gravity compression → release
-                            ex.to(logo, { scale: 0.96, duration: 0.12, ease: 'power3.in' }, 0.3);
-                            ex.to(logo, { scale: 1.1, opacity: 0, filter: 'blur(4px)', duration: 0.4, ease: 'power3.out' }, 0.42);
-                            // 4. Edge glints flash on key corners
-                            ex.to(glints, { opacity: 1, duration: 0.06, stagger: 0.04 }, 0.32);
-                            ex.to(glints, { opacity: 0, duration: 0.2 }, 0.5);
-                            // 5. Camera shake on impact
-                            if (!isMobile) {
-                                ex.to(pl, { x: -3, y: 1, duration: 0.03 }, 0.3);
-                                ex.to(pl, { x: 3, y: -1, duration: 0.03 }, 0.33);
-                                ex.to(pl, { x: -1, y: 0, duration: 0.03 }, 0.36);
-                                ex.to(pl, { x: 0, y: 0, duration: 0.08, ease: 'power2.out' }, 0.39);
-                            }
-                            // 6. Fade everything
-                            ex.to([sub, prog, fc, tc, '.pl-corner'], { opacity: 0, duration: 0.25 }, 0.3);
-                            // 7. Letterbox bars collapse
-                            ex.to(lbT, { height: 0, duration: 0.6, ease: 'expo.inOut' }, 0.4);
-                            ex.to(lbB, { height: 0, duration: 0.6, ease: 'expo.inOut' }, 0.4);
-                            // 8. Dissolve preloader
-                            ex.to(pl, { opacity: 0, duration: 0.5, ease: 'power2.inOut',
-                                onComplete: function() { pl.style.display = 'none'; renderLoop = false; }
-                            }, 0.7);
-                            // Hero zoom-settle (camera racks into focus)
+                            // fade HUD
+                            ex.to([sub,prog,fc,tc,'.pl-corner'], { opacity:0, duration:0.3 }, 0);
+                            // letterbox collapse
+                            ex.to(lbT, { height:0, duration:0.55, ease:'expo.inOut' }, 0.1);
+                            ex.to(lbB, { height:0, duration:0.55, ease:'expo.inOut' }, 0.1);
+                            // canvas particles fade (visual noise suppressed at exit)
+                            ex.to(canvas, { opacity:0, duration:0.4 }, 0.1);
+                            // preloader dissolves
+                            ex.to(pl, { opacity:0, duration:0.5, ease:'power2.inOut',
+                                onComplete:function(){ pl.style.display='none'; renderLoop=false; }
+                            }, 0.35);
+                            // hero camera rack-in
                             gsap.fromTo('#home',
-                                { scale: 1.1, filter: 'blur(16px)', opacity: 0.3 },
-                                { scale: 1, filter: 'blur(0px)', opacity: 1, duration: 1.5, ease: 'power3.out', delay: 0.75 });
-                            // Navbar drops in
+                                { scale:1.08, filter:'blur(12px)', opacity:0.4 },
+                                { scale:1, filter:'blur(0px)', opacity:1, duration:1.4, ease:'power3.out', delay:0.45 });
+                            // nav drop
                             gsap.fromTo('nav',
-                                { y: -60, opacity: 0 },
-                                { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out', delay: 1.1 });
+                                { y:-50, opacity:0 },
+                                { y:0, opacity:1, duration:0.75, ease:'power3.out', delay:0.8 });
                         }
-                    } catch (e) { var pl = document.getElementById('preloader'); if (pl) pl.style.display = 'none'; }
+
+                    } catch(e) { var pl=document.getElementById('preloader'); if(pl) pl.style.display='none'; }
                 })();
             }
 
@@ -2424,7 +2519,7 @@
                     width = canvas.width = window.innerWidth;
                     height = canvas.height = window.innerHeight;
                     particles = [];
-                    const particleCount = window.innerWidth < 768 ? 40 : 80;
+                    const particleCount = window.innerWidth < 768 ? 0 : 80; // mobile: skip entirely, canvas hidden
                     for (let i = 0; i < particleCount; i++) { particles.push(new Particle()); }
                 }
 
@@ -2469,15 +2564,27 @@
                     }
                     _canvasAnimId = requestAnimationFrame(animateCanvas);
                 }
-                // On mobile, visibilitychange fires spuriously during address-bar
-                // animation and scroll — cancelling RAF causes the stop/start flicker.
-                // Only pause if truly backgrounded (minimized, app-switched).
+                // Pause RAF during scroll to free the compositor for smooth scrolling.
+                // Resume 150ms after scroll stops (debounced).
+                let _scrollPauseTimer = null;
+                let _scrollPaused = false;
+                window.addEventListener('scroll', () => {
+                    if (!_scrollPaused) {
+                        cancelAnimationFrame(_canvasAnimId);
+                        _canvasAnimId = null;
+                        _scrollPaused = true;
+                    }
+                    clearTimeout(_scrollPauseTimer);
+                    _scrollPauseTimer = setTimeout(() => {
+                        _scrollPaused = false;
+                        if (!_canvasAnimId) animateCanvas();
+                    }, 150);
+                }, { passive: true });
                 document.addEventListener('visibilitychange', () => {
                     if (document.hidden) {
                         cancelAnimationFrame(_canvasAnimId);
                         _canvasAnimId = null;
-                    } else if (!_canvasAnimId) {
-                        // Short delay so burst visibilitychange events don't spawn multiple loops
+                    } else if (!_canvasAnimId && !_scrollPaused) {
                         setTimeout(() => { if (!_canvasAnimId) animateCanvas(); }, 50);
                     }
                 });
@@ -2563,7 +2670,7 @@
 
                 // BUG FIX #8: Guard close button — toggleChat() flips state blindly,
                 // so calling it when already closed would re-open the chat.
-                closeBtn.addEventListener('click', function() { if (isOpen) toggleChat(); });
+                closeBtn.addEventListener('click', function () { if (isOpen) toggleChat(); });
 
                 // Add click listeners to price cards
                 document.querySelectorAll('.price-card').forEach(card => {
@@ -2816,7 +2923,7 @@
                                 try {
                                     if (window.gsap) gsap.killTweensOf('*');
                                     document.querySelectorAll('.orb, .grid-bg, .noise, .video-bg, canvas').forEach(el => el.remove());
-                                } catch(e) { }
+                                } catch (e) { }
 
                                 // ── Minimum overlay hold (1.5s) so the user sees the portal
                                 // screen on fast PCs where getCashfree() resolves instantly.
@@ -2840,16 +2947,16 @@
                                     });
 
                                     if (checkoutPromise && typeof checkoutPromise.then === 'function') {
-                                        checkoutPromise.then(function(result) {
+                                        checkoutPromise.then(function (result) {
                                             if (result && result.error) {
                                                 statusEl.innerText = "Payment Error: " + result.error.message;
                                             }
-                                        }).catch(function(err) {
+                                        }).catch(function (err) {
                                             console.warn('Cashfree SDK checkout failed, falling back to direct URL:', err);
                                             window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
                                         });
                                     }
-                                 } catch (e) {
+                                } catch (e) {
                                     console.warn('Cashfree SDK exception, falling back to direct URL:', e);
                                     window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
                                 }
@@ -2915,7 +3022,7 @@
                     }
 
                     // ── "Available for Projects" badge ───────────────────────
-                    const ping  = document.getElementById('avail-ping');
+                    const ping = document.getElementById('avail-ping');
                     const avDot = document.getElementById('avail-dot');
                     const avTxt = document.getElementById('avail-text');
                     if (ping && avDot && avTxt) {
