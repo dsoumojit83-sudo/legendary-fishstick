@@ -528,12 +528,16 @@
         }
 
         .pl-logo {
-            /* ABSOLUTE positioned — completely out of flex flow.
-               Nothing (subtitle, gap, flex recalc) can ever shift this. */
+            /* Centered via inset:0 + margin:auto — ZERO CSS transform.
+               GSAP owns transform 100%, no conflicts, no mobile shift. */
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            width: max-content;
+            height: max-content;
             font-family: 'Roboto', sans-serif;
             font-size: clamp(2.2rem, 12vw, 7.5rem);
             font-weight: 900;
@@ -2691,15 +2695,15 @@
                             tl.to(shadow, { opacity: 0.6, duration: 0.9, ease: 'power2.out' }, 0.35);
 
                             if (isMobile) {
-                                // MOBILE: scale+opacity only — NO y movement so logo never shifts position
-                                // xPercent/yPercent keeps the CSS translate(-50%,-50%) centering intact
-                                gsap.set(logo, { opacity: 0, scale: 2.0, xPercent: -50, yPercent: -50, y: 0, filter: 'none' });
+                                // MOBILE: scale+opacity only — NO y, NO xPercent/yPercent needed
+                                // Logo is centered via CSS inset:0+margin:auto (no CSS transform)
+                                gsap.set(logo, { opacity: 0, scale: 2.0, filter: 'none' });
                                 tl.to(logo, { opacity: 0.15, scale: 1.7, duration: 0.35, ease: 'power1.out' }, 0.3);
                                 tl.to(logo, { opacity: 1, scale: 1.0, duration: 0.9, ease: 'expo.out' }, 0.6);
                             } else {
                                 // DESKTOP: blur animation is fine
                                 tl.fromTo(logo,
-                                    { opacity: 0, scale: 2.0, y: 8, xPercent: -50, yPercent: -50, filter: 'blur(14px)' },
+                                    { opacity: 0, scale: 2.0, y: 8, filter: 'blur(14px)' },
                                     {
                                         opacity: 0.15, scale: 1.7, y: 5, filter: 'blur(9px)',
                                         duration: 0.35, ease: 'power1.out', clearProps: 'none'
