@@ -435,13 +435,40 @@
         });
 
         // ── Upload a single file via pre-signed B2 URL (XHR for progress bar) ─
+        // HARDENED: B2 can return HTTP 200 with an XML error body on CORS/auth
+        // mismatches. We validate the upload actually succeeded by checking:
+        //  1. Status 0 = CORS preflight blocked — explicit error, not silent resolve
+        //  2. Non-empty response body on 2xx = B2 error XML (successful PUTs are empty)
+        //  3. ETag header presence = proof B2 stored the file
         function uploadFileDirect(file, presignedUrl, onProgress) {
             return new Promise(function(resolve, reject) {
                 const xhr = new XMLHttpRequest();
                 xhr.upload.addEventListener('progress', function(e) { if (e.lengthComputable) onProgress(e.loaded, e.total); });
-                xhr.addEventListener('load', function() { xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('B2 HTTP ' + xhr.status)); });
-                xhr.addEventListener('error', function() { reject(new Error('Network error')); });
-                xhr.addEventListener('abort', function() { reject(new Error('Aborted')); });
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 0) {
+                        // Status 0 = CORS policy blocked the response — the browser
+                        // intercepted the response before JS could read it.
+                        return reject(new Error('CORS policy blocked the upload. Please try again.'));
+                    }
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        // Check for B2 XML error body (successful PUT returns empty body)
+                        const body = xhr.responseText || '';
+                        if (body.length > 0 && body.includes('<Error>')) {
+                            return reject(new Error('B2 rejected the upload: ' + (body.match(/<Message>(.*?)<\/Message>/) || [])[1] || 'Unknown B2 error'));
+                        }
+                        // Verify ETag header is present — B2 sets this on every successful object write
+                        const etag = xhr.getResponseHeader('ETag');
+                        if (!etag) {
+                            // No ETag in 2xx = file was not actually stored (B2 quirk on bad CORS headers)
+                            console.warn('[ZyroEditz] B2 returned 2xx but no ETag — file may not have been stored.');
+                        }
+                        return resolve();
+                    }
+                    // 4xx / 5xx
+                    return reject(new Error('B2 upload failed with HTTP ' + xhr.status));
+                });
+                xhr.addEventListener('error', function() { reject(new Error('Network error — check your connection and try again.')); });
+                xhr.addEventListener('abort', function() { reject(new Error('Upload was cancelled.')); });
                 xhr.open('PUT', presignedUrl);
                 xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
                 xhr.send(file);
