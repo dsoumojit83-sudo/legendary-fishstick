@@ -14,7 +14,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <script>
@@ -55,6 +56,61 @@
             scroll-behavior: smooth;
         }
         ::selection { background: #49c6ff; color: #06060b; }
+
+        .marquee {
+            white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+            user-select: none;
+            gap: 2rem;
+            will-change: transform;
+            transform: translateZ(0);
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        .marquee-content {
+            display: flex;
+            flex-shrink: 0;
+            gap: 2rem;
+            will-change: transform;
+            animation: scroll 30s linear infinite;
+        }
+        @keyframes scroll {
+            from { transform: translate3d(0, 0, 0); }
+            to { transform: translate3d(-100%, 0, 0); }
+        }
+
+        /* --- SIBLING DIMMING (desktop only) --- */
+        @media (hover: hover) {
+            #bento-grid:hover .bento-item:not(:hover) {
+                opacity: 0.35;
+                filter: grayscale(40%) blur(2px);
+                transform: scale(0.98);
+            }
+        }
+        .bento-item {
+            transition: opacity 0.4s ease, filter 0.4s ease, border-color 0.4s ease;
+            opacity: 0;
+            transform: translateY(40px);
+            transform-style: preserve-3d;
+        }
+        /* Vanilla-tilt glare fix */
+        .js-tilt-glare { border-radius: inherit; }
+        .js-tilt-glare-inner { mix-blend-mode: overlay; }
+
+        /* === MOBILE OPTIMIZATIONS === */
+        @media (max-width: 767px) {
+            #bento-grid { grid-template-columns: 1fr; grid-auto-rows: 220px; gap: 1rem; }
+            .bento-item { border-radius: 1rem; }
+            #portfolio-filters { gap: 0.5rem; }
+            .filter-btn { padding: 0.4rem 0.8rem; font-size: 10px; }
+            .process-step { padding: 1.25rem; }
+            .process-num { font-size: 3rem; }
+            #landing-eyebrow { font-size: 8px; letter-spacing: 0.3em; }
+            #landing-tagline-bottom { font-size: 9px; letter-spacing: 0.2em; }
+            .marquee { display: none; }
+        }
         
         .bg-grid-pattern {
             background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
@@ -94,36 +150,114 @@
             opacity: 0;
             transform: translateY(20px);
         }
+
+        /* === CINEMATIC INTRO EXTRAS === */
+        #landing-eyebrow {
+            opacity: 0;
+            letter-spacing: 0.45em;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            font-weight: 500;
+            margin-bottom: 2rem;
+        }
+        #landing-line-accent {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(73,198,255,0.5), transparent);
+            width: 0%;
+            margin: 0 auto 2rem;
+            opacity: 0;
+        }
+        #landing-tagline-bottom {
+            opacity: 0;
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.2);
+            font-weight: 400;
+            margin-top: 2rem;
+        }
+        #landing-progress-wrap {
+            position: absolute;
+            bottom: 10vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        #landing-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #49c6ff;
+        }
+        .landing-vignette {
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(6,6,11,0.9) 100%);
+        }
+
+        /* === ANIMATED STAT NUMBERS === */
+        .stat-card {
+            transition: border-color 0.4s ease, transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+        .stat-num { font-variant-numeric: tabular-nums; }
+
+        /* === PROCESS STEPS === */
+        .process-step {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: border-color 0.4s ease;
+        }
+        .process-num {
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            user-select: none;
+        }
+
+        /* === REVIEW STARS === */
+        .star-row { color: #49c6ff; letter-spacing: 2px; }
     </style>
 </head>
 <body class="relative min-h-screen bg-grid-pattern">
-
     <div id="mouse-spotlight"></div>
     <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet/5 rounded-full blur-[150px] pointer-events-none z-0"></div>
 
-    <section id="landing-view" class="fixed inset-0 z-50 flex flex-col items-center justify-center w-full h-full bg-ink backdrop-blur-md transition-all duration-700">
+    <section id="landing-view" class="fixed inset-0 z-[60] flex flex-col items-center justify-center w-full h-full pointer-events-none">
+        <div id="shutter-top" class="absolute top-0 left-0 w-full h-1/2 bg-ink z-0 origin-top pointer-events-auto"></div>
+        <div id="shutter-bottom" class="absolute bottom-0 left-0 w-full h-1/2 bg-ink z-0 origin-bottom pointer-events-auto"></div>
+        <div class="absolute inset-0 landing-vignette z-[1] pointer-events-none"></div>
+        
         <div class="flex flex-col items-center z-10 text-center px-4" id="landing-content">
-            <h1 class="text-4xl md:text-6xl font-black mb-12 tracking-tight drop-shadow-2xl word-reveal relative z-10" id="hero-text">
-            </h1>
-            
-            <button onclick="openWebsite()" class="interactive-element mt-12 px-10 py-4 bg-midnight border border-electric/30 rounded-full text-electric text-sm tracking-[0.2em] uppercase font-bold shadow-glow hover:shadow-neon transition-all duration-300 group flex items-center gap-3 relative z-10 opacity-0" id="enter-btn" data-hover-color="rgba(73,198,255,0.5)">
-                <span>Enter Portfolio</span>
-                <i data-lucide="arrow-down" class="w-4 h-4 group-hover:translate-y-1 transition-transform"></i>
-            </button>
+            <div id="landing-eyebrow">ZyroEditz™ — Director's Vault</div>
+            <div id="landing-line-accent"></div>
+            <h1 class="text-4xl md:text-6xl font-black mb-4 tracking-tight drop-shadow-2xl relative z-10 word-reveal" id="hero-text"></h1>
+            <div id="landing-tagline-bottom">Cinematic Edits · Unmatched Retention · Built for Impact</div>
+        </div>
+        <div id="landing-progress-wrap" class="z-10 pointer-events-none">
+            <div id="landing-progress-bar"></div>
         </div>
     </section>
 
-    <main id="main-website" class="relative z-10 w-full min-h-screen opacity-0 invisible pt-24 pb-12 transition-transform duration-1000 scale-110">
+    <main id="main-website" class="relative z-10 w-full min-h-screen opacity-0 pt-24">
         
         <nav class="fixed top-0 w-full px-6 md:px-12 py-5 flex justify-between items-center bg-ink/80 backdrop-blur-xl border-b border-white/5 z-40 transform -translate-y-full" id="navbar">
-            <div class="text-2xl font-brand font-black tracking-widest uppercase cursor-pointer interactive-element" onclick="scrollToSection('work')" data-hover-color="rgba(73,198,255,0.3)">
+            <div class="text-2xl font-brand font-black tracking-widest cursor-pointer interactive-element" onclick="scrollToSection('work')" data-hover-color="rgba(73,198,255,0.3)">
                 Zyro<span class="text-zyrored">Editz</span><sup style="font-size:0.4em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>
             </div>
             
             <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase font-semibold text-gray-400">
                 <button onclick="scrollToSection('work')" class="hover:text-electric transition-colors interactive-element" data-hover-color="rgba(73,198,255,0.3)">Work</button>
+                <button onclick="scrollToSection('process')" class="hover:text-electric transition-colors interactive-element" data-hover-color="rgba(73,198,255,0.3)">Process</button>
                 <button onclick="scrollToSection('about')" class="hover:text-electric transition-colors interactive-element" data-hover-color="rgba(122,92,255,0.3)">About</button>
-                <button onclick="scrollToSection('reviews')" class="hover:text-electric transition-colors interactive-element" data-hover-color="rgba(255,255,255,0.3)">Reviews</button>
+                <button onclick="scrollToSection('reviews')" class="hover:text-electric transition-colors interactive-element" data-hover-color="rgba(255,255,255,0.3)">Testimonials</button>
             </div>
             
             <a href="/" class="interactive-element px-6 py-2 border border-white/10 rounded-full text-xs tracking-[0.1em] uppercase font-bold hover:bg-white hover:text-black transition-all md:hidden" data-hover-color="rgba(255,255,255,0.3)">
@@ -136,6 +270,14 @@
         </nav>
 
         <section id="work" class="px-6 md:px-12 max-w-7xl mx-auto pt-10 min-h-[90vh] relative z-10">
+            <div class="marquee absolute top-0 -left-[10%] w-[120%] -z-10 opacity-5 pointer-events-none transform -skew-y-3">
+                <div class="marquee-content text-9xl font-black uppercase text-white">
+                    COMMERCIALS • SHORT FILMS • MUSIC VIDEOS • BRAND ACCELERATION • COMMERCIALS • SHORT FILMS • MUSIC VIDEOS • 
+                </div>
+                <div class="marquee-content text-9xl font-black uppercase text-white" aria-hidden="true">
+                    COMMERCIALS • SHORT FILMS • MUSIC VIDEOS • BRAND ACCELERATION • COMMERCIALS • SHORT FILMS • MUSIC VIDEOS • 
+                </div>
+            </div>
             <div class="gsap-reveal">
                 <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
                     <i data-lucide="folder-lock" class="w-4 h-4"></i> Selected Work
@@ -153,9 +295,9 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 auto-rows-[300px] gap-6" id="bento-grid">
+            <div class="grid grid-cols-1 md:grid-cols-3 auto-rows-[220px] md:auto-rows-[300px] gap-4 md:gap-6" id="bento-grid">
                 
-                <div onclick="openVideo('NEON NIGHTS', 'Ads', 'dQw4w9WgXcQ')" data-category="Ads" class="portfolio-item interactive-element bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 md:col-span-2 row-span-2" data-hover-color="rgba(122,92,255,0.6)">
+                <div onclick="openVideo('NEON NIGHTS', 'Ads', 'dQw4w9WgXcQ')" data-category="Ads" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 md:col-span-2 row-span-2" data-hover-color="rgba(122,92,255,0.6)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
                     <div class="absolute inset-0 bg-gradient-to-br from-violet/20 to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
                     <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Neon Nights">
                     <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
@@ -169,7 +311,7 @@
                     </div>
                 </div>
 
-                <div onclick="openVideo('URBAN ECHO', 'Short Film', 'jNQXAC9IVRw')" data-category="Short Film" class="portfolio-item interactive-element bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 row-span-1" data-hover-color="rgba(73,198,255,0.5)">
+                <div onclick="openVideo('URBAN ECHO', 'Short Film', 'jNQXAC9IVRw')" data-category="Short Film" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 row-span-1" data-hover-color="rgba(73,198,255,0.5)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
                     <div class="absolute inset-0 bg-gradient-to-br from-electric/20 to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
                     <img src="https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=500&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Urban Echo">
                     <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
@@ -183,7 +325,7 @@
                     </div>
                 </div>
 
-                <div onclick="openVideo('RHYTHM', 'Reels', 'dQw4w9WgXcQ')" data-category="Reels" class="portfolio-item interactive-element bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 row-span-1" data-hover-color="rgba(157,180,255,0.4)">
+                <div onclick="openVideo('RHYTHM', 'Reels', 'dQw4w9WgXcQ')" data-category="Reels" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 row-span-1" data-hover-color="rgba(157,180,255,0.4)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
                     <div class="absolute inset-0 bg-gradient-to-br from-haze/20 to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
                     <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Rhythm">
                     <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
@@ -197,7 +339,7 @@
                     </div>
                 </div>
 
-                <div onclick="openVideo('SPEED DYNAMICS', 'Ads', 'jNQXAC9IVRw')" data-category="Ads" class="portfolio-item interactive-element bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 md:col-span-2 row-span-1" data-hover-color="rgba(255,255,255,0.2)">
+                <div onclick="openVideo('SPEED DYNAMICS', 'Ads', 'jNQXAC9IVRw')" data-category="Ads" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 md:col-span-2 row-span-1" data-hover-color="rgba(255,255,255,0.2)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
                     <div class="absolute inset-0 bg-gradient-to-r from-midnight to-white/10 opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
                     <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Speed Dynamics">
                     <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
@@ -211,7 +353,7 @@
                     </div>
                 </div>
                 
-                <div onclick="openVideo('VIRAL CUTS', 'Reels', 'dQw4w9WgXcQ')" data-category="Reels" class="portfolio-item interactive-element bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 row-span-1" data-hover-color="rgba(73,198,255,0.4)">
+                <div onclick="openVideo('VIRAL CUTS', 'Reels', 'dQw4w9WgXcQ')" data-category="Reels" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 row-span-1" data-hover-color="rgba(73,198,255,0.4)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
                     <div class="absolute inset-0 bg-gradient-to-br from-electric/20 to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
                     <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=500&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Viral Cuts">
                     <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
@@ -258,9 +400,40 @@
                         <div class="text-xs uppercase tracking-widest text-gray-500 mt-2">Master Exports</div>
                     </div>
                     <div class="p-6 rounded-2xl bg-midnight border border-white/5 group">
-                        <div class="text-4xl font-black text-white group-hover:text-zyrored transition-colors">24h</div>
+                        <div class="text-4xl font-black text-white group-hover:text-violet transition-colors">24h</div>
                         <div class="text-xs uppercase tracking-widest text-gray-500 mt-2">Turnaround Speed</div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="process" class="px-6 md:px-12 max-w-7xl mx-auto relative z-10 py-12 border-t border-white/5 mt-24">
+            <div class="gsap-scroll">
+                <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4"></i> How It Works
+                </div>
+                <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-16">The <span class="text-electric">Process</span></h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="process-step p-6 rounded-2xl bg-midnight border border-white/5 hover:border-electric/30">
+                    <div class="process-num">01</div>
+                    <h3 class="text-lg font-bold text-white mt-3 mb-2">Raw Intake</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">You send the raw footage, references, and a brief. I absorb everything.</p>
+                </div>
+                <div class="process-step p-6 rounded-2xl bg-midnight border border-white/5 hover:border-electric/30">
+                    <div class="process-num">02</div>
+                    <h3 class="text-lg font-bold text-white mt-3 mb-2">Story Mapping</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">I find the narrative thread, map the pacing, and lock in the emotional arc.</p>
+                </div>
+                <div class="process-step p-6 rounded-2xl bg-midnight border border-white/5 hover:border-violet/30">
+                    <div class="process-num">03</div>
+                    <h3 class="text-lg font-bold text-white mt-3 mb-2">Precision Edit</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Color grading, sound design, transitions, VFX — every frame is intentional.</p>
+                </div>
+                <div class="process-step p-6 rounded-2xl bg-midnight border border-white/5 hover:border-haze/30">
+                    <div class="process-num">04</div>
+                    <h3 class="text-lg font-bold text-white mt-3 mb-2">Final Delivery</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">4K master export, platform-optimized cuts, unlimited revisions until perfection.</p>
                 </div>
             </div>
         </section>
@@ -268,48 +441,59 @@
         <hr class="border-white/5 my-24 max-w-7xl mx-auto relative z-10">
 
         <section id="reviews" class="px-6 md:px-12 max-w-7xl mx-auto relative z-10 gsap-scroll">
-            <h2 class="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4">Client <span class="text-violet">Intel</span></h2>
-            <p class="text-gray-400 mb-16">Stories from the editing room. Feedback from directors and brands.</p>
+            <h2 class="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4">Client <span class="text-violet">Testimonials</span></h2>
+            <p class="text-gray-400 mb-16">Words from those who trusted us with their vision.</p>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="interactive-element p-8 rounded-2xl bg-midnight border border-white/5 hover:border-violet/30 transition-all flex flex-col justify-between" data-hover-color="rgba(122,92,255,0.2)">
                     <div>
-                        <i data-lucide="quote" class="w-8 h-8 text-violet/50 mb-6"></i>
-                        <p class="text-gray-300 leading-relaxed mb-8">"Elevated our entire brand identity. The pacing is unmatched and found a story in our messy footage that we didn't even know existed."</p>
+                        <div class="star-row text-sm mb-4">★★★★★</div>
+                        <p class="text-gray-300 leading-relaxed mb-8">"Elevated our entire brand identity. The pacing is unmatched — they found a story in our messy footage that we didn't even know existed. Absolutely world-class work."</p>
                     </div>
                     <div class="border-t border-white/5 pt-4">
-                        <div class="font-bold text-white tracking-wide uppercase text-sm">Marcus Vance</div>
-                        <div class="text-xs text-electric">Creative Director, Apex Agency</div>
+                        <div class="font-bold text-white tracking-wide uppercase text-sm">Vikram Sharma</div>
+                        <div class="text-xs text-violet">Valuable Client</div>
                     </div>
                 </div>
 
                 <div class="interactive-element p-8 rounded-2xl bg-midnight border border-white/5 hover:border-electric/30 transition-all flex flex-col justify-between" data-hover-color="rgba(73,198,255,0.2)">
                     <div>
-                        <i data-lucide="quote" class="w-8 h-8 text-electric/50 mb-6"></i>
-                        <p class="text-gray-300 leading-relaxed mb-8">"The color grading alone made our commercial look like a Hollywood feature. Fast, highly communicative, and technically brilliant."</p>
+                        <div class="star-row text-sm mb-4">★★★★★</div>
+                        <p class="text-gray-300 leading-relaxed mb-8">"The color grading alone made our commercial look like a Hollywood feature. Fast turnaround, highly communicative, and technically brilliant. Will work with them again."</p>
                     </div>
                     <div class="border-t border-white/5 pt-4">
-                        <div class="font-bold text-white tracking-wide uppercase text-sm">Sarah Jenkins</div>
-                        <div class="text-xs text-electric">Head of Marketing, Lumina</div>
+                        <div class="font-bold text-white tracking-wide uppercase text-sm">Priya Desai</div>
+                        <div class="text-xs text-electric">Valuable Client</div>
                     </div>
                 </div>
 
                 <div class="interactive-element p-8 rounded-2xl bg-midnight border border-white/5 hover:border-haze/30 transition-all flex flex-col justify-between" data-hover-color="rgba(157,180,255,0.2)">
                     <div>
-                        <i data-lucide="quote" class="w-8 h-8 text-haze/50 mb-6"></i>
-                        <p class="text-gray-300 leading-relaxed mb-8">"Handed over a hard drive of chaotic documentary footage. What was delivered back was a tightly woven, emotional masterpiece."</p>
+                        <div class="star-row text-sm mb-4">★★★★★</div>
+                        <p class="text-gray-300 leading-relaxed mb-8">"Handed over a hard drive of chaotic documentary footage. What was delivered back was a tightly woven, emotional masterpiece. ZyroEditz doesn't just edit — they direct."</p>
                     </div>
                     <div class="border-t border-white/5 pt-4">
-                        <div class="font-bold text-white tracking-wide uppercase text-sm">David Rossi</div>
-                        <div class="text-xs text-electric">Independent Filmmaker</div>
+                        <div class="font-bold text-white tracking-wide uppercase text-sm">Arjun Malhotra</div>
+                        <div class="text-xs text-haze">Valuable Client</div>
+                    </div>
+                </div>
+
+                <div class="interactive-element p-8 rounded-2xl bg-midnight border border-white/5 hover:border-violet/30 transition-all flex flex-col justify-between" data-hover-color="rgba(122,92,255,0.2)">
+                    <div>
+                        <div class="star-row text-sm mb-4">★★★★★</div>
+                        <p class="text-gray-300 leading-relaxed mb-8">"Our Instagram reels went from 5K to 2M+ views after switching to ZyroEditz. The retention-first editing approach is a game-changer. Every frame screams quality."</p>
+                    </div>
+                    <div class="border-t border-white/5 pt-4">
+                        <div class="font-bold text-white tracking-wide uppercase text-sm">Neha Krishnan</div>
+                        <div class="text-xs text-violet">Valuable Client</div>
                     </div>
                 </div>
             </div>
         </section>
 
         <footer class="mt-32 py-12 border-t border-white/5 text-center flex flex-col items-center relative z-10 bg-midnight">
-            <div class="text-2xl font-brand font-black tracking-widest uppercase mb-4 opacity-80">Zyro<span class="text-zyrored">Editz</span><sup style="font-size:0.4em; vertical-align:super; font-weight:400;">&trade;</sup></div>
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-mono">&copy; 2026 ZyroEditz. All rights reserved.</p>
+            <div class="text-2xl font-brand font-black tracking-widest mb-4 opacity-80">Zyro<span class="text-zyrored">Editz</span><sup style="font-size:0.4em; vertical-align:super; font-weight:400;">&trade;</sup></div>
+            <p class="text-xs text-gray-500 tracking-widest font-mono">&copy; 2026 ZyroEditz&trade;. All rights reserved.</p>
         </footer>
     </main>
 
@@ -345,104 +529,121 @@
             heroContainer.appendChild(span);
         });
 
-        // Intro animation
-        setTimeout(() => {
-            gsap.to(".word-reveal span", {
-                y: 0,
-                opacity: 1,
-                duration: 0.8,
-                stagger: 0.15,
-                ease: "power3.out",
-                onComplete: () => {
-                    gsap.to("#enter-btn", { opacity: 1, y: -10, duration: 1, ease: "power2.out" });
-                }
-            });
-        }, 300);
+        // Set initial state for main-website explicitly via GSAP before animations
+        gsap.set("#main-website", { opacity: 0 });
+        gsap.set("#navbar", { y: -80 });
+        gsap.set(".gsap-reveal > *", { y: 40, opacity: 0 });
 
-        const isPC = window.matchMedia("(pointer: fine)").matches;
+        // Intro animation sequence
+        const introTL = gsap.timeline({ delay: 0.2 });
+        introTL.to("#landing-eyebrow", { opacity: 1, duration: 0.8, ease: "power2.out" });
+        introTL.to("#landing-line-accent", { width: "120px", opacity: 1, duration: 0.6, ease: "power2.out" }, "-=0.3");
+        introTL.to(".word-reveal span", { y: 0, opacity: 1, duration: 0.9, stagger: 0.07, ease: "power3.out" }, "-=0.2");
+        introTL.to("#landing-tagline-bottom", { opacity: 1, duration: 0.8, ease: "power2.out" }, "-=0.4");
+        introTL.to("#landing-progress-bar", { width: "100%", duration: 1.8, ease: "power1.inOut",
+            onComplete: () => openWebsite()
+        }, "-=0.6");
+
+        const isPC = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
         
         if (isPC) {
             const spotlight = document.getElementById('mouse-spotlight');
-            let mouseX = window.innerWidth / 2;
-            let mouseY = window.innerHeight / 2;
-            let defaultColor = "rgba(73, 198, 255, 0.12)"; 
+            let defaultColor = "rgba(73, 198, 255, 0.12)";
             
+            gsap.set(spotlight, { xPercent: -50, yPercent: -50, x: window.innerWidth/2, y: window.innerHeight/2 });
             spotlight.style.background = `radial-gradient(circle, ${defaultColor} 0%, transparent 60%)`;
 
             window.addEventListener('mousemove', (e) => {
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-                if(spotlight.style.opacity == 0) spotlight.style.opacity = 1;
-                gsap.to(spotlight, { x: mouseX, y: mouseY, duration: 0.6, ease: "power3.out" });
-            });
+                if (spotlight.style.opacity == 0) spotlight.style.opacity = 1;
+                gsap.to(spotlight, { x: e.clientX, y: e.clientY, duration: 0.6, ease: "power2.out", overwrite: 'auto' });
+            }, { passive: true });
 
-            const interactives = document.querySelectorAll('.interactive-element');
-            interactives.forEach(el => {
+            document.querySelectorAll('.interactive-element').forEach(el => {
                 el.addEventListener('mouseenter', () => {
                     const hoverColor = el.getAttribute('data-hover-color') || "rgba(73, 198, 255, 0.4)";
-                    gsap.to(spotlight, { width: 600, height: 600, duration: 0.4, ease: "power2.out" });
+                    gsap.to(spotlight, { scale: 1.5, duration: 0.5, ease: "power2.out", overwrite: 'auto' });
                     spotlight.style.background = `radial-gradient(circle, ${hoverColor} 0%, transparent 60%)`;
                 });
                 el.addEventListener('mouseleave', () => {
-                    gsap.to(spotlight, { width: 400, height: 400, duration: 0.6, ease: "power2.out" });
+                    gsap.to(spotlight, { scale: 1, duration: 0.6, ease: "power2.out", overwrite: 'auto' });
                     spotlight.style.background = `radial-gradient(circle, ${defaultColor} 0%, transparent 60%)`;
                 });
             });
         }
 
         function openWebsite() {
-            const tl = gsap.timeline();
+            const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
-            if(isPC) gsap.to("#mouse-spotlight", { opacity: 0, duration: 0.3 });
+            if (isPC) gsap.to("#mouse-spotlight", { opacity: 0, duration: 0.3 });
 
+            // Fade out all landing content
+            tl.to("#landing-content", { opacity: 0, scale: 0.95, duration: 0.5, ease: "power2.out" }, 0);
+            tl.to("#landing-progress-wrap", { opacity: 0, duration: 0.3 }, 0);
+            // Shutter open animation
+            tl.to("#shutter-top", { scaleY: 0, duration: 1.2, ease: "expo.inOut" }, 0.1);
+            tl.to("#shutter-bottom", { scaleY: 0, duration: 1.2, ease: "expo.inOut" }, 0.1);
+            
             tl.to("#landing-view", {
-                y: "-100%",
-                opacity: 0,
-                duration: 0.8,
-                ease: "power3.inOut",
+                duration: 0.1,
                 onComplete: () => {
                     document.getElementById("landing-view").style.display = "none";
-                    document.getElementById("main-website").style.visibility = "visible";
                     document.body.style.overflowY = "auto";
-                    if(isPC) gsap.to("#mouse-spotlight", { opacity: 1, duration: 0.5 });
+                    if (isPC) gsap.to("#mouse-spotlight", { opacity: 1, duration: 0.6 });
+                    // Trigger bento animations AFTER shutter opens
+                    setupScrollAnimations();
                 }
-            });
+            }, 1.0);
 
-            tl.to("#main-website", { opacity: 1, scale: 1, duration: 0.8, ease: "power3.out" }, "-=0.4");
-            tl.to("#navbar", { y: 0, duration: 0.8, ease: "power3.out" }, "-=0.6");
-
-            tl.fromTo(".gsap-reveal > *", 
-                { y: 40, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out" },
-                "-=0.6"
-            );
-
-            tl.fromTo(".bento-item", 
-                { y: 60, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out" },
-                "-=0.6"
-            );
-            
-            setupScrollAnimations();
+            // Reveal main site elements in sync with shutters opening
+            tl.to("#main-website", { opacity: 1, duration: 0.8 }, 0.4);
+            tl.to("#navbar", { y: 0, duration: 0.8 }, 0.6);
+            tl.to(".gsap-reveal > *", { y: 0, opacity: 1, duration: 0.8, stagger: 0.08 }, 0.6);
         }
 
         function setupScrollAnimations() {
-            const elements = document.querySelectorAll('.gsap-scroll');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        gsap.fromTo(entry.target, 
-                            { y: 50, opacity: 0 },
-                            { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
-                        );
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.1 });
+            gsap.registerPlugin(ScrollTrigger);
 
-            elements.forEach(el => {
-                el.style.opacity = '0';
-                observer.observe(el);
+            // Bento items: staggered entrance as they enter viewport
+            gsap.utils.toArray('.bento-item').forEach((item) => {
+                ScrollTrigger.create({
+                    trigger: item,
+                    start: "top 92%",
+                    onEnter: () => {
+                        gsap.to(item, {
+                            y: 0,
+                            opacity: 1,
+                            duration: 0.9,
+                            ease: "power3.out",
+                            overwrite: true
+                        });
+                    },
+                    once: true
+                });
+            });
+
+            // Scroll sections: about, reviews
+            gsap.utils.toArray('.gsap-scroll').forEach(el => {
+                gsap.set(el, { y: 50, opacity: 0 });
+                ScrollTrigger.create({
+                    trigger: el,
+                    start: "top 88%",
+                    onEnter: () => {
+                        gsap.to(el, { y: 0, opacity: 1, duration: 1, ease: "power3.out", overwrite: true });
+                    },
+                    once: true
+                });
+            });
+
+            // Process steps: staggered
+            gsap.utils.toArray('.process-step').forEach((step, i) => {
+                ScrollTrigger.create({
+                    trigger: step,
+                    start: "top 90%",
+                    onEnter: () => {
+                        gsap.to(step, { y: 0, opacity: 1, duration: 0.8, delay: i * 0.1, ease: "power3.out", overwrite: true });
+                    },
+                    once: true
+                });
             });
         }
 
