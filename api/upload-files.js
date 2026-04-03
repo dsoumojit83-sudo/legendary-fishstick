@@ -131,6 +131,7 @@ const corsReady = (async () => {
                         'x-amz-content-sha256',
                         'x-amz-date',
                         'x-amz-security-token',
+                        'x-amz-checksum-algorithm', // AWS SDK v3 sends this on some node versions
                     ],
                     exposeHeaders: [
                         'ETag',
@@ -173,6 +174,12 @@ module.exports = async function (req, res) {
     // On cold start, the first request waits here until b2_update_bucket finishes.
     // Subsequent requests in the same instance resolve instantly (promise is cached).
     const corsOk = await corsReady;
+
+    // If CORS setup failed on cold start, refuse to issue presigned URLs.
+    // Uploading without CORS rules on B2 would silently fail in the browser.
+    if (!corsOk) {
+        return res.status(503).json({ error: 'Storage CORS not ready. Please retry in a few seconds.' });
+    }
 
     const { orderId, fileName, contentType } = req.body || {};
     if (!orderId || !fileName) {
