@@ -2822,11 +2822,21 @@
                             var ex = gsap.timeline({
                                 onComplete: function () {
                                     pl.style.display = 'none';
-                                    // Clear will-change NOW — preloader is hidden, no visual snap possible
                                     if (logo) { logo.style.willChange = 'auto'; }
                                     if (shadow) { shadow.style.willChange = 'auto'; }
-                                    // FIX: kill all lingering tweens on preloader elements
                                     gsap.killTweensOf([pl, logo, shadow, sub, prog, fc, tc, heat, scan, flare, canvas, lbT, lbB]);
+                                    // ── Hero rack-in fires AFTER preloader is gone ──
+                                    // Moving these here prevents a simultaneous GPU compositor
+                                    // rebuild that snaps the logo on Android Chrome.
+                                    if (isMobile) {
+                                        gsap.set('#home', { opacity: 0.7 });
+                                        gsap.to('#home', { opacity: 1, duration: 0.7, ease: 'power2.out' });
+                                    } else {
+                                        gsap.set('#home', { scale: 1.07, filter: 'blur(10px)', opacity: 0.5 });
+                                        gsap.to('#home', { scale: 1, filter: 'blur(0px)', opacity: 1, duration: 1.3, ease: 'power3.out' });
+                                    }
+                                    gsap.set('nav', { y: -40, opacity: 0 });
+                                    gsap.to('nav', { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out', delay: 0.15 });
                                 }
                             });
                             ex.to([sub, prog, fc, tc, '.pl-corner'], { opacity: 0, duration: 0.28, ease: 'power1.in' }, 0);
@@ -2834,16 +2844,6 @@
                             ex.to(lbB, { scaleY: 0, transformOrigin: 'bottom center', duration: 0.5, ease: 'expo.inOut' }, 0.08);
                             ex.to(canvas, { opacity: 0, duration: 0.35 }, 0.08);
                             ex.to(pl, { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 0.3);
-                            // hero rack-in — skip blur on mobile (forces compositor re-layer = logo snap)
-                            if (isMobile) {
-                                gsap.set('#home', { scale: 1.04, opacity: 0.6 });
-                                gsap.to('#home', { scale: 1, opacity: 1, duration: 1.1, ease: 'power3.out', delay: 0.35 });
-                            } else {
-                                gsap.set('#home', { scale: 1.07, filter: 'blur(10px)', opacity: 0.5 });
-                                gsap.to('#home', { scale: 1, filter: 'blur(0px)', opacity: 1, duration: 1.3, ease: 'power3.out', delay: 0.35 });
-                            }
-                            gsap.set('nav', { y: -45, opacity: 0 });
-                            gsap.to('nav', { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', delay: 0.75 });
                         }
 
                     } catch (e) {
