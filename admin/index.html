@@ -477,6 +477,11 @@
                     <i data-lucide="film" class="w-5 h-5"></i>
                     <span class="font-medium text-sm">Project Vault</span>
                 </button>
+                <button onclick="switchView('portfolio-vault-view', this)"
+                    class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all border border-transparent">
+                    <i data-lucide="layout-template" class="w-5 h-5"></i>
+                    <span class="font-medium text-sm">Portfolio Vault</span>
+                </button>
                 <button onclick="switchView('crm-view', this)"
                     class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all border border-transparent">
                     <i data-lucide="users" class="w-5 h-5"></i>
@@ -1088,6 +1093,35 @@
                     </div>
                 </div>
 
+                <!-- ========== PORTFOLIO VAULT VIEW ========== -->
+                <div id="portfolio-vault-view" class="view-section">
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
+                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Total Entries</div>
+                            <div class="text-3xl font-bold text-white" id="pf-total">0</div>
+                        </div>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-6 border border-white/5 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Portfolio Editor</h3>
+                                <p class="text-xs text-gray-400 mt-1">Manage public `/portfolio` gallery (Data is saved to local storage)</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="exportPortfolioJSON()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-white/10 flex items-center gap-2">
+                                    <i data-lucide="download" class="w-4 h-4"></i> Backup JSON
+                                </button>
+                                <button onclick="openPortfolioModal()" class="px-4 py-2 bg-[#ff1a1a] hover:bg-white text-black rounded-lg text-sm font-bold tracking-widest uppercase transition-colors flex items-center gap-2">
+                                    <i data-lucide="plus" class="w-4 h-4"></i> Edit Vault
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-center py-10 text-gray-500 font-mono text-sm border border-dashed border-white/10 rounded-xl">
+                            Live editing of portfolio/index.html via Admin will be wired later.<br>For now, modify <span class="text-white">c:/Users/dsoum/Downloads/website/portfolio/index.html</span> manually directly with AI.
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ========== BANK LEDGER VIEW ========== -->
                 <div id="ledger-view" class="view-section">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
@@ -1560,7 +1594,8 @@
                 'dashboard-view': 'Command Center',
                 'projects-view': 'Project Vault',
                 'crm-view': 'Client Database',
-                'ledger-view': 'Bank Ledger'
+                'ledger-view': 'Bank Ledger',
+                'portfolio-vault-view': 'Portfolio Vault'
             };
             document.getElementById('header-title').innerText = titles[viewId] || 'Command Center';
 
@@ -3402,8 +3437,12 @@
         document.getElementById('open-sidebar').addEventListener('click', toggleSidebar);
         document.getElementById('close-sidebar').addEventListener('click', toggleSidebar);
         overlay.addEventListener('click', toggleSidebar);
-
+        window.exportPortfolioJSON = function() {
+            showToast('JSON export will be available once connected to live site DB', 'info');
+        };
+        window.openPortfolioModal = function() {
+            showToast('Live editing is currently disabled. Please edit portfolio/index.html manually.', 'info');
+        };
     </script>
 </body>
-
 </html>
