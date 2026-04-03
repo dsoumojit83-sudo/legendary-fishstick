@@ -20,19 +20,27 @@
     <meta name="keywords"
         content="video editing, motion graphics, color grading, cinematic editing, visual effects, post-production">
     <meta name="author" content="Soumojit Das">
-    <link rel="canonical" href="https://zyroeditz.xyz">
+    <link rel="canonical" href="https://zyroeditz.xyz/">
 
-    <meta property="og:title" content="ZyroEditz | Professional Video Editing &amp; Motion Graphics">
+    <meta property="og:title" content="ZyroEditz™ | Professional Video Editing &amp; Motion Graphics">
     <meta property="og:description"
         content="Premium video editing and motion graphics studio for brands that demand excellence.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://zyroeditz.xyz">
-    <meta property="og:image" content="https://zyroeditz.xyz/favicon.png">
-    <meta property="og:image:secure_url" content="https://zyroeditz.xyz/favicon.png">
+    <meta property="og:url" content="https://zyroeditz.xyz/">
+    <meta property="og:image" content="https://zyroeditz.xyz/og-image.png">
+    <meta property="og:image:secure_url" content="https://zyroeditz.xyz/og-image.png">
     <meta property="og:image:type" content="image/png">
-    <meta property="og:image:width" content="128">
-    <meta property="og:image:height" content="128">
-    <meta property="og:site_name" content="ZyroEditz">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="ZyroEditz™ — Professional Video Editing Studio">
+    <meta property="og:site_name" content="ZyroEditz™">
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ZyroEditz™ | Professional Video Editing &amp; Motion Graphics">
+    <meta name="twitter:description" content="Premium video editing and motion graphics studio for brands that demand excellence.">
+    <meta name="twitter:image" content="https://zyroeditz.xyz/og-image.png">
+    <meta name="twitter:image:alt" content="ZyroEditz™ — Professional Video Editing Studio">
 
     <script type="application/ld+json">
     {
@@ -81,9 +89,8 @@
         }
     </style>
 
-    <!-- Favicon: PNG is primary (128x128), ICO is legacy fallback -->
+    <!-- favicon.ico tag removed — no .ico file exists, PNG is fully supported -->
     <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" sizes="128x128" href="/favicon.png">
     <meta name="theme-color" content="#ff1a1a">
 
@@ -384,7 +391,7 @@
         .pl-corner::after  { width: 1px; height: 100%; left: 50%; top: 0; }
         .pl-tl { top: 18px; left: 18px; } .pl-tr { top: 18px; right: 18px; }
         .pl-bl { bottom: 18px; left: 18px; } .pl-br { bottom: 18px; right: 18px; }
-        .pl-fc { position: absolute; bottom: 20px; right: 20px;
+        .pl-fc { position: absolute; bottom: 48px; right: 20px;
             font-family: 'Courier New',monospace; font-size: 10px; letter-spacing: 0.3em;
             color: rgba(255,26,26,0.35); z-index: 9; opacity: 0; }
         .pl-tc { position: absolute; top: 20px; left: 46px;
@@ -408,8 +415,10 @@
             font-family: 'Roboto',sans-serif;
             font-size: clamp(2.2rem,12vw,7.5rem);
             font-weight: 900; letter-spacing: 0.15em; color: #fff; line-height: 1;
-            /* GPU-friendly init: use translate3d so browser promotes to compositor layer immediately */
-            opacity: 0; transform: scale(2.0) translate3d(0,8px,0);
+            /* NO CSS transform here — GSAP owns the matrix fully via gsap.set()
+               Mixing CSS transform + GSAP transform causes a position jump on mobile
+               because GSAP re-parses the matrix and may mis-decode translate3d syntax */
+            opacity: 0;
             text-shadow: none; will-change: transform, opacity;
             -webkit-text-stroke: 0.5px rgba(255,255,255,0.08);
             position: relative; z-index: 5;
@@ -1439,8 +1448,7 @@
                     </div>
                 </div>
 
-                <div class="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/30 to-transparent hidden md:block"
-                    style="top: 50%; transform: translateY(-50%);"></div>
+
             </div>
         </div>
     </section>
@@ -1457,17 +1465,19 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-20">
                 <a href="https://youtube.com/shorts/CQl4JZI6qaI" target="_blank" rel="noopener noreferrer"
-                    class="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm reveal block"
+                    class="group relative overflow-hidden rounded-2xl bg-black/50 reveal block"
                     aria-label="View YouTube Shorts portfolio item">
-                    <div class="aspect-video relative overflow-hidden">
+                    <!-- aspect-[4/3] on mobile matches YouTube hqdefault native ratio (480x360)
+                         aspect-video (16:9) on desktop for wider display -->
+                    <div class="aspect-[4/3] md:aspect-video relative overflow-hidden">
                         <img src="https://img.youtube.com/vi/CQl4JZI6qaI/hqdefault.jpg"
                             alt="YouTube Shorts - ZyroEditz portfolio showcase"
-                            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            class="w-full h-full object-cover object-center md:group-hover:scale-105 transition-transform duration-700"
                             loading="eager" fetchpriority="high" width="480" height="360" decoding="sync">
 
                         <div class="absolute inset-0 flex items-center justify-center">
                             <div
-                                class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:bg-[#ff1a1a]/20 group-hover:border-[#ff1a1a]/40 transition-all duration-300 transform group-hover:scale-110">
+                                class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center md:group-hover:bg-[#ff1a1a]/20 md:group-hover:border-[#ff1a1a]/40 transition-all duration-300 transform md:group-hover:scale-110">
                                 <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z" />
                                 </svg>
@@ -1475,7 +1485,7 @@
                         </div>
 
                         <div
-                            class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            class="absolute inset-0 rounded-2xl opacity-0 md:group-hover:opacity-100 transition-opacity duration-500">
                             <div
                                 class="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#ff1a1a]/20 via-transparent to-[#ff1a1a]/20 blur-xl">
                             </div>
@@ -1491,12 +1501,12 @@
                 </a>
 
                 <a href="https://youtube.com/shorts/sAXRjhSiDoA" target="_blank" rel="noopener noreferrer"
-                    class="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm reveal block"
+                    class="group relative overflow-hidden rounded-2xl bg-black/50 reveal block"
                     aria-label="View YouTube Shorts portfolio item">
-                    <div class="aspect-video relative overflow-hidden">
+                    <div class="aspect-[4/3] md:aspect-video relative overflow-hidden">
                         <img src="https://img.youtube.com/vi/sAXRjhSiDoA/hqdefault.jpg"
                             alt="YouTube Shorts - ZyroEditz portfolio showcase"
-                            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            class="w-full h-full object-cover object-center md:group-hover:scale-105 transition-transform duration-700"
                             loading="lazy" width="480" height="360" decoding="async">
 
                         <div class="absolute inset-0 flex items-center justify-center">
@@ -1526,7 +1536,7 @@
             </div>
 
             <!-- Portfolio CTA Banner -->
-            <div class="mt-16 relative overflow-hidden rounded-2xl border border-white/8 bg-black/60 text-center reveal"
+            <div class="mt-8 md:mt-16 relative overflow-hidden rounded-2xl bg-black/60 text-center reveal"
                 style="padding: clamp(2rem,6vw,3.5rem) clamp(1.25rem,5vw,3.5rem);">
                 <!-- subtle top edge accent only — no red bg -->
                 <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/30 to-transparent"></div>
