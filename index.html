@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOUMOJIT DAS&trade; | Professional Video Editing & Motion Graphics Studio</title>
+    <title>ZyroEditz&trade; | Professional Video Editing & Motion Graphics Studio</title>
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-DWVYLJBCLR"></script>
     <script>
@@ -16,29 +16,38 @@
     </script>
 
     <meta name="description"
-        content="SOUMOJIT DAS - Professional video editing and motion graphics studio. Premium cinematic editing, color grading, and visual effects for brands that demand excellence.">
+        content="ZyroEditz - Professional video editing and motion graphics studio. Premium cinematic editing, color grading, and visual effects for brands that demand excellence.">
     <meta name="keywords"
         content="video editing, motion graphics, color grading, cinematic editing, visual effects, post-production">
     <meta name="author" content="Soumojit Das">
-    <link rel="canonical" href="https://zyroeditz.xyz">
+    <link rel="canonical" href="https://zyroeditz.xyz/">
 
-    <meta property="og:title" content="SOUMOJIT DAS | Professional Video Editing &amp; Motion Graphics">
+    <meta property="og:title" content="ZyroEditz™ | Professional Video Editing &amp; Motion Graphics">
     <meta property="og:description"
         content="Premium video editing and motion graphics studio for brands that demand excellence.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://zyroeditz.xyz">
-    <meta property="og:image" content="https://zyroeditz.xyz/favicon.png">
-    <meta property="og:image:secure_url" content="https://zyroeditz.xyz/favicon.png">
+    <meta property="og:url" content="https://zyroeditz.xyz/">
+    <meta property="og:image" content="https://zyroeditz.xyz/og-image.png">
+    <meta property="og:image:secure_url" content="https://zyroeditz.xyz/og-image.png">
     <meta property="og:image:type" content="image/png">
-    <meta property="og:image:width" content="128">
-    <meta property="og:image:height" content="128">
-    <meta property="og:site_name" content="SOUMOJIT DAS">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="ZyroEditz™ — Professional Video Editing Studio">
+    <meta property="og:site_name" content="ZyroEditz™">
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ZyroEditz™ | Professional Video Editing &amp; Motion Graphics">
+    <meta name="twitter:description"
+        content="Premium video editing and motion graphics studio for brands that demand excellence.">
+    <meta name="twitter:image" content="https://zyroeditz.xyz/og-image.png">
+    <meta name="twitter:image:alt" content="ZyroEditz™ — Professional Video Editing Studio">
 
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "CreativeAgency",
-      "name": "SOUMOJIT DAS",
+      "name": "ZyroEditz",
       "description": "Professional video editing and motion graphics studio",
       "url": "https://zyroeditz.xyz",
       "email": "zyroeditz.official@gmail.com",
@@ -68,7 +77,8 @@
     <!-- Roboto: synchronous/blocking load — headings, bold and brand name never flicker -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@700;900&display=block">
     <!-- Outfit: display=optional — shows text immediately in fallback; uses Outfit if it arrives within ~100ms -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=optional">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=optional">
 
     <style>
         .reveal {
@@ -80,9 +90,8 @@
         }
     </style>
 
-    <!-- Favicon: PNG is primary (128x128), ICO is legacy fallback -->
+    <!-- favicon.ico tag removed — no .ico file exists, PNG is fully supported -->
     <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" sizes="128x128" href="/favicon.png">
     <meta name="theme-color" content="#ff1a1a">
 
@@ -125,19 +134,14 @@
         }
 
         ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #050505;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #ff1a1a;
-            border-radius: 3px;
+            display: none;
+            width: 0;
+            background: transparent;
         }
 
         html {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
             scroll-behavior: smooth;
         }
 
@@ -362,47 +366,331 @@
             perspective: 400px;
         }
 
+        /* ============================================================
+           MONOLITH AWAKENING — Cinematic Preloader v4
+        ============================================================ */
         #preloader {
             position: fixed;
             inset: 0;
             z-index: 99999;
             background: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
-        }
-
-        /* Brand name: Roboto (same as all bold/heading text) */
-        .brand-name {
-            font-family: 'Roboto', sans-serif !important;
-        }
-
-        .preloader-logo {
-            font-size: clamp(2.5rem, 8vw, 5rem);
-            font-weight: 900;
-            letter-spacing: -0.05em;
-            font-family: 'Roboto', sans-serif;
-        }
-
-        .preloader-logo span {
-            color: #ff1a1a;
-        }
-
-        .preloader-bar {
-            width: 180px;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.08);
             overflow: hidden;
         }
 
-        .preloader-fill {
+        #plCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0;
+        }
+
+        .pl-lb {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            background: #000;
+            z-index: 8;
+        }
+
+        .pl-lb-t {
+            top: 0;
+            height: 13vh;
+        }
+
+        .pl-lb-b {
+            bottom: 0;
+            height: 13vh;
+        }
+
+        .pl-vig {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: radial-gradient(ellipse 65% 65% at 50% 50%, transparent 20%, rgba(0, 0, 0, 0.95) 100%);
+        }
+
+        .pl-heat {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(ellipse 55% 30% at 50% 50%, rgba(139, 0, 0, 0.14) 0%, transparent 70%);
+        }
+
+        .pl-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            z-index: 9;
+            opacity: 0;
+        }
+
+        .pl-corner::before,
+        .pl-corner::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 26, 26, 0.55);
+        }
+
+        .pl-corner::before {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+        }
+
+        .pl-corner::after {
+            width: 1px;
+            height: 100%;
+            left: 50%;
+            top: 0;
+        }
+
+        .pl-tl {
+            top: 18px;
+            left: 18px;
+        }
+
+        .pl-tr {
+            top: 18px;
+            right: 18px;
+        }
+
+        .pl-bl {
+            bottom: 18px;
+            left: 18px;
+        }
+
+        .pl-br {
+            bottom: 18px;
+            right: 18px;
+        }
+
+        .pl-fc {
+            position: absolute;
+            bottom: 48px;
+            right: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            letter-spacing: 0.3em;
+            color: rgba(255, 26, 26, 0.35);
+            z-index: 9;
+            opacity: 0;
+        }
+
+        .pl-tc {
+            position: absolute;
+            top: 20px;
+            left: 46px;
+            font-family: 'Courier New', monospace;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.08);
+            z-index: 9;
+            opacity: 0;
+        }
+
+        .pl-center {
+            /* Flex centering wrapper — GSAP never touches this element.
+               The logo sits inside it; centering is always guaranteed. */
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .pl-logo-shadow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 4;
+            white-space: nowrap;
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(2.2rem, 12vw, 7.5rem);
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            color: #8b0000;
+            /* static blur only — GSAP never animates filter on mobile */
+            filter: blur(28px);
+            opacity: 0;
+            user-select: none;
+            pointer-events: none;
+            will-change: opacity;
+            /* only opacity changes */
+        }
+
+        .pl-logo {
+            /* position:relative inside flex — GSAP animates scale+opacity only.
+               The flex parent handles ALL centering. No CSS transform on this element.
+               GSAP has zero conflicts. */
+            position: relative;
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(2.2rem, 12vw, 7.5rem);
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            color: #fff;
+            line-height: 1;
+            white-space: nowrap;
+            opacity: 0;
+            text-shadow: none;
+            will-change: transform, opacity;
+            -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.08);
+            z-index: 5;
+        }
+
+        /* blur wrapper: NOT using backdrop-filter — causes compositor layer on mobile */
+        #plLogoBlur {
+            display: none;
+        }
+
+        .pl-logo span {
+            color: #ff1a1a;
+            -webkit-text-stroke: 0.5px rgba(255, 26, 26, 0.15);
+        }
+
+        .pl-sub {
+            /* ABSOLUTE positioned below logo center — cannot affect logo position */
+            position: absolute;
+            top: calc(50% + clamp(1.4rem, 7vw, 4.8rem));
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 9px;
+            letter-spacing: 0.65em;
+            text-transform: uppercase;
+            color: transparent;
+            font-weight: 300;
+            opacity: 0;
+            z-index: 5;
+            white-space: nowrap;
+        }
+
+        /* anamorphic lens flare — sharp, not glowy */
+        .pl-flare {
+            position: absolute;
+            top: 50%;
+            left: -110%;
+            width: 110%;
+            height: 1px;
+            z-index: 6;
+            background: linear-gradient(90deg,
+                    transparent 0%, rgba(255, 255, 255, 0.01) 10%,
+                    rgba(255, 255, 255, 0.8) 48%, #fff 50%, rgba(255, 255, 255, 0.8) 52%,
+                    rgba(255, 255, 255, 0.01) 90%, transparent 100%);
+            box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.2);
+            opacity: 0;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .pl-flare::after {
+            content: '';
+            position: absolute;
+            top: -20vh;
+            left: 50%;
+            width: 1px;
+            height: 40vh;
+            background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.18) 45%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.18) 55%, transparent);
+            transform: translateX(-50%);
+        }
+
+        .pl-glint {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #fff;
+            box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.9);
+            z-index: 6;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pl-prog {
+            position: absolute;
+            bottom: 46px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            opacity: 0;
+        }
+
+        .pl-bar-w {
+            width: 140px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.04);
+            overflow: hidden;
+        }
+
+        .pl-bar-f {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, #ff1a1a, #ff6060);
-            transition: width 0.05s linear;
+            background: linear-gradient(90deg, #8b0000, #ff1a1a);
+            transition: width 0.08s linear;
         }
+
+        .pl-pct {
+            font-family: 'Courier New', monospace;
+            font-size: 9px;
+            letter-spacing: 0.3em;
+            color: rgba(255, 26, 26, 0.35);
+        }
+
+        .pl-scan {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            z-index: 3;
+            background: linear-gradient(90deg, transparent, rgba(255, 26, 26, 0.12), transparent);
+            animation: plScan 4s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes plScan {
+            0% {
+                top: 10%;
+                opacity: 0
+            }
+
+            20% {
+                opacity: 0.2
+            }
+
+            80% {
+                opacity: 0.2
+            }
+
+            100% {
+                top: 90%;
+                opacity: 0
+            }
+        }
+
+        /* breathing glow — for post-settle */
+        @keyframes plBreathe {
+
+            0%,
+            100% {
+                text-shadow: 0 0 18px rgba(255, 26, 26, 0.35), 0 0 40px rgba(139, 0, 0, 0.2);
+            }
+
+            50% {
+                text-shadow: 0 0 30px rgba(255, 26, 26, 0.55), 0 0 70px rgba(139, 0, 0, 0.3);
+            }
+        }
+
 
         #scrollProgress {
             position: fixed;
@@ -789,13 +1077,172 @@
         /* backdrop-filter triggers a compositor layer on EVERY element that uses it. */
         /* On mobile GPUs this causes dropped frames and battery drain. */
         @media (max-width: 767px) {
+
             .service-card,
             #chatbotWindow,
             #mobileMenu {
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
             }
+
+            /* ── INPUT ZOOM PREVENTION (iOS Safari) ──────────────────────────
+               iOS zooms the viewport when an input has font-size < 16px.
+               Force 16px on ALL inputs, selects, textareas site-wide. */
+            input,
+            select,
+            textarea,
+            .input-field {
+                font-size: 16px !important;
+            }
+
+            /* ── SVG will-change strip ────────────────────────────────────────
+               The global svg{} rule sets will-change:transform on every SVG.
+               On mobile this creates hundreds of compositor layers — pure waste.
+               Override to auto so the GPU only promotes layers that actually move. */
+            svg {
+                will-change: auto !important;
+            }
+
+            /* ── Hero H1 size cap for narrow phones (≤375px) ─────────────────
+               --text-9xl goes up to 7.5rem but on 320px that overflows.
+               Clamp it tighter for mobile viewports. */
+            :root {
+                --text-9xl: clamp(3rem, 15vw, 4.5rem);
+                --text-8xl: clamp(2.5rem, 12vw, 3.75rem);
+            }
+
+            /* ── Tagline: prevent overflow + improve legibility ───────────────
+               letter-spacing:0.5em makes the tagline very wide on small screens. */
+            #home p[style*="letter-spacing"] {
+                letter-spacing: 0.2em !important;
+                word-break: break-word;
+                font-size: clamp(0.6rem, 3vw, 1rem) !important;
+            }
+
+            /* ── Footer nav: wrap on small screens ───────────────────────────
+               The footer link row has gap-6 and 5 links — overflows on 375px. */
+            footer .flex.items-center.gap-6 {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.75rem;
+            }
+
+            /* ── Chatbot window: safe-area inset for iPhone notch/home bar ─── */
+            #chatbotWindow {
+                bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            /* ── Pricing card labels: allow wrap on 2-col grid ───────────────
+               whitespace-nowrap on the Short Form label clips on small phones. */
+            .price-card .text-\[10px\] {
+                white-space: normal !important;
+            }
+
+            /* ── SCROLL STUTTER FIX: kill heavy fixed compositor layers on mobile ──
+               noise, grid-bg, and the cinematic canvas each create a GPU compositor
+               layer. On mobile this fights the scroll compositor and causes frame drops.
+               Hide them — the background color + vignette still looks great. */
+            .noise,
+            .grid-bg {
+                display: none !important;
+            }
+
+            #cinematicCanvas {
+                display: none !important;
+            }
+
+            /* ── Force momentum (inertia) scrolling on iOS ── */
+            html,
+            body {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* ── Prevent orbs from creating compositor layers during scroll ── */
+            .orb {
+                will-change: auto !important;
+                filter: none !important;
+                opacity: 0 !important;
+                pointer-events: none;
+            }
         }
+
+        /* ── Scroll-to-top: always red on mobile ─────────────────────────────
+           Desktop uses hover:bg-white for the color-flip effect.
+           On mobile that hover state can stick after a tap — force red always. */
+        @media (max-width: 767px) {
+
+            #scrollTopBtn,
+            #scrollTopBtn:active,
+            #scrollTopBtn:focus {
+                background-color: #ff1a1a !important;
+            }
+        }
+
+        /* ── Chatbot input shake animation ───────────────────────────────────
+           Fires when user submits an invalid name / email / phone.            */
+        @keyframes wiz-shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-6px);
+            }
+
+            40% {
+                transform: translateX(6px);
+            }
+
+            60% {
+                transform: translateX(-4px);
+            }
+
+            80% {
+                transform: translateX(4px);
+            }
+        }
+
+        .wiz-shake {
+            animation: wiz-shake 0.35s ease;
+        }
+
+        /* ── Payment redirect overlay ────────────────────────────────────────
+           Full-screen dark screen with pulsing ring — shown when Cashfree SDK
+           is initialising so the user never sees a white browser flash.       */
+        #payRedirectOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #050505;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        #payRedirectOverlay.active {
+            display: flex;
+        }
+
+        .pay-redirect-ring {
+            width: 52px;
+            height: 52px;
+            border: 3px solid rgba(255, 26, 26, 0.2);
+            border-top-color: #ff1a1a;
+            border-radius: 50%;
+            animation: yt-spin 0.9s linear infinite;
+        }
+
+        .pay-redirect-label {
+            font-size: 12px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
+        }
+
         /* ===== END MOBILE PERFORMANCE ===== */
     </style>
 
@@ -825,10 +1272,36 @@
     <div class="custom-cursor-dot" id="customCursorDot"></div>
 
     <div id="preloader" aria-hidden="true">
-        <div class="preloader-logo tracking-tight">SOUMOJIT <span class="text-[#ff1a1a]">DAS</span><sup style="font-size:0.38em; vertical-align:super; letter-spacing:normal; -webkit-text-fill-color:#ffffff; color:#ffffff; font-weight:400;">&trade;</sup></div>
-        <div class="preloader-bar">
-            <div class="preloader-fill" id="preloaderFill"></div>
+        <canvas id="plCanvas"></canvas>
+        <div class="pl-vig"></div>
+        <div class="pl-heat" id="plHeat"></div>
+        <div class="pl-lb pl-lb-t" id="plLbT"></div>
+        <div class="pl-lb pl-lb-b" id="plLbB"></div>
+        <div class="pl-corner pl-tl"></div>
+        <div class="pl-corner pl-tr"></div>
+        <div class="pl-corner pl-bl"></div>
+        <div class="pl-corner pl-br"></div>
+        <div class="pl-fc" id="plFC">001</div>
+        <div class="pl-tc" id="plTC">00:00:00:00</div>
+        <div class="pl-flare" id="plFlare"></div>
+        <div class="pl-glint" id="plG1"></div>
+        <div class="pl-glint" id="plG2"></div>
+        <div class="pl-glint" id="plG3"></div>
+        <!-- depth shadow behind logo -->
+        <div class="pl-logo-shadow" id="plShadow">ZyroEditz</div>
+        <div class="pl-center">
+            <div class="pl-logo" id="plLogo">Zyro<span>Editz</span><sup
+                    style="font-size:0.35em;vertical-align:super;letter-spacing:normal;opacity:0.5;font-weight:400;">&#8482;</sup>
+            </div>
         </div>
+        <div class="pl-sub" id="plSub">Speed &middot; Motion &middot; Precision</div>
+        <div class="pl-prog" id="plProg">
+            <div class="pl-bar-w">
+                <div class="pl-bar-f" id="preloaderFill"></div>
+            </div>
+            <div class="pl-pct" id="plPct">0%</div>
+        </div>
+        <div class="pl-scan" id="plScan"></div>
     </div>
     <div id="scrollProgress" aria-hidden="true"></div>
     <div class="scanlines" aria-hidden="true"></div>
@@ -852,8 +1325,10 @@
 
     <nav
         class="fixed top-0 left-0 w-full z-50 px-8 py-5 flex justify-between items-center backdrop-blur-md bg-black/30">
-        <a href="#home" class="text-xl font-bold tracking-tight hover:text-[#ff1a1a] transition-colors brand-name">SOUMOJIT <span
-                class="text-[#ff1a1a]">DAS</span><sup style="font-size:0.4em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></a>
+        <a href="#home"
+            class="text-xl font-bold tracking-tight hover:text-[#ff1a1a] transition-colors brand-name">Zyro<span
+                class="text-[#ff1a1a]">Editz</span><sup
+                style="font-size:0.4em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></a>
 
         <div class="hidden md:flex items-center gap-8">
             <a href="#home"
@@ -862,6 +1337,8 @@
                 class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">About</a>
             <a href="#services"
                 class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">Services</a>
+            <a href="#portfolio"
+                class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link text-[#ff1a1a]/90 hover:text-[#ff1a1a]">Portfolio</a>
 
             <a href="#contact"
                 class="text-sm uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link">Contact</a>
@@ -869,14 +1346,16 @@
 
         <a href="mailto:zyroeditz.official@gmail.com"
             class="hidden md:block px-6 py-2.5 border border-white/20 text-xs uppercase tracking-widest hover:border-[#ff1a1a] hover:text-[#ff1a1a] transition-all magnetic-btn"
-            rel="noopener noreferrer" aria-label="Send email to SOUMOJIT DAS">Let's Talk</a>
+            rel="noopener noreferrer" aria-label="Send email to ZyroEditz">Let's Talk</a>
 
         <!-- UPDATED: Hamburger button with animated bars -->
         <button class="md:hidden w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="mobileMenuToggle"
             aria-label="Toggle mobile menu" aria-expanded="false">
-            <span id="bar1" class="w-6 h-0.5 bg-white block origin-center" style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
+            <span id="bar1" class="w-6 h-0.5 bg-white block origin-center"
+                style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
             <span id="bar2" class="w-6 h-0.5 bg-white block" style="transition: opacity 0.25s ease;"></span>
-            <span id="bar3" class="w-6 h-0.5 bg-white block origin-center" style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
+            <span id="bar3" class="w-6 h-0.5 bg-white block origin-center"
+                style="transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;"></span>
         </button>
     </nav>
 
@@ -890,12 +1369,14 @@
             class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">About</a>
         <a href="#services"
             class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Services</a>
+        <a href="#portfolio"
+            class="text-3xl uppercase tracking-widest text-[#ff1a1a]/90 hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Portfolio</a>
 
         <a href="#contact"
             class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Contact</a>
     </div>
 
-    <section id="home" class="min-h-screen flex items-center justify-center relative z-10 px-6">
+    <section id="home" class="min-h-screen flex items-center justify-center relative z-10 px-6" style="will-change: transform, filter, opacity;">
         <div class="text-center max-w-4xl">
             <div
                 class="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 mb-8 mt-24 reveal">
@@ -904,12 +1385,14 @@
                         class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
                     <span id="avail-dot" class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
                 </span>
-                <span id="avail-text" class="text-xs uppercase tracking-widest text-gray-300">Available for projects</span>
+                <span id="avail-text" class="text-xs uppercase tracking-widest text-gray-300">Available for
+                    projects</span>
             </div>
 
             <h1 class="reveal brand-name"
                 style="font-size: var(--text-9xl); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 1.5rem; background: linear-gradient(to bottom, #fff, #fff, rgba(255,255,255,0.2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                SOUMOJIT <span style="color: #ff1a1a; -webkit-text-fill-color: #ff1a1a;">DAS</span><sup style="font-size:0.3em; vertical-align:super; letter-spacing:normal; -webkit-text-fill-color:#aaaaaa; color:#aaaaaa; font-weight:300; position:relative; top:-0.1em;">&trade;</sup>
+                Zyro<span style="color: #ff1a1a; -webkit-text-fill-color: #ff1a1a;">Editz</span><sup
+                    style="font-size:0.3em; vertical-align:super; letter-spacing:normal; -webkit-text-fill-color:#aaaaaa; color:#aaaaaa; font-weight:300; position:relative; top:-0.1em;">&trade;</sup>
             </h1>
 
             <p class="reveal text-lg md:text-2xl font-light text-gray-400 uppercase mb-6 text-center"
@@ -961,7 +1444,9 @@
                     class="text-[#ff1a1a]">Excellence</span></h2>
             <p class="reveal"
                 style="color: rgba(255,255,255,0.5); font-size: var(--text-base); max-width: 48rem; margin: 0 auto; line-height: 1.6;">
-                SOUMOJIT DAS<sup style="font-size:0.55em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup> is more than an edit studio. We are visual architects, engineering emotion through every
+                ZyroEditz<sup
+                    style="font-size:0.55em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>
+                is more than an edit studio. We are visual architects, engineering emotion through every
                 frame.<br>
                 Specializing in cinematic editing, color grading, and motion graphics for forward-thinking brands.
                 <br><br>
@@ -1083,12 +1568,16 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full lg:w-2/3">
                     <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5"
                         data-service="Short Form" data-price="200">
-                        <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider whitespace-nowrap">Short Form</div>
+                        <div
+                            class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider whitespace-nowrap">
+                            Short Form</div>
                         <div class="text-white font-bold text-lg">₹200</div>
                     </div>
                     <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5"
                         data-service="Long Form" data-price="500">
-                        <div class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider whitespace-nowrap">Long Form</div>
+                        <div
+                            class="text-[10px] text-gray-500 uppercase mb-1 font-semibold tracking-wider whitespace-nowrap">
+                            Long Form</div>
                         <div class="text-white font-bold text-lg">₹500</div>
                     </div>
                     <div class="price-card cursor-pointer text-center p-4 rounded-xl bg-black/40 border border-white/5"
@@ -1205,13 +1694,12 @@
                     </div>
                 </div>
 
-                <div class="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/30 to-transparent hidden md:block"
-                    style="top: 50%; transform: translateY(-50%);"></div>
+
             </div>
         </div>
     </section>
 
-    <section class="relative z-10 px-6 py-24">
+    <section id="portfolio" class="relative z-10 px-6 py-24">
         <div class="max-w-6xl mx-auto">
             <div class="text-center reveal">
                 <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">Portfolio</p>
@@ -1223,17 +1711,19 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-20">
                 <a href="https://youtube.com/shorts/CQl4JZI6qaI" target="_blank" rel="noopener noreferrer"
-                    class="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm reveal block"
+                    class="group relative overflow-hidden rounded-2xl bg-black/50 reveal block"
                     aria-label="View YouTube Shorts portfolio item">
-                    <div class="aspect-video relative overflow-hidden">
+                    <!-- aspect-[4/3] on mobile matches YouTube hqdefault native ratio (480x360)
+                         aspect-video (16:9) on desktop for wider display -->
+                    <div class="aspect-[4/3] md:aspect-video relative overflow-hidden">
                         <img src="https://img.youtube.com/vi/CQl4JZI6qaI/hqdefault.jpg"
-                            alt="YouTube Shorts - SOUMOJIT DAS portfolio showcase"
-                            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            alt="YouTube Shorts - ZyroEditz portfolio showcase"
+                            class="w-full h-full object-cover object-center md:group-hover:scale-105 transition-transform duration-700"
                             loading="eager" fetchpriority="high" width="480" height="360" decoding="sync">
 
                         <div class="absolute inset-0 flex items-center justify-center">
                             <div
-                                class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:bg-[#ff1a1a]/20 group-hover:border-[#ff1a1a]/40 transition-all duration-300 transform group-hover:scale-110">
+                                class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center md:group-hover:bg-[#ff1a1a]/20 md:group-hover:border-[#ff1a1a]/40 transition-all duration-300 transform md:group-hover:scale-110">
                                 <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z" />
                                 </svg>
@@ -1241,7 +1731,7 @@
                         </div>
 
                         <div
-                            class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            class="absolute inset-0 rounded-2xl opacity-0 md:group-hover:opacity-100 transition-opacity duration-500">
                             <div
                                 class="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#ff1a1a]/20 via-transparent to-[#ff1a1a]/20 blur-xl">
                             </div>
@@ -1257,12 +1747,12 @@
                 </a>
 
                 <a href="https://youtube.com/shorts/sAXRjhSiDoA" target="_blank" rel="noopener noreferrer"
-                    class="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm reveal block"
+                    class="group relative overflow-hidden rounded-2xl bg-black/50 reveal block"
                     aria-label="View YouTube Shorts portfolio item">
-                    <div class="aspect-video relative overflow-hidden">
+                    <div class="aspect-[4/3] md:aspect-video relative overflow-hidden">
                         <img src="https://img.youtube.com/vi/sAXRjhSiDoA/hqdefault.jpg"
-                            alt="YouTube Shorts - SOUMOJIT DAS portfolio showcase"
-                            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            alt="YouTube Shorts - ZyroEditz portfolio showcase"
+                            class="w-full h-full object-cover object-center md:group-hover:scale-105 transition-transform duration-700"
                             loading="lazy" width="480" height="360" decoding="async">
 
                         <div class="absolute inset-0 flex items-center justify-center">
@@ -1289,6 +1779,30 @@
                             and crisp audio.</p>
                     </div>
                 </a>
+            </div>
+
+            <!-- Portfolio CTA Banner -->
+            <div class="mt-8 md:mt-16 relative overflow-hidden rounded-2xl bg-black/60 text-center reveal"
+                style="padding: clamp(2rem,6vw,3.5rem) clamp(1.25rem,5vw,3.5rem);">
+                <!-- subtle top edge accent only — no red bg -->
+                <div
+                    class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff1a1a]/30 to-transparent">
+                </div>
+                <div class="relative z-10 max-w-xl mx-auto">
+                    <p class="text-xs uppercase tracking-[0.4em] text-[#ff1a1a] mb-3 font-bold">Full Showcase</p>
+                    <h3 class="text-2xl md:text-4xl font-bold text-white mb-4 leading-tight">See the Complete Director's
+                        Vault</h3>
+                    <p class="text-gray-400 text-sm md:text-base mb-8 leading-relaxed">Explore our cinematic portfolio
+                        — curated gallery, client testimonials, and our creative process.</p>
+                    <a href="/portfolio/"
+                        class="inline-flex items-center gap-3 px-8 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn btn-shine">
+                        Enter Portfolio
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                    </a>
+                </div>
             </div>
         </div>
     </section>
@@ -1345,8 +1859,10 @@
                     </div>
                     <div class="px-8 mt-4 text-center">
                         <p class="text-white text-sm leading-relaxed mb-6">
-                        "I sent my raw car footage to SOUMOJIT DAS<sup style="font-size:0.55em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>, and the final result was insane. The beat-syncing and
-                        color grading made it look like a high-end commercial. Engagement skyrocketed instantly."
+                            "I sent my raw car footage to ZyroEditz<sup
+                                style="font-size:0.55em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>,
+                            and the final result was insane. The beat-syncing and
+                            color grading made it look like a high-end commercial. Engagement skyrocketed instantly."
                         </p>
                     </div>
                     <div class="mt-6 h-px bg-gradient-to-r from-[#ff1a1a]/50 to-transparent"></div>
@@ -1486,7 +2002,8 @@
                         <div
                             class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
                             <svg class="w-6 h-6 text-[#ff1a1a]" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                                <path
+                                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                             </svg>
                         </div>
                         <div>
@@ -1496,18 +2013,20 @@
                         </div>
                     </a>
 
-                    <a href="https://x.com/SOUMOJIT DASfx" target="_blank" rel="noopener noreferrer"
+                    <a href="https://x.com/ZyroEditzfx" target="_blank" rel="noopener noreferrer"
                         class="group flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#ff1a1a]/30 hover:bg-[#ff1a1a]/[0.04] transition-all duration-300">
                         <div
                             class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
                             <svg class="w-5 h-5 text-[#ff1a1a]" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                                <path
+                                    d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z">
+                                </path>
                             </svg>
                         </div>
                         <div>
                             <div class="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-0.5">X (Twitter)</div>
                             <div class="text-white text-sm group-hover:text-[#ff1a1a] transition-colors">
-                                @SOUMOJIT DASfx</div>
+                                @ZyroEditzfx</div>
                         </div>
                     </a>
                 </div>
@@ -1572,8 +2091,10 @@
 
     <footer class="relative z-10 px-6 py-12 border-t border-white/10 bg-black">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <a href="#home" class="text-lg font-bold tracking-tight hover:text-[#ff1a1a] transition-colors brand-name">SOUMOJIT <span
-                    class="text-[#ff1a1a]">DAS</span><sup style="font-size:0.42em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></a>
+            <a href="#home"
+                class="text-lg font-bold tracking-tight hover:text-[#ff1a1a] transition-colors brand-name">Zyro<span
+                    class="text-[#ff1a1a]">Editz</span><sup
+                    style="font-size:0.42em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></a>
             <div class="text-xs uppercase tracking-[0.35em] text-gray-500 text-center">Precision. Motion. Speed.</div>
             <div class="flex items-center gap-6">
                 <a href="#about"
@@ -1590,8 +2111,18 @@
                     class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Instagram</a>
             </div>
         </div>
-        <div class="max-w-6xl mx-auto mt-6 text-center text-gray-600 text-xs">&copy; <span id="year"></span> SOUMOJIT DAS<sup style="font-size:0.7em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>.
-            All rights reserved.</div>
+        <div class="max-w-6xl mx-auto mt-8 flex flex-col items-center justify-center gap-3">
+            <div class="text-center text-gray-600 text-xs">&copy; <span id="year"></span> ZyroEditz<sup
+                    style="font-size:0.7em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>.
+                All rights reserved.</div>
+            <div
+                class="text-center text-xs tracking-[0.05em] text-gray-500/70 border border-white/5 rounded-full px-5 py-2 bg-white/[0.02]">
+                <span class="text-gray-400/80">ZyroEditz<sup
+                        style="font-size:0.7em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></span>
+                is a digital brand owned and operated by <strong
+                    class="text-gray-300 font-medium tracking-widest uppercase text-[10px]">Soumojit Das</strong>.
+            </div>
+        </div>
     </footer>
 
     <div id="chatbotWindow"
@@ -1611,9 +2142,10 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-white text-sm font-bold">SOUMOJIT DAS Assistant</h3>
+                    <h3 class="text-white text-sm font-bold">Zyro Assistant</h3>
                     <p class="text-[10px] uppercase tracking-wider flex items-center gap-1" id="chatbot-status-row">
-                        <span id="chatbot-status-dot" class="w-1.5 h-1.5 rounded-full bg-[#ff1a1a] animate-pulse transition-colors duration-500"></span>
+                        <span id="chatbot-status-dot"
+                            class="w-1.5 h-1.5 rounded-full bg-[#ff1a1a] animate-pulse transition-colors duration-500"></span>
                         <span id="chatbot-status-text" class="text-[#ff1a1a]">Online</span>
                     </p>
                 </div>
@@ -1634,12 +2166,20 @@
 
     <!-- Scroll to top - styled like Start Project button -->
     <button id="scrollTopBtn"
-        class="btn-glow btn-shine fixed bottom-8 right-8 w-14 h-14 bg-[#ff1a1a] text-black rounded-full shadow-lg shadow-[#ff1a1a]/40 flex items-center justify-center opacity-0 invisible z-40 transition-all duration-300 hover:bg-white hover:scale-110 pointer-events-none"
+        class="btn-glow btn-shine magnetic-btn fixed bottom-8 right-8 w-14 h-14 bg-[#ff1a1a] text-black rounded-full shadow-lg shadow-[#ff1a1a]/40 flex items-center justify-center opacity-0 invisible z-40 transition-all duration-300 hover:bg-white hover:scale-110 active:bg-white active:scale-110 pointer-events-none"
         aria-label="Scroll to top">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
         </svg>
     </button>
+
+    <!-- Payment redirect overlay — shown while Cashfree SDK is initialising -->
+    <div id="payRedirectOverlay"
+        style="position:fixed;inset:0;z-index:99999;background:#050505;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+        <div class="pay-redirect-ring"></div>
+        <p class="pay-redirect-label">Securing payment portal…</p>
+    </div>
+
 
     <!-- GSAP: deferred so preload hint (in head) starts download during body render -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
@@ -1647,7 +2187,7 @@
 
     <script>
         // Configure ScrollTrigger — runs after deferred GSAP executes
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', function () {
             if (window.gsap && window.ScrollTrigger) { ScrollTrigger.config({ limitCallbacks: true }); }
         });
         document.body.classList.add('reveal-loaded');
@@ -1655,7 +2195,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const cashfree = Cashfree({ mode: "production" }); // Cashfree Setup
+
+            // ── CASHFREE SDK: Lazy initializer ────────────────────────────────────
+            // The SDK script loads with `defer` — on slow mobile connections it may
+            // not have executed yet by the time DOMContentLoaded fires. Calling
+            // Cashfree() eagerly here causes a ReferenceError that silently crashes
+            // the entire DOMContentLoaded block. Instead: init lazily at pay-time,
+            // with a 3-retry backoff poll so mobile network delays are handled.
+            let _cf = null;
+            async function getCashfree() {
+                if (_cf) return _cf;
+                for (let i = 0; i < 3; i++) {
+                    if (typeof Cashfree !== 'undefined') {
+                        try { _cf = Cashfree({ mode: 'production' }); return _cf; } catch (e) { }
+                    }
+                    await new Promise(r => setTimeout(r, 300)); // wait 300ms, retry
+                }
+                return null; // SDK failed to load after 900ms
+            }
 
             // ==================== INITIALIZATION FUNCTIONS ====================
             function initCustomCursor() {
@@ -1905,7 +2462,19 @@
                 });
 
                 const scrollTopBtn = document.getElementById('scrollTopBtn');
-                if (scrollTopBtn) scrollTopBtn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+                if (scrollTopBtn) scrollTopBtn.addEventListener('click', function () {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    // Force canvas resize + immediate redraw — mobile Chrome changes
+                    // innerHeight when the address bar reappears after scrolling up,
+                    // which leaves a white gap if the canvas doesn't resize.
+                    setTimeout(() => {
+                        const cv = document.getElementById('cinematicCanvas');
+                        if (cv && cv.getContext) {
+                            cv.width = window.innerWidth;
+                            cv.height = window.innerHeight;
+                        }
+                    }, 400);
+                });
 
                 (function () {
                     const ids = ['home', 'about', 'services', 'blogs', 'contact', 'legal'];
@@ -2007,26 +2576,289 @@
             function initPreloader() {
                 (function () {
                     try {
-                        const pl = document.getElementById('preloader');
-                        const fill = document.getElementById('preloaderFill');
-                        if (!pl || !fill) { if (pl) pl.style.display = 'none'; return; }
+                        // Hide scrollbar and scroll progress bar while preloader is active
+                        document.body.style.overflow = 'hidden';
+                        var _scrollProg = document.getElementById('scrollProgress');
+                        if (_scrollProg) _scrollProg.style.display = 'none';
+
+                        var pl = document.getElementById('preloader');
+                        var canvas = document.getElementById('plCanvas');
+                        var fill = document.getElementById('preloaderFill');
+                        var pct = document.getElementById('plPct');
+                        var fc = document.getElementById('plFC');
+                        var tc = document.getElementById('plTC');
+                        var logo = document.getElementById('plLogo');
+                        var shadow = document.getElementById('plShadow');
+                        var sub = document.getElementById('plSub');
+                        var flare = document.getElementById('plFlare');
+                        var prog = document.getElementById('plProg');
+                        var heat = document.getElementById('plHeat');
+                        var lbT = document.getElementById('plLbT');
+                        var lbB = document.getElementById('plLbB');
+                        var scan = document.getElementById('plScan');
+                        // FIX: filter nulls — GSAP throws silently on null targets
+                        var glints = [document.getElementById('plG1'), document.getElementById('plG2'), document.getElementById('plG3')].filter(Boolean);
+
+                        if (!pl || !canvas) { if (pl) pl.style.display = 'none'; return; }
                         if (prefersReducedMotion) { pl.style.display = 'none'; return; }
-                        let p = 0;
-                        function step() {
-                            try {
-                                p = Math.min(100, p + Math.random() * 18 + 4);
-                                if (fill) fill.style.width = p + '%';
-                                if (p < 100) { setTimeout(step, 55 + Math.random() * 40); } else {
-                                    setTimeout(function () {
-                                        try {
-                                            if (window.gsap && typeof gsap.to === 'function') { gsap.to(pl, { opacity: 0, duration: 0.55, ease: 'power2.inOut', onComplete: function () { pl.style.display = 'none'; } }); } else { pl.style.display = 'none'; }
-                                        } catch (e) { pl.style.display = 'none'; }
-                                    }, 260);
-                                }
-                            } catch (e) { console.error('Preloader error:', e); const pl = document.getElementById('preloader'); if (pl) pl.style.display = 'none'; }
+
+                        var isMobile = window.innerWidth < 768;
+
+                        // ── Canvas particles ──
+                        // FIX: track RAF id so it can be properly cancelled (was leaking forever)
+                        var ctx = canvas.getContext('2d');
+                        var W = canvas.width = window.innerWidth;
+                        var H = canvas.height = window.innerHeight;
+                        var parts = [];
+                        var rafId = null; // FIX: named RAF id
+                        var pCount = isMobile ? 20 : 45; // FIX: reduced count for 60fps headroom
+                        for (var i = 0; i < pCount; i++) {
+                            parts.push({
+                                x: Math.random() * W, y: Math.random() * H,
+                                vx: (Math.random() - 0.5) * 0.35, vy: -(Math.random() * 0.5 + 0.08),
+                                r: Math.random() * 1.2 + 0.3, a: Math.random() * 0.35 + 0.05, life: Math.random()
+                            });
                         }
-                        setTimeout(step, 100);
-                    } catch (e) { console.error('Preloader error:', e); const pl = document.getElementById('preloader'); if (pl) pl.style.display = 'none'; }
+                        function drawFrame() {
+                            ctx.clearRect(0, 0, W, H);
+                            for (var i = 0; i < parts.length; i++) {
+                                var e = parts[i]; e.x += e.vx; e.y += e.vy; e.life -= 0.003;
+                                if (e.life <= 0 || e.y < -10) { e.x = Math.random() * W; e.y = H + 5; e.life = 1; }
+                                var al = e.a * e.life;
+                                if (al < 0.01) continue; // FIX: skip invisible particles
+                                ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, 6.28);
+                                ctx.fillStyle = 'rgba(255,26,26,' + al.toFixed(2) + ')';
+                                // NO shadowBlur — forces SW rasterization on mobile, kills 60fps
+                                ctx.fill();
+                            }
+                            rafId = requestAnimationFrame(drawFrame); // FIX: store id
+                        }
+                        rafId = requestAnimationFrame(drawFrame);
+
+                        function stopCanvas() {
+                            if (rafId) { cancelAnimationFrame(rafId); rafId = null; } // FIX: clean cancel
+                        }
+
+                        // ── HUD timecode ──
+                        var frame = 1, tcF = 0;
+                        var cInt = setInterval(function () {
+                            frame = Math.min(999, frame + Math.floor(Math.random() * 14 + 2));
+                            if (fc) fc.textContent = String(frame).padStart(3, '0');
+                            tcF++;
+                            if (tc) { var s = Math.floor(tcF / 12); tc.textContent = '00:00:' + String(s % 60).padStart(2, '0') + ':' + String(tcF % 24).padStart(2, '0'); }
+                        }, 70);
+
+                        // ── Glint positions ──
+                        var cx = W / 2, cy = H / 2;
+                        glints.forEach(function (g, i) { g.style.left = (cx + (i - 1) * W * 0.14) + 'px'; g.style.top = (cy + (Math.random() - 0.5) * 50) + 'px'; });
+
+                        // FIX: gate — prevent exitPreloader firing before tl min time
+                        var tlMinDone = false;
+                        var exitQueued = false;
+
+                        // ══════════════════════════════════════════════════
+                        //  STRICT CINEMATIC TIMELINE
+                        //  0.0–0.3  → pure black
+                        //  0.3–1.2  → logo emerges (scale 2→1, blur→sharp)
+                        //  1.2      → sharp lens flare sweep
+                        //  1.2–2.0  → red internal energy + heat
+                        //  2.0      → micro glints
+                        //  2.2–3.0  → final lock (bounce + red pulse)
+                        //  3.0+     → fade out
+                        // ══════════════════════════════════════════════════
+                        if (window.gsap) {
+                            var tl = gsap.timeline({
+                                onComplete: function () {
+                                    // NOTE: do NOT clear will-change here — dropping the GPU layer
+                                    // before exit causes a visual snap on mobile. Cleanup happens
+                                    // inside exitPreloader's onComplete, after display:none.
+                                    tlMinDone = true;
+                                    if (exitQueued) exitPreloader();
+                                }
+                            });
+
+                            // 0.0–0.3 → pure black
+                            tl.to(prog, { opacity: 1, duration: 0.25 }, 0.25);
+                            tl.to(fc, { opacity: 1, duration: 0.2 }, 0.3);
+                            tl.to(tc, { opacity: 1, duration: 0.2 }, 0.3);
+                            tl.to('.pl-corner', { opacity: 0.4, duration: 0.3, stagger: 0.05 }, 0.3);
+
+                            // 0.3–1.4 → logo emerges: massive → normal, blur → sharp
+                            // FIX: animate scale+y in ONE call (avoids GSAP merging two tweens
+                            //      that target the same transform and causing a jump)
+                            tl.to(canvas, { opacity: 0.25, duration: 0.5, ease: 'power1.inOut' }, 0.3);
+                            tl.to(shadow, { opacity: 0.6, duration: 0.9, ease: 'power2.out' }, 0.35);
+
+                            if (isMobile) {
+                                // MOBILE: scale+opacity+blur — no y movement so logo never shifts
+                                gsap.set(logo, { opacity: 0, scale: 2.0, y: 0, filter: 'blur(14px)' });
+                                tl.to(logo, { opacity: 0.15, scale: 1.7, filter: 'blur(9px)', duration: 0.35, ease: 'power1.out' }, 0.3);
+                                tl.to(logo, { opacity: 1, scale: 1.0, filter: 'blur(0px)', duration: 0.9, ease: 'expo.out',
+                                    onComplete: function() { if (logo) gsap.set(logo, { clearProps: 'filter' }); }
+                                }, 0.6);
+                            } else {
+                                // DESKTOP: blur animation is fine
+                                tl.fromTo(logo,
+                                    { opacity: 0, scale: 2.0, y: 8, filter: 'blur(14px)' },
+                                    {
+                                        opacity: 0.15, scale: 1.7, y: 5, filter: 'blur(9px)',
+                                        duration: 0.35, ease: 'power1.out', clearProps: 'none'
+                                    }, 0.3);
+                                tl.to(logo,
+                                    {
+                                        opacity: 1, scale: 1.0, y: 0, filter: 'blur(0px)',
+                                        duration: 0.9, ease: 'expo.out',
+                                        onComplete: function () {
+                                            if (logo) gsap.set(logo, { clearProps: 'filter' });
+                                        }
+                                    }, 0.6);
+                            }
+
+                            // 1.2 → sharp lens flare sweep
+                            tl.set(flare, { left: '-110%', opacity: 1 }, 1.2);
+                            tl.to(flare, { left: '120%', duration: 0.55, ease: 'power2.inOut' }, 1.2);
+                            tl.to(flare, { opacity: 0, duration: 0.1 }, 1.73);
+
+                            // 1.25–2.0 → red internal energy
+                            tl.to(shadow, { opacity: 0.9, filter: 'blur(22px)', duration: 0.5, ease: 'power2.out' }, 1.25);
+                            tl.to(logo, {
+                                textShadow: '0 0 35px rgba(255,26,26,0.7),0 0 70px rgba(139,0,0,0.4),0 0 2px rgba(255,255,255,0.15)',
+                                duration: 0.55, ease: 'power2.out'
+                            }, 1.3);
+                            tl.to(heat, { opacity: 0.65, duration: 0.35 }, 1.3);
+                            tl.to(heat, { opacity: 0, duration: 0.55 }, 1.65);
+                            tl.to(scan, { opacity: 1, duration: 0.2 }, 1.3);
+                            tl.to(scan, { opacity: 0, duration: 0.3 }, 1.85);
+
+                            // FIX: camera shake — use gsap.set + very short tweens
+                            //      avoids overlapping x-tweens fighting each other
+                            if (!isMobile) {
+                                tl.to(pl, { x: 2.5, duration: 0.04, ease: 'none' }, 1.42);
+                                tl.to(pl, { x: -2.0, duration: 0.04, ease: 'none' }, 1.46);
+                                tl.to(pl, { x: 0.8, duration: 0.04, ease: 'none' }, 1.50);
+                                tl.to(pl, { x: 0, duration: 0.07, ease: 'power2.out' }, 1.54);
+                            }
+
+                            // 2.0 → micro glints
+                            if (glints.length) {
+                                tl.to(glints, { opacity: 1, duration: 0.06, stagger: 0.08 }, 2.0);
+                                tl.to(glints, { opacity: 0, duration: 0.18, stagger: 0.06 }, 2.18);
+                            }
+
+                            // 2.2–2.7 → FINAL LOCK: compress → punch → settle
+                            // Mobile: scale only (no y) so logo never shifts vertically
+                            if (isMobile) {
+                                tl.to(logo, { scale: 0.97, duration: 0.1, ease: 'power3.in' }, 2.2);
+                                tl.to(logo, { scale: 1.05, duration: 0.14, ease: 'power3.out' }, 2.3);
+                            } else {
+                                tl.to(logo, { scale: 0.97, y: 2, duration: 0.1, ease: 'power3.in' }, 2.2);
+                                tl.to(logo, { scale: 1.05, y: 0, duration: 0.14, ease: 'power3.out' }, 2.3);
+                            }
+                            tl.to(logo, { scale: 1.0, duration: 0.18, ease: 'power2.inOut' }, 2.44);
+                            // single red pulse
+                            tl.to(shadow, { opacity: 1.0, filter: 'blur(18px)', duration: 0.15 }, 2.2);
+                            tl.to(logo, {
+                                textShadow: '0 0 80px rgba(255,26,26,0.95),0 0 160px rgba(139,0,0,0.5),0 0 4px rgba(255,255,255,0.3)',
+                                duration: 0.15, ease: 'power3.out'
+                            }, 2.2);
+                            // breathe settle
+                            tl.to(logo, {
+                                textShadow: '0 0 18px rgba(255,26,26,0.35),0 0 40px rgba(139,0,0,0.2)',
+                                duration: 0.4, ease: 'power2.out'
+                            }, 2.35);
+                            tl.to(shadow, { opacity: 0.5, duration: 0.4 }, 2.35);
+                            // subtitle
+                            tl.to(sub, { color: 'rgba(255,255,255,0.18)', opacity: 1, duration: 0.4 }, 2.4);
+                            // FIX: hold frame at 2.85 so exit can't fire during mid-punch
+                            tl.to({}, { duration: 0.01 }, 2.85);
+
+                        } else {
+                            // no GSAP fallback
+                            if (logo) { logo.style.opacity = '1'; logo.style.transform = 'scale(1) translate3d(0,0,0)'; logo.style.filter = 'none'; }
+                            if (prog) { prog.style.opacity = '1'; }
+                            tlMinDone = true;
+                        }
+
+                        // ── Progress bar ──
+                        var p = 0;
+                        var stepTimer = null;
+                        function step() {
+                            p = Math.min(100, p + Math.random() * 10 + 3);
+                            if (fill) fill.style.width = p + '%';
+                            if (pct) pct.textContent = Math.round(p) + '%';
+                            if (p < 100) {
+                                stepTimer = setTimeout(step, 70 + Math.random() * 60);
+                            } else {
+                                clearInterval(cInt);
+                                if (fc) fc.textContent = '999';
+                                // FIX: wait for timeline minimum before firing exit
+                                if (tlMinDone) { setTimeout(exitPreloader, 400); }
+                                else { exitQueued = true; }
+                            }
+                        }
+                        stepTimer = setTimeout(step, 350);
+
+                        // ── EXIT: clean fade ──
+                        var exitFired = false; // FIX: prevent double-fire
+                        function exitPreloader() {
+                            if (exitFired) return; exitFired = true;
+                            clearInterval(cInt);           // FIX: always clear timer
+                            clearTimeout(stepTimer);       // FIX: clear step timer
+                            stopCanvas();                  // FIX: stop RAF properly
+                            // Delay scroll restore 1.5s — lets landing page rack-in finish before scrollbar reappears
+                            setTimeout(function() {
+                                document.body.style.overflow = '';
+                                if (_scrollProg) _scrollProg.style.display = '';
+                            }, 1500);
+
+                            if (!window.gsap) {
+                                pl.style.display = 'none';
+                                return;
+                            }
+                            var ex = gsap.timeline({
+                                onComplete: function () {
+                                    // Soft-hide instead of display:none to prevent mobile layout reflows
+                                    // that recalculate 100vh and shift the entire page downward.
+                                    pl.style.pointerEvents = 'none';
+                                    pl.style.zIndex = '-100';
+                                    if (logo) { logo.style.willChange = 'auto'; }
+                                    if (shadow) { shadow.style.willChange = 'auto'; }
+                                    gsap.killTweensOf([pl, logo, shadow, sub, prog, fc, tc, heat, scan, flare, canvas, lbT, lbB]);
+                                }
+                            });
+                            ex.to([sub, prog, fc, tc, '.pl-corner'], { opacity: 0, duration: 0.28, ease: 'power1.in' }, 0);
+                            ex.to(lbT, { height: 0, duration: 0.5, ease: 'expo.inOut' }, 0.08);
+                            ex.to(lbB, { height: 0, duration: 0.5, ease: 'expo.inOut' }, 0.08);
+                            ex.to(canvas, { opacity: 0, duration: 0.35 }, 0.08);
+                            ex.to(pl, { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 0.3);
+                            // hero rack-in
+                            var homeContent = document.querySelector('#home > div');
+                            if (isMobile) {
+                                gsap.set(homeContent, { scale: 1.04, opacity: 0.6, transformOrigin: 'top center' });
+                                gsap.to(homeContent, {
+                                    scale: 1, opacity: 1,
+                                    duration: 1.1, ease: 'power3.out', delay: 0.35
+                                });
+                            } else {
+                                gsap.set(homeContent, { scale: 1.07, filter: 'blur(10px)', opacity: 0.5, transformOrigin: 'top center' });
+                                gsap.to(homeContent, {
+                                    scale: 1, filter: 'blur(0px)', opacity: 1,
+                                    duration: 1.3, ease: 'power3.out', delay: 0.35
+                                });
+                            }
+                            gsap.set('nav', { y: -45, opacity: 0 });
+                            gsap.to('nav', {
+                                y: 0, opacity: 1,
+                                duration: 0.7, ease: 'power3.out', delay: 0.75
+                            });
+                        }
+
+                    } catch (e) {
+                        // FIX: proper catch — never leave preloader blocking page
+                        console.warn('[Preloader] Error:', e);
+                        var _pl = document.getElementById('preloader');
+                        if (_pl) { _pl.style.opacity = '0'; setTimeout(function () { _pl.style.display = 'none'; }, 100); }
+                    }
                 })();
             }
 
@@ -2034,13 +2866,8 @@
             function initCanvasBackground() {
                 const canvas = document.getElementById('cinematicCanvas');
                 if (!canvas) return;
-                // Skip canvas on mobile (saves battery + GPU) or if motion is reduced
-                const isMobile = window.matchMedia('(pointer: coarse)').matches ||
-                                 window.innerWidth < 768;
-                if (prefersReducedMotion || isMobile) {
-                    canvas.style.display = 'none';
-                    return;
-                }
+                if (prefersReducedMotion) { canvas.style.display = 'none'; return; }
+
                 const ctx = canvas.getContext('2d');
                 let width, height, particles;
                 let lastWidth = window.innerWidth;
@@ -2049,7 +2876,7 @@
                     width = canvas.width = window.innerWidth;
                     height = canvas.height = window.innerHeight;
                     particles = [];
-                    const particleCount = window.innerWidth < 768 ? 40 : 80;
+                    const particleCount = window.innerWidth < 768 ? 0 : 80; // mobile: skip entirely, canvas hidden
                     for (let i = 0; i < particleCount; i++) { particles.push(new Particle()); }
                 }
 
@@ -2094,25 +2921,50 @@
                     }
                     _canvasAnimId = requestAnimationFrame(animateCanvas);
                 }
+                // Pause RAF during scroll to free the compositor for smooth scrolling.
+                // Resume 150ms after scroll stops (debounced).
+                let _scrollPauseTimer = null;
+                let _scrollPaused = false;
+                window.addEventListener('scroll', () => {
+                    if (!_scrollPaused) {
+                        cancelAnimationFrame(_canvasAnimId);
+                        _canvasAnimId = null;
+                        _scrollPaused = true;
+                    }
+                    clearTimeout(_scrollPauseTimer);
+                    _scrollPauseTimer = setTimeout(() => {
+                        _scrollPaused = false;
+                        if (!_canvasAnimId) animateCanvas();
+                    }, 150);
+                }, { passive: true });
                 document.addEventListener('visibilitychange', () => {
                     if (document.hidden) {
                         cancelAnimationFrame(_canvasAnimId);
                         _canvasAnimId = null;
-                    } else if (!_canvasAnimId) {
-                        animateCanvas(); // resume on tab focus
+                    } else if (!_canvasAnimId && !_scrollPaused) {
+                        setTimeout(() => { if (!_canvasAnimId) animateCanvas(); }, 50);
                     }
                 });
 
+                // Debounced resize — address bar animation fires resize 30+ times/sec.
+                // initCanvas() clears the canvas each call, causing flicker.
+                // Wait 120ms after resize stops before reinitialising.
+                let lastHeight = window.innerHeight;
+                let _resizeTimer = null;
                 window.addEventListener('resize', () => {
-                    if (window.innerWidth !== lastWidth) {
-                        lastWidth = window.innerWidth;
-                        initCanvas();
-                    }
+                    clearTimeout(_resizeTimer);
+                    _resizeTimer = setTimeout(() => {
+                        const newW = window.innerWidth, newH = window.innerHeight;
+                        if (newW !== lastWidth || Math.abs(newH - lastHeight) > 50) {
+                            lastWidth = newW; lastHeight = newH;
+                            initCanvas();
+                        }
+                    }, 120);
                 });
                 initCanvas(); animateCanvas();
             }
 
-            // ==================== SOUMOJIT DAS ASSISTANT WIZARD ====================
+            // ==================== ZYRO ASSISTANT WIZARD ====================
             function initChatbot() {
                 const closeBtn = document.getElementById('chatbotClose');
                 const windowEl = document.getElementById('chatbotWindow');
@@ -2175,7 +3027,7 @@
 
                 // BUG FIX #8: Guard close button — toggleChat() flips state blindly,
                 // so calling it when already closed would re-open the chat.
-                closeBtn.addEventListener('click', function() { if (isOpen) toggleChat(); });
+                closeBtn.addEventListener('click', function () { if (isOpen) toggleChat(); });
 
                 // Add click listeners to price cards
                 document.querySelectorAll('.price-card').forEach(card => {
@@ -2214,7 +3066,7 @@
 
                 function renderStep0() {
                     const content = `
-                        <p class="mb-3 font-bold text-white">Hey!👋 SOUMOJIT DAS Assistant here.</p>
+                        <p class="mb-3 font-bold text-white">Hey!👋 Zyro Assistant here.</p>
                         <p class="mb-3">Select the service you need to get started:</p>
                         <div class="flex flex-col gap-2">
                             <button class="service-btn bg-white/5 border border-white/10 hover:border-[#ff1a1a] hover:bg-[#ff1a1a]/10 text-white text-xs py-2 px-3 rounded text-left transition-colors" data-service="Short Form" data-price="200">Short Form (₹200)</button>
@@ -2250,21 +3102,32 @@
                         <p class="mb-3">Awesome choice! What is your name?</p>
                         <div class="flex flex-col gap-2">
                             <input type="text" id="wizName" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Your Name" autocomplete="off">
+                            <p id="wizNameErr" class="text-[#ff1a1a] text-[10px] hidden">⚠ Please enter your full name</p>
                             <button id="wizNameBtn" class="bg-[#ff1a1a] text-black px-3 py-2 rounded text-xs font-bold hover:bg-white transition-colors">Next</button>
                         </div>
                     `;
                     addBotMessage(content);
 
                     document.getElementById('wizNameBtn').addEventListener('click', function () {
-                        const name = document.getElementById('wizName').value.trim();
-                        if (name) {
-                            document.getElementById('wizName').disabled = true;
-                            this.disabled = true;
-                            this.classList.add('opacity-50');
-                            orderData.name = name;
-                            addUserMessage(name);
-                            setTimeout(renderStep2, 400);
+                        const inp = document.getElementById('wizName');
+                        const err = document.getElementById('wizNameErr');
+                        const name = inp.value.trim();
+                        if (!name || name.length < 2) {
+                            inp.style.borderColor = '#ff1a1a';
+                            err.classList.remove('hidden');
+                            inp.classList.remove('wiz-shake');
+                            void inp.offsetWidth;
+                            inp.classList.add('wiz-shake');
+                            inp.addEventListener('animationend', () => inp.classList.remove('wiz-shake'), { once: true });
+                            inp.focus();
+                            return;
                         }
+                        inp.disabled = true;
+                        this.disabled = true;
+                        this.classList.add('opacity-50');
+                        orderData.name = name;
+                        addUserMessage(name);
+                        setTimeout(renderStep2, 400);
                     });
                 }
 
@@ -2275,21 +3138,27 @@
                         <p class="mb-3">What's your email? (We'll send your receipt and project link here).</p>
                         <div class="flex flex-col gap-2">
                             <input type="email" id="wizEmail" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="email@example.com" autocomplete="off">
+                            <p id="wizEmailErr" class="text-[#ff1a1a] text-[10px] hidden">⚠ Please enter a valid email address (e.g. you@example.com)</p>
                             <button id="wizEmailBtn" class="bg-[#ff1a1a] text-black px-3 py-2 rounded text-xs font-bold hover:bg-white transition-colors">Next</button>
                         </div>
                     `;
                     addBotMessage(content);
 
                     document.getElementById('wizEmailBtn').addEventListener('click', function () {
-                        const email = document.getElementById('wizEmail').value.trim();
-                        // BUG FIX #3: Validate with proper email regex (not just .includes('@'))
+                        const inp = document.getElementById('wizEmail');
+                        const err = document.getElementById('wizEmailErr');
+                        const email = inp.value.trim();
                         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                         if (!emailRegex.test(email)) {
-                            const inp = document.getElementById('wizEmail');
-                            if (inp) { inp.style.borderColor = '#ff1a1a'; inp.placeholder = 'Enter a valid email address'; inp.focus(); }
+                            inp.style.borderColor = '#ff1a1a';
+                            err.classList.remove('hidden');
+                            inp.classList.remove('wiz-shake');
+                            void inp.offsetWidth;
+                            inp.classList.add('wiz-shake');
+                            inp.focus();
                             return;
                         }
-                        document.getElementById('wizEmail').disabled = true;
+                        inp.disabled = true;
                         this.disabled = true;
                         this.classList.add('opacity-50');
                         orderData.email = email;
@@ -2302,23 +3171,28 @@
                     const content = `
                         <p class="mb-3">Got it! What is your phone number?</p>
                         <div class="flex flex-col gap-2">
-                            <input type="tel" id="wizPhone" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="0000000000" autocomplete="off">
+                            <input type="tel" id="wizPhone" class="bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="10-digit mobile number" autocomplete="off">
+                            <p id="wizPhoneErr" class="text-[#ff1a1a] text-[10px] hidden">⚠ Please enter a valid 10-digit Indian mobile number</p>
                             <button id="wizPhoneBtn" class="bg-[#ff1a1a] text-black px-3 py-2 rounded text-xs font-bold hover:bg-white transition-colors">Next</button>
                         </div>
                     `;
                     addBotMessage(content);
 
                     document.getElementById('wizPhoneBtn').addEventListener('click', function () {
-                        const phone = document.getElementById('wizPhone').value.trim();
-                        // BUG FIX #2: Match backend's strict 10-digit-only regex
-                        // Previously: phone.length >= 10 allowed 'aaaaaaaaaa' or '+++++++++++'
+                        const inp = document.getElementById('wizPhone');
+                        const err = document.getElementById('wizPhoneErr');
+                        const phone = inp.value.trim();
                         const phoneRegex = /^[0-9]{10}$/;
                         if (!phoneRegex.test(phone)) {
-                            const inp = document.getElementById('wizPhone');
-                            if (inp) { inp.style.borderColor = '#ff1a1a'; inp.placeholder = 'Enter valid 10-digit number'; inp.focus(); }
+                            inp.style.borderColor = '#ff1a1a';
+                            err.classList.remove('hidden');
+                            inp.classList.remove('wiz-shake');
+                            void inp.offsetWidth;
+                            inp.classList.add('wiz-shake');
+                            inp.focus();
                             return;
                         }
-                        document.getElementById('wizPhone').disabled = true;
+                        inp.disabled = true;
                         this.disabled = true;
                         this.classList.add('opacity-50');
                         orderData.phone = phone;
@@ -2330,7 +3204,7 @@
                 // UPGRADED: renderStep4 with correct payload, trust badge, and business policy enforcement
                 function renderStep4() {
                     const content = `
-                        <p class="mb-3">Perfect! Here is your SOUMOJIT DAS<sup class="text-[0.4em]">&trade;</sup> order summary:</p>
+                        <p class="mb-3">Perfect! Here is your ZyroEditz<sup class="text-[0.4em]">&trade;</sup> order summary:</p>
                         <!-- BUG FIX B7: All orderData fields escaped before HTML injection -->
                         <div class="bg-white/5 border border-white/10 rounded p-3 mb-3">
                             <div class="flex justify-between text-xs mb-1"><span class="text-gray-400">Service:</span><span class="text-white font-bold">${escapeHtml(orderData.service)}</span></div>
@@ -2359,13 +3233,20 @@
                         const statusEl = document.getElementById('wizPayStatus');
                         statusEl.classList.remove('hidden');
 
+                        // MOBILE FIX: Detect touch/mobile device — Cashfree SDK popup is
+                        // unreliable on mobile browsers (causes white "sad page" error).
+                        // PERF FIX: Set 30s timeout on the fetch — prevents infinite spinner
+                        // on slow mobile cellular connections.
+                        const _payAbortCtrl = new AbortController();
+                        const _payTimeout = setTimeout(() => _payAbortCtrl.abort(), 30000);
+
                         try {
                             statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Generating secure payment link...`;
 
-                            // FIXED: Payload aligned with chat.js expectations
                             const response = await fetch('/api/chat', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                signal: _payAbortCtrl.signal,
                                 body: JSON.stringify({
                                     message: `Client ready to pay. INITIATE_CHECKOUT_NOW`,
                                     selectedService: orderData.service,
@@ -2377,20 +3258,82 @@
                                 })
                             });
 
+                            clearTimeout(_payTimeout);
                             const data = await response.json();
 
                             if (data.paymentSessionId) {
-                                statusEl.innerHTML = `<span class="yt-spinner mr-2"></span> Redirecting to secure portal...`;
-                                cashfree.checkout({
-                                    paymentSessionId: data.paymentSessionId,
-                                    redirectTarget: "_modal"
-                                });
+                                const payOverlay = document.getElementById('payRedirectOverlay');
+                                // Clear the white status spinner before showing the red overlay
+                                statusEl.innerHTML = '';
+                                statusEl.classList.add('hidden');
+                                if (payOverlay) payOverlay.style.display = 'flex';
+                                // Collapse chatbot UI so it doesn't float over the overlay
+                                windowEl.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+                                windowEl.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+                                // Lock page background dark so browser shows #050505
+                                // (not white) during the navigation unload flash
+                                document.documentElement.style.background = '#050505';
+                                document.body.style.background = '#050505';
+
+                                // Free up GPU memory before redirect
+                                try {
+                                    if (window.gsap) gsap.killTweensOf('*');
+                                    document.querySelectorAll('.orb, .grid-bg, .noise, .video-bg, canvas').forEach(el => el.remove());
+                                } catch (e) { }
+
+                                // ── Minimum overlay hold (1.5s) so the user sees the portal
+                                // screen on fast PCs where getCashfree() resolves instantly.
+                                // getCashfree() polls the SDK in parallel — whichever takes
+                                // longer wins, so slow mobile networks are unaffected.
+                                const [cfInstance] = await Promise.all([
+                                    getCashfree(),
+                                    new Promise(res => setTimeout(res, 1500))
+                                ]);
+                                if (!cfInstance) {
+                                    // SDK genuinely unavailable after retries → direct URL
+                                    console.warn('Cashfree SDK unavailable, falling back to direct URL');
+                                    window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
+                                    return;
+                                }
+
+                                try {
+                                    const checkoutPromise = cfInstance.checkout({
+                                        paymentSessionId: data.paymentSessionId,
+                                        redirectTarget: "_top"
+                                    });
+
+                                    if (checkoutPromise && typeof checkoutPromise.then === 'function') {
+                                        checkoutPromise.then(function (result) {
+                                            if (result && result.error) {
+                                                statusEl.innerText = "Payment Error: " + result.error.message;
+                                            }
+                                        }).catch(function (err) {
+                                            console.warn('Cashfree SDK checkout failed, falling back to direct URL:', err);
+                                            window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
+                                        });
+                                    }
+                                } catch (e) {
+                                    console.warn('Cashfree SDK exception, falling back to direct URL:', e);
+                                    window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
+                                }
                             } else {
                                 throw new Error(data.reply || "Could not retrieve payment session.");
                             }
                         } catch (err) {
+                            clearTimeout(_payTimeout);
                             console.error("Payment Error:", err);
-                            statusEl.innerText = "System error. Please contact support via email.";
+                            // Hide the redirect overlay so user can see the error
+                            const _errOverlay = document.getElementById('payRedirectOverlay');
+                            if (_errOverlay) _errOverlay.style.display = 'none';
+                            // Re-show chatbot so user can see the status message
+                            windowEl.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+                            windowEl.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+                            if (err.name === 'AbortError') {
+                                statusEl.innerText = "Request timed out. Please check your connection and try again.";
+                            } else {
+                                statusEl.innerText = "System error. Please contact support via email.";
+                            }
                             this.disabled = false;
                             this.classList.remove('opacity-50');
                         }
@@ -2436,7 +3379,7 @@
                     }
 
                     // ── "Available for Projects" badge ───────────────────────
-                    const ping  = document.getElementById('avail-ping');
+                    const ping = document.getElementById('avail-ping');
                     const avDot = document.getElementById('avail-dot');
                     const avTxt = document.getElementById('avail-text');
                     if (ping && avDot && avTxt) {
@@ -2469,4 +3412,3 @@
 </body>
 
 </html>
-
