@@ -140,8 +140,10 @@
         }
 
         html {
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
             scroll-behavior: smooth;
         }
 
@@ -1376,7 +1378,8 @@
             class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Contact</a>
     </div>
 
-    <section id="home" class="min-h-screen flex items-center justify-center relative z-10 px-6" style="will-change: transform, filter, opacity;">
+    <section id="home" class="min-h-screen flex items-center justify-center relative z-10 px-6"
+        style="will-change: transform, filter, opacity;">
         <div class="text-center max-w-4xl">
             <div
                 class="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 mb-8 mt-24 reveal">
@@ -1947,8 +1950,7 @@
                                 zyroeditz.official@gmail.com</div>
                         </div>
                     </a>
-                    <a href="https://youtube.com/@ZyroEditzfx" target="_blank"
-                        rel="noopener noreferrer"
+                    <a href="https://youtube.com/@ZyroEditzfx" target="_blank" rel="noopener noreferrer"
                         class="group flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#ff1a1a]/30 hover:bg-[#ff1a1a]/[0.04] transition-all duration-300">
                         <div
                             class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
@@ -1963,8 +1965,7 @@
                             </div>
                         </div>
                     </a>
-                    <a href="https://www.instagram.com/zyroeditzfx" target="_blank"
-                        rel="noopener noreferrer"
+                    <a href="https://www.instagram.com/zyroeditzfx" target="_blank" rel="noopener noreferrer"
                         class="group flex items-center gap-5 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#ff1a1a]/30 hover:bg-[#ff1a1a]/[0.04] transition-all duration-300">
                         <div
                             class="w-12 h-12 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center shrink-0 group-hover:bg-[#ff1a1a]/20 transition-colors">
@@ -2106,11 +2107,11 @@
                     class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors nav-link min-h-[44px] min-w-[44px] flex items-center justify-center">Contact</a>
                 <a href="https://youtube.com/@ZyroEditzfx" target="_blank" rel="noopener noreferrer"
                     class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors">YouTube</a>
-                <a href="https://www.instagram.com/zyroeditzfx" target="_blank"
-                    rel="noopener noreferrer"
+                <a href="https://www.instagram.com/zyroeditzfx" target="_blank" rel="noopener noreferrer"
                     class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Instagram</a>
-                <a href="https://wa.me/918900229800" target="_blank" rel="noopener noreferrer" 
-                    title="Chat on WhatsApp"
+                <a href="https://x.com/ZyroEditzfx" target="_blank" rel="noopener noreferrer"
+                    class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Twitter</a>
+                <a href="https://wa.me/918900229800" target="_blank" rel="noopener noreferrer" title="Chat on WhatsApp"
                     class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors">WhatsApp</a>
                 <a href="mailto:zyroeditz.official@gmail.com"
                     class="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Email</a>
@@ -2126,6 +2127,9 @@
                         style="font-size:0.7em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup></span>
                 is a digital brand owned and operated by <strong
                     class="text-gray-300 font-medium tracking-widest uppercase text-[10px]">Soumojit Das</strong>.
+            </div>
+            <div class="text-center text-[10px] tracking-wider text-gray-500/50 uppercase mt-1">
+                ZyroEditz is a legally registered Micro, Small & Medium Enterprise (MSME) under the Government of India.
             </div>
         </div>
     </footer>
@@ -2698,8 +2702,9 @@
                                 // MOBILE: scale+opacity+blur — no y movement so logo never shifts
                                 gsap.set(logo, { opacity: 0, scale: 2.0, y: 0, filter: 'blur(14px)' });
                                 tl.to(logo, { opacity: 0.15, scale: 1.7, filter: 'blur(9px)', duration: 0.35, ease: 'power1.out' }, 0.3);
-                                tl.to(logo, { opacity: 1, scale: 1.0, filter: 'blur(0px)', duration: 0.9, ease: 'expo.out',
-                                    onComplete: function() { if (logo) gsap.set(logo, { clearProps: 'filter' }); }
+                                tl.to(logo, {
+                                    opacity: 1, scale: 1.0, filter: 'blur(0px)', duration: 0.9, ease: 'expo.out',
+                                    onComplete: function () { if (logo) gsap.set(logo, { clearProps: 'filter' }); }
                                 }, 0.6);
                             } else {
                                 // DESKTOP: blur animation is fine
@@ -2811,7 +2816,7 @@
                             clearTimeout(stepTimer);       // FIX: clear step timer
                             stopCanvas();                  // FIX: stop RAF properly
                             // Delay scroll restore 1.5s — lets landing page rack-in finish before scrollbar reappears
-                            setTimeout(function() {
+                            setTimeout(function () {
                                 document.body.style.overflow = '';
                                 if (_scrollProg) _scrollProg.style.display = '';
                             }, 1500);
