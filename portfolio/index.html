@@ -357,9 +357,12 @@
             <div class="text-haze text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
                 <i data-lucide="split-square-horizontal" class="w-4 h-4"></i> Color Grade
             </div>
-            <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-16">Before & <span class="text-haze">After</span></h2>
+            <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4">Before & <span class="text-haze">After</span></h2>
+            <p class="text-haze max-w-xl text-base md:text-lg leading-relaxed mb-12 border-l-2 border-haze pl-4">
+                Witness the transformation. Drag the slider to reveal the difference between flat, raw camera footage and a cinematic final grade.
+            </p>
             
-            <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-midnight border border-white/10 group select-none">
+            <div class="interactive-element relative w-full aspect-video rounded-2xl overflow-hidden bg-midnight border border-white/10 hover:border-haze/30 transition-colors duration-500 group select-none" data-hover-color="rgba(157,180,255,0.2)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.15">
                 <!-- Bottom Image (After) -->
                 <img src="https://images.unsplash.com/photo-1538370621607-4919ce7889b3?q=80&w=1200" alt="Graded" class="absolute inset-0 w-full h-full object-cover pointer-events-none" style="filter: contrast(1.1) saturate(1.4);">
                 
@@ -376,14 +379,16 @@
                     </div>
                 </div>
             </div>
-            <p class="text-center text-gray-500 text-xs mt-6 uppercase tracking-widest">Drag to compare Raw Log vs Final Grade</p>
         </section>
 
         <section id="sound" class="px-6 md:px-12 max-w-7xl mx-auto relative z-10 py-12 border-t border-white/5 mt-24 gsap-scroll">
             <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
                 <i data-lucide="waves" class="w-4 h-4"></i> Sound Design
             </div>
-            <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-16">Audio <span class="text-electric">Engineering</span></h2>
+            <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4">Audio <span class="text-electric">Engineering</span></h2>
+            <p class="text-haze max-w-xl text-base md:text-lg leading-relaxed mb-12 border-l-2 border-electric pl-4">
+                Sound is half the experience. Click play to listen to a layered, high-fidelity audio environment mixed for maximum impact.
+            </p>
             
             <div id="sound-card" class="interactive-element p-8 md:p-12 rounded-2xl bg-midnight border border-white/5 flex flex-col md:flex-row items-center gap-8" data-hover-color="rgba(73,198,255,0.2)">
                 <button id="audio-play-btn" class="w-20 h-20 rounded-full bg-electric/10 border border-electric/30 flex items-center justify-center shrink-0 hover:scale-110 hover:bg-electric hover:text-black transition-all text-white focus:outline-none z-20">
