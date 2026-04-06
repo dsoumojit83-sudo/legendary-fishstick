@@ -121,10 +121,9 @@
             background-size: 40px 40px;
         }
 
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #06060b; }
-        ::-webkit-scrollbar-thumb { background: rgba(73, 198, 255, 0.2); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(73, 198, 255, 0.5); }
+        /* Hide scrollbar completely while keeping scroll functionality */
+        ::-webkit-scrollbar { display: none; }
+        html { -ms-overflow-style: none; scrollbar-width: none; }
 
         #mouse-spotlight {
             display: none;
@@ -209,25 +208,7 @@
         }
         .stat-num { font-variant-numeric: tabular-nums; }
 
-        /* === PROCESS STEPS === */
-        .process-step {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: border-color 0.4s ease;
-        }
-        .process-num {
-            font-size: 4.5rem;
-            font-weight: 900;
-            line-height: 1;
-            background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            user-select: none;
-        }
 
-        /* === REVIEW STARS === */
-        .star-row { color: #49c6ff; letter-spacing: 2px; }
     </style>
 </head>
 <body class="relative min-h-screen bg-grid-pattern">
@@ -259,9 +240,6 @@
             
             <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase font-semibold text-gray-400">
                 <button onclick="scrollToSection('work')" class="hover:text-electric transition-colors interactive-element" data-hover-color="rgba(73,198,255,0.3)">Work</button>
-                <button onclick="scrollToSection('process')" class="hover:text-electric transition-colors interactive-element" data-hover-color="rgba(73,198,255,0.3)">Process</button>
-                <button onclick="scrollToSection('about')" class="hover:text-electric transition-colors interactive-element" data-hover-color="rgba(122,92,255,0.3)">About</button>
-                <button onclick="scrollToSection('reviews')" class="hover:text-electric transition-colors interactive-element" data-hover-color="rgba(255,255,255,0.3)">Testimonials</button>
             </div>
             
             <a href="/" class="interactive-element px-6 py-2 border border-white/10 rounded-full text-xs tracking-[0.1em] uppercase font-bold hover:bg-white hover:text-black transition-all md:hidden" data-hover-color="rgba(255,255,255,0.3)">
@@ -374,126 +352,56 @@
             </div>
         </section>
 
-        <section id="about" class="px-6 md:px-12 max-w-7xl mx-auto min-h-[50vh] relative z-10 py-12 border-t border-white/5 mt-24">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-                <div class="gsap-scroll">
-                    <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-6">Behind the <span class="text-violet">Timeline</span></h2>
-                    <p class="text-gray-400 text-lg leading-relaxed mb-6">
-                        Video editing built for retention, impact, and brand velocity. I specialize in turning raw footage into polished, high-retention cuts that capture attention and hold it.
-                    </p>
-                    
-                    <div class="flex flex-wrap gap-3">
-                        <span class="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-mono text-haze">Adobe Premiere Pro</span>
-                        <span class="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-mono text-haze">After Effects</span>
-                        <span class="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-mono text-haze">DaVinci Resolve</span>
-                        <span class="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-mono text-haze">CapCut Pro</span>
-                    </div>
-                </div>
 
-                <div class="grid grid-cols-2 gap-6 gsap-scroll">
-                    <div class="p-6 rounded-2xl bg-midnight border border-white/5 group">
-                        <div class="text-4xl font-black text-white group-hover:text-violet transition-colors">100+</div>
-                        <div class="text-xs uppercase tracking-widest text-gray-500 mt-2">Projects Delivered</div>
-                    </div>
-                    <div class="p-6 rounded-2xl bg-midnight border border-white/5 group">
-                        <div class="text-4xl font-black text-electric group-hover:text-haze transition-colors">50M+</div>
-                        <div class="text-xs uppercase tracking-widest text-gray-500 mt-2">Views Generated</div>
-                    </div>
-                    <div class="p-6 rounded-2xl bg-midnight border border-white/5 group">
-                        <div class="text-4xl font-black text-white group-hover:text-electric transition-colors">4K</div>
-                        <div class="text-xs uppercase tracking-widest text-gray-500 mt-2">Master Exports</div>
-                    </div>
-                    <div class="p-6 rounded-2xl bg-midnight border border-white/5 group">
-                        <div class="text-4xl font-black text-white group-hover:text-violet transition-colors">24h</div>
-                        <div class="text-xs uppercase tracking-widest text-gray-500 mt-2">Turnaround Speed</div>
+        <section id="comparisons" class="px-6 md:px-12 max-w-7xl mx-auto relative z-10 py-12 border-t border-white/5 mt-24 gsap-scroll">
+            <div class="text-haze text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="split-square-horizontal" class="w-4 h-4"></i> Color Grade
+            </div>
+            <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-16">Before & <span class="text-haze">After</span></h2>
+            
+            <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-midnight border border-white/10 group select-none">
+                <!-- Bottom Image (After) -->
+                <img src="https://images.unsplash.com/photo-1538370621607-4919ce7889b3?q=80&w=1200" alt="Graded" class="absolute inset-0 w-full h-full object-cover pointer-events-none" style="filter: contrast(1.1) saturate(1.4);">
+                
+                <!-- Top Image (Before - clipped) using clip-path -->
+                <img src="https://images.unsplash.com/photo-1538370621607-4919ce7889b3?q=80&w=1200" alt="Raw" class="absolute inset-0 w-full h-full object-cover pointer-events-none" style="clip-path: inset(0 50% 0 0); filter: grayscale(80%) contrast(0.8);" id="before-img">
+
+                <!-- Slider -->
+                <input type="range" min="0" max="100" value="50" class="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" id="ba-slider">
+                
+                <!-- Drag Handle -->
+                <div class="absolute inset-y-0 w-0.5 bg-white left-1/2 -translate-x-1/2 pointer-events-none z-10 shadow-[0_0_20px_rgba(255,255,255,0.8)]" id="ba-handle">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center text-black border border-white/20">
+                        <i data-lucide="chevrons-left-right" class="w-4 h-4"></i>
                     </div>
                 </div>
+            </div>
+            <p class="text-center text-gray-500 text-xs mt-6 uppercase tracking-widest">Drag to compare Raw Log vs Final Grade</p>
+        </section>
+
+        <section id="sound" class="px-6 md:px-12 max-w-7xl mx-auto relative z-10 py-12 border-t border-white/5 mt-24 gsap-scroll">
+            <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="waves" class="w-4 h-4"></i> Sound Design
+            </div>
+            <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-16">Audio <span class="text-electric">Engineering</span></h2>
+            
+            <div id="sound-card" class="interactive-element p-8 md:p-12 rounded-2xl bg-midnight border border-white/5 flex flex-col md:flex-row items-center gap-8" data-hover-color="rgba(73,198,255,0.2)">
+                <button id="audio-play-btn" class="w-20 h-20 rounded-full bg-electric/10 border border-electric/30 flex items-center justify-center shrink-0 hover:scale-110 hover:bg-electric hover:text-black transition-all text-white focus:outline-none z-20">
+                    <span id="icon-play" class="block"><i data-lucide="play" class="w-8 h-8 ml-1"></i></span>
+                    <span id="icon-pause" class="hidden"><i data-lucide="pause" class="w-8 h-8"></i></span>
+                </button>
+                <div class="flex-1 w-full relative h-16 flex items-center gap-1 opacity-50 transition-opacity" id="audio-visualizer">
+                    <!-- Generating bars via JS -->
+                </div>
+                <div class="hidden md:block text-right">
+                    <div class="text-white font-bold tracking-widest uppercase mb-1">Foley & SFX</div>
+                    <div class="text-xs text-electric tracking-[0.2em]">HQ AUDIO MIX</div>
+                </div>
+                <!-- Actual Audio Element -->
+                <audio id="demo-audio" src="audio.mp3" preload="auto" loop></audio>
             </div>
         </section>
 
-        <section id="process" class="px-6 md:px-12 max-w-7xl mx-auto relative z-10 py-12 border-t border-white/5 mt-24">
-            <div class="gsap-scroll">
-                <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
-                    <i data-lucide="layers" class="w-4 h-4"></i> How It Works
-                </div>
-                <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-16">The <span class="text-electric">Process</span></h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div class="process-step p-6 rounded-2xl bg-midnight border border-white/5 hover:border-electric/30">
-                    <div class="process-num">01</div>
-                    <h3 class="text-lg font-bold text-white mt-3 mb-2">Raw Intake</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">You send the raw footage, references, and a brief. I absorb everything.</p>
-                </div>
-                <div class="process-step p-6 rounded-2xl bg-midnight border border-white/5 hover:border-electric/30">
-                    <div class="process-num">02</div>
-                    <h3 class="text-lg font-bold text-white mt-3 mb-2">Story Mapping</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">I find the narrative thread, map the pacing, and lock in the emotional arc.</p>
-                </div>
-                <div class="process-step p-6 rounded-2xl bg-midnight border border-white/5 hover:border-violet/30">
-                    <div class="process-num">03</div>
-                    <h3 class="text-lg font-bold text-white mt-3 mb-2">Precision Edit</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Color grading, sound design, transitions, VFX — every frame is intentional.</p>
-                </div>
-                <div class="process-step p-6 rounded-2xl bg-midnight border border-white/5 hover:border-haze/30">
-                    <div class="process-num">04</div>
-                    <h3 class="text-lg font-bold text-white mt-3 mb-2">Final Delivery</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">4K master export, platform-optimized cuts, unlimited revisions until perfection.</p>
-                </div>
-            </div>
-        </section>
-
-        <hr class="border-white/5 my-24 max-w-7xl mx-auto relative z-10">
-
-        <section id="reviews" class="px-6 md:px-12 max-w-7xl mx-auto relative z-10 gsap-scroll">
-            <h2 class="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4">Client <span class="text-violet">Testimonials</span></h2>
-            <p class="text-gray-400 mb-16">Words from those who trusted us with their vision.</p>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="interactive-element p-8 rounded-2xl bg-midnight border border-white/5 hover:border-violet/30 transition-all flex flex-col justify-between" data-hover-color="rgba(122,92,255,0.2)">
-                    <div>
-                        <div class="star-row text-sm mb-4">★★★★★</div>
-                        <p class="text-gray-300 leading-relaxed mb-8">"Elevated our entire brand identity. The pacing is unmatched — they found a story in our messy footage that we didn't even know existed. Absolutely world-class work."</p>
-                    </div>
-                    <div class="border-t border-white/5 pt-4">
-                        <div class="font-bold text-white tracking-wide uppercase text-sm">Vikram Sharma</div>
-                        <div class="text-xs text-violet">Valuable Client</div>
-                    </div>
-                </div>
-
-                <div class="interactive-element p-8 rounded-2xl bg-midnight border border-white/5 hover:border-electric/30 transition-all flex flex-col justify-between" data-hover-color="rgba(73,198,255,0.2)">
-                    <div>
-                        <div class="star-row text-sm mb-4">★★★★★</div>
-                        <p class="text-gray-300 leading-relaxed mb-8">"The color grading alone made our commercial look like a Hollywood feature. Fast turnaround, highly communicative, and technically brilliant. Will work with them again."</p>
-                    </div>
-                    <div class="border-t border-white/5 pt-4">
-                        <div class="font-bold text-white tracking-wide uppercase text-sm">Priya Desai</div>
-                        <div class="text-xs text-electric">Valuable Client</div>
-                    </div>
-                </div>
-
-                <div class="interactive-element p-8 rounded-2xl bg-midnight border border-white/5 hover:border-haze/30 transition-all flex flex-col justify-between" data-hover-color="rgba(157,180,255,0.2)">
-                    <div>
-                        <div class="star-row text-sm mb-4">★★★★★</div>
-                        <p class="text-gray-300 leading-relaxed mb-8">"Handed over a hard drive of chaotic documentary footage. What was delivered back was a tightly woven, emotional masterpiece. ZyroEditz doesn't just edit — they direct."</p>
-                    </div>
-                    <div class="border-t border-white/5 pt-4">
-                        <div class="font-bold text-white tracking-wide uppercase text-sm">Arjun Malhotra</div>
-                        <div class="text-xs text-haze">Valuable Client</div>
-                    </div>
-                </div>
-
-                <div class="interactive-element p-8 rounded-2xl bg-midnight border border-white/5 hover:border-violet/30 transition-all flex flex-col justify-between" data-hover-color="rgba(122,92,255,0.2)">
-                    <div>
-                        <div class="star-row text-sm mb-4">★★★★★</div>
-                        <p class="text-gray-300 leading-relaxed mb-8">"Our Instagram reels went from 5K to 2M+ views after switching to ZyroEditz. The retention-first editing approach is a game-changer. Every frame screams quality."</p>
-                    </div>
-                    <div class="border-t border-white/5 pt-4">
-                        <div class="font-bold text-white tracking-wide uppercase text-sm">Neha Krishnan</div>
-                        <div class="text-xs text-violet">Valuable Client</div>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <footer class="mt-32 py-12 border-t border-white/5 text-center flex flex-col items-center relative z-10 bg-midnight">
             <div class="text-2xl font-brand font-black tracking-widest mb-4 opacity-80">Zyro<span class="text-zyrored">Editz</span><sup style="font-size:0.4em; vertical-align:super; font-weight:400;">&trade;</sup></div>
@@ -638,17 +546,7 @@
                 });
             });
 
-            // Process steps: staggered
-            gsap.utils.toArray('.process-step').forEach((step, i) => {
-                ScrollTrigger.create({
-                    trigger: step,
-                    start: "top 90%",
-                    onEnter: () => {
-                        gsap.to(step, { y: 0, opacity: 1, duration: 0.8, delay: i * 0.1, ease: "power3.out", overwrite: true });
-                    },
-                    once: true
-                });
-            });
+
         }
 
         function scrollToSection(id) {
@@ -721,6 +619,68 @@
                 // Stop video
                 document.getElementById('video-player').src = "";
             }, 500);
+        }
+
+        // Before & After Slider Logic
+        const baSlider = document.getElementById('ba-slider');
+        const baHandle = document.getElementById('ba-handle');
+        const beforeImg = document.getElementById('before-img');
+        if (baSlider) {
+            baSlider.addEventListener('input', (e) => {
+                const val = e.target.value;
+                // Update clip-path and handle position
+                beforeImg.style.clipPath = `inset(0 ${100 - val}% 0 0)`;
+                baHandle.style.left = `${val}%`;
+            });
+        }
+
+        // Sound Visualizer Bars Generation & Audio Playback
+        const visContainer = document.getElementById('audio-visualizer');
+        const demoAudio = document.getElementById('demo-audio');
+        const playBtn = document.getElementById('audio-play-btn');
+        const iconPlay = document.getElementById('icon-play');
+        const iconPause = document.getElementById('icon-pause');
+        
+        if (visContainer && demoAudio && playBtn) {
+            for(let i=0; i<30; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'flex-1 bg-electric rounded-full transition-all duration-300 transform-gpu';
+                bar.style.height = `${Math.max(15, Math.random() * 100)}%`;
+                visContainer.appendChild(bar);
+            }
+            
+            playBtn.addEventListener('click', () => {
+                if (demoAudio.paused) {
+                    demoAudio.volume = 0.5;
+                    const playPromise = demoAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            iconPlay.classList.replace('block', 'hidden');
+                            iconPause.classList.replace('hidden', 'block');
+                            visContainer.style.opacity = '1';
+                        }).catch(e => console.log('Audio playback prevented.'));
+                    }
+                } else {
+                    demoAudio.pause();
+                    iconPause.classList.replace('block', 'hidden');
+                    iconPlay.classList.replace('hidden', 'block');
+                    visContainer.style.opacity = '0.5';
+                    
+                    // Reset visualizer bars
+                    Array.from(visContainer.children).forEach(bar => {
+                        bar.style.height = `${Math.max(15, Math.random() * 100)}%`;
+                    });
+                }
+            });
+
+            // Fast animation on interval to make it look alive when playing
+            setInterval(() => {
+                if (!demoAudio.paused) {
+                    Array.from(visContainer.children).forEach(bar => {
+                        bar.style.height = `${Math.max(20, Math.random() * 100)}%`;
+                    });
+                }
+            }, 100);
         }
     </script>
 </body>
