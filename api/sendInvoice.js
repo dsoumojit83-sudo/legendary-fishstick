@@ -116,6 +116,15 @@ async function sendInvoice(order) {
                     const pdfData = Buffer.concat(buffers);
                     log('INFO', orderId, `PDF generated successfully (${pdfData.length} bytes). Attempting email send...`);
 
+                    // B-15 FIX: Guard against missing or malformed email.
+                    // If client_email is absent (e.g. admin-created order with no email),
+                    // resolve cleanly instead of crashing Resend with an invalid 'to' field.
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!order.client_email || !emailRegex.test(String(order.client_email).trim())) {
+                        log('WARN', orderId, `No valid client_email on order — skipping invoice email.`);
+                        return resolve();
+                    }
+
                     // --- 2. EMAIL TRANSMISSION ENGINE ---
                     const { data, error } = await resend.emails.send({
                         from: 'ZyroEditz™ <billing@zyroeditz.xyz>',
