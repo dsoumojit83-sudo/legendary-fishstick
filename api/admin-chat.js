@@ -264,25 +264,22 @@ async function executeAction(action, sessionId) {
                 ? String(phone).replace(/\D/g, '').slice(-10)
                 : '9999999999';
 
-            // ── Use Cashfree Payment Links API (/pg/links) ─────────────────────
-            // This returns a real shareable `link_url` the admin can send to the client.
-            // The Order API (/pg/orders) only returns a session token for SDK checkout.
-            const cfResponse = await axios.post('https://api.cashfree.com/pg/links', {
-                link_amount: Number(amount),
-                link_currency: 'INR',
-                link_purpose: `${service} — ZyroEditz™`,
-                link_id: orderId,
+            // ── Use Cashfree Orders API (/pg/orders) ─────────────────────
+            // This works for all Cashfree accounts without special approval.
+            // We construct a hosted link using the session ID.
+            const cfResponse = await axios.post('https://api.cashfree.com/pg/orders', {
+                order_amount: Number(amount),
+                order_currency: 'INR',
+                order_note: `${service} — ZyroEditz™`,
+                order_id: orderId,
                 customer_details: {
+                    customer_id: orderId,
                     customer_name: client_name,
                     customer_email: email,
                     customer_phone: cleanPhone
                 },
-                link_meta: {
+                order_meta: {
                     return_url: `https://zyroeditz.xyz/payment-success?order_id=${orderId}`
-                },
-                link_notify: {
-                    send_sms: false,
-                    send_email: false  // We handle our own emails via sendInvoice on webhook
                 }
             }, {
                 headers: {
@@ -292,8 +289,13 @@ async function executeAction(action, sessionId) {
                 }
             });
 
-            // Payment Links API returns link_url directly
-            payment_link = cfResponse.data.link_url || cfResponse.data.link_id || null;
+            // Construct our own "Payment Link" using the session ID
+            const sessionId = cfResponse.data.payment_session_id;
+            if (sessionId) {
+                payment_link = `https://payments.cashfree.com/order/#${sessionId}`;
+            } else {
+                payment_link = null;
+            }
         } catch (e) {
             console.log('Cashfree Payment Link error:', e.response?.data || e.message);
             return { success: false, error: `Order created in DB but Cashfree link generation failed: ${e.response?.data?.message || e.message}` };
@@ -343,7 +345,7 @@ async function executeAction(action, sessionId) {
                 let refundOrderId = orderId;
 
                 try {
-                    // Check if a direct order exists in Cashfree
+                    // Check if an order exists in Cashfree
                     await axios.get(`https://api.cashfree.com/pg/orders/${orderId}`, {
                         headers: {
                             'x-api-version': '2025-01-01',
@@ -353,26 +355,7 @@ async function executeAction(action, sessionId) {
                     });
                     // Order exists via Orders API — use orderId directly for refund
                 } catch (lookupErr) {
-                    if (lookupErr.response?.status === 404) {
-                        // Payment Link order — Cashfree auto-creates an internal order ID.
-                        // Fetch it from the Payment Links API.
-                        const linkRes = await axios.get(`https://api.cashfree.com/pg/links/${orderId}`, {
-                            headers: {
-                                'x-api-version': '2025-01-01',
-                                'x-client-id': process.env.CASHFREE_APP_ID,
-                                'x-client-secret': process.env.CASHFREE_SECRET_KEY
-                            }
-                        });
-                        // The link's linked order_id is in link_orders[0].order_id
-                        const linkedOrders = linkRes.data.link_orders || [];
-                        if (linkedOrders.length > 0) {
-                            refundOrderId = linkedOrders[0].order_id;
-                        } else {
-                            throw new Error('No completed payment found for this Payment Link.');
-                        }
-                    } else {
-                        throw lookupErr;
-                    }
+                    throw lookupErr;
                 }
 
                 const refundId = `REFUND_${orderId}_${Date.now().toString().slice(-6)}`;
