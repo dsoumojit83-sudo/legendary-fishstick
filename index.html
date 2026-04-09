@@ -3591,7 +3591,11 @@
             vid.addEventListener('playing', () => { load.style.display='none'; syncIcons(); });
             vid.addEventListener('play', syncIcons);
             vid.addEventListener('pause', syncIcons);
-            vid.addEventListener('error', () => { load.style.display='none'; err.style.display='flex'; });
+            vid.addEventListener('error', () => { 
+                console.error('[index] Video playback error. Code:', vid.error ? vid.error.code : 'Unknown', vid.error ? vid.error.message : '');
+                load.style.display='none'; 
+                err.style.display='flex'; 
+            });
 
             document.getElementById('msvp-shell').addEventListener('mousemove', () => {
                 ctrl.style.opacity = '1';
