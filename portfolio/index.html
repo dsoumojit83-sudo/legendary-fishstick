@@ -683,6 +683,7 @@
         vpVideo.addEventListener('play',  syncPlayIcon);
         vpVideo.addEventListener('pause', syncPlayIcon);
         vpVideo.addEventListener('error', () => {
+            if (!vpVideo.getAttribute('src')) return;
             console.error('[portfolio] Video playback error. Code:', vpVideo.error ? vpVideo.error.code : 'Unknown', vpVideo.error ? vpVideo.error.message : '');
             vpLoading.style.display = 'none';
             vpErrorEl.style.display = 'flex';
@@ -733,7 +734,7 @@
             _currentFile = filename;
 
             // Reset player state
-            vpVideo.src       = '';
+            vpVideo.removeAttribute('src'); vpVideo.load();
             vpFill.style.width = '0%';
             vpBuf.style.width  = '0%';
             vpTime.textContent = '0:00 / 0:00';
@@ -785,7 +786,7 @@
                 modal.style.visibility = 'hidden';
                 document.body.style.overflow = 'auto';
                 vpVideo.pause();
-                vpVideo.src = '';
+                vpVideo.removeAttribute('src'); vpVideo.load();
             }, 500);
         }
 
