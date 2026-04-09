@@ -124,6 +124,12 @@
             border: 1px solid rgba(34, 197, 94, 0.2);
         }
 
+        .status-refunded {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
         .noise {
             position: fixed;
             inset: 0;
@@ -394,6 +400,31 @@
                 max-height: 85dvh !important;
                 overflow-y: auto !important;
                 margin: 8px !important;
+            }
+
+            /* R-03 FIX: Portfolio slide-in modal — save button unreachable when keyboard is open.
+               Form area scrollable; footer gets safe-area inset for iOS home bar. */
+            #pv-modal {
+                max-height: 100dvh;
+                overflow: hidden;
+            }
+            #pv-modal > div > div.flex-1 {
+                max-height: calc(100dvh - 180px) !important;
+                overflow-y: auto !important;
+            }
+            #pv-modal > div > div:last-child {
+                padding-bottom: calc(1rem + env(safe-area-inset-bottom, 12px)) !important;
+            }
+
+            /* R-04 FIX: Chart canvas overflows its card on sub-400px screens */
+            canvas {
+                max-width: 100% !important;
+            }
+
+            /* R-05 FIX: Full projects table — hide Service/Amount/Date cols on mobile.
+               Only Client and Status+Actions visible → readable on 375px. */
+            .full-table-mob-hide {
+                display: none !important;
             }
         }
         /* ━━━━━━━━━━━━━━━ END MOBILE OVERRIDES ━━━━━━━━━━━━━━━ */
@@ -1094,119 +1125,55 @@
 
                 <!-- ========== PORTFOLIO VAULT VIEW ========== -->
                 <div id="portfolio-vault-view" class="view-section">
-                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+                    <!-- Stats Row -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
-                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Total Entries</div>
-                            <div class="text-3xl font-bold text-white">5</div>
+                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Total Items</div>
+                            <div class="text-3xl font-bold text-white" id="pv-stat-total">—</div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
+                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Active / Live</div>
+                            <div class="text-3xl font-bold text-green-400" id="pv-stat-active">—</div>
                         </div>
                         <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
                             <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Categories</div>
-                            <div class="text-3xl font-bold text-[#49c6ff]">3</div>
+                            <div class="text-3xl font-bold text-[#49c6ff]" id="pv-stat-cats">—</div>
                         </div>
                         <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
-                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Testimonials</div>
-                            <div class="text-3xl font-bold text-[#7a5cff]">4</div>
-                        </div>
-                        <div class="glass-panel p-6 rounded-2xl bg-black/40 border border-white/5">
-                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Status</div>
-                            <div class="text-3xl font-bold text-green-400">Live</div>
+                            <div class="text-xs uppercase tracking-widest text-gray-400 mb-1">Portfolio Page</div>
+                            <a href="/portfolio" target="_blank" class="text-sm font-bold text-[#ff1a1a] hover:underline flex items-center gap-1 mt-2">View Live <i data-lucide="external-link" class="w-3 h-3"></i></a>
                         </div>
                     </div>
 
-                    <div class="glass-panel rounded-2xl p-6 border border-white/5 mb-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+                    <!-- Table -->
+                    <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                        <div class="p-4 sm:p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-black/20">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Portfolio Items</h3>
-                                <p class="text-xs text-gray-400 mt-1">Live entries displayed on <a href="/portfolio" target="_blank" class="text-[#49c6ff] hover:underline">/portfolio</a></p>
+                                <p class="text-xs text-gray-400 mt-1">Changes go live on <a href="/portfolio" target="_blank" class="text-[#49c6ff] hover:underline">/portfolio</a> immediately</p>
                             </div>
-                            <a href="/portfolio" target="_blank" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-white/10 flex items-center gap-2">
-                                <i data-lucide="external-link" class="w-4 h-4"></i> View Live
-                            </a>
+                            <button onclick="openPVModal()" class="flex items-center gap-2 px-4 py-2 bg-[#ff1a1a] text-black text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-all shrink-0">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Add Item
+                            </button>
                         </div>
 
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead>
-                                    <tr class="border-b border-white/10 text-[10px] uppercase tracking-widest text-gray-500">
-                                        <th class="pb-3 pr-4">Project</th>
-                                        <th class="pb-3 pr-4">Category</th>
-                                        <th class="pb-3 pr-4">Video ID</th>
-                                        <th class="pb-3 pr-4">Grid Size</th>
-                                        <th class="pb-3 text-right">Status</th>
+                            <table class="w-full text-left min-w-[700px]">
+                                <thead class="border-b border-white/5 bg-black/20">
+                                    <tr class="text-[10px] uppercase tracking-widest text-gray-500">
+                                        <th class="p-4">Order</th>
+                                        <th class="p-4">Title</th>
+                                        <th class="p-4">Category</th>
+                                        <th class="p-4">Filename</th>
+                                        <th class="p-4">Grid</th>
+                                        <th class="p-4 text-center">Visible</th>
+                                        <th class="p-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody class="text-sm">
-                                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                                        <td class="py-4 pr-4 font-bold text-white">NEON NIGHTS</td>
-                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-[#7a5cff]/10 text-[#7a5cff] text-xs font-bold">Ads</span></td>
-                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">dQw4w9WgXcQ</td>
-                                        <td class="py-4 pr-4 text-gray-400">2×2 Featured</td>
-                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
-                                    </tr>
-                                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                                        <td class="py-4 pr-4 font-bold text-white">URBAN ECHO</td>
-                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-[#49c6ff]/10 text-[#49c6ff] text-xs font-bold">Short Film</span></td>
-                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">jNQXAC9IVRw</td>
-                                        <td class="py-4 pr-4 text-gray-400">1×1</td>
-                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
-                                    </tr>
-                                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                                        <td class="py-4 pr-4 font-bold text-white">RHYTHM</td>
-                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-[#9db4ff]/10 text-[#9db4ff] text-xs font-bold">Reels</span></td>
-                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">dQw4w9WgXcQ</td>
-                                        <td class="py-4 pr-4 text-gray-400">1×1</td>
-                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
-                                    </tr>
-                                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                                        <td class="py-4 pr-4 font-bold text-white">SPEED DYNAMICS</td>
-                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-white/10 text-gray-300 text-xs font-bold">Ads</span></td>
-                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">jNQXAC9IVRw</td>
-                                        <td class="py-4 pr-4 text-gray-400">2×1 Wide</td>
-                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
-                                    </tr>
-                                    <tr class="hover:bg-white/[0.02] transition-colors">
-                                        <td class="py-4 pr-4 font-bold text-white">VIRAL CUTS</td>
-                                        <td class="py-4 pr-4"><span class="px-2 py-1 rounded-full bg-[#49c6ff]/10 text-[#49c6ff] text-xs font-bold">Reels</span></td>
-                                        <td class="py-4 pr-4 font-mono text-gray-400 text-xs">dQw4w9WgXcQ</td>
-                                        <td class="py-4 pr-4 text-gray-400">1×1</td>
-                                        <td class="py-4 text-right"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span></td>
-                                    </tr>
+                                <tbody id="pv-tbody" class="text-sm divide-y divide-white/5">
+                                    <tr><td colspan="7" class="p-6 text-center text-gray-500"><div class="skeleton h-8 w-full"></div></td></tr>
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-
-                    <div class="glass-panel rounded-2xl p-6 border border-white/5">
-                        <h3 class="text-lg font-bold text-white mb-4">Client Testimonials</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="p-4 rounded-xl bg-black/30 border border-white/5">
-                                <div class="flex justify-between items-start">
-                                    <div class="font-bold text-white text-sm">Vikram Sharma</div>
-                                    <span class="text-[#49c6ff] text-xs">★★★★★</span>
-                                </div>
-                                <div class="text-xs text-[#7a5cff] mt-1">Valuable Client</div>
-                            </div>
-                            <div class="p-4 rounded-xl bg-black/30 border border-white/5">
-                                <div class="flex justify-between items-start">
-                                    <div class="font-bold text-white text-sm">Priya Desai</div>
-                                    <span class="text-[#49c6ff] text-xs">★★★★★</span>
-                                </div>
-                                <div class="text-xs text-[#49c6ff] mt-1">Valuable Client</div>
-                            </div>
-                            <div class="p-4 rounded-xl bg-black/30 border border-white/5">
-                                <div class="flex justify-between items-start">
-                                    <div class="font-bold text-white text-sm">Arjun Malhotra</div>
-                                    <span class="text-[#49c6ff] text-xs">★★★★★</span>
-                                </div>
-                                <div class="text-xs text-[#9db4ff] mt-1">Valuable Client</div>
-                            </div>
-                            <div class="p-4 rounded-xl bg-black/30 border border-white/5">
-                                <div class="flex justify-between items-start">
-                                    <div class="font-bold text-white text-sm">Neha Krishnan</div>
-                                    <span class="text-[#49c6ff] text-xs">★★★★★</span>
-                                </div>
-                                <div class="text-xs text-[#7a5cff] mt-1">Valuable Client</div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1874,7 +1841,7 @@
                 globalOrdersData.forEach(o => {
                     if (o.status === 'completed') {
                         vaultCompleted++;
-                    } else {
+                    } else if (o.status !== 'refunded' && o.status !== 'canceled' && o.status !== 'cancelled') {
 
                         if (o.has_files) vaultReady++; else vaultAwaiting++;
                         if (o.deadline) {
@@ -2072,7 +2039,7 @@
         // with text-transform:uppercase, but underscores stay visible. This maps
         // raw status → clean display text.
         function statusLabel(status) {
-            const map = { in_progress: 'WORKING', pending: 'PENDING', paid: 'PAID', completed: 'COMPLETED' };
+            const map = { in_progress: 'WORKING', pending: 'PENDING', paid: 'PAID', completed: 'COMPLETED', refunded: 'REFUNDED', canceled: 'CANCELLED', cancelled: 'CANCELLED' };
             return map[status] || (status || '').toUpperCase().replace(/_/g, ' ');
         }
 
@@ -2131,10 +2098,13 @@
                 let badgeClass = 'status-pending';
                 if (order.status === 'in_progress') badgeClass = 'status-progress';
                 if (order.status === 'completed' || order.status === 'paid') badgeClass = 'status-completed';
+                if (order.status === 'refunded' || order.status === 'canceled' || order.status === 'cancelled') badgeClass = 'status-refunded';
 
                 const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
                 const avatar = getAvatarHTML(clientName);
                 const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB') : 'Just now';
+
+
 
                 // FIX: Passing the entire order to calculate dynamic completion date or deadline
                 const deadlineBadge = getDeadlineBadge(order);
@@ -2149,7 +2119,8 @@
                 `;
 
                 let completeBtnHTML = '';
-                if (order.status !== 'completed') {
+                // In-progress or pending (exclude completed, refunded, canceled)
+                if (order.status !== 'completed' && order.status !== 'refunded' && order.status !== 'canceled' && order.status !== 'cancelled') {
                     const isInProgress = order.status === 'in_progress';
                     completeBtnHTML = `
                         <button onclick="markProjectCompleted('${order.id}', '${order.status}')"
@@ -2214,9 +2185,9 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="p-4 text-gray-300 text-sm font-medium">${order.service}</td>
-                        <td class="p-4 font-bold text-white">₹${order.amount}</td>
-                        <td class="p-4">
+                        <td class="p-4 text-gray-300 text-sm font-medium full-table-mob-hide">${order.service}</td>
+                        <td class="p-4 font-bold text-white full-table-mob-hide">₹${order.amount}</td>
+                        <td class="p-4 full-table-mob-hide">
                             <div class="flex flex-col gap-1">
                                 <span class="text-[10px] text-gray-500">Booked: ${orderDate}</span>
                                 ${deadlineBadge}
@@ -2494,6 +2465,7 @@
                 let badgeClass = 'status-pending';
                 if (order.status === 'in_progress') badgeClass = 'status-progress';
                 if (order.status === 'completed' || order.status === 'paid') badgeClass = 'status-completed';
+                if (order.status === 'refunded' || order.status === 'canceled' || order.status === 'cancelled') badgeClass = 'status-refunded';
 
                 const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
                 const avatar = getAvatarHTML(clientName);
@@ -2511,7 +2483,7 @@
                     </div>`;
 
                 let completeBtnHTML = '';
-                if (order.status !== 'completed') {
+                if (order.status !== 'completed' && order.status !== 'refunded' && order.status !== 'canceled' && order.status !== 'cancelled') {
                     const isInProgress = order.status === 'in_progress';
                     completeBtnHTML = `<button onclick="markProjectCompleted('${order.id}', '${order.status}')"
                         class="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
@@ -3529,10 +3501,239 @@
         window.exportPortfolioJSON = function() {
             showToast('JSON export will be available once connected to live site DB', 'info');
         };
-        window.openPortfolioModal = function() {
-            showToast('Live editing is currently disabled. Please edit portfolio/index.html manually.', 'info');
+
+        // ── Portfolio Vault CRUD ─────────────────────────────────────────────────
+        let _pvItems = [];
+        let _pvEditId = null;
+
+        async function pvAuthHeader() {
+            const { data: { session } } = await supabaseClient.auth.getSession(); // BUG-1 FIX: was _supabase
+            return session ? { 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' } : {};
+        }
+
+        window.loadPortfolioView = async function () {
+            if (!authToken) return; // BUG-2 FIX: guard against unauthenticated calls
+            const tbody = document.getElementById('pv-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center"><div class="skeleton h-8 w-full"></div></td></tr>';
+            try {
+                const headers = await pvAuthHeader();
+                const res  = await fetch('/api/admin-data?type=portfolio', { headers });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed');
+                _pvItems = data.items || [];
+                renderPVTable();
+                // Stats
+                document.getElementById('pv-stat-total').textContent  = _pvItems.length;
+                document.getElementById('pv-stat-active').textContent = _pvItems.filter(i => i.active).length;
+                const cats = new Set(_pvItems.map(i => i.category));
+                document.getElementById('pv-stat-cats').textContent   = cats.size;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-400 text-sm">⚠ ${e.message}</td></tr>`;
+            }
+        };
+
+        function renderPVTable() {
+            const tbody = document.getElementById('pv-tbody');
+            if (!tbody) return;
+            if (!_pvItems.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-500 text-sm">No portfolio items yet. Click "Add Item".</td></tr>';
+                return;
+            }
+            const catColors = { 'Ads': '#7a5cff', 'Reels': '#49c6ff', 'Short Film': '#9db4ff' };
+            tbody.innerHTML = _pvItems.map((item, i) => `
+                <tr class="hover:bg-white/[0.02] transition-colors">
+                    <td class="p-4 text-gray-500 text-xs font-mono">${item.display_order}</td>
+                    <td class="p-4 font-bold text-white">${item.title}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-bold" style="background:${(catColors[item.category]||'#fff')}20;color:${catColors[item.category]||'#aaa'}">
+                            ${item.category}
+                        </span>
+                    </td>
+                    <td class="p-4 font-mono text-gray-400 text-xs">${item.filename}</td>
+                    <td class="p-4 text-gray-400 text-xs">${item.grid_cols}×${item.grid_rows}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="togglePV('${item.id}', ${!item.active})" title="${item.active ? 'Hide' : 'Show'}"
+                            class="w-8 h-4 rounded-full relative transition-colors duration-200 ${item.active ? 'bg-green-500' : 'bg-white/10'}">
+                            <span class="absolute top-0.5 ${item.active ? 'right-0.5' : 'left-0.5'} w-3 h-3 rounded-full bg-white transition-all"></span>
+                        </button>
+                    </td>
+                    <td class="p-4 text-right flex items-center justify-end gap-2">
+                        <button onclick="openPVModal('${item.id}')" class="flex items-center gap-1 px-3 py-1.5 bg-white/5 hover:bg-[#49c6ff]/20 hover:text-[#49c6ff] text-gray-400 rounded-lg text-xs transition-all">
+                            <i data-lucide="pencil" class="w-3 h-3"></i> Edit
+                        </button>
+                        <button onclick="deletePV('${item.id}')" class="flex items-center gap-1 px-3 py-1.5 bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-gray-400 rounded-lg text-xs transition-all">
+                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        window.openPVModal = function(id) {
+            _pvEditId = id || null;
+            const modal = document.getElementById('pv-modal');
+            const form  = document.getElementById('pv-form');
+            form.reset();
+            document.getElementById('pv-modal-title').textContent = id ? 'Edit Portfolio Item' : 'Add Portfolio Item';
+            if (id) {
+                const item = _pvItems.find(i => i.id === id);
+                if (item) {
+                    form.pv_title.value       = item.title || '';
+                    form.pv_category.value    = item.category || 'Reels';
+                    form.pv_filename.value    = item.filename || '';
+                    form.pv_thumbnail.value   = item.thumbnail_url || '';
+                    form.pv_color.value       = item.accent_color || 'rgba(73,198,255,0.5)';
+                    form.pv_cols.value        = item.grid_cols || 1;
+                    form.pv_rows.value        = item.grid_rows || 1;
+                    form.pv_order.value       = item.display_order || 99;
+                }
+            }
+            modal.classList.remove('translate-x-full');
+            modal.classList.add('translate-x-0');
+        };
+
+        window.closePVModal = function() {
+            const modal = document.getElementById('pv-modal');
+            modal.classList.add('translate-x-full');
+            modal.classList.remove('translate-x-0');
+            _pvEditId = null;
+        };
+
+        window.savePV = async function() {
+            const form = document.getElementById('pv-form');
+            const payload = {
+                action:       _pvEditId ? 'portfolio_update' : 'portfolio_add',
+                id:           _pvEditId,
+                title:        form.pv_title.value.trim().toUpperCase(),
+                category:     form.pv_category.value,
+                filename:     form.pv_filename.value.trim(),
+                thumbnail_url:form.pv_thumbnail.value.trim() || null,
+                accent_color: form.pv_color.value.trim(),
+                grid_cols:    parseInt(form.pv_cols.value),
+                grid_rows:    parseInt(form.pv_rows.value),
+                display_order:parseInt(form.pv_order.value) || 99,
+            };
+            if (!payload.title || !payload.filename) return showToast('Title and Filename are required.', false); // BUG-3 FIX
+            const saveBtn = document.getElementById('pv-save-btn');
+            saveBtn.textContent = 'Saving…'; saveBtn.disabled = true;
+            try {
+                const headers = await pvAuthHeader();
+                const res = await fetch('/api/admin-data', { method: 'POST', headers, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Save failed');
+                showToast(_pvEditId ? 'Item updated ✓' : 'Item added ✓', true); // BUG-3 FIX
+                closePVModal();
+                loadPortfolioView();
+            } catch(e) {
+                showToast('Error: ' + e.message, false);
+            } finally {
+                saveBtn.textContent = 'Save'; saveBtn.disabled = false;
+            }
+        };
+
+        window.deletePV = async function(id) {
+            const item = _pvItems.find(i => i.id === id);
+            if (!confirm(`Delete "${item?.title}"? This cannot be undone.`)) return;
+            try {
+                const headers = await pvAuthHeader();
+                const res = await fetch('/api/admin-data', { method: 'POST', headers, body: JSON.stringify({ action: 'portfolio_delete', id }) });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Delete failed');
+                showToast('Item deleted', true); // BUG-3 FIX
+                loadPortfolioView();
+            } catch(e) {
+                showToast('Error: ' + e.message, false);
+            }
+        };
+
+        window.togglePV = async function(id, newActive) {
+            try {
+                const headers = await pvAuthHeader();
+                const res = await fetch('/api/admin-data', { method: 'POST', headers, body: JSON.stringify({ action: 'portfolio_toggle', id, active: newActive }) });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Toggle failed');
+                showToast(newActive ? 'Item set to visible' : 'Item hidden', true); // BUG-3 FIX
+                loadPortfolioView();
+            } catch(e) {
+                showToast('Error: ' + e.message, false);
+            }
+        };
+
+        // Hook into switchView to auto-load portfolio data
+        const _origSwitchView = window.switchView;
+        window.switchView = function(viewId, btn) {
+            if (_origSwitchView) _origSwitchView(viewId, btn);
+            if (viewId === 'portfolio-vault-view') loadPortfolioView();
         };
     </script>
+
+    <!-- ── Portfolio CRUD Slide-in Modal ─────────────────────────────────── -->
+    <div id="pv-modal" class="fixed top-0 right-0 h-full w-full sm:w-[420px] z-[9999] translate-x-full transition-transform duration-300 ease-in-out" style="background:rgba(8,8,8,0.98);backdrop-filter:blur(20px);border-left:1px solid rgba(255,255,255,0.08);">
+        <div class="flex flex-col h-full">
+            <!-- Header -->
+            <div class="flex justify-between items-center p-6 border-b border-white/5">
+                <h3 id="pv-modal-title" class="text-white font-bold text-lg">Add Portfolio Item</h3>
+                <button onclick="closePVModal()" class="w-8 h-8 rounded-full border border-white/10 text-gray-400 hover:text-white hover:border-white/30 flex items-center justify-center transition-all text-sm">✕</button>
+            </div>
+            <!-- Form -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <form id="pv-form" onsubmit="return false" class="flex flex-col gap-4">
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Title *</label>
+                        <input name="pv_title" type="text" placeholder="NEON NIGHTS" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Category *</label>
+                        <select name="pv_category" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                            <option value="Reels">Reels</option>
+                            <option value="Ads">Ads</option>
+                            <option value="Short Film">Short Film</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">B2 Filename * <span class="text-gray-600 normal-case tracking-normal">(e.g. neon-nights.mp4)</span></label>
+                        <input name="pv_filename" type="text" placeholder="neon-nights.mp4" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Thumbnail URL <span class="text-gray-600 normal-case tracking-normal">(optional)</span></label>
+                        <input name="pv_thumbnail" type="url" placeholder="https://..." class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Accent Color <span class="text-gray-600 normal-case tracking-normal">(rgba or hex)</span></label>
+                        <input name="pv_color" type="text" placeholder="rgba(73,198,255,0.5)" value="rgba(73,198,255,0.5)" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors font-mono">
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Grid Cols</label>
+                            <select name="pv_cols" class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                                <option value="1">1 (Normal)</option>
+                                <option value="2">2 (Wide)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Grid Rows</label>
+                            <select name="pv_rows" class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                                <option value="1">1 (Normal)</option>
+                                <option value="2">2 (Tall)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Order</label>
+                            <input name="pv_order" type="number" min="1" value="99" class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- Footer -->
+            <div class="p-6 border-t border-white/5 flex gap-3">
+                <button onclick="closePVModal()" class="flex-1 px-4 py-2 border border-white/10 text-gray-400 rounded-lg text-sm hover:border-white/20 hover:text-white transition-all">Cancel</button>
+                <button id="pv-save-btn" onclick="savePV()" class="flex-1 px-4 py-2 bg-[#ff1a1a] text-black font-bold text-sm rounded-lg hover:bg-white transition-all">Save</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
