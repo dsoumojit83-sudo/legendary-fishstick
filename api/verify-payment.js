@@ -175,9 +175,6 @@ module.exports = async function (req, res) {
         log('INFO', order_id, 'Verification request received. Calling Cashfree API...');
 
         // 1. Fetch the authoritative status directly from Cashfree (Server-to-Server)
-        // B-02 FIX: Admin-chat creates orders via Payment Links API (/pg/links), while
-        // the public chat uses the Orders API (/pg/orders). Both use the same order_id/link_id.
-        // Try Orders API first; fall back to Links API if 404 (payment link order).
         let orderStatus;
         try {
             const cashfreeResponse = await axios.get(
@@ -193,25 +190,7 @@ module.exports = async function (req, res) {
             orderStatus = cashfreeResponse.data.order_status; // e.g. "PAID", "ACTIVE"
             log('INFO', order_id, `Orders API returned order_status: ${orderStatus}`);
         } catch (cfErr) {
-            if (cfErr.response?.status === 404) {
-                // Order was created via Payment Links — fall back to Links API
-                log('INFO', order_id, 'Orders API returned 404 — trying Payment Links API...');
-                const linkResponse = await axios.get(
-                    `https://api.cashfree.com/pg/links/${order_id}`,
-                    {
-                        headers: {
-                            'x-api-version': '2025-01-01',
-                            'x-client-id': process.env.CASHFREE_APP_ID,
-                            'x-client-secret': process.env.CASHFREE_SECRET_KEY
-                        }
-                    }
-                );
-                // Payment Links API returns link_status ("PAID", "ACTIVE", "EXPIRED")
-                orderStatus = linkResponse.data.link_status;
-                log('INFO', order_id, `Links API returned link_status: ${orderStatus}`);
-            } else {
-                throw cfErr; // re-throw for any other error (auth, network, etc.)
-            }
+            throw cfErr; // re-throw for any error (auth, network, 404, etc.)
         }
 
         // 2. Only proceed if the payment actually cleared on Cashfree
