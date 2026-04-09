@@ -386,7 +386,7 @@
                     <div class="text-xs text-electric tracking-[0.2em]">HQ AUDIO MIX</div>
                 </div>
                 <!-- Actual Audio Element -->
-                <audio id="demo-audio" src="audio.mp3" preload="auto" loop></audio>
+                <audio id="demo-audio" src="/portfolio/audio.mp3" preload="auto" loop></audio>
             </div>
         </section>
         <section class="max-w-7xl mx-auto px-6 md:px-12 flex justify-center mt-32 mb-8 relative z-10 gsap-scroll">
@@ -697,7 +697,12 @@
             lucide.createIcons();
         }
         function vpTogglePlay() {
-            vpVideo.paused ? vpVideo.play() : vpVideo.pause();
+            if (vpVideo.paused) {
+                const p = vpVideo.play();
+                if (p !== undefined) p.catch(() => {});
+            } else {
+                vpVideo.pause();
+            }
         }
         function vpToggleMute() {
             vpVideo.muted = !vpVideo.muted;
