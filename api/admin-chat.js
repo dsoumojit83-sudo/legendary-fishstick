@@ -553,7 +553,10 @@ STEP 2 — EXECUTE (Only after Soumojit confirms):
 
 Valid Pending Proposal Formats:
 
-1. Propose New Order Creation (Proactively ask for missing Name, Phone, Email, Service, Amount, Deadline):
+1. Propose New Order Creation:
+- You MUST automatically determine the 'amount' based on the requested service using the SERVICES & PRICING menu below.
+- You MUST automatically set 'deadline_date' to 24-48 hours from today unless the user specifies otherwise.
+- Only ask the user for missing details if they haven't provided Name, Phone, Email, or Service.
 <<<PENDING: {"type": "create_order", "client_name": "...", "phone": "...", "email": "...", "service": "...", "amount": "...", "deadline_date": "YYYY-MM-DD"} >>>
 
 2. Propose Status Update (working, completed, pending, paid):
