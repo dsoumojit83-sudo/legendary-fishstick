@@ -6,7 +6,8 @@ const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // ── Backblaze B2 S3-compatible client ────────────────────────────────────────
-const B2_ENDPOINT = process.env.B2_ENDPOINT || '';
+const rawEndpoint = process.env.B2_ENDPOINT || '';
+const B2_ENDPOINT = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint || 's3.us-west-004.backblazeb2.com'}`;
 const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-west-004';
 
 const b2 = new S3Client({
