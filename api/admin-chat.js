@@ -289,10 +289,10 @@ async function executeAction(action, sessionId) {
                 }
             });
 
-            // Construct our own "Payment Link" using the session ID
+            // Construct our own "Payment Link" pointing to our checkout bridge
             const sessionId = cfResponse.data.payment_session_id;
             if (sessionId) {
-                payment_link = `https://payments.cashfree.com/order/#token=${sessionId}`;
+                payment_link = `https://zyroeditz.xyz/checkout?session_id=${sessionId}`;
             } else {
                 payment_link = null;
             }
