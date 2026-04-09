@@ -3592,6 +3592,7 @@
             vid.addEventListener('play', syncIcons);
             vid.addEventListener('pause', syncIcons);
             vid.addEventListener('error', () => { 
+                if (!vid.getAttribute('src')) return;
                 console.error('[index] Video playback error. Code:', vid.error ? vid.error.code : 'Unknown', vid.error ? vid.error.message : '');
                 load.style.display='none'; 
                 err.style.display='flex'; 
@@ -3606,7 +3607,7 @@
             window.openMainVideo = async function(title, filename) {
                 _file = filename;
                 document.getElementById('msvp-title').textContent = title;
-                vid.src = ''; fill.style.width='0%'; buf.style.width='0%';
+                vid.removeAttribute('src'); vid.load(); fill.style.width='0%'; buf.style.width='0%';
                 timeEl.textContent = '0:00 / 0:00';
                 load.style.display='flex'; err.style.display='none';
                 ctrl.style.display='none'; overlay.style.display='none';
@@ -3625,7 +3626,7 @@
             window.closeMainVideo = function() {
                 modal.classList.remove('open');
                 document.body.style.overflow = '';
-                vid.pause(); vid.src = '';
+                vid.pause(); vid.removeAttribute('src'); vid.load();
             };
             window.retryMainVideo = function() {
                 if (_file) openMainVideo(document.getElementById('msvp-title').textContent, _file);
