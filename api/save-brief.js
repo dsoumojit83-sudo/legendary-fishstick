@@ -22,10 +22,8 @@ module.exports = async function(req, res) {
                 .single();
 
             return res.status(200).json({
-                // B-06 FIX: Removed supabaseUrl and supabaseAnonKey from public response.
-                // The frontend already has the anon key baked into the HTML config.
-                // Re-exposing it here is unnecessary and increases the blast radius
-                // if the service-role key is ever accidentally used in this variable.
+                supabaseUrl: process.env.SUPABASE_URL,
+                supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
                 is_online: (!error && data) ? data.is_online : true
             });
         } catch (e) {
