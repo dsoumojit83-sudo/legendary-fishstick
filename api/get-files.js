@@ -70,9 +70,20 @@ module.exports = async function (req, res) {
         }
 
         try {
+            const ext = file.split('.').pop().toLowerCase();
+            const mimeType = ext === 'webm' ? 'video/webm' 
+                           : ext === 'mov' ? 'video/quicktime' 
+                           : ext === 'mkv' ? 'video/x-matroska'
+                           : 'video/mp4';
+
             const signedUrl = await getSignedUrl(
                 b2,
-                new GetObjectCommand({ Bucket: B2_PORTFOLIO_BUCKET, Key: file }),
+                new GetObjectCommand({ 
+                    Bucket: B2_PORTFOLIO_BUCKET, 
+                    Key: file,
+                    ResponseContentType: mimeType,
+                    ResponseContentDisposition: 'inline'
+                }),
                 { expiresIn: 3600 } // 1 hour
             );
             res.setHeader('Cache-Control', 'no-store');
