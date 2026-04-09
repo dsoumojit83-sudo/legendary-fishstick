@@ -12,12 +12,12 @@
     <meta name="theme-color" content="#ff1a1a">
 
     <!-- Tailwind CSS: pre-built at deploy time by Vercel (npm run build → Tailwind CLI) -->
-    <link rel="stylesheet" href="/tailwind.css">
+    <link rel="stylesheet" href="/tailwind.css?v=2">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="dns-prefetch" href="https://unpkg.com">
     <!-- Preload GSAP so it downloads while body renders -->
@@ -3106,6 +3106,7 @@
                     terminalBody.insertAdjacentHTML('beforeend', `<div class="terminal-msg msg-ai"><div class="avatar">ZC</div><div class="bubble">${formattedReply}</div></div>`);
 
                     // ── If the AI executed actions, show confirmation cards ──
+                    const prettify = (str) => String(str).replace(/_/g, ' ').replace(/\//g, '').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                     const actionsToRender = aiResponse.actions || [];
                     if (aiResponse.action) actionsToRender.push(aiResponse.action); // fallback
 
@@ -3117,8 +3118,9 @@
                         const iconColor = isSuccess ? '#22c55e' : '#ef4444';
                         
                         const safeError = escapeHtml(String(act.error || 'Unknown error'));
-                        let actionDesc = act.newStatus ? `Status updated → <strong style="color:#22c55e">${act.newStatus}</strong>` : 
-                                         act.actionType ? `Action completed → <strong style="color:#22c55e">${act.actionType}</strong>` : 
+                        const prettify = (str) => String(str).replace(/_/g, ' ').replace(/\//g, '').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                        let actionDesc = act.newStatus ? `Status updated → <strong style="color:#22c55e">${prettify(act.newStatus)}</strong>` : 
+                                         act.actionType ? `Action completed → <strong style="color:#22c55e">${prettify(act.actionType)}</strong>` : 
                                          'Action completed';
 
                         const label = isSuccess
