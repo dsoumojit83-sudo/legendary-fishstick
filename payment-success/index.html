@@ -190,6 +190,20 @@
                 -webkit-backdrop-filter: none !important;
             }
         }
+
+        /* ── Cinematic button SUCCESS transform ─────────────────────────────── */
+        @keyframes btn-morph-green {
+            0%   { background-color: #ff1a1a; box-shadow: 0 0 0 0 rgba(34,197,94,0); transform: scale(1); }
+            30%  { background-color: #16a34a; box-shadow: 0 0 0 10px rgba(34,197,94,0.25); transform: scale(1.03); }
+            60%  { background-color: #22c55e; box-shadow: 0 0 30px rgba(34,197,94,0.55), 0 0 60px rgba(34,197,94,0.2); transform: scale(1.015); }
+            100% { background-color: #22c55e; box-shadow: 0 0 20px rgba(34,197,94,0.4); transform: scale(1); }
+        }
+        #submitBriefBtn.success-state {
+            animation: btn-morph-green 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards;
+            cursor: default;
+            pointer-events: none;
+            color: #fff !important;
+        }
     </style>
     
     <!-- Vercel Web Analytics -->
@@ -305,7 +319,7 @@
                 <span class="text-gray-400 text-sm font-medium group-hover:text-white transition-colors">Click to select raw files</span>
                 <span class="text-gray-600 text-xs mt-1">Multiple files supported · Any format</span>
                 <!-- File name list — updated by JS when files are chosen -->
-                <span id="fileNameDisplay" class="mt-2 text-[#ff1a1a] text-xs font-mono text-center hidden"></span>
+                <span id="fileNameDisplay" class="mt-2 text-[#ff1a1a] text-xs font-mono text-center hidden" style="word-break:break-all;overflow-wrap:anywhere;"></span>
             </label>
 
             <!-- ── Premium Upload Progress Bar ──────────────────────────── -->
@@ -327,7 +341,7 @@
                 <span id="btnText">Submit &amp; Upload</span>
                 <i id="btnIcon" data-lucide="cloud-upload" class="w-5 h-5 group-hover:translate-y-[-2px] transition-transform"></i>
             </button>
-            <div id="statusMsg" class="mt-3 text-center text-xs font-mono hidden"></div>
+
         </div>
 
         <p class="mt-8 text-gray-600 text-[10px] uppercase tracking-widest brand-name">
@@ -481,7 +495,6 @@
             const btn = this;
             const btnText = document.getElementById('btnText');
             const btnIcon = document.getElementById('btnIcon');
-            const statusMsg = document.getElementById('statusMsg');
             const progressWrapper = document.getElementById('uploadProgressWrapper');
             const progressBar = document.getElementById('uploadProgressBar');
             const progressLabel = document.getElementById('uploadProgressLabel');
@@ -492,7 +505,7 @@
             btn.classList.add('opacity-80', 'cursor-not-allowed');
             btnIcon.classList.add('hidden');
             btnText.innerHTML = `<span class="yt-spinner mr-2"></span> SAVING TO STUDIO CORE...`;
-            statusMsg.classList.add('hidden');
+
             progressWrapper.classList.add('hidden');
 
             try {
@@ -558,16 +571,29 @@
                     }
                 }
 
-                // Restore button
-                btnText.innerHTML = `Submit &amp; Upload`;
-                btnIcon.classList.remove('hidden');
-                btn.disabled = false;
-                btn.classList.remove('opacity-80', 'cursor-not-allowed');
-
-                statusMsg.textContent = uploadError || '✅ Your brief and raw files have been delivered securely. Check your Email for confirmation.';
-                statusMsg.classList.remove('hidden');
-                statusMsg.classList.toggle('text-[#ff1a1a]', !!uploadError);
-                statusMsg.classList.toggle('text-[#22c55e]', !uploadError);
+                if (!uploadError) {
+                    // ── CINEMATIC GREEN TRANSFORM ──────────────────────────────────
+                    btn.classList.remove('hover:bg-white', 'hover:shadow-[0_0_30px_rgba(255,26,26,0.4)]', 'opacity-80', 'cursor-not-allowed');
+                    btn.classList.add('success-state');
+                    btnIcon.classList.add('hidden');
+                    btnText.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Assets Delivered to Studio Vault
+                    `;
+                    document.getElementById('fileDropZone').style.pointerEvents = 'none';
+                    document.getElementById('fileDropZone').style.opacity = '0.4';
+                    document.getElementById('projectBrief').disabled = true;
+                    localStorage.removeItem(storageKey);
+                } else {
+                    btnText.innerHTML = `Submit &amp; Upload`;
+                    btnIcon.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                    fileCountEl.textContent = uploadError;
+                    fileCountEl.style.color = '#ff5533';
+                }
 
             } catch (error) {
                 console.error('Submit error:', error);
@@ -575,10 +601,10 @@
                 btnIcon.classList.remove('hidden');
                 btn.disabled = false;
                 btn.classList.remove('opacity-80', 'cursor-not-allowed');
-                statusMsg.textContent = '⚠️ Error saving brief. Please try again.';
-                statusMsg.classList.remove('hidden');
-                statusMsg.classList.add('text-[#ff1a1a]');
-                statusMsg.classList.remove('text-[#22c55e]');
+                progressWrapper.classList.remove('hidden');
+                progressLabel.textContent = 'Submission Failed';
+                document.getElementById('uploadFileCount').textContent = '⚠️ Error saving brief. Please try again.';
+                document.getElementById('uploadFileCount').style.color = '#ff5533';
             }
         });
     </script>
