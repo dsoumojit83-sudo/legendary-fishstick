@@ -292,7 +292,7 @@ async function executeAction(action, sessionId) {
             // Construct our own "Payment Link" using the session ID
             const sessionId = cfResponse.data.payment_session_id;
             if (sessionId) {
-                payment_link = `https://payments.cashfree.com/order/#${sessionId}`;
+                payment_link = `https://payments.cashfree.com/order/#token=${sessionId}`;
             } else {
                 payment_link = null;
             }
