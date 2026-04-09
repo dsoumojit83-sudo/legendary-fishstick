@@ -3,6 +3,17 @@ const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 module.exports = async function (req, res) {
+    // B-20 FIX: Browser sends an OPTIONS preflight before the POST.
+    // Without handling OPTIONS, it returned 405 → the real POST never fired
+    // → settlements tab silently failed to load on first open.
+    const _sAllowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _sOrigin = req.headers.origin;
+    res.setHeader('Access-Control-Allow-Origin', _sAllowed.includes(_sOrigin) ? _sOrigin : _sAllowed[0]);
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Vary', 'Origin');
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
     // Allow only POST
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method Not Allowed" });
