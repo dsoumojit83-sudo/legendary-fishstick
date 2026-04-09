@@ -46,10 +46,15 @@ async function getCachedFilesMap(activeOrders) {
 }
 
 module.exports = async function (req, res) {
-    // CORS headers — required when admin panel is served from a different origin
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    // B-14 FIX: Restrict CORS to known trusted origins only.
+    // admin-data returns sensitive revenue, client names, emails, and phone numbers.
+    // Reflecting any Origin allows cross-origin abuse with a stolen JWT token.
+    const _adAllowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _adOrigin = req.headers.origin;
+    res.setHeader('Access-Control-Allow-Origin', _adAllowed.includes(_adOrigin) ? _adOrigin : _adAllowed[0]);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     // Prevent 304 Browser/Vercel Caching
@@ -64,6 +69,79 @@ module.exports = async function (req, res) {
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
     try {
+        // ── Portfolio admin listing (GET ?type=portfolio) ────────────────────────
+        if (req.method === 'GET' && req.query.type === 'portfolio') {
+            const { data, error } = await supabase
+                .from('portfolio_items')
+                .select('*')
+                .order('display_order');
+            if (error) throw error;
+            return res.status(200).json({ items: data });
+        }
+
+        // ── Portfolio CRUD (POST) ──────────────────────────────────────────
+        if (req.method === 'POST') {
+            const body = req.body || {};
+            const { action } = body;
+
+            if (action === 'portfolio_add') {
+                const { title, category, filename, thumbnail_url, accent_color, grid_cols, grid_rows, display_order } = body;
+                if (!title || !category || !filename) return res.status(400).json({ error: 'title, category, filename are required.' });
+                const { data, error } = await supabase.from('portfolio_items').insert([{
+                    title, category, filename,
+                    thumbnail_url: thumbnail_url || null,
+                    accent_color: accent_color || 'rgba(73,198,255,0.5)',
+                    grid_cols: grid_cols || 1,
+                    grid_rows: grid_rows || 1,
+                    display_order: display_order || 99,
+                    active: true
+                }]).select().single();
+                if (error) throw error;
+                return res.status(201).json({ item: data });
+            }
+
+            if (action === 'portfolio_update') {
+                const { id } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                // BUG-5 FIX: whitelist allowed fields — never pass raw body to Supabase
+                const allowed = ['title','category','filename','thumbnail_url','accent_color','grid_cols','grid_rows','display_order','active'];
+                const updates = {};
+                allowed.forEach(k => { if (k in body) updates[k] = body[k]; });
+                if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields to update.' });
+                const { data, error } = await supabase.from('portfolio_items').update(updates).eq('id', id).select().single();
+                if (error) throw error;
+                return res.status(200).json({ item: data });
+            }
+
+            if (action === 'portfolio_delete') {
+                const { id } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const { error } = await supabase.from('portfolio_items').delete().eq('id', id);
+                if (error) throw error;
+                return res.status(200).json({ ok: true });
+            }
+
+            if (action === 'portfolio_toggle') {
+                const { id, active } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const { data, error } = await supabase.from('portfolio_items').update({ active }).eq('id', id).select().single();
+                if (error) throw error;
+                return res.status(200).json({ item: data });
+            }
+
+            if (action === 'portfolio_reorder') {
+                const { items } = body; // [{id, display_order}]
+                if (!Array.isArray(items)) return res.status(400).json({ error: 'items[] required.' });
+                await Promise.all(items.map(({ id, display_order }) =>
+                    supabase.from('portfolio_items').update({ display_order }).eq('id', id)
+                ));
+                return res.status(200).json({ ok: true });
+            }
+
+            return res.status(400).json({ error: 'Unknown action.' });
+        }
+
+        // ── Existing dashboard/orders GET logic below ───────────────────────
         // Fetch all orders to compute metrics
         const { data: orders, error } = await supabase
             .from('orders')
@@ -111,12 +189,12 @@ module.exports = async function (req, res) {
             }
 
             // Active Pipeline & Urgent Tasks Logistics
-            if (order.status === 'pending' || order.status === 'in_progress' || order.status === 'paid') {
+            if (order.status === 'pending' || order.status === 'working' || order.status === 'paid') {
                 activeProjects++;
 
                 // BUG FIX #8: Only count real, paid/in-progress projects as urgent.
                 // 'pending' = payment not received yet, so deadline pressure isn't real yet.
-                if ((order.status === 'in_progress' || order.status === 'paid') && order.deadline_date) {
+                if ((order.status === 'working' || order.status === 'paid') && order.deadline_date) {
                     // Strip the time from 'now' to ensure accurate day-diff calculation
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
@@ -138,7 +216,7 @@ module.exports = async function (req, res) {
         // This prevents a Vercel timeout as the total order count grows over time.
         // Uses the 60s module-level cache to avoid N concurrent B2 calls per dashboard refresh.
         const activeOrders = orders.filter(o =>
-            o.status === 'pending' || o.status === 'in_progress' || o.status === 'paid'
+            o.status === 'pending' || o.status === 'working' || o.status === 'paid'
         );
 
         // Build a quick lookup map: order_id -> has_files (result from cache or fresh B2 calls)
