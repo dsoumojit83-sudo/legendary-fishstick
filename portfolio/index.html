@@ -6,7 +6,6 @@
     <title>ZyroEditz&trade; | Selected Work</title>
     <meta name="description" content="A curated gallery of cinematic video edits. No sales. Just the work." />
     <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" sizes="128x128" href="/favicon.png">
     <meta name="theme-color" content="#ff1a1a">
     
@@ -125,6 +124,9 @@
         ::-webkit-scrollbar { display: none; }
         html { -ms-overflow-style: none; scrollbar-width: none; }
 
+        /* BUG-10 FIX: loading spinner keyframe */
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         #mouse-spotlight {
             display: none;
             position: fixed;
@@ -235,6 +237,54 @@
         .stat-num { font-variant-numeric: tabular-nums; }
 
 
+        /* ── CUSTOM VIDEO PLAYER ─────────────────────────────────────────── */
+        #vp-controls {
+            background: linear-gradient(to top, rgba(6,6,11,0.98) 0%, rgba(6,6,11,0.6) 70%, transparent 100%);
+        }
+        #vp-progress-track {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 99px;
+            cursor: pointer;
+            position: relative;
+            transition: height 0.15s ease;
+        }
+        #vp-progress-track:hover { height: 7px; }
+        #vp-progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #49c6ff, #7a5cff);
+            box-shadow: 0 0 10px rgba(73,198,255,0.6);
+            pointer-events: none;
+            transition: width 0.1s linear;
+        }
+        #vp-progress-buf {
+            position: absolute;
+            top: 0; left: 0;
+            height: 100%;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.12);
+            pointer-events: none;
+        }
+        .vp-btn {
+            background: none; border: none; cursor: pointer;
+            color: rgba(255,255,255,0.8); padding: 6px;
+            display:flex; align-items:center; justify-content:center;
+            border-radius: 8px; transition: color 0.2s, background 0.2s;
+        }
+        .vp-btn:hover { color: #49c6ff; background: rgba(73,198,255,0.1); }
+        #vp-spinner {
+            width: 52px; height: 52px;
+            border: 3px solid rgba(73,198,255,0.2);
+            border-top-color: #49c6ff;
+            border-radius: 50%;
+            animation: vp-spin 0.8s linear infinite;
+        }
+        @keyframes vp-spin { to { transform: rotate(360deg); } }
+        #vp-error {
+            color: #ff6b6b; font-size: 13px; text-align: center;
+            display: none; flex-direction: column; align-items: center; gap: 10px;
+        }
     </style>
 </head>
 <body class="relative min-h-screen bg-grid-pattern">
@@ -303,78 +353,12 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 auto-rows-[220px] md:auto-rows-[300px] gap-4 md:gap-6" id="bento-grid">
-                
-                <div onclick="openVideo('NEON NIGHTS', 'Ads', 'dQw4w9WgXcQ')" data-category="Ads" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 md:col-span-2 row-span-2" data-hover-color="rgba(122,92,255,0.6)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
-                    <div class="absolute inset-0 bg-gradient-to-br from-violet/20 to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-                    <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Neon Nights">
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
-                        <div class="w-20 h-20 rounded-full bg-ink/60 backdrop-blur-md border border-violet/50 flex items-center justify-center shadow-[0_0_30px_rgba(122,92,255,0.3)] hover:scale-110 transition-transform">
-                            <i data-lucide="play" class="w-8 h-8 text-violet ml-1"></i>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-0 left-0 p-8 z-10 w-full bg-gradient-to-t from-ink via-ink/80 to-transparent transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                        <div class="text-xs tracking-[0.3em] text-violet uppercase font-bold mb-2">Commercial Ad</div>
-                        <div class="text-3xl md:text-4xl font-black tracking-tight text-white">NEON NIGHTS</div>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 auto-rows-[220px] md:auto-rows-[280px] lg:auto-rows-[320px] gap-4 md:gap-6" id="bento-grid">
+                <!-- Cards are dynamically rendered by loadPortfolioItems() -->
+                <div class="col-span-1 md:col-span-3 flex items-center justify-center py-12 text-gray-500" id="portfolio-loading">
+                    <div style="width:32px;height:32px;border:2px solid rgba(73,198,255,0.2);border-top-color:#49c6ff;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:12px"></div>
+                    Loading portfolio…
                 </div>
-
-                <div onclick="openVideo('URBAN ECHO', 'Short Film', 'jNQXAC9IVRw')" data-category="Short Film" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 row-span-1" data-hover-color="rgba(73,198,255,0.5)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
-                    <div class="absolute inset-0 bg-gradient-to-br from-electric/20 to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-                    <img src="https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=500&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Urban Echo">
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
-                        <div class="w-16 h-16 rounded-full bg-ink/60 backdrop-blur-md border border-electric/50 flex items-center justify-center shadow-glow hover:scale-110 transition-transform">
-                            <i data-lucide="play" class="w-6 h-6 text-electric ml-1"></i>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-0 left-0 p-6 z-10 w-full bg-gradient-to-t from-ink via-ink/80 to-transparent transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                        <div class="text-[10px] tracking-[0.2em] text-electric uppercase font-bold mb-1">Short Film</div>
-                        <div class="text-xl md:text-2xl font-bold tracking-tight text-white">URBAN ECHO</div>
-                    </div>
-                </div>
-
-                <div onclick="openVideo('RHYTHM', 'Reels', 'dQw4w9WgXcQ')" data-category="Reels" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 row-span-1" data-hover-color="rgba(157,180,255,0.4)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
-                    <div class="absolute inset-0 bg-gradient-to-br from-haze/20 to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Rhythm">
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
-                        <div class="w-16 h-16 rounded-full bg-ink/60 backdrop-blur-md border border-haze/50 flex items-center justify-center shadow-[0_0_30px_rgba(157,180,255,0.3)] hover:scale-110 transition-transform">
-                            <i data-lucide="play" class="w-6 h-6 text-haze ml-1"></i>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-0 left-0 p-6 z-10 w-full bg-gradient-to-t from-ink via-ink/80 to-transparent transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                        <div class="text-[10px] tracking-[0.2em] text-haze uppercase font-bold mb-1">Music Reel</div>
-                        <div class="text-xl md:text-2xl font-bold tracking-tight text-white">RHYTHM</div>
-                    </div>
-                </div>
-
-                <div onclick="openVideo('SPEED DYNAMICS', 'Ads', 'jNQXAC9IVRw')" data-category="Ads" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 md:col-span-2 row-span-1" data-hover-color="rgba(255,255,255,0.2)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
-                    <div class="absolute inset-0 bg-gradient-to-r from-midnight to-white/10 opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-                    <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Speed Dynamics">
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
-                        <div class="w-16 h-16 rounded-full bg-ink/60 backdrop-blur-md border border-white/50 flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-110 transition-transform">
-                            <i data-lucide="play" class="w-6 h-6 text-white ml-1"></i>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-0 left-0 p-6 z-10 w-full bg-gradient-to-t from-ink via-ink/80 to-transparent transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                        <div class="text-[10px] tracking-[0.2em] text-gray-400 uppercase font-bold mb-1">Automotive Ad</div>
-                        <div class="text-2xl md:text-3xl font-bold tracking-tight text-white">SPEED DYNAMICS</div>
-                    </div>
-                </div>
-                
-                <div onclick="openVideo('VIRAL CUTS', 'Reels', 'dQw4w9WgXcQ')" data-category="Reels" class="portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 row-span-1" data-hover-color="rgba(73,198,255,0.4)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.08">
-                    <div class="absolute inset-0 bg-gradient-to-br from-electric/20 to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-                    <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=500&q=80" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="Viral Cuts">
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
-                        <div class="w-16 h-16 rounded-full bg-ink/60 backdrop-blur-md border border-electric/50 flex items-center justify-center shadow-[0_0_30px_rgba(73,198,255,0.3)] hover:scale-110 transition-transform">
-                            <i data-lucide="play" class="w-6 h-6 text-electric ml-1"></i>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-0 left-0 p-6 z-10 w-full bg-gradient-to-t from-ink via-ink/80 to-transparent transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                        <div class="text-[10px] tracking-[0.2em] text-electric uppercase font-bold mb-1">Social Shorts</div>
-                        <div class="text-xl md:text-2xl font-bold tracking-tight text-white">VIRAL CUTS</div>
-                    </div>
-                </div>
-
             </div>
         </section>
 
@@ -453,22 +437,77 @@
         </footer>
     </main>
 
+    <!-- ── CINEMATIC VIDEO MODAL ──────────────────────────────────────────── -->
     <div id="video-modal" class="fixed inset-0 z-[100] bg-ink/95 backdrop-blur-xl flex flex-col items-center justify-center opacity-0 invisible transition-all duration-500">
-        <button onclick="closeVideo()" class="absolute top-6 right-6 md:top-10 md:right-12 text-gray-400 hover:text-white transition-colors flex items-center gap-2 text-xs uppercase tracking-widest group">
+        <!-- Close -->
+        <button onclick="closeVideo()" class="absolute top-6 right-6 md:top-10 md:right-12 text-gray-400 hover:text-electric transition-colors flex items-center gap-2 text-xs uppercase tracking-widest group z-20">
             <span class="hidden md:inline">Close</span>
-            <div class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:border-white transition-colors">
+            <div class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:border-electric transition-colors">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </div>
         </button>
 
-        <div class="w-full max-w-6xl px-4 md:px-12 flex flex-col transform scale-95 transition-transform duration-500" id="video-content">
+        <div class="w-full max-w-6xl px-4 md:px-12 flex flex-col transform scale-95 transition-transform duration-500 max-h-[92dvh] overflow-y-auto" id="video-content">
+            <!-- Header -->
             <div class="flex items-center gap-4 mb-4">
                 <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold border border-electric/30 px-3 py-1 rounded-full" id="modal-type">Category</div>
                 <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white m-0" id="modal-title">Title</h3>
             </div>
-            
-            <div class="relative w-full aspect-video bg-black rounded-xl border border-white/10 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]">
-                <iframe id="video-player" class="absolute inset-0 w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+            <!-- Player shell -->
+            <div class="relative w-full aspect-video bg-black rounded-2xl border border-white/10 overflow-hidden shadow-[0_0_60px_rgba(73,198,255,0.08)] max-h-[70dvh]" id="vp-shell">
+
+                <!-- Spinner / loading state -->
+                <div id="vp-loading" class="absolute inset-0 flex items-center justify-center z-30 bg-black/60">
+                    <div id="vp-spinner"></div>
+                </div>
+
+                <!-- Error state -->
+                <div id="vp-error" class="absolute inset-0 flex items-center justify-center z-30 bg-black/80" style="display:none;flex-direction:column;gap:10px;">
+                    <i data-lucide="wifi-off" class="w-10 h-10 text-red-400"></i>
+                    <p style="color:#ff6b6b;font-size:13px;">Couldn't load video. Try again.</p>
+                    <button onclick="retryVideo()" style="padding:8px 20px;border-radius:99px;border:1px solid #49c6ff;color:#49c6ff;background:none;cursor:pointer;font-size:12px;letter-spacing:.1em;">RETRY</button>
+                </div>
+
+                <!-- Actual video element -->
+                <video id="vp-video" class="w-full h-full object-contain" preload="auto" playsinline></video>
+
+                <!-- Big play overlay (click to play) -->
+                <div id="vp-play-overlay" class="absolute inset-0 flex items-center justify-center z-20 cursor-pointer" onclick="vpTogglePlay()" style="display:none;">
+                    <div class="w-20 h-20 rounded-full bg-ink/70 backdrop-blur-md border border-electric/50 flex items-center justify-center shadow-[0_0_40px_rgba(73,198,255,0.3)] hover:scale-110 transition-transform">
+                        <i data-lucide="play" class="w-9 h-9 text-electric ml-1" id="vp-big-play-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Controls bar -->
+                <div id="vp-controls" class="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4 pt-10 opacity-0 transition-opacity duration-300" style="display:none;">
+                    <!-- Progress -->
+                    <div id="vp-progress-track" onclick="vpSeek(event)">
+                        <div id="vp-progress-buf" style="width:0%"></div>
+                        <div id="vp-progress-fill" style="width:0%"></div>
+                    </div>
+                    <!-- Buttons row -->
+                    <div class="flex items-center gap-2 mt-3">
+                        <button class="vp-btn" onclick="vpTogglePlay()" id="vp-play-btn">
+                            <i data-lucide="play" class="w-5 h-5" id="vp-play-icon"></i>
+                        </button>
+                        <button class="vp-btn" onclick="vpToggleMute()">
+                            <i data-lucide="volume-2" class="w-5 h-5" id="vp-vol-icon"></i>
+                        </button>
+                        <!-- Volume slider -->
+                        <input id="vp-vol-slider" type="range" min="0" max="1" step="0.05" value="1"
+                            style="width:70px;accent-color:#49c6ff;cursor:pointer;"
+                            oninput="vpSetVolume(this.value)">
+                        <!-- Time -->
+                        <span id="vp-time" style="font-size:11px;color:rgba(255,255,255,0.5);font-family:monospace;margin-left:4px;">0:00 / 0:00</span>
+                        <!-- Spacer -->
+                        <div class="flex-1"></div>
+                        <!-- Fullscreen -->
+                        <button class="vp-btn" onclick="vpFullscreen()">
+                            <i data-lucide="maximize-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -601,9 +640,8 @@
             }
         }
 
-        // Filters
+        // Filters — BUG-4 FIX: query .portfolio-item inside click handler (not at parse time)
         const filterBtns = document.querySelectorAll('.filter-btn');
-        const portfolioItems = document.querySelectorAll('.portfolio-item');
 
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -616,6 +654,8 @@
                 btn.classList.remove('border-white/10', 'bg-white/5', 'text-gray-400');
 
                 const filterValue = btn.getAttribute('data-filter');
+                // Query live DOM here — cards are added asynchronously after page load
+                const portfolioItems = document.querySelectorAll('.portfolio-item');
 
                 portfolioItems.forEach(item => {
                     if (filterValue === 'all' || item.getAttribute('data-category') === filterValue) {
@@ -628,40 +668,150 @@
             });
         });
 
-        // Video Player
-        function openVideo(title, type, videoId) {
+        // ── VIDEO PLAYER ENGINE ──────────────────────────────────────────────
+        const vpVideo     = document.getElementById('vp-video');
+        const vpLoading   = document.getElementById('vp-loading');
+        const vpErrorEl   = document.getElementById('vp-error');
+        const vpControls  = document.getElementById('vp-controls');
+        const vpOverlay   = document.getElementById('vp-play-overlay');
+        const vpFill      = document.getElementById('vp-progress-fill');
+        const vpBuf       = document.getElementById('vp-progress-buf');
+        const vpTime      = document.getElementById('vp-time');
+        const vpPlayIcon  = document.getElementById('vp-play-icon');
+        const vpBigIcon   = document.getElementById('vp-big-play-icon');
+        const vpVolIcon   = document.getElementById('vp-vol-icon');
+        let _currentFile  = null;
+        let _hideCtrlTimer = null;
+
+        function fmtTime(s) {
+            if (!isFinite(s)) return '0:00';
+            const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2,'0')}`;
+        }
+
+        vpVideo.addEventListener('timeupdate', () => {
+            if (!vpVideo.duration) return;
+            const pct = (vpVideo.currentTime / vpVideo.duration) * 100;
+            vpFill.style.width = pct + '%';
+            vpTime.textContent = `${fmtTime(vpVideo.currentTime)} / ${fmtTime(vpVideo.duration)}`;
+        });
+        vpVideo.addEventListener('progress', () => {
+            if (!vpVideo.duration || !vpVideo.buffered.length) return;
+            vpBuf.style.width = ((vpVideo.buffered.end(vpVideo.buffered.length - 1) / vpVideo.duration) * 100) + '%';
+        });
+        vpVideo.addEventListener('canplay', () => {
+            vpLoading.style.display = 'none';
+            vpControls.style.display = 'block';
+            vpOverlay.style.display  = 'flex';
+            vpVideo.play().then(() => syncPlayIcon()).catch(() => {});
+        });
+        vpVideo.addEventListener('waiting', () => { vpLoading.style.display = 'flex'; });
+        vpVideo.addEventListener('playing', () => { vpLoading.style.display = 'none'; syncPlayIcon(); });
+        vpVideo.addEventListener('play',  syncPlayIcon);
+        vpVideo.addEventListener('pause', syncPlayIcon);
+        vpVideo.addEventListener('error', () => {
+            vpLoading.style.display = 'none';
+            vpErrorEl.style.display = 'flex';
+        });
+
+        function syncPlayIcon() {
+            const paused = vpVideo.paused;
+            vpPlayIcon.setAttribute('data-lucide', paused ? 'play' : 'pause');
+            vpBigIcon.setAttribute('data-lucide',  paused ? 'play' : 'pause');
+            vpOverlay.style.display = paused ? 'flex' : 'none';
+            lucide.createIcons();
+        }
+        function vpTogglePlay() {
+            vpVideo.paused ? vpVideo.play() : vpVideo.pause();
+        }
+        function vpToggleMute() {
+            vpVideo.muted = !vpVideo.muted;
+            vpVolIcon.setAttribute('data-lucide', vpVideo.muted ? 'volume-x' : 'volume-2');
+            lucide.createIcons();
+        }
+        function vpSetVolume(v) {
+            vpVideo.volume = v;
+            vpVideo.muted  = (v == 0);
+            vpVolIcon.setAttribute('data-lucide', v == 0 ? 'volume-x' : 'volume-2');
+            lucide.createIcons();
+        }
+        function vpSeek(e) {
+            const track = document.getElementById('vp-progress-track');
+            const pct   = e.offsetX / track.offsetWidth;
+            vpVideo.currentTime = pct * vpVideo.duration;
+        }
+        function vpFullscreen() {
+            const shell = document.getElementById('vp-shell');
+            if (document.fullscreenElement) document.exitFullscreen();
+            else shell.requestFullscreen && shell.requestFullscreen();
+        }
+
+        // Show / hide controls on mouse move inside player
+        document.getElementById('vp-shell').addEventListener('mousemove', () => {
+            vpControls.style.opacity = '1';
+            clearTimeout(_hideCtrlTimer);
+            _hideCtrlTimer = setTimeout(() => { if (!vpVideo.paused) vpControls.style.opacity = '0'; }, 2500);
+        });
+
+        async function openVideo(title, type, filename) {
             document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-type').innerText = type;
-            
-            // Set youtube URL with autoplay
-            document.getElementById('video-player').src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
-            
-            const modal = document.getElementById('video-modal');
+            document.getElementById('modal-type').innerText  = type;
+            _currentFile = filename;
+
+            // Reset player state
+            vpVideo.src       = '';
+            vpFill.style.width = '0%';
+            vpBuf.style.width  = '0%';
+            vpTime.textContent = '0:00 / 0:00';
+            vpLoading.style.display  = 'flex';
+            vpErrorEl.style.display  = 'none';
+            vpControls.style.display = 'none';
+            vpOverlay.style.display  = 'none';
+
+            // Show modal
+            const modal   = document.getElementById('video-modal');
             const content = document.getElementById('video-content');
-            
             modal.style.visibility = 'visible';
             document.body.style.overflow = 'hidden';
-            
             setTimeout(() => {
-                modal.classList.remove('opacity-0');
+                modal.classList.remove('opacity-0', 'invisible');
                 content.classList.remove('scale-95');
                 content.classList.add('scale-100');
             }, 10);
+
+            // Fetch signed URL from backend
+            try {
+                const resp = await fetch(`/api/get-files?portfolio=true&file=${encodeURIComponent(filename)}`);
+                const data = await resp.json();
+                if (!resp.ok || !data.url) throw new Error(data.error || 'No URL');
+                vpVideo.src = data.url;
+                vpVideo.load();
+            } catch (err) {
+                console.error('[portfolio] video load error:', err);
+                vpLoading.style.display = 'none';
+                vpErrorEl.style.display = 'flex';
+            }
+        }
+
+        function retryVideo() {
+            if (_currentFile) {
+                const title = document.getElementById('modal-title').innerText;
+                const type  = document.getElementById('modal-type').innerText;
+                openVideo(title, type, _currentFile);
+            }
         }
 
         function closeVideo() {
-            const modal = document.getElementById('video-modal');
+            const modal   = document.getElementById('video-modal');
             const content = document.getElementById('video-content');
-            
-            modal.classList.add('opacity-0');
+            modal.classList.add('opacity-0', 'invisible');
             content.classList.remove('scale-100');
             content.classList.add('scale-95');
-            
             setTimeout(() => {
                 modal.style.visibility = 'hidden';
-                document.body.style.overflow = 'auto'; // Restore scrolling
-                // Stop video
-                document.getElementById('video-player').src = "";
+                document.body.style.overflow = 'auto';
+                vpVideo.pause();
+                vpVideo.src = '';
             }, 500);
         }
 
@@ -726,6 +876,135 @@
                 }
             }, 100);
         }
+    </script>
+
+    <script>
+    // ── Dynamic Portfolio Loader ─────────────────────────────────────────────
+    // Called once on DOMContentLoaded; re-renders bento grid from Supabase DB.
+    async function loadPortfolioItems() {
+        const grid   = document.getElementById('bento-grid');
+        const loader = document.getElementById('portfolio-loading');
+        try {
+            const res  = await fetch('/api/get-files?portfolio_items=true');
+            const data = await res.json();
+            if (!res.ok || !data.items) throw new Error(data.error || 'API error');
+
+            // Remove loading spinner
+            if (loader) loader.remove();
+
+            if (!data.items.length) {
+                grid.innerHTML = '<div class="col-span-3 text-center text-gray-500 py-16 text-sm">No portfolio items found.</div>';
+                return;
+            }
+
+            // Helper: pick glow/accent color for play button
+            function accentClass(color) {
+                // inline style since color is dynamic
+                return `style="border-color:${color};box-shadow:0 0 30px ${color}"`;
+            }
+
+            const colSpanMap = { 1: 'col-span-1', 2: 'md:col-span-2' };
+            const rowSpanMap = { 1: 'row-span-1', 2: 'row-span-2' };
+
+            const fallbackThumbs = [
+                'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80',
+                'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=500&q=80',
+                'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
+                'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80',
+                'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=500&q=80',
+            ];
+
+            data.items.forEach((item, idx) => {
+                const thumb   = item.thumbnail_url || fallbackThumbs[idx % fallbackThumbs.length];
+                const color   = item.accent_color  || 'rgba(73,198,255,0.5)';
+                const colSpan = colSpanMap[item.grid_cols] || 'col-span-1';
+                const rowSpan = rowSpanMap[item.grid_rows] || 'row-span-1';
+                const padding = item.grid_rows >= 2 ? 'p-8' : 'p-6';
+                const title_size = item.grid_cols >= 2 ? 'text-3xl md:text-4xl' : 'text-xl md:text-2xl';
+                const play_size  = item.grid_rows >= 2 ? 'w-20 h-20' : 'w-16 h-16';
+                const icon_size  = item.grid_rows >= 2 ? 'w-8 h-8'  : 'w-6 h-6';
+
+                // Escape title for safe injection
+                const safeTitle    = item.title.replace(/'/g, "\\'");
+                const safeCategory = item.category.replace(/'/g, "\\'");
+                const safeFilename = item.filename.replace(/'/g, "\\'");
+
+                const card = document.createElement('div');
+                card.setAttribute('onclick', `openVideo('${safeTitle}','${safeCategory}','${safeFilename}')`);
+                card.setAttribute('data-category', item.category);
+                card.setAttribute('data-hover-color', color);
+                card.setAttribute('data-tilt', '');
+                card.setAttribute('data-tilt-max', '1');
+                card.setAttribute('data-tilt-speed', '1000');
+                card.setAttribute('data-tilt-glare', '');
+                card.setAttribute('data-tilt-max-glare', '0.08');
+                card.className = `portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 ${colSpan} ${rowSpan}`;
+
+                card.innerHTML = `
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-60 transition-opacity duration-700" style="background: linear-gradient(135deg, ${color} 0%, transparent 60%)"></div>
+                    <img src="${thumb}" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="${item.title}" loading="lazy">
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
+                        <div class="${play_size} rounded-full bg-ink/60 backdrop-blur-md border flex items-center justify-center hover:scale-110 transition-transform" ${accentClass(color)}>
+                            <i data-lucide="play" class="${icon_size} ml-1" style="color:${color}"></i>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-0 left-0 ${padding} z-10 w-full bg-gradient-to-t from-ink via-ink/80 to-transparent transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                        <div class="text-[10px] tracking-[0.2em] uppercase font-bold mb-1" style="color:${color}">${item.category}</div>
+                        <div class="${title_size} font-black tracking-tight text-white">${item.title}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Reinitialize Lucide icons on new DOM nodes
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Reinitialize VanillaTilt only on non-touch devices (R-06 FIX: prevents Android card jitter)
+            if (typeof VanillaTilt !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+                VanillaTilt.init(grid.querySelectorAll('[data-tilt]'), {
+                    max: 1, speed: 1000, glare: true, 'max-glare': 0.08
+                });
+            }
+
+            // Re-attach interactive hover color listeners
+            grid.querySelectorAll('.interactive-element').forEach(el => {
+                const hoverColor = el.dataset.hoverColor;
+                if (!hoverColor) return;
+                el.addEventListener('mouseenter', () => {
+                    const cursor = document.querySelector('.custom-cursor');
+                    if (cursor) cursor.style.background = hoverColor.replace(/[\d.]+\)$/, '0.15)');
+                });
+            });
+
+            // Rerun active filter if one is selected
+            const activeFilter = document.querySelector('.filter-btn.active');
+            if (activeFilter && activeFilter.dataset.filter !== 'all') {
+                const cat = activeFilter.dataset.filter;
+                grid.querySelectorAll('.portfolio-item').forEach(card => {
+                    card.style.display = card.dataset.category === cat ? '' : 'none';
+                });
+            }
+
+            // BUG-6 FIX: Trigger GSAP scroll animations on newly added cards
+            if (typeof ScrollTrigger !== 'undefined') {
+                grid.querySelectorAll('.bento-item').forEach(item => {
+                    ScrollTrigger.create({
+                        trigger: item,
+                        start: 'top 92%',
+                        onEnter: () => gsap.to(item, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', overwrite: true }),
+                        once: true
+                    });
+                });
+                ScrollTrigger.refresh();
+            }
+
+        } catch (err) {
+            console.error('[portfolio] Failed to load items:', err);
+            if (loader) loader.innerHTML = '<span style="color:#ff6b6b">⚠ Failed to load portfolio. Please refresh.</span>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPortfolioItems);
     </script>
 </body>
 </html>
