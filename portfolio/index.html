@@ -13,41 +13,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@700;900&display=swap" rel="stylesheet" />
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS: pre-built at deploy time by Vercel -->
+    <link rel="stylesheet" href="/tailwind.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        ink: "#06060b",
-                        midnight: "#0b1020",
-                        electric: "#49c6ff",
-                        violet: "#7a5cff",
-                        haze: "#9db4ff",
-                        zyrored: "#ff1a1a"
-                    },
-                    boxShadow: {
-                        glow: "0 0 0 1px rgba(130, 96, 255, 0.16), 0 0 32px rgba(73, 198, 255, 0.18)",
-                        neon: "0 0 30px rgba(73, 198, 255, 0.28)",
-                    },
-                    backgroundImage: {
-                        grid: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-                    },
-                    fontFamily: {
-                        sans: ['"Inter"', "sans-serif"],
-                        brand: ['"Roboto"', "sans-serif"],
-                    },
-                },
-            },
-        }
-    </script>
 
     <style>
         body {
@@ -710,6 +683,7 @@
         vpVideo.addEventListener('play',  syncPlayIcon);
         vpVideo.addEventListener('pause', syncPlayIcon);
         vpVideo.addEventListener('error', () => {
+            console.error('[portfolio] Video playback error. Code:', vpVideo.error ? vpVideo.error.code : 'Unknown', vpVideo.error ? vpVideo.error.message : '');
             vpLoading.style.display = 'none';
             vpErrorEl.style.display = 'flex';
         });
