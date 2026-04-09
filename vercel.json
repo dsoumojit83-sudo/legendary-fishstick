@@ -6,7 +6,6 @@
     "api/admin-data.js":      { "maxDuration": 20 },
     "api/webhook.js":         { "maxDuration": 30 },
     "api/verify-payment.js":  { "maxDuration": 20 },
-    "api/retry-payment.js":   { "maxDuration": 20 },
     "api/payments.js":        { "maxDuration": 30 },
     "api/settlements.js":     { "maxDuration": 15 },
     "api/chat.js":            { "maxDuration": 20 },
