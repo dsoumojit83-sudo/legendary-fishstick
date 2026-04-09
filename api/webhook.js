@@ -103,7 +103,7 @@ const _handler = async function(req, res) {
                 } else {
                     console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | DB updated to 'paid'. Firing sendInvoice()...`);
                     try {
-                        await sendInvoice(orderData);
+                        await sendInvoice({ ...orderData, status: 'paid' });
                         console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | Invoice email sent successfully.`);
                     } catch (invoiceErr) {
                         console.error(`[ZYRO][webhook][ERROR] ${new Date().toISOString()} | order=${orderId} | sendInvoice() FAILED:`, invoiceErr.message);
