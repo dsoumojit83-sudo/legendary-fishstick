@@ -32,7 +32,10 @@ module.exports = async function(req, res) {
             return res.status(400).json({ error: 'Missing required fields.' });
         }
 
-        const validStatuses = ['pending', 'in_progress', 'paid', 'completed'];
+        // B-03 FIX: Standardize on 'working' — admin-chat.js and the DB use 'working',
+        // not 'in_progress'. Using two different strings for the same state caused
+        // status updates from the manual admin panel to be silently ignored.
+        const validStatuses = ['pending', 'working', 'paid', 'completed'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ error: 'Invalid status value.' });
         }
