@@ -22,12 +22,64 @@ const b2 = new S3Client({
 });
 
 const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
+const B2_PORTFOLIO_BUCKET = process.env.B2_PORTFOLIO_BUCKET || 'zyroeditz-portfolio';
+
+// ALLOWED_PORTFOLIO_FILES removed — now validated dynamically from portfolio_items table (see BUG-7 fix)
+
 
 module.exports = async function (req, res) {
-    // Method check BEFORE auth — prevents leaking that the endpoint exists
-    // when a non-GET request arrives without credentials.
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed.' });
+    }
+
+    // ── Portfolio items listing (no auth — drives public /portfolio page) ─────────
+    // GET /api/get-files?portfolio_items=true
+    if (req.query.portfolio_items === 'true') {
+        const { data, error } = await supabase
+            .from('portfolio_items')
+            .select('id, title, category, filename, thumbnail_url, accent_color, grid_cols, grid_rows, display_order')
+            .eq('active', true)
+            .order('display_order');
+        if (error) {
+            console.error('[get-files] portfolio_items error:', error);
+            return res.status(500).json({ error: 'Failed to fetch portfolio items.' });
+        }
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).json({ items: data });
+    }
+    // GET /api/get-files?portfolio=true&file=neon-nights.mp4
+    if (req.query.portfolio === 'true') {
+        const file = req.query.file;
+        if (!file) return res.status(400).json({ error: 'Missing file parameter.' });
+
+        // BUG-7 FIX: Validate against portfolio_items DB instead of hardcoded whitelist.
+        // Hardcoded list broke every time a new item was added via the admin CRUD panel.
+        try {
+            const { data: item, error: dbErr } = await supabase
+                .from('portfolio_items')
+                .select('filename')
+                .eq('filename', file)
+                .maybeSingle();
+
+            if (dbErr) throw dbErr;
+            if (!item) return res.status(400).json({ error: 'Invalid or unknown file.' });
+        } catch (dbErr) {
+            console.error('[get-files] DB whitelist check error:', dbErr);
+            return res.status(500).json({ error: 'Failed to validate file.' });
+        }
+
+        try {
+            const signedUrl = await getSignedUrl(
+                b2,
+                new GetObjectCommand({ Bucket: B2_PORTFOLIO_BUCKET, Key: file }),
+                { expiresIn: 3600 } // 1 hour
+            );
+            res.setHeader('Cache-Control', 'no-store');
+            return res.status(200).json({ url: signedUrl });
+        } catch (err) {
+            console.error('[get-files] Portfolio B2 error:', err);
+            return res.status(500).json({ error: 'Failed to generate video URL.' });
+        }
     }
 
     // 🔒 SECURITY FIX: Replaced static ADMIN_PASSWORD header (never expires, single point of
