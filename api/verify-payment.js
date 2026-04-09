@@ -29,6 +29,19 @@ function isRateLimited(ip) {
     return false;
 }
 
+// Add retry rate limiter
+const _retryRateMap = {};
+const RETRY_RATE_MAX = 5;
+const RETRY_RATE_WINDOW_MS = 60 * 1000;
+function isRetryRateLimited(ip) {
+    const now = Date.now();
+    const recent = (_retryRateMap[ip] || []).filter(t => now - t < RETRY_RATE_WINDOW_MS);
+    if (recent.length >= RETRY_RATE_MAX) { _retryRateMap[ip] = recent; return true; }
+    recent.push(now);
+    _retryRateMap[ip] = recent;
+    return false;
+}
+
 // ─── STRUCTURED LOGGER ───────────────────────────────────────────────────────
 function log(level, orderId, message, extra) {
     const ts = new Date().toISOString();
@@ -52,6 +65,7 @@ module.exports = async function (req, res) {
     // CORS — locked to known production origins; localhost for development
     const allowedOrigins = [
         'https://zyroeditz.xyz',
+        'https://www.zyroeditz.xyz',
         'https://zyroeditz.vercel.app',
     ];
     const requestOrigin = req.headers.origin || '';
@@ -66,11 +80,19 @@ module.exports = async function (req, res) {
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    // Rate limit by IP to prevent Cashfree quota exhaustion
     const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
-    if (isRateLimited(clientIp)) {
-        log('WARN', null, `Rate limit hit for IP: ${clientIp}`);
-        return res.status(429).json({ error: 'Too many requests. Please wait before trying again.' });
+    const action = req.body?.action;
+
+    if (action === 'retry') {
+        if (isRetryRateLimited(clientIp)) {
+            return res.status(429).json({ error: 'Too many retry attempts. Please wait a moment.' });
+        }
+    } else {
+        // Rate limit by IP to prevent Cashfree quota exhaustion (verify calls)
+        if (isRateLimited(clientIp)) {
+            log('WARN', null, `Rate limit hit for IP: ${clientIp}`);
+            return res.status(429).json({ error: 'Too many requests. Please wait before trying again.' });
+        }
     }
 
     try {
@@ -78,25 +100,119 @@ module.exports = async function (req, res) {
 
         if (!order_id) {
             log('ERROR', null, 'Request arrived with missing order_id.');
-            return res.status(400).json({ error: 'Missing order_id for verification.' });
+            return res.status(400).json({ error: 'Missing order_id.' });
+        }
+
+        if (action === 'retry') {
+            log('INFO', order_id, 'Retry payment request received.');
+
+            // 1. Verify this order actually exists in our DB and is still pending
+            const { data: order, error: dbErr } = await supabase
+                .from('orders')
+                .select('order_id, status, amount, client_name, client_email, client_phone, service')
+                .eq('order_id', order_id)
+                .single();
+
+            if (dbErr || !order) return res.status(404).json({ error: 'Order not found.' });
+
+            // If already paid, no retry needed — send them to success
+            if (order.status === 'paid' || order.status === 'completed') {
+                return res.status(200).json({ already_paid: true });
+            }
+
+            // 2. Fetch the existing Cashfree order to get its payment_session_id.
+            let paymentSessionId = null;
+            try {
+                const cfRes = await axios.get(`https://api.cashfree.com/pg/orders/${order_id}`, {
+                    headers: {
+                        'x-api-version': '2025-01-01',
+                        'x-client-id': process.env.CASHFREE_APP_ID,
+                        'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                    }
+                });
+                paymentSessionId = cfRes.data.payment_session_id || null;
+            } catch (cfErr) {
+                // Cashfree order doesn't exist or expired, fall back to creating a new one
+                if (cfErr.response?.status === 404 || !paymentSessionId) {
+                    const cleanPhone = order.client_phone
+                        ? String(order.client_phone).replace(/\D/g, '').slice(-10)
+                        : '9999999999';
+
+                    const freshRes = await axios.post('https://api.cashfree.com/pg/orders', {
+                        order_id: order_id + '_R' + Date.now().toString().slice(-4),
+                        order_amount: Number(order.amount).toFixed(2),
+                        order_currency: 'INR',
+                        customer_details: {
+                            customer_id: order_id,
+                            customer_name: order.client_name || 'Zyro Client',
+                            customer_email: order.client_email || 'zyroeditz.official@gmail.com',
+                            customer_phone: cleanPhone
+                        },
+                        order_meta: {
+                            return_url: `https://zyroeditz.xyz/payment-success?order_id=${order_id}`
+                        }
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-version': '2025-01-01',
+                            'x-client-id': process.env.CASHFREE_APP_ID,
+                            'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                        }
+                    });
+                    paymentSessionId = freshRes.data.payment_session_id;
+                } else {
+                    throw cfErr;
+                }
+            }
+
+            if (!paymentSessionId) {
+                return res.status(500).json({ error: 'Could not retrieve payment session from gateway.' });
+            }
+
+            return res.status(200).json({ paymentSessionId, order_id });
         }
 
         log('INFO', order_id, 'Verification request received. Calling Cashfree API...');
 
         // 1. Fetch the authoritative status directly from Cashfree (Server-to-Server)
-        const cashfreeResponse = await axios.get(
-            `https://api.cashfree.com/pg/orders/${order_id}`,
-            {
-                headers: {
-                    'x-api-version': '2025-01-01',
-                    'x-client-id': process.env.CASHFREE_APP_ID,
-                    'x-client-secret': process.env.CASHFREE_SECRET_KEY
+        // B-02 FIX: Admin-chat creates orders via Payment Links API (/pg/links), while
+        // the public chat uses the Orders API (/pg/orders). Both use the same order_id/link_id.
+        // Try Orders API first; fall back to Links API if 404 (payment link order).
+        let orderStatus;
+        try {
+            const cashfreeResponse = await axios.get(
+                `https://api.cashfree.com/pg/orders/${order_id}`,
+                {
+                    headers: {
+                        'x-api-version': '2025-01-01',
+                        'x-client-id': process.env.CASHFREE_APP_ID,
+                        'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                    }
                 }
+            );
+            orderStatus = cashfreeResponse.data.order_status; // e.g. "PAID", "ACTIVE"
+            log('INFO', order_id, `Orders API returned order_status: ${orderStatus}`);
+        } catch (cfErr) {
+            if (cfErr.response?.status === 404) {
+                // Order was created via Payment Links — fall back to Links API
+                log('INFO', order_id, 'Orders API returned 404 — trying Payment Links API...');
+                const linkResponse = await axios.get(
+                    `https://api.cashfree.com/pg/links/${order_id}`,
+                    {
+                        headers: {
+                            'x-api-version': '2025-01-01',
+                            'x-client-id': process.env.CASHFREE_APP_ID,
+                            'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                        }
+                    }
+                );
+                // Payment Links API returns link_status ("PAID", "ACTIVE", "EXPIRED")
+                orderStatus = linkResponse.data.link_status;
+                log('INFO', order_id, `Links API returned link_status: ${orderStatus}`);
+            } else {
+                throw cfErr; // re-throw for any other error (auth, network, etc.)
             }
-        );
-
-        const orderStatus = cashfreeResponse.data.order_status; // e.g., "PAID", "ACTIVE"
-        log('INFO', order_id, `Cashfree returned order_status: ${orderStatus}`);
+        }
 
         // 2. Only proceed if the payment actually cleared on Cashfree
         if (orderStatus === 'PAID') {
@@ -148,12 +264,16 @@ module.exports = async function (req, res) {
         }
 
         // If it's still pending or failed, return the status
-        log('INFO', order_id, `Order is not yet PAID. Returning status: ${orderStatus.toLowerCase()}`);
-        return res.status(200).json({ success: true, status: orderStatus.toLowerCase() });
+        log('INFO', order_id, `Order is not yet PAID. Returning status: ${String(orderStatus).toLowerCase()}`);
+        return res.status(200).json({ success: true, status: String(orderStatus).toLowerCase() });
 
     } catch (error) {
         const order_id_ctx = req.body?.order_id || 'UNKNOWN';
         log('ERROR', order_id_ctx, 'Unhandled exception in verify-payment handler.', error);
+        const action = req.body?.action;
+        if (action === 'retry') {
+            return res.status(500).json({ error: 'Retry failed. Please try again or contact support.' });
+        }
         return res.status(500).json({ error: "Failed to verify payment status with gateway." });
     }
 };
