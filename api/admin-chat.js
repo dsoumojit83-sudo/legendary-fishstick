@@ -304,20 +304,8 @@ async function executeAction(action, sessionId) {
         return { success: true, actionType: 'created order', orderId, payment_link };
     }
 
-    if (action.type === 'generate_upload_link') {
-        const { orderId } = action;
-        if (!orderId) return { success: false, error: 'Missing orderId' };
-        
-        try {
-            const key = `${orderId}/client_upload_${Date.now()}.zip`;
-            const command = new PutObjectCommand({ Bucket: B2_BUCKET, Key: key });
-            const url = await getSignedUrl(b2, command, { expiresIn: 3600 * 24 * 7 });
-            return { success: true, actionType: 'upload link generated', orderId, url };
-        } catch (e) {
-            console.log('Presigner error:', e.message);
-            return { success: false, error: 'Failed to generate upload link.' };
-        }
-    }
+    // generate_upload_link removed (automated in success page)
+
 
     // ── CANCEL ORDER: Full refund + email + DB status update ─────────────────
     if (action.type === 'cancel_order') {
@@ -450,7 +438,7 @@ async function executeAction(action, sessionId) {
         return {
             success: true,
             orderId,
-            actionType: 'cancelled_and_refunded',
+            actionType: 'Cancelled and Refunded',
             refundStatus: refundResult?.refund_status || (hasBeenPaid ? 'PENDING' : 'N/A (unpaid)'),
             refundArn: refundResult?.refund_arn || null,
             amountRefunded: hasBeenPaid ? orderAmount : 0
@@ -607,18 +595,16 @@ module.exports = async function (req, res) {
                 summaryMsg = `Completed ${successCount} out of ${totalCount} actions. ${totalCount - successCount} failed.`;
             }
             
-            // Append generated links dynamically
-            let linkAppendix = '';
+            // Append only the Checkout Link as requested
             results.forEach(r => {
                 if (r && r.payment_link) {
-                    linkAppendix += `\n\n💳 **Payment Link** (send to client):\n${r.payment_link}`;
-                    linkAppendix += `\n\n✅ **Payment Success URL** (share after payment or use internally):\nhttps://zyroeditz.xyz/payment-success?order_id=${r.orderId}`;
+                    linkAppendix += `\n\n${r.payment_link}`;
                 }
-                if (r && r.url) linkAppendix += `\n\n📁 **B2 Upload Link** (7-day expiry):\n${r.url}`;
             });
 
+
             return res.status(200).json({
-                reply: summaryMsg + " (Type 'undo' if you need to revert this)" + linkAppendix,
+                reply: (linkAppendix || summaryMsg).trim(),
                 actions: results
             });
         }
@@ -753,10 +739,7 @@ Valid Pending Proposal Formats:
 3. Propose Field Update:
 <<<PENDING: {"type": "update_order", "orderId": "exact_order_id", "updates": {"project_notes": "Urgent"}} >>>
 
-4. Propose Generating B2 Upload Link:
-<<<PENDING: {"type": "generate_upload_link", "orderId": "exact_order_id"} >>>
-
-5. Propose Deletion (⚠️ Extra warning required):
+4. Propose Deletion (⚠️ Extra warning required):
 <<<PENDING: {"type": "delete_order", "orderId": "exact_order_id"} >>>
 
 6. Propose Order Cancellation + Full Refund:
@@ -798,6 +781,11 @@ ADDITIONAL RULES:
 5. BULK OPERATIONS:
    - For bulk changes, output one PENDING block per order
    - Summarize all changes clearly before asking for confirmation
+
+6. DATA PRECISION:
+   - Always prioritize information provided in the LATEST user message over session memory.
+   - Capture the Client's Email (Gmail) EXACTLY as they provide it. Do not guess or use old emails if a new one is shared.
+   - When providing the final confirmation for an order, ALWAYS include both the Payment Link and the Success Verification link.
    - Add extra warning for bulk deletions
 
 ---
