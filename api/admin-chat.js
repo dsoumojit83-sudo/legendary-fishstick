@@ -1,7 +1,11 @@
 const OpenAI = require('openai');
 const { createClient } = require('@supabase/supabase-js');
-const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { S3Client, ListObjectsV2Command, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const axios = require('axios');
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const groq = new OpenAI({
@@ -148,9 +152,9 @@ async function executeAction(action, sessionId) {
         let { orderId, status } = action;
         if (!orderId || !status) return { success: false, error: 'Missing orderId or status' };
 
-        if (status === 'working') status = 'in_progress';
+        if (status === 'in_progress') status = 'working';
 
-        const validStatuses = ['pending', 'in_progress', 'paid', 'completed'];
+        const validStatuses = ['pending', 'working', 'paid', 'completed'];
         if (!validStatuses.includes(status)) return { success: false, error: `Invalid status: ${status}` };
 
         const updatePayload = { status };
@@ -163,6 +167,24 @@ async function executeAction(action, sessionId) {
 
         if (!error && sessionId) {
             await saveActionHistory(sessionId, action, originalData);
+        }
+
+        if (!error && originalData && originalData.client_email) {
+            if (status === 'working') {
+                await resend.emails.send({
+                    from: 'updates@zyroeditz.xyz',
+                    to: originalData.client_email,
+                    subject: `Status Update: ${originalData.service}`,
+                    html: `<p>Hi there,</p><p>Your project is now being worked on.</p><p>Best regards,<br>ZyroEditz™</p>`
+                }).catch(e => console.log('Resend error:', e));
+            } else if (status === 'completed') {
+                await resend.emails.send({
+                    from: 'updates@zyroeditz.xyz',
+                    to: originalData.client_email,
+                    subject: `Project Completed: ${originalData.service}`,
+                    html: `<p>Hi there,</p><p>Your project is complete! You can download your final delivery from the link below:</p><p>[Insert Final Link Here]</p><p>Best regards,<br>ZyroEditz™</p>`
+                }).catch(e => console.log('Resend error:', e));
+            }
         }
 
         return error
@@ -210,6 +232,73 @@ async function executeAction(action, sessionId) {
         return error
             ? { success: false, error: error.message }
             : { success: true, orderId, actionType: 'deleted' };
+    }
+
+    if (action.type === 'create_order') {
+        const { client_name, phone, email, service, amount, deadline_date } = action;
+        if (!client_name || !email || !service || !amount) return { success: false, error: 'Missing required fields' };
+
+        const orderId = 'ORD_' + Date.now().toString().slice(-6) + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const payload = {
+            order_id: orderId,
+            client_name,
+            client_phone: phone || 'N/A',
+            client_email: email,
+            service,
+            amount,
+            deadline_date: deadline_date || null,
+            status: 'pending'
+        };
+
+        const { error } = await supabase.from('orders').insert(payload);
+        if (error) return { success: false, error: error.message };
+
+        let payment_link = null;
+        try {
+            const cleanPhone = phone && String(phone).replace(/\D/g, '').length >= 10 
+                ? String(phone).replace(/\D/g, '').slice(-10) 
+                : '9999999999';
+
+            const cfResponse = await axios.post('https://api.cashfree.com/pg/orders', {
+                order_amount: Number(amount),
+                order_currency: 'INR',
+                order_id: orderId,
+                customer_details: {
+                    customer_id: orderId,
+                    customer_name: client_name,
+                    customer_email: email,
+                    customer_phone: cleanPhone
+                }
+            }, {
+                headers: {
+                    'x-client-id': process.env.CASHFREE_APP_ID,
+                    'x-client-secret': process.env.CASHFREE_SECRET_KEY,
+                    'x-api-version': '2025-01-01'
+                }
+            });
+            payment_link = cfResponse.data.payment_session_id;
+            if (cfResponse.data.payment_link) payment_link = cfResponse.data.payment_link;
+        } catch (e) {
+            console.log('Cashfree error:', e.response?.data || e.message);
+            return { success: false, error: 'Order created but Cashfree linker failed.' };
+        }
+
+        return { success: true, actionType: 'created order', orderId, payment_link };
+    }
+
+    if (action.type === 'generate_upload_link') {
+        const { orderId } = action;
+        if (!orderId) return { success: false, error: 'Missing orderId' };
+        
+        try {
+            const key = `${orderId}/client_upload_${Date.now()}.zip`;
+            const command = new PutObjectCommand({ Bucket: B2_BUCKET, Key: key });
+            const url = await getSignedUrl(b2, command, { expiresIn: 3600 * 24 * 7 });
+            return { success: true, actionType: 'upload link generated', orderId, url };
+        } catch (e) {
+            console.log('Presigner error:', e.message);
+            return { success: false, error: 'Failed to generate upload link.' };
+        }
     }
 
     return null;
@@ -330,6 +419,10 @@ module.exports = async function (req, res) {
                         summaryMsg = `Deleted order ${action.orderId}.`;
                     } else if (action.type === 'update_status') {
                         summaryMsg = `Updated ${action.orderId} to ${action.status}.`;
+                    } else if (action.type === 'create_order') {
+                        summaryMsg = `Created order ${results[0].orderId}.`;
+                    } else if (action.type === 'generate_upload_link') {
+                        summaryMsg = `Generated upload link for ${results[0].orderId}.`;
                     } else {
                         summaryMsg = `Updated order ${action.orderId}.`;
                     }
@@ -340,8 +433,15 @@ module.exports = async function (req, res) {
                 summaryMsg = `Completed ${successCount} out of ${totalCount} actions. ${totalCount - successCount} failed.`;
             }
             
+            // Append generated links dynamically
+            let linkAppendix = '';
+            results.forEach(res => {
+                if (res && res.payment_link) linkAppendix += `\n\n[Payment Link]: ${res.payment_link}`;
+                if (res && res.url) linkAppendix += `\n\n[B2 Upload Link]: ${res.url}`;
+            });
+
             return res.status(200).json({
-                reply: summaryMsg + " (Type 'undo' if you need to revert this)",
+                reply: summaryMsg + " (Type 'undo' if you need to revert this)" + linkAppendix,
                 actions: results
             });
         }
@@ -412,20 +512,12 @@ module.exports = async function (req, res) {
             return orderTime < twoDaysAgo && o.status === 'pending';
         });
 
-        const fullDatabaseLog = orders.map(o => {
-            const amt = Number(o.amount) || 0;
-            const createdDate = formatDate(o.created_at);
-            const deadlineDate = formatDate(o.deadline_date);
-            const completedDate = formatDate(o.completed_at);
-            return `${o.order_id} | ${o.client_name || 'Unknown'} | ${o.service || 'N/A'} | Rs.${amt} | Status: ${o.status || 'unknown'} | Created: ${createdDate} | Deadline: ${deadlineDate} | Completed: ${completedDate} | Notes: ${o.project_notes || 'None'}`;
-        }).join('\n');
-
         // ────────────────────────────────────────────────────────────────────────
         // SYSTEM PROMPT — Enhanced with enforced confirmation flow
         // ────────────────────────────────────────────────────────────────────────
         const systemPrompt = `You are Zyro, a smart, friendly assistant built specifically for Soumojit Das who runs ZyroEditz — a video editing studio.
 
-You talk like a real person, not a robot. You're helpful, a bit casual, and genuinely invested in making the studio run well. You know everything about the business in real-time and you can propose actions — but you NEVER execute them immediately.
+You talk like a real person, not a robot. You're helpful, a bit casual, and genuinely invested in making the studio run well. You know everything about the business in real-time and you can propose actions — but you NEVER execute them immediately unless it is a search explicitly designed to get context.
 
 Today's date (IST): ${todayStr}
 
@@ -444,9 +536,6 @@ BUSINESS SNAPSHOT:
 ACTIVE PIPELINE:
 ${activePipeline.length > 0 ? activePipeline.join('\n') : 'No active projects right now.'}
 
-FULL DATABASE (every order ever):
-${fullDatabaseLog}
-
 ---
 
 CRITICAL ACTION WORKFLOW (TWO-STEP CONFIRMATION SYSTEM):
@@ -455,8 +544,6 @@ When Soumojit asks you to modify the database, you MUST follow this exact workfl
 
 STEP 1 — PROPOSE (Never execute directly):
 - Summarize EXACTLY what you'll do in plain English
-- Show the specific order ID(s) and what will change
-- If it's a deletion, add a WARNING line
 - Ask "Should I go ahead?" or similar
 - Output a PENDING block (not ACTION block)
 
@@ -466,41 +553,32 @@ STEP 2 — EXECUTE (Only after Soumojit confirms):
 
 Valid Pending Proposal Formats:
 
-1. Propose Status Update:
+1. Propose New Order Creation (Proactively ask for missing Name, Phone, Email, Service, Amount, Deadline):
+<<<PENDING: {"type": "create_order", "client_name": "...", "phone": "...", "email": "...", "service": "...", "amount": "...", "deadline_date": "YYYY-MM-DD"} >>>
+
+2. Propose Status Update (working, completed, pending, paid):
 <<<PENDING: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
 
-2. Propose Field Update:
+3. Propose Field Update:
 <<<PENDING: {"type": "update_order", "orderId": "exact_order_id", "updates": {"project_notes": "Urgent"}} >>>
 
-3. Propose Deletion (⚠️ Extra warning required):
+4. Propose Generating B2 Upload Link:
+<<<PENDING: {"type": "generate_upload_link", "orderId": "exact_order_id"} >>>
+
+5. Propose Deletion (⚠️ Extra warning required):
 <<<PENDING: {"type": "delete_order", "orderId": "exact_order_id"} >>>
 
-EXAMPLES OF CORRECT WORKFLOW:
+--- 
+INSTANT ACTIONS:
+If you need to query the database, you can emit an ACTION block bypassing confirmation. The system will intercept it and give you the data to answer the user!
 
-User: "Delete the last order"
-You: "That's order Z7X9M2 (Arjun - Short Form, Rs.200). ⚠️ WARNING: This will permanently delete the order from the database. Should I go ahead?
-<<<PENDING: {"type": "delete_order", "orderId": "Z7X9M2"} >>>"
-
-User: "Mark all pending orders as in progress"
-You: "I'll update 3 orders to 'in_progress':
-• X1Y2Z3 - Priya - Long Form
-• A4B5C6 - Vikram - Motion Graphics  
-• D7E8F9 - Neha - Thumbnails
-
-Should I proceed?
-<<<PENDING: {"type": "update_status", "orderId": "X1Y2Z3", "status": "in_progress"} >>>
-<<<PENDING: {"type": "update_status", "orderId": "A4B5C6", "status": "in_progress"} >>>
-<<<PENDING: {"type": "update_status", "orderId": "D7E8F9", "status": "in_progress"} >>>"
-
-User: "yes"
-You: [System executes automatically — no action needed from you]
-
+Search Orders:
+<<<ACTION: {"type": "search_orders", "query": "client name or id or email"} >>>
 ---
 
 ADDITIONAL RULES:
 
 1. RESTRICTIONS:
-   - You CANNOT create new orders
    - You CANNOT edit financial amounts (amount field)
    - If asked, direct Soumojit to use the main interface for proper invoice generation
 
@@ -514,6 +592,7 @@ ADDITIONAL RULES:
 
 4. WORKFLOW DISTINCTION:
    - "Mark as done"/"completed" = status='completed' (creative workflow)
+   - "working" = status='working' (creative workflow in progress)
    - "Mark as paid" = status='paid' (finance workflow)
    - These are different states — never confuse them
 
@@ -598,14 +677,47 @@ Always direct people to '/portfolio/' to see the curated gallery if they ask for
             { role: 'user', content: userMessageContent }
         ];
 
-        const aiResponse = await groq.chat.completions.create({
+        let aiResponse = await groq.chat.completions.create({
             model: selectedModel,
             messages: currentMessages,
             temperature: 0.55,
             max_tokens: hasImage ? 1024 : 600
         });
 
-        const rawContent = aiResponse.choices[0].message.content;
+        let rawContent = aiResponse.choices[0].message.content;
+
+        // ── Check for instantaneous database SEARCH action ──
+        const searchRegex = /<<<ACTION:\s*(\{.*?type.*?search_orders.*?\})\s*>>>/i;
+        const searchMatch = searchRegex.exec(rawContent);
+        if (searchMatch) {
+            try {
+                const searchObj = JSON.parse(searchMatch[1]);
+                if (searchObj.query) {
+                    const { data: searchResults } = await supabase
+                        .from('orders')
+                        .select('*')
+                        .or(`client_name.ilike.%${searchObj.query}%,order_id.eq.${searchObj.query},client_email.ilike.%${searchObj.query}%`)
+                        .limit(10);
+                    
+                    const resultsText = searchResults && searchResults.length > 0 
+                        ? searchResults.map(o => `[ID:${o.order_id} | Client:${o.client_name} | Email:${o.client_email} | Phone:${o.client_phone} | Service:${o.service} | Status:${o.status} | Amount:${o.amount}]`).join('\n')
+                        : 'No matching orders found.';
+
+                    currentMessages.push({ role: 'assistant', content: rawContent });
+                    currentMessages.push({ role: 'system', content: `[Database Search Results for "${searchObj.query}"]:\n${resultsText}\n\nContinue responding to the user using these results without using the search_orders action again.` });
+
+                    aiResponse = await groq.chat.completions.create({
+                        model: selectedModel,
+                        messages: currentMessages,
+                        temperature: 0.55,
+                        max_tokens: 600
+                    });
+                    rawContent = aiResponse.choices[0].message.content;
+                }
+            } catch (e) {
+                console.log("Search parsing error:", e);
+            }
+        }
 
         // ── Extract pending proposals and store them ───────────────────────────
         const { cleanText, proposals } = extractPendingProposals(rawContent);
