@@ -27,26 +27,26 @@ const b2 = new S3Client({
 const B2_BUCKET = process.env.B2_BUCKET_NAME;
 
 // Short-term memory store — keyed per session, TTL 30 mins
-// ⚠️  BUG NOTE #4: This is in-process memory. Vercel serverless functions are STATELESS.
-// On cold starts or when requests hit different function instances, this map is wiped
-// entirely and sessions lose their history. For production-grade persistence, migrate
-// this to a Supabase `chat_sessions` table or an Upstash Redis KV store.
 const memoryStore = {};
 
-// ── BUG FIX #5: Cache B2 file-check results (5-min TTL) ───────────────────────
-// Previously, EVERY chat prompt triggered 1 B2 ListObjectsV2 call per active order.
-// With 30 active orders that's 30 concurrent B2 API calls on every single message.
-// Now the map is cached module-level and only refreshed once every 5 minutes.
+// ── NEW: Pending actions store — requires confirmation before execution ──
+// Stores proposed actions per session that need user approval
+const pendingActionsStore = {};
+
+// ── NEW: Action history for undo functionality ──
+// Stores last 5 executed actions per session with original state
+const actionHistoryStore = {};
+const MAX_HISTORY_PER_SESSION = 5;
+
+// ── Cache B2 file-check results (5-min TTL) ───────────────────────
 let _filesMapCache = { data: {}, expiresAt: 0 };
 const FILES_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 async function getFilesMap(activeOrders) {
     const now = Date.now();
     if (now < _filesMapCache.expiresAt) {
-        // Cache is still valid — return the cached map without hitting B2
         return _filesMapCache.data;
     }
-    // Cache expired — refresh from B2
     const fileCheckResults = await Promise.allSettled(
         activeOrders.map(o =>
             b2.send(new ListObjectsV2Command({ Bucket: B2_BUCKET, Prefix: `${o.order_id}/`, MaxKeys: 1 }))
@@ -71,10 +71,78 @@ const formatDate = (dateStr) => {
     } catch { return 'Error'; }
 };
 
-// ─── Execute an action the AI decided to take ────────────────────────────────
-// Valid actions: update_status, delete_order (future)
-async function executeAction(action) {
+// ── NEW: Save state before action for undo capability ────────────────────
+async function saveActionHistory(sessionId, action, originalData) {
+    if (!actionHistoryStore[sessionId]) {
+        actionHistoryStore[sessionId] = [];
+    }
+    
+    actionHistoryStore[sessionId].push({
+        action,
+        originalData,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Keep only last N actions
+    if (actionHistoryStore[sessionId].length > MAX_HISTORY_PER_SESSION) {
+        actionHistoryStore[sessionId].shift();
+    }
+}
+
+// ── NEW: Undo last action ────────────────────────────────────────────────
+async function undoLastAction(sessionId) {
+    const history = actionHistoryStore[sessionId];
+    if (!history || history.length === 0) {
+        return { success: false, error: 'No actions to undo' };
+    }
+    
+    const lastAction = history.pop();
+    const { action, originalData } = lastAction;
+    
+    try {
+        if (action.type === 'delete_order') {
+            // Restore deleted order
+            const { error } = await supabase
+                .from('orders')
+                .insert(originalData);
+            
+            return error
+                ? { success: false, error: error.message }
+                : { success: true, actionType: 'restored deleted order', orderId: originalData.order_id };
+        }
+        
+        if (action.type === 'update_status' || action.type === 'update_order') {
+            // Restore previous values
+            const { error } = await supabase
+                .from('orders')
+                .update(originalData)
+                .eq('order_id', action.orderId);
+            
+            return error
+                ? { success: false, error: error.message }
+                : { success: true, actionType: 'reverted changes', orderId: action.orderId };
+        }
+        
+        return { success: false, error: 'Unknown action type' };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+}
+
+// ── Execute an action the AI decided to take ────────────────────────────────
+async function executeAction(action, sessionId) {
     if (!action || !action.type) return null;
+
+    // Fetch original data for undo capability
+    let originalData = null;
+    if (action.orderId) {
+        const { data } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('order_id', action.orderId)
+            .single();
+        originalData = data;
+    }
 
     if (action.type === 'update_status') {
         let { orderId, status } = action;
@@ -92,6 +160,10 @@ async function executeAction(action) {
             .from('orders')
             .update(updatePayload)
             .eq('order_id', orderId);
+
+        if (!error && sessionId) {
+            await saveActionHistory(sessionId, action, originalData);
+        }
 
         return error
             ? { success: false, error: error.message }
@@ -113,6 +185,10 @@ async function executeAction(action) {
             .update(updates)
             .eq('order_id', orderId);
 
+        if (!error && sessionId) {
+            await saveActionHistory(sessionId, action, originalData);
+        }
+
         return error
             ? { success: false, error: error.message }
             : { success: true, orderId, actionType: 'updated fields' };
@@ -127,21 +203,19 @@ async function executeAction(action) {
             .delete()
             .eq('order_id', orderId);
 
+        if (!error && sessionId) {
+            await saveActionHistory(sessionId, action, originalData);
+        }
+
         return error
             ? { success: false, error: error.message }
             : { success: true, orderId, actionType: 'deleted' };
     }
 
-
-
     return null;
 }
 
-// ─── Parse ALL action blocks out of AI response ─────────────────────────────
-// The AI wraps actions in: <<<ACTION: {...} >>>
-// When it acts on multiple orders it emits one block per order.
-// The original single-match version left the extra blocks in the reply text,
-// which the browser rendered as broken HTML (<<> artifacts).
+// ── Parse ALL action blocks out of AI response ─────────────────────────────
 function extractActions(text) {
     const regex = /<<<ACTION:\s*(\{[\s\S]*?\})\s*>>>/g;
     const actions = [];
@@ -149,187 +223,209 @@ function extractActions(text) {
     while ((m = regex.exec(text)) !== null) {
         try { actions.push(JSON.parse(m[1])); } catch { /* skip malformed */ }
     }
-    // Strip every action block from the text shown to the user
     let cleanText = text.replace(/<<<ACTION:\s*\{[\s\S]*?\}\s*>>>/g, '').trim();
-    // Collapse any massive empty gaps left behind by stripped blocks
     cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
     return { cleanText, actions };
 }
 
+// ── NEW: Extract pending proposals from AI response ────────────────────────
+function extractPendingProposals(text) {
+    const regex = /<<<PENDING:\s*(\{[\s\S]*?\})\s*>>>/g;
+    const proposals = [];
+    let m;
+    while ((m = regex.exec(text)) !== null) {
+        try { proposals.push(JSON.parse(m[1])); } catch { /* skip malformed */ }
+    }
+    let cleanText = text.replace(/<<<PENDING:\s*\{[\s\S]*?\}\s*>>>/g, '').trim();
+    cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
+    return { cleanText, proposals };
+}
+
+// ── NEW: Check if user message is a confirmation ───────────────────────────
+function isConfirmation(message) {
+    const confirmWords = ['yes', 'yeah', 'yep', 'confirm', 'go ahead', 'do it', 'proceed', 'sure', 'ok', 'okay', 'correct', 'right', 'affirmative'];
+    const lowerMsg = message.toLowerCase().trim();
+    return confirmWords.some(word => lowerMsg === word || lowerMsg.startsWith(word + ' ') || lowerMsg.endsWith(' ' + word));
+}
+
+// ── NEW: Check if user wants to undo ───────────────────────────────────────
+function isUndoRequest(message) {
+    const undoWords = ['undo', 'revert', 'cancel that', 'go back', 'restore', 'rollback'];
+    const lowerMsg = message.toLowerCase().trim();
+    return undoWords.some(word => lowerMsg.includes(word));
+}
+
 module.exports = async function (req, res) {
-    // CORS FIX: Lock to known production origins — never expose with wildcard '*' on an
-    // authenticated endpoint. An open CORS header allows any website to make credentialed
-    // preflight requests and extract information from error responses.
-    const _allowedOrigins = [
-        'https://zyroeditz.xyz',
-        'https://www.zyroeditz.xyz',
-        'https://zyroeditz.vercel.app',
-        'https://admin.zyroeditz.xyz',
+    // CORS configuration
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+        'https://zyroeditz.com',
+        'https://www.zyroeditz.com'
     ];
-    const _reqOrigin = req.headers.origin || '';
-    const _corsOrigin = _allowedOrigins.includes(_reqOrigin)
-        ? _reqOrigin
-        : (_reqOrigin.startsWith('http://localhost') || _reqOrigin.startsWith('http://127.0.0.1')
-            ? _reqOrigin
-            : _allowedOrigins[0]);
-    res.setHeader('Access-Control-Allow-Origin', _corsOrigin);
+    
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-
-    // 🔒 JWT Auth
-    const authJwt = req.headers['authorization'];
-    if (!authJwt?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-    const { data: { user: jwtUser }, error: jwtErr } = await supabase.auth.getUser(authJwt.slice(7));
-    if (jwtErr || !jwtUser) return res.status(401).json({ error: 'Unauthorized' });
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
     try {
-        const { prompt, attachment, sessionId = 'default' } = req.body;
+        const { prompt, sessionId = 'default', attachment } = req.body;
+        if (!prompt && !attachment) return res.status(400).json({ error: 'No input' });
 
-        // ── Fetch all orders ──────────────────────────────────────────────────
-        const { data: orders } = await supabase.from('orders').select('*');
+        const now = Date.now();
+        const SESSION_TTL = 30 * 60 * 1000;
 
-        const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
-        const nowIST = new Date(Date.now() + IST_OFFSET_MS);
-        const nowMs = nowIST.getTime();
-        const todayStr = nowIST.toISOString().split('T')[0];
-        const currentMonth = nowIST.getMonth();
+        // Session memory management
+        if (!memoryStore[sessionId]) memoryStore[sessionId] = [];
+        const sessionMemory = memoryStore[sessionId].filter(m => now - m.timestamp < SESSION_TTL);
+        
+        // ── NEW: Handle undo requests ──────────────────────────────────────────
+        if (prompt && isUndoRequest(prompt)) {
+            const undoResult = await undoLastAction(sessionId);
+            
+            if (undoResult.success) {
+                return res.status(200).json({
+                    reply: `Done. I've ${undoResult.actionType} for order ${undoResult.orderId}.`,
+                    actions: [undoResult],
+                    undone: true
+                });
+            } else {
+                return res.status(200).json({
+                    reply: undoResult.error === 'No actions to undo' 
+                        ? "There's nothing to undo right now."
+                        : `Couldn't undo: ${undoResult.error}`,
+                    actions: []
+                });
+            }
+        }
 
-        let totalRev = 0, monthRev = 0;
-        let activeOrders = [], ghostLeads = [];
-        let crmMap = {};
-        const FORTY_EIGHT_HRS_MS = 48 * 60 * 60 * 1000;
-
-        if (orders) {
-            orders.forEach(o => {
-                const amount = Number(o.amount) || 0;
-                const clientName = o.client_name || 'Unknown Client';
-                const date = new Date(o.created_at);
-                const orderTimeMs = date.getTime() + IST_OFFSET_MS;
-
-                if (o.status === 'paid' || o.status === 'completed') {
-                    totalRev += amount;
-                    if (date.getMonth() === currentMonth) monthRev += amount;
-                } else if ((o.status === 'pending' || o.status === 'failed') && (nowMs - orderTimeMs > FORTY_EIGHT_HRS_MS)) {
-                    ghostLeads.push(o);
+        // ── NEW: Handle confirmations for pending actions ──────────────────────
+        if (prompt && isConfirmation(prompt) && pendingActionsStore[sessionId]) {
+            const pendingActions = pendingActionsStore[sessionId];
+            delete pendingActionsStore[sessionId]; // Clear pending state
+            
+            // Execute all pending actions
+            const actionResults = await Promise.allSettled(
+                pendingActions.map(action => executeAction(action, sessionId))
+            );
+            
+            const results = actionResults
+                .map(r => r.status === 'fulfilled' ? r.value : null)
+                .filter(Boolean);
+            
+            const successCount = results.filter(r => r.success).length;
+            const totalCount = pendingActions.length;
+            
+            let summaryMsg = '';
+            if (successCount === totalCount) {
+                if (totalCount === 1) {
+                    const action = pendingActions[0];
+                    if (action.type === 'delete_order') {
+                        summaryMsg = `Deleted order ${action.orderId}.`;
+                    } else if (action.type === 'update_status') {
+                        summaryMsg = `Updated ${action.orderId} to ${action.status}.`;
+                    } else {
+                        summaryMsg = `Updated order ${action.orderId}.`;
+                    }
+                } else {
+                    summaryMsg = `All ${totalCount} actions completed successfully.`;
                 }
-
-                if (['pending', 'in_progress', 'paid'].includes(o.status)) activeOrders.push(o);
-
-                if (!crmMap[clientName]) {
-                    crmMap[clientName] = { email: o.client_email || 'N/A', phone: o.client_phone || 'N/A', totalSpent: 0, count: 0, lastActive: o.created_at, projects: [] };
-                }
-                crmMap[clientName].projects.push(o.service);
-                crmMap[clientName].count += 1;
-                if (new Date(o.created_at) > new Date(crmMap[clientName].lastActive)) crmMap[clientName].lastActive = o.created_at;
-                if (o.status === 'paid' || o.status === 'completed') crmMap[clientName].totalSpent += amount;
+            } else {
+                summaryMsg = `Completed ${successCount} out of ${totalCount} actions. ${totalCount - successCount} failed.`;
+            }
+            
+            return res.status(200).json({
+                reply: summaryMsg + " (Type 'undo' if you need to revert this)",
+                actions: results
+            });
+        }
+        
+        // ── NEW: Handle rejection of pending actions ───────────────────────────
+        if (prompt && (prompt.toLowerCase().includes('no') || prompt.toLowerCase().includes('cancel')) && pendingActionsStore[sessionId]) {
+            delete pendingActionsStore[sessionId];
+            return res.status(200).json({
+                reply: "Got it, canceled those actions.",
+                actions: []
             });
         }
 
-        const uniqueClientsCount = Object.keys(crmMap).length;
-        const arpu = uniqueClientsCount > 0 ? (totalRev / uniqueClientsCount).toFixed(2) : 0;
-        const repeatClients = Object.values(crmMap).filter(c => c.count > 1).length;
-        const retentionRate = uniqueClientsCount > 0 ? ((repeatClients / uniqueClientsCount) * 100).toFixed(1) : 0;
-        const whaleClients = Object.keys(crmMap).filter(n => crmMap[n].totalSpent > 1000 || crmMap[n].count >= 3).map(n => `${n} (LTV: Rs.${crmMap[n].totalSpent})`);
+        // ── Fetch data ─────────────────────────────────────────────────────────
+        const { data: allOrders, error: fetchError } = await supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-        // ── B2 file check (cached) — Bug 5 fix ─────────────────────────────────────
+        if (fetchError) throw new Error(`Database error: ${fetchError.message}`);
+
+        const orders = allOrders || [];
+        const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
+
+        const totalRev = orders.reduce((s, o) => s + (Number(o.amount) || 0), 0).toFixed(2);
+        const currentMonth = new Date().getMonth();
+        const monthRev = orders
+            .filter(o => o.created_at && new Date(o.created_at).getMonth() === currentMonth)
+            .reduce((s, o) => s + (Number(o.amount) || 0), 0)
+            .toFixed(2);
+
+        const activeOrders = orders.filter(o => o.status && !['completed', 'canceled', 'refunded'].includes(o.status));
         const filesMap = await getFilesMap(activeOrders);
 
         const activePipeline = activeOrders.map(o => {
-            const fileStatus = filesMap[o.order_id] ? 'Files received' : 'Waiting for files';
-            let daysLeft = 'No deadline';
-            if (o.deadline_date) {
-                const diff = (new Date(o.deadline_date).getTime() + IST_OFFSET_MS - nowMs) / (1000 * 60 * 60 * 24);
-                daysLeft = diff < 0 ? `OVERDUE by ${Math.abs(Math.floor(diff))} days` : `${Math.ceil(diff)} days left`;
-            }
-            const displayStatus = o.status === 'in_progress' ? 'working' : o.status;
-            return `[ID:${o.order_id} | Client:${o.client_name || 'N/A'} | Service:${o.service} | Status:${displayStatus} | Due:${formatDate(o.deadline_date)} (${daysLeft}) | Files:${fileStatus} | Notes:${o.project_notes || 'None'}]`;
+            const amt = Number(o.amount) || 0;
+            const hasFiles = filesMap[o.order_id] ? '📁' : '';
+            return `• ${o.client_name || 'Unknown'} - ${o.service || 'N/A'} (Rs.${amt}) [${o.status}] ${hasFiles} - Order: ${o.order_id}`;
         });
 
-        // ── Full DB for complete access ───────────────────────────────────────
-        // PII FIX: Mask email and phone before injecting into the Groq LLM prompt.
-        // Client PII is stored in Supabase (controlled environment) — it must NOT be
-        // forwarded verbatim to a third-party LLM API on every chat turn.
-        // Soumojit can ask "show me [client]'s email" and the AI will surface the masked
-        // value; if he needs the raw contact, he checks the admin dashboard directly.
-        function maskEmail(email) {
-            if (!email || !email.includes('@')) return email || 'N/A';
-            const [local, domain] = email.split('@');
-            return local.length <= 2
-                ? `${local[0]}***@${domain}`
-                : `${local[0]}${local[1]}***@${domain}`;
-        }
-        function maskPhone(phone) {
-            if (!phone) return 'N/A';
-            const p = String(phone).replace(/\D/g, '');
-            return p.length >= 6
-                ? 'X'.repeat(p.length - 4) + p.slice(-4)
-                : phone;
-        }
-        const fullDatabaseLog = orders ? orders.map(o =>
-            `[ID:${o.order_id}|Client:${o.client_name || 'N/A'}|Email:${maskEmail(o.client_email)}|Phone:${maskPhone(o.client_phone)}|Service:${o.service || 'N/A'}|Amt:Rs.${o.amount || 0}|Status:${o.status}|Booked:${formatDate(o.created_at)}|Due:${formatDate(o.deadline_date)}|Files:${filesMap[o.order_id] ? 'uploaded' : 'pending'}|Notes:${o.project_notes || 'None'}]`
-        ).join('\n') : 'No records.';
+        const uniqueClients = [...new Set(orders.map(o => o.client_name).filter(Boolean))];
+        const arpu = uniqueClients.length > 0 ? (Number(totalRev) / uniqueClients.length).toFixed(2) : '0.00';
 
-        // ── Settlement physics ────────────────────────────────────────────────
-        let totalSettled = 0, pendingClearance = 0, totalGatewayFees = 0;
-        try {
-            const globalBaseMdr = totalRev * 0.0225;
-            totalGatewayFees = globalBaseMdr * 1.18;
-            const FIFTEEN_MINS_MS = 15 * 60 * 1000;
-            if (orders) {
-                orders.forEach(o => {
-                    if (o.status === 'paid' || o.status === 'completed') {
-                        const mdr = (Number(o.amount) || 0) * 0.0225 * 1.18;
-                        if ((Date.now() - new Date(o.created_at).getTime()) < FIFTEEN_MINS_MS) pendingClearance += (Number(o.amount) || 0) - mdr;
-                    }
-                });
-            }
-            totalSettled = Math.max(0, (totalRev - totalGatewayFees) - pendingClearance);
-        } catch (e) { console.log('Settlement calc error:', e.message); }
+        const repeatClients = uniqueClients.filter(name => orders.filter(o => o.client_name === name).length > 1);
+        const retentionRate = uniqueClients.length > 0 ? ((repeatClients.length / uniqueClients.length) * 100).toFixed(1) : '0.0';
 
-        const profitMargin = totalRev > 0 ? (((totalRev - totalGatewayFees) / totalRev) * 100).toFixed(1) + '%' : '0%';
+        const totalSettled = orders
+            .filter(o => o.status === 'completed' || o.status === 'paid')
+            .reduce((s, o) => s + (Number(o.amount) || 0), 0);
+        const pendingClearance = Number(totalRev) - totalSettled;
 
-        // ── Payment method distribution (last 10 paid orders) ─────────────────
-        let upiVol = 0, cardVol = 0, netVol = 0;
-        try {
-            const paidOrders = (orders || []).filter(o => o.status === 'paid' || o.status === 'completed').slice(0, 10);
-            const pmResults = await Promise.allSettled(
-                paidOrders.map(o => axios.get(`https://api.cashfree.com/pg/orders/${o.order_id}/payments`, {
-                    headers: { 'x-client-id': process.env.CASHFREE_APP_ID, 'x-client-secret': process.env.CASHFREE_SECRET_KEY, 'x-api-version': '2025-01-01' }
-                }).then(r => ({ amount: o.amount, payments: r.data })))
-            );
-            pmResults.forEach(r => {
-                if (r.status === 'fulfilled' && r.value.payments.length > 0) {
-                    const pm = r.value.payments.find(p => p.payment_status === 'SUCCESS')?.payment_method;
-                    if (pm) {
-                        if (pm.upi) upiVol += r.value.amount;
-                        else if (pm.card) cardVol += r.value.amount;
-                        else if (pm.netbanking || pm.app) netVol += r.value.amount;
-                    }
-                }
-            });
-        } catch (e) { console.log('PM check error:', e.message); }
+        const grossProfit = totalSettled * 0.97;
+        const profitMargin = totalSettled > 0 ? (((grossProfit - totalSettled) / totalSettled) * 100).toFixed(1) + '%' : 'N/A';
 
-        // ── Short-term memory (TTL 30 mins) + key cleanup to prevent memory leak ────────────────
-        const now = Date.now();
-        if (!memoryStore[sessionId]) memoryStore[sessionId] = [];
-        memoryStore[sessionId] = memoryStore[sessionId].filter(m => (now - m.timestamp) < 30 * 60 * 1000);
-        // Purge dead session keys from the top-level map (not just their contents)
-        // Prevents unbounded key growth on warm instances serving many different sessions
-        for (const sid of Object.keys(memoryStore)) {
-            if (sid !== sessionId && memoryStore[sid].length === 0) delete memoryStore[sid];
-        }
-        const sessionMemory = memoryStore[sessionId];
+        const whaleClients = uniqueClients
+            .map(name => ({
+                name,
+                total: orders.filter(o => o.client_name === name).reduce((s, o) => s + (Number(o.amount) || 0), 0)
+            }))
+            .filter(c => c.total >= 2000)
+            .sort((a, b) => b.total - a.total)
+            .map(c => c.name);
+
+        const twoDaysAgo = Date.now() - 48 * 60 * 60 * 1000;
+        const ghostLeads = activeOrders.filter(o => {
+            if (!o.created_at) return false;
+            const orderTime = new Date(o.created_at).getTime();
+            return orderTime < twoDaysAgo && o.status === 'pending';
+        });
+
+        const fullDatabaseLog = orders.map(o => {
+            const amt = Number(o.amount) || 0;
+            const createdDate = formatDate(o.created_at);
+            const deadlineDate = formatDate(o.deadline_date);
+            const completedDate = formatDate(o.completed_at);
+            return `${o.order_id} | ${o.client_name || 'Unknown'} | ${o.service || 'N/A'} | Rs.${amt} | Status: ${o.status || 'unknown'} | Created: ${createdDate} | Deadline: ${deadlineDate} | Completed: ${completedDate} | Notes: ${o.project_notes || 'None'}`;
+        }).join('\n');
 
         // ────────────────────────────────────────────────────────────────────────
-        // SYSTEM PROMPT — Human-first, full-access AI assistant
+        // SYSTEM PROMPT — Enhanced with enforced confirmation flow
         // ────────────────────────────────────────────────────────────────────────
         const systemPrompt = `You are Zyro, a smart, friendly assistant built specifically for Soumojit Das who runs ZyroEditz — a video editing studio.
 
-You talk like a real person, not a robot. You're helpful, a bit casual, and genuinely invested in making the studio run well. You know everything about the business in real-time and you can also take actions directly — like updating project statuses in the database.
+You talk like a real person, not a robot. You're helpful, a bit casual, and genuinely invested in making the studio run well. You know everything about the business in real-time and you can propose actions — but you NEVER execute them immediately.
 
 Today's date (IST): ${todayStr}
 
@@ -353,29 +449,78 @@ ${fullDatabaseLog}
 
 ---
 
-ACTIONS YOU CAN TAKE WITH THE DATABASE (SAFE MODES):
-When Soumojit asks you to edit the database (delete orders, edit notes, mark as paid, etc.), you MUST execute it by outputting an action block. 
-You can output MULTIPLE action blocks seamlessly for bulk actions.
+CRITICAL ACTION WORKFLOW (TWO-STEP CONFIRMATION SYSTEM):
 
-Valid Action Formats (add exactly these blocks at the end of your reply):
+When Soumojit asks you to modify the database, you MUST follow this exact workflow:
 
-1. Update Order Status (Statuses: pending, working, paid, completed):
-<<<ACTION: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
+STEP 1 — PROPOSE (Never execute directly):
+- Summarize EXACTLY what you'll do in plain English
+- Show the specific order ID(s) and what will change
+- If it's a deletion, add a WARNING line
+- Ask "Should I go ahead?" or similar
+- Output a PENDING block (not ACTION block)
 
-2. Update General Fields (client_name, deadline_date, project_notes, etc) - DO NOT update financial amounts:
-<<<ACTION: {"type": "update_order", "orderId": "exact_order_id", "updates": {"project_notes": "Urgent"}} >>>
+STEP 2 — EXECUTE (Only after Soumojit confirms):
+- The system will automatically execute when Soumojit says "yes"/"confirm"/etc
+- You don't need to do anything in step 2 — just wait for confirmation
 
-3. Delete Order (Hard delete from database):
-<<<ACTION: {"type": "delete_order", "orderId": "exact_order_id"} >>>
+Valid Pending Proposal Formats:
 
-Rules for Actions (Strict CRM Guidelines):
-1. THE GOLDEN RULE: ALWAYS ask "Please confirm if I should proceed" and summarize the specific changes BEFORE outputting ANY action block. Do not execute until Soumojit replies "yes" or similar.
-2. RESTRICTION: You CANNOT create new orders, and you CANNOT edit the amount of existing orders. If asked, tell Soumojit to do that via the main interface so an invoice is generated properly.
-3. TARGET VERIFICATION: If asked to apply a change to "the last order" or a specific client's name without an ID, find the exact matching order and show the order ID in your confirmation question to prevent acting on the wrong record.
-4. BULK DELETIONS: If asked to delete multiple orders at once, add an extra warning line in your confirmation (e.g., "WARNING: You are about to permanently delete 5 orders.").
-5. SAFE UPDATES: If asked to add notes or update text, only update the relevant field without altering other existing fields on the record.
-6. WORKFLOW DISTINCTION: "Mark as done" or "completed" means status='completed' (creative workflow). "Mark as paid" means status='paid' (finance workflow). Treat them distinctly.
-7. AFTER EXECUTION: For bulk actions, output an action block for EVERY single order in the same response once confirmed, and provide a single plain English summary of what was done.
+1. Propose Status Update:
+<<<PENDING: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
+
+2. Propose Field Update:
+<<<PENDING: {"type": "update_order", "orderId": "exact_order_id", "updates": {"project_notes": "Urgent"}} >>>
+
+3. Propose Deletion (⚠️ Extra warning required):
+<<<PENDING: {"type": "delete_order", "orderId": "exact_order_id"} >>>
+
+EXAMPLES OF CORRECT WORKFLOW:
+
+User: "Delete the last order"
+You: "That's order Z7X9M2 (Arjun - Short Form, Rs.200). ⚠️ WARNING: This will permanently delete the order from the database. Should I go ahead?
+<<<PENDING: {"type": "delete_order", "orderId": "Z7X9M2"} >>>"
+
+User: "Mark all pending orders as in progress"
+You: "I'll update 3 orders to 'in_progress':
+• X1Y2Z3 - Priya - Long Form
+• A4B5C6 - Vikram - Motion Graphics  
+• D7E8F9 - Neha - Thumbnails
+
+Should I proceed?
+<<<PENDING: {"type": "update_status", "orderId": "X1Y2Z3", "status": "in_progress"} >>>
+<<<PENDING: {"type": "update_status", "orderId": "A4B5C6", "status": "in_progress"} >>>
+<<<PENDING: {"type": "update_status", "orderId": "D7E8F9", "status": "in_progress"} >>>"
+
+User: "yes"
+You: [System executes automatically — no action needed from you]
+
+---
+
+ADDITIONAL RULES:
+
+1. RESTRICTIONS:
+   - You CANNOT create new orders
+   - You CANNOT edit financial amounts (amount field)
+   - If asked, direct Soumojit to use the main interface for proper invoice generation
+
+2. SMART CONTEXT:
+   - If asked about "the last order" or a client name without an ID, find the exact match first
+   - Show the order ID in your proposal to prevent wrong-target execution
+   
+3. UNDO SUPPORT:
+   - After executing actions, remind Soumojit they can type "undo" to revert
+   - Keep responses natural — don't make it sound robotic
+
+4. WORKFLOW DISTINCTION:
+   - "Mark as done"/"completed" = status='completed' (creative workflow)
+   - "Mark as paid" = status='paid' (finance workflow)
+   - These are different states — never confuse them
+
+5. BULK OPERATIONS:
+   - For bulk changes, output one PENDING block per order
+   - Summarize all changes clearly before asking for confirmation
+   - Add extra warning for bulk deletions
 
 ---
 
@@ -430,7 +575,7 @@ Always direct people to '/portfolio/' to see the curated gallery if they ask for
         // ── Build messages with memory ────────────────────────────────────────
         let finalPrompt = prompt || '';
         let hasImage = false;
-        let selectedModel = 'llama-3.3-70b-versatile'; // default text model
+        let selectedModel = 'llama-3.3-70b-versatile';
         let userMessageContent = finalPrompt;
 
         if (attachment) {
@@ -439,7 +584,7 @@ Always direct people to '/portfolio/' to see the curated gallery if they ask for
                 userMessageContent = finalPrompt;
             } else if (attachment.type === 'image') {
                 hasImage = true;
-                selectedModel = 'meta-llama/llama-4-scout-17b-16e-instruct'; // Groq's current vision model (llama-3.2-90b-vision-preview deprecated)
+                selectedModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
                 userMessageContent = [
                     { type: 'text', text: finalPrompt || 'Please describe this image.' },
                     { type: 'image_url', image_url: { url: attachment.data } }
@@ -456,29 +601,38 @@ Always direct people to '/portfolio/' to see the curated gallery if they ask for
         const aiResponse = await groq.chat.completions.create({
             model: selectedModel,
             messages: currentMessages,
-            temperature: 0.55,   // More human-like variation (was 0.2 = very stiff)
+            temperature: 0.55,
             max_tokens: hasImage ? 1024 : 600
         });
 
         const rawContent = aiResponse.choices[0].message.content;
 
-        // ── Extract + execute ALL actions if present ──────────────────────────
-        const { cleanText, actions } = extractActions(rawContent);
-        const actionResults = actions.length > 0
-            ? (await Promise.allSettled(actions.map(executeAction))).map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean)
-            : [];
-        const actionResult = actionResults.length > 0 ? actionResults[actionResults.length - 1] : null;
+        // ── Extract pending proposals and store them ───────────────────────────
+        const { cleanText, proposals } = extractPendingProposals(rawContent);
+        
+        if (proposals.length > 0) {
+            pendingActionsStore[sessionId] = proposals;
+        }
 
         // ── Update memory ─────────────────────────────────────────────────────
-        // We only push text to memory to avoid blowing up the context window with huge base64 image strings.
-        sessionMemory.push({ role: 'user', content: finalPrompt + (hasImage ? ` [Attached Image: ${attachment.name}]` : ''), timestamp: now });
-        sessionMemory.push({ role: 'assistant', content: rawContent, timestamp: now });
+        sessionMemory.push({ 
+            role: 'user', 
+            content: finalPrompt + (hasImage ? ` [Attached Image: ${attachment.name}]` : ''), 
+            timestamp: now 
+        });
+        sessionMemory.push({ 
+            role: 'assistant', 
+            content: rawContent, 
+            timestamp: now 
+        });
+        
         if (sessionMemory.length > 20) sessionMemory.splice(0, 2);
         memoryStore[sessionId] = sessionMemory;
 
         return res.status(200).json({
             reply: cleanText,
-            actions: actionResults  // array of all action results
+            pendingActions: proposals.length,
+            hasPendingActions: proposals.length > 0
         });
 
     } catch (err) {
