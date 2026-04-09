@@ -596,6 +596,7 @@ module.exports = async function (req, res) {
             }
             
             // Append only the Checkout Link as requested
+            let linkAppendix = '';
             results.forEach(r => {
                 if (r && r.payment_link) {
                     linkAppendix += `\n\n${r.payment_link}`;
