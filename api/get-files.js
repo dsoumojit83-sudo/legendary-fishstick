@@ -53,20 +53,24 @@ module.exports = async function (req, res) {
         const file = req.query.file;
         if (!file) return res.status(400).json({ error: 'Missing file parameter.' });
 
-        // BUG-7 FIX: Validate against portfolio_items DB instead of hardcoded whitelist.
-        // Hardcoded list broke every time a new item was added via the admin CRUD panel.
-        try {
-            const { data: item, error: dbErr } = await supabase
-                .from('portfolio_items')
-                .select('filename')
-                .eq('filename', file)
-                .maybeSingle();
+        // Allow hardcoded landing page featured videos
+        const landingPageVideos = ['high-impact-shorts.mp4', 'cinematic-shorts.mp4'];
 
-            if (dbErr) throw dbErr;
-            if (!item) return res.status(400).json({ error: 'Invalid or unknown file.' });
-        } catch (dbErr) {
-            console.error('[get-files] DB whitelist check error:', dbErr);
-            return res.status(500).json({ error: 'Failed to validate file.' });
+        if (!landingPageVideos.includes(file)) {
+            // BUG-7 FIX: Validate against portfolio_items DB instead of hardcoded whitelist.
+            try {
+                const { data: item, error: dbErr } = await supabase
+                    .from('portfolio_items')
+                    .select('filename')
+                    .eq('filename', file)
+                    .maybeSingle();
+
+                if (dbErr) throw dbErr;
+                if (!item) return res.status(400).json({ error: 'Invalid or unknown file.' });
+            } catch (dbErr) {
+                console.error('[get-files] DB whitelist check error:', dbErr);
+                return res.status(500).json({ error: 'Failed to validate file.' });
+            }
         }
 
         try {
