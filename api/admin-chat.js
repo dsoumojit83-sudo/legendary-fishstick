@@ -178,12 +178,17 @@ async function executeAction(action, sessionId) {
                     html: `<p>Hi there,</p><p>Your project is now being worked on.</p><p>Best regards,<br>ZyroEditz™</p>`
                 }).catch(e => console.log('Resend error:', e));
             } else if (status === 'completed') {
-                await resend.emails.send({
-                    from: 'updates@zyroeditz.xyz',
-                    to: originalData.client_email,
-                    subject: `Project Completed: ${originalData.service}`,
-                    html: `<p>Hi there,</p><p>Your project is complete! You can download your final delivery from the link below:</p><p>[Insert Final Link Here]</p><p>Best regards,<br>ZyroEditz™</p>`
-                }).catch(e => console.log('Resend error:', e));
+                // B-18 FIX: Removed [Insert Final Link Here] placeholder — never send
+                // a placeholder to a real client. Delivery link must be shared manually
+                // via the admin panel's file-sharing feature or a separate message.
+                if (originalData.client_email) {
+                    await resend.emails.send({
+                        from: 'updates@zyroeditz.xyz',
+                        to: originalData.client_email,
+                        subject: `Project Completed: ${originalData.service}`,
+                        html: `<p>Hi there,</p><p>Your <strong>${originalData.service}</strong> project is now complete! Our team will share the final delivery link with you shortly via email or WhatsApp.</p><p>Your Order ID for reference: <strong>${originalData.order_id}</strong></p><p>If you have any questions, reply to this email or reach us at zyroeditz.official@gmail.com.</p><p>Best regards,<br>ZyroEditz&#8482;</p>`
+                    }).catch(e => console.log('Resend error:', e));
+                }
             }
         }
 
@@ -238,7 +243,7 @@ async function executeAction(action, sessionId) {
         const { client_name, phone, email, service, amount, deadline_date } = action;
         if (!client_name || !email || !service || !amount) return { success: false, error: 'Missing required fields' };
 
-        const orderId = 'ORD_' + Date.now().toString().slice(-6) + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const orderId = 'ZYRO' + Date.now().toString().slice(-6) + Math.random().toString(36).substring(2, 6).toUpperCase();
         const payload = {
             order_id: orderId,
             client_name,
@@ -255,19 +260,29 @@ async function executeAction(action, sessionId) {
 
         let payment_link = null;
         try {
-            const cleanPhone = phone && String(phone).replace(/\D/g, '').length >= 10 
-                ? String(phone).replace(/\D/g, '').slice(-10) 
+            const cleanPhone = phone && String(phone).replace(/\D/g, '').length >= 10
+                ? String(phone).replace(/\D/g, '').slice(-10)
                 : '9999999999';
 
-            const cfResponse = await axios.post('https://api.cashfree.com/pg/orders', {
-                order_amount: Number(amount),
-                order_currency: 'INR',
-                order_id: orderId,
+            // ── Use Cashfree Payment Links API (/pg/links) ─────────────────────
+            // This returns a real shareable `link_url` the admin can send to the client.
+            // The Order API (/pg/orders) only returns a session token for SDK checkout.
+            const cfResponse = await axios.post('https://api.cashfree.com/pg/links', {
+                link_amount: Number(amount),
+                link_currency: 'INR',
+                link_purpose: `${service} — ZyroEditz™`,
+                link_id: orderId,
                 customer_details: {
-                    customer_id: orderId,
                     customer_name: client_name,
                     customer_email: email,
                     customer_phone: cleanPhone
+                },
+                link_meta: {
+                    return_url: `https://zyroeditz.xyz/payment-success?order_id=${orderId}`
+                },
+                link_notify: {
+                    send_sms: false,
+                    send_email: false  // We handle our own emails via sendInvoice on webhook
                 }
             }, {
                 headers: {
@@ -276,11 +291,12 @@ async function executeAction(action, sessionId) {
                     'x-api-version': '2025-01-01'
                 }
             });
-            payment_link = cfResponse.data.payment_session_id;
-            if (cfResponse.data.payment_link) payment_link = cfResponse.data.payment_link;
+
+            // Payment Links API returns link_url directly
+            payment_link = cfResponse.data.link_url || cfResponse.data.link_id || null;
         } catch (e) {
-            console.log('Cashfree error:', e.response?.data || e.message);
-            return { success: false, error: 'Order created but Cashfree linker failed.' };
+            console.log('Cashfree Payment Link error:', e.response?.data || e.message);
+            return { success: false, error: `Order created in DB but Cashfree link generation failed: ${e.response?.data?.message || e.message}` };
         }
 
         return { success: true, actionType: 'created order', orderId, payment_link };
@@ -299,6 +315,163 @@ async function executeAction(action, sessionId) {
             console.log('Presigner error:', e.message);
             return { success: false, error: 'Failed to generate upload link.' };
         }
+    }
+
+    // ── CANCEL ORDER: Full refund + email + DB status update ─────────────────
+    if (action.type === 'cancel_order') {
+        const { orderId, reason } = action;
+        if (!orderId) return { success: false, error: 'Missing orderId' };
+
+        // Must fetch original data (already fetched above if orderId present)
+        if (!originalData) return { success: false, error: 'Order not found in database.' };
+
+        const orderStatus = originalData.status;
+        const orderAmount = Number(originalData.amount) || 0;
+        const hasBeenPaid = orderStatus === 'paid' || orderStatus === 'completed';
+
+        let refundResult = null;
+        let refundError = null;
+
+        // ── Step 1: Trigger Cashfree Refund (only if payment was received) ──
+        if (hasBeenPaid && orderAmount > 0) {
+            try {
+                // Cashfree refund needs the ORDERS API order_id.
+                // If order was created via Payment Links, the link_id === orderId,
+                // but we need to find the underlying cf_payment_id first.
+                // Strategy: try Orders API refund directly first (works for chat.js orders).
+                // If it fails with 404, the order was a Payment Link — look up via links API.
+                let refundOrderId = orderId;
+
+                try {
+                    // Check if a direct order exists in Cashfree
+                    await axios.get(`https://api.cashfree.com/pg/orders/${orderId}`, {
+                        headers: {
+                            'x-api-version': '2025-01-01',
+                            'x-client-id': process.env.CASHFREE_APP_ID,
+                            'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                        }
+                    });
+                    // Order exists via Orders API — use orderId directly for refund
+                } catch (lookupErr) {
+                    if (lookupErr.response?.status === 404) {
+                        // Payment Link order — Cashfree auto-creates an internal order ID.
+                        // Fetch it from the Payment Links API.
+                        const linkRes = await axios.get(`https://api.cashfree.com/pg/links/${orderId}`, {
+                            headers: {
+                                'x-api-version': '2025-01-01',
+                                'x-client-id': process.env.CASHFREE_APP_ID,
+                                'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                            }
+                        });
+                        // The link's linked order_id is in link_orders[0].order_id
+                        const linkedOrders = linkRes.data.link_orders || [];
+                        if (linkedOrders.length > 0) {
+                            refundOrderId = linkedOrders[0].order_id;
+                        } else {
+                            throw new Error('No completed payment found for this Payment Link.');
+                        }
+                    } else {
+                        throw lookupErr;
+                    }
+                }
+
+                const refundId = `REFUND_${orderId}_${Date.now().toString().slice(-6)}`;
+                const cfRefundRes = await axios.post(
+                    `https://api.cashfree.com/pg/orders/${refundOrderId}/refunds`,
+                    {
+                        refund_amount: orderAmount,
+                        refund_id: refundId.substring(0, 40), // Cashfree max 40 chars
+                        refund_note: reason ? reason.substring(0, 100) : 'Order cancelled by merchant',
+                        refund_speed: 'STANDARD'
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-version': '2025-01-01',
+                            'x-client-id': process.env.CASHFREE_APP_ID,
+                            'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                        }
+                    }
+                );
+
+                refundResult = cfRefundRes.data;
+                console.log(`[cancel_order] Refund initiated for ${orderId}:`, refundResult?.refund_status);
+
+            } catch (refErr) {
+                // Refund failed — DON'T cancel the order, surface the error
+                refundError = refErr.response?.data?.message || refErr.message;
+                console.error(`[cancel_order] Cashfree refund FAILED for ${orderId}:`, refundError);
+                return {
+                    success: false,
+                    error: `Cashfree refund failed: ${refundError}. Order NOT cancelled to prevent financial discrepancy.`
+                };
+            }
+        }
+
+        // ── Step 2: Update DB status to 'refunded' ────────────────────────────
+        const { error: dbError } = await supabase
+            .from('orders')
+            .update({ status: 'refunded', completed_at: new Date().toISOString() })
+            .eq('order_id', orderId);
+
+        if (dbError) {
+            return { success: false, error: `DB update failed: ${dbError.message}. Refund was already submitted to Cashfree — contact support.` };
+        }
+
+        await saveActionHistory(sessionId, action, originalData);
+
+        // ── Step 3: Send cancellation email to client ─────────────────────────
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (originalData.client_email && emailRegex.test(originalData.client_email)) {
+            const refundArn = refundResult?.refund_arn || null;
+            const refundStatus = refundResult?.refund_status || (hasBeenPaid ? 'PENDING' : 'N/A');
+            const refundNote = hasBeenPaid
+                ? `<p>A full refund of <strong>Rs.${orderAmount.toFixed(2)}</strong> has been initiated to your original payment method. Refunds typically reflect in <strong>5–7 business days</strong> (STANDARD speed).</p>
+                   ${refundArn ? `<p style="color:#888;font-size:12px;">Refund Reference (ARN): <code>${refundArn}</code></p>` : ''}`
+                : `<p>Since payment had not been collected for this order, no refund transaction is applicable.</p>`;
+
+            await resend.emails.send({
+                from: 'ZyroEditz\u2122 <billing@zyroeditz.xyz>',
+                to: originalData.client_email,
+                reply_to: 'zyroeditz.official@gmail.com',
+                subject: `Order Cancellation Confirmed \u2014 ${originalData.service} | ZyroEditz\u2122`,
+                html: `
+                    <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;background:#050505;color:#fff;border:1px solid #222;border-radius:12px;overflow:hidden;">
+                        <div style="background:#111;padding:36px 30px;text-align:center;border-bottom:2px solid #ff1a1a;">
+                            <h1 style="margin:0;font-size:30px;font-weight:900;">Zyro<span style="color:#ff1a1a;">Editz</span>&#8482;</h1>
+                            <p style="margin:5px 0 0;color:#888;font-size:10px;text-transform:uppercase;letter-spacing:4px;">Speed. Motion. Precision.</p>
+                        </div>
+                        <div style="padding:36px 30px;">
+                            <h2 style="margin-top:0;color:#fff;">Order Cancellation Confirmed</h2>
+                            <p style="color:#ccc;font-size:15px;line-height:1.6;">Hi <strong>${(originalData.client_name || 'there').replace(/[<>"'&]/g, '')}</strong>,</p>
+                            <p style="color:#ccc;font-size:15px;line-height:1.6;">We're sorry to inform you that your order has been cancelled${reason ? ` — <em style="color:#ff6666;">${reason.replace(/[<>"'&]/g, '')}</em>` : ''}.</p>
+                            <div style="background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:20px;margin:24px 0;">
+                                <table style="width:100%;border-collapse:collapse;">
+                                    <tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Order ID</td><td style="padding:8px 0;color:#ff1a1a;font-weight:bold;text-align:right;font-family:monospace;">${originalData.order_id}</td></tr>
+                                    <tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid #222;">Service</td><td style="padding:8px 0;color:#fff;text-align:right;border-top:1px solid #222;">${(originalData.service || 'N/A').replace(/[<>"'&]/g, '')}</td></tr>
+                                    <tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid #222;">Amount</td><td style="padding:8px 0;color:#fff;text-align:right;border-top:1px solid #222;">Rs.${orderAmount.toFixed(2)}</td></tr>
+                                    <tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid #222;">Refund Status</td><td style="padding:8px 0;color:${refundStatus === 'SUCCESS' ? '#22c55e' : '#ffcc00'};font-weight:bold;text-align:right;border-top:1px solid #222;">${refundStatus}</td></tr>
+                                </table>
+                            </div>
+                            ${refundNote}
+                            <p style="color:#ccc;font-size:14px;line-height:1.6;">We hope to work with you again in the future. If you have any questions, reply to this email or reach us at <a href="mailto:zyroeditz.official@gmail.com" style="color:#ff1a1a;">zyroeditz.official@gmail.com</a>.</p>
+                        </div>
+                        <div style="background:#0a0a0a;padding:20px 30px;text-align:center;border-top:1px solid #1a1a1a;">
+                            <p style="margin:0;color:#666;font-size:12px;">&copy; ${new Date().getFullYear()} ZyroEditz&#8482;. All rights reserved.</p>
+                        </div>
+                    </div>
+                `
+            }).catch(e => console.error('[cancel_order] Resend email error:', e.message));
+        }
+
+        return {
+            success: true,
+            orderId,
+            actionType: 'cancelled_and_refunded',
+            refundStatus: refundResult?.refund_status || (hasBeenPaid ? 'PENDING' : 'N/A (unpaid)'),
+            refundArn: refundResult?.refund_arn || null,
+            amountRefunded: hasBeenPaid ? orderAmount : 0
+        };
     }
 
     return null;
@@ -348,8 +521,10 @@ module.exports = async function (req, res) {
     // CORS configuration
     const origin = req.headers.origin;
     const allowedOrigins = [
-        'https://zyroeditz.com',
-        'https://www.zyroeditz.com'
+        'https://zyroeditz.xyz',
+        'https://www.zyroeditz.xyz',
+        'https://admin.zyroeditz.xyz',
+        'https://zyroeditz.vercel.app'
     ];
     
     if (allowedOrigins.includes(origin)) {
@@ -373,6 +548,18 @@ module.exports = async function (req, res) {
         // Session memory management
         if (!memoryStore[sessionId]) memoryStore[sessionId] = [];
         const sessionMemory = memoryStore[sessionId].filter(m => now - m.timestamp < SESSION_TTL);
+
+        // B-09 FIX: Evict fully-expired sessions from all in-memory stores to prevent
+        // unbounded memory growth on warm Vercel instances with many unique sessions.
+        Object.keys(memoryStore).forEach(id => {
+            if (id === sessionId) return; // skip active session
+            const msgs = memoryStore[id];
+            if (!msgs.length || now - msgs[msgs.length - 1].timestamp > SESSION_TTL) {
+                delete memoryStore[id];
+                delete pendingActionsStore[id];
+                delete actionHistoryStore[id];
+            }
+        });
         
         // ── NEW: Handle undo requests ──────────────────────────────────────────
         if (prompt && isUndoRequest(prompt)) {
@@ -415,14 +602,18 @@ module.exports = async function (req, res) {
             if (successCount === totalCount) {
                 if (totalCount === 1) {
                     const action = pendingActions[0];
+                    const r = results[0];
                     if (action.type === 'delete_order') {
                         summaryMsg = `Deleted order ${action.orderId}.`;
                     } else if (action.type === 'update_status') {
                         summaryMsg = `Updated ${action.orderId} to ${action.status}.`;
                     } else if (action.type === 'create_order') {
-                        summaryMsg = `Created order ${results[0].orderId}.`;
+                        summaryMsg = `Order **${r.orderId}** created for **${action.client_name}** (${action.service}).`;
                     } else if (action.type === 'generate_upload_link') {
                         summaryMsg = `Generated upload link for ${results[0].orderId}.`;
+                    } else if (action.type === 'cancel_order') {
+                        const refunded = r.amountRefunded > 0;
+                        summaryMsg = `Order **${r.orderId}** cancelled.${refunded ? ` Refund of **Rs.${r.amountRefunded}** initiated to Cashfree (status: ${r.refundStatus}).${r.refundArn ? ` ARN: \`${r.refundArn}\`` : ''} Cancellation email sent to client.` : ' No payment was on record, so no refund was required.'}`;
                     } else {
                         summaryMsg = `Updated order ${action.orderId}.`;
                     }
@@ -435,9 +626,12 @@ module.exports = async function (req, res) {
             
             // Append generated links dynamically
             let linkAppendix = '';
-            results.forEach(res => {
-                if (res && res.payment_link) linkAppendix += `\n\n[Payment Link]: ${res.payment_link}`;
-                if (res && res.url) linkAppendix += `\n\n[B2 Upload Link]: ${res.url}`;
+            results.forEach(r => {
+                if (r && r.payment_link) {
+                    linkAppendix += `\n\n💳 **Payment Link** (send to client):\n${r.payment_link}`;
+                    linkAppendix += `\n\n✅ **Payment Success URL** (share after payment or use internally):\nhttps://zyroeditz.xyz/payment-success?order_id=${r.orderId}`;
+                }
+                if (r && r.url) linkAppendix += `\n\n📁 **B2 Upload Link** (7-day expiry):\n${r.url}`;
             });
 
             return res.status(200).json({
@@ -447,12 +641,21 @@ module.exports = async function (req, res) {
         }
         
         // ── NEW: Handle rejection of pending actions ───────────────────────────
-        if (prompt && (prompt.toLowerCase().includes('no') || prompt.toLowerCase().includes('cancel')) && pendingActionsStore[sessionId]) {
-            delete pendingActionsStore[sessionId];
-            return res.status(200).json({
-                reply: "Got it, canceled those actions.",
-                actions: []
-            });
+        // IMPORTANT: We only treat 'cancel' as a rejection if there's NO orderId context in the message.
+        // Otherwise "cancel order ZYRO123" would abort the pending action instead of starting a new cancel flow.
+        if (prompt && pendingActionsStore[sessionId]) {
+            const lp = prompt.toLowerCase();
+            const isExplicitRejection =
+                (lp === 'no' || lp === 'nope' || lp === 'nah' || lp === 'abort' || lp === 'stop' || lp === 'dont' || lp === "don't") ||
+                (lp.includes('cancel') && !lp.match(/cancel\s+(order|zyro|#)/i));
+
+            if (isExplicitRejection) {
+                delete pendingActionsStore[sessionId];
+                return res.status(200).json({
+                    reply: "Got it, I've dropped those pending actions.",
+                    actions: []
+                });
+            }
         }
 
         // ── Fetch data ─────────────────────────────────────────────────────────
@@ -493,8 +696,10 @@ module.exports = async function (req, res) {
             .reduce((s, o) => s + (Number(o.amount) || 0), 0);
         const pendingClearance = Number(totalRev) - totalSettled;
 
-        const grossProfit = totalSettled * 0.97;
-        const profitMargin = totalSettled > 0 ? (((grossProfit - totalSettled) / totalSettled) * 100).toFixed(1) + '%' : 'N/A';
+        // B-08 FIX: Previous formula (grossProfit - totalSettled) / totalSettled always
+        // evaluated to -3% — it was subtracting the fee from itself. Now correctly
+        // reports Cashfree's 3% gateway fee as a cost against settled revenue.
+        const profitMargin = totalSettled > 0 ? `97.0% (after 3% Cashfree gateway fee)` : 'N/A';
 
         const whaleClients = uniqueClients
             .map(name => ({
@@ -570,6 +775,14 @@ Valid Pending Proposal Formats:
 
 5. Propose Deletion (⚠️ Extra warning required):
 <<<PENDING: {"type": "delete_order", "orderId": "exact_order_id"} >>>
+
+6. Propose Order Cancellation + Full Refund:
+   - Use this when Soumojit says "cancel", "refund", "cancel and refund", etc.
+   - For paid orders: triggers Cashfree refund + email to client
+   - For unpaid orders: just marks as cancelled + sends cancellation email
+   - You MUST include a reason (use "Client request" if none given)
+   - ⚠️ This is IRREVERSIBLE — add an explicit warning in your message before the PENDING block
+<<<PENDING: {"type": "cancel_order", "orderId": "exact_order_id", "reason": "e.g. Client requested cancellation"} >>>
 
 --- 
 INSTANT ACTIONS:
