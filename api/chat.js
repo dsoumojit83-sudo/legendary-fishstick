@@ -7,6 +7,21 @@ const generateOrderId = () => {
     return "ZYRO" + Date.now() + Math.random().toString(16).slice(2, 6).toUpperCase();
 };
 
+// B-04 FIX: Rate limiter — prevents bots from spamming order creation.
+// Sliding window: 10 requests per IP per 60 seconds (tighter than verify-payment
+// because each request hits both Cashfree AND Supabase).
+const _chatRateMap = {};
+const CHAT_RATE_MAX = 10;
+const CHAT_RATE_WINDOW_MS = 60 * 1000;
+function isChatRateLimited(ip) {
+    const now = Date.now();
+    const recent = (_chatRateMap[ip] || []).filter(t => now - t < CHAT_RATE_WINDOW_MS);
+    if (recent.length >= CHAT_RATE_MAX) { _chatRateMap[ip] = recent; return true; }
+    recent.push(now);
+    _chatRateMap[ip] = recent;
+    return false;
+}
+
 // --- DEADLINE TIMETABLE ---
 const deadlineMap = {
     "Short Form": 2,
@@ -19,6 +34,12 @@ const deadlineMap = {
 
 module.exports = async function (req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    // B-04 FIX: Reject abusive IPs before hitting Cashfree or Supabase
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+    if (isChatRateLimited(clientIp)) {
+        return res.status(429).json({ reply: 'Too many requests. Please wait a moment before trying again.' });
+    }
 
     try {
         const { sessionId, phone, email, name, selectedService, amount } = req.body;
