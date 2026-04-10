@@ -51,6 +51,14 @@ const _handler = async function(req, res) {
     const timestamp = req.headers['x-webhook-timestamp'];
     const receivedSig = req.headers['x-webhook-signature'];
 
+    // 🔒 Replay attack protection — reject stale webhooks older than 5 minutes.
+    // Cashfree always sends a fresh timestamp; replayed payloads will be stale.
+    const webhookAge = Math.abs(Date.now() / 1000 - Number(timestamp));
+    if (!timestamp || isNaN(webhookAge) || webhookAge > 300) {
+        console.warn(`[ZYRO][webhook][SECURITY] ${new Date().toISOString()} | Stale or missing timestamp (age: ${webhookAge}s). Rejecting.`);
+        return res.status(401).json({ error: 'Webhook timestamp expired or missing.' });
+    }
+
     // 🔒 Verify the webhook came from Cashfree — reject spoofed payloads
     if (!verifyWebhookSignature(timestamp, rawBody, receivedSig)) {
         console.warn(`[ZYRO][webhook][SECURITY] ${new Date().toISOString()} | Signature verification FAILED. Rejecting request.`);
