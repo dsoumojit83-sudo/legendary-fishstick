@@ -35,13 +35,15 @@ module.exports = async function(req, res) {
         // B-03 FIX: Standardize on 'working' — admin-chat.js and the DB use 'working',
         // not 'in_progress'. Using two different strings for the same state caused
         // status updates from the manual admin panel to be silently ignored.
+        // 'in_progress' is an alias sent by the frontend status toggle; map it to 'working'
+        const normalizedStatus = status === 'in_progress' ? 'working' : status;
         const validStatuses = ['pending', 'working', 'paid', 'completed', 'refunded', 'cancelled'];
-        if (!validStatuses.includes(status)) {
+        if (!validStatuses.includes(normalizedStatus)) {
             return res.status(400).json({ error: 'Invalid status value.' });
         }
 
-        let updatePayload = { status };
-        if (status === 'completed') updatePayload.completed_at = new Date().toISOString();
+        let updatePayload = { status: normalizedStatus };
+        if (normalizedStatus === 'completed') updatePayload.completed_at = new Date().toISOString();
 
         const { error } = await supabase
             .from('orders')
