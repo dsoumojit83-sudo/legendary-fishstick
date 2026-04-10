@@ -1,36 +1,57 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    './index.html',
-    './admin/index.html',
-    './payment-success/index.html',
-    './payment-failed/index.html',
-    './portfolio/index.html',
-    './checkout/index.html',
-  ],
-  theme: {
-    extend: {
-      colors: {
-        brand: { red: '#ff1a1a', dark: '#050505' },
-        ink: "#06060b",
-        midnight: "#0b1020",
-        electric: "#49c6ff",
-        violet: "#7a5cff",
-        haze: "#9db4ff",
-        zyrored: "#ff1a1a"
-      },
-      fontFamily: {
-        sans: ['Outfit', 'sans-serif'],
-        brand: ['"Roboto"', "sans-serif"]
-      },
-      boxShadow: {
-        glow: "0 0 0 1px rgba(130, 96, 255, 0.16), 0 0 32px rgba(73, 198, 255, 0.18)",
-        neon: "0 0 30px rgba(73, 198, 255, 0.28)",
-      },
-      backgroundImage: {
-        grid: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-      }
-    }
+{
+  "outputDirectory": ".",
+  "functions": {
+    "api/upload-files.js":    { "maxDuration": 20 },
+    "api/admin-chat.js":      { "maxDuration": 30 },
+    "api/admin-data.js":      { "maxDuration": 20 },
+    "api/webhook.js":         { "maxDuration": 30 },
+    "api/verify-payment.js":  { "maxDuration": 20 },
+    "api/payments.js":        { "maxDuration": 30 },
+    "api/settlements.js":     { "maxDuration": 15 },
+    "api/chat.js":            { "maxDuration": 20 },
+    "api/save-brief.js":      { "maxDuration": 15 },
+    "api/get-files.js":       { "maxDuration": 20 },
+    "api/update-status.js":   { "maxDuration": 15 }
   },
-  plugins: []
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options",           "value": "DENY" },
+        { "key": "X-Content-Type-Options",    "value": "nosniff" },
+        { "key": "X-XSS-Protection",          "value": "1; mode=block" },
+        { "key": "Referrer-Policy",            "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",         "value": "camera=(), microphone=(), geolocation=()" },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://www.googletagmanager.com https://*.cashfree.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.cashfree.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: ; media-src 'self' https: blob: data: ; connect-src 'self' https: wss://*.supabase.co; frame-src https://*.cashfree.com https://www.youtube.com; object-src 'none'; worker-src 'self' blob:;"
+        }
+      ]
+    },
+    {
+      "source": "/favicon.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/og-image.PNG",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/og-image.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+
+    {
+      "source": "/tailwind.css",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
 }
