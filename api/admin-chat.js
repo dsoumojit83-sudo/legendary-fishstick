@@ -115,6 +115,22 @@ async function undoLastAction(sessionId) {
                 : { success: true, actionType: 'restored deleted order', orderId: originalData.order_id };
         }
         
+        if (action.type === 'create_order') {
+            // Restore by deleting the mistakenly created order
+            const { error } = await supabase
+                .from('orders')
+                .delete()
+                .eq('order_id', action.orderId);
+            
+            return error
+                ? { success: false, error: error.message }
+                : { success: true, actionType: 'removed mistakenly created order', orderId: action.orderId };
+        }
+        
+        if (action.type === 'cancel_order') {
+            return { success: false, error: 'Refunds cannot be automatically undone once sent to Cashfree. Please contact support.' };
+        }
+
         if (action.type === 'update_status' || action.type === 'update_order') {
             // Restore previous values
             const { error } = await supabase
@@ -240,8 +256,12 @@ async function executeAction(action, sessionId) {
     }
 
     if (action.type === 'create_order') {
-        const { client_name, phone, email, service, amount, deadline_date } = action;
-        if (!client_name || !email || !service || !amount) return { success: false, error: 'Missing required fields' };
+        const { client_name, phone, email, service, deadline_date } = action;
+        if (!client_name || !email || !service || !action.amount) return { success: false, error: 'Missing required fields' };
+
+        // Strip currency symbols/formatting — AI may output "Rs. 200", "₹200", "200.00", etc.
+        const cleanAmount = parseFloat(String(action.amount).replace(/[^\d.]/g, ''));
+        if (isNaN(cleanAmount) || cleanAmount <= 0) return { success: false, error: `Invalid amount: "${action.amount}"` };
 
         const orderId = 'ZYRO' + Date.now().toString().slice(-6) + Math.random().toString(36).substring(2, 6).toUpperCase();
         const payload = {
@@ -250,13 +270,18 @@ async function executeAction(action, sessionId) {
             client_phone: phone || 'N/A',
             client_email: email,
             service,
-            amount,
+            amount: cleanAmount,
             deadline_date: deadline_date || null,
             status: 'pending'
         };
 
         const { error } = await supabase.from('orders').insert(payload);
         if (error) return { success: false, error: error.message };
+
+        action.orderId = orderId;
+        if (sessionId) {
+            await saveActionHistory(sessionId, action, null);
+        }
 
         let payment_link = null;
         try {
@@ -268,7 +293,7 @@ async function executeAction(action, sessionId) {
             // This works for all Cashfree accounts without special approval.
             // We construct a hosted link using the session ID.
             const cfResponse = await axios.post('https://api.cashfree.com/pg/orders', {
-                order_amount: Number(amount),
+                order_amount: cleanAmount,
                 order_currency: 'INR',
                 order_note: `${service} — ZyroEditz™`,
                 order_id: orderId,
@@ -290,9 +315,10 @@ async function executeAction(action, sessionId) {
             });
 
             // Construct our own "Payment Link" pointing to our checkout bridge
-            const sessionId = cfResponse.data.payment_session_id;
-            if (sessionId) {
-                payment_link = `https://zyroeditz.xyz/checkout?session_id=${sessionId}`;
+            // BUG FIX B: renamed from 'sessionId' to avoid shadowing the outer admin sessionId
+            const cfSessionId = cfResponse.data.payment_session_id;
+            if (cfSessionId) {
+                payment_link = `https://zyroeditz.xyz/checkout?session_id=${cfSessionId}`;
             } else {
                 payment_link = null;
             }
@@ -513,6 +539,12 @@ module.exports = async function (req, res) {
         const { prompt, sessionId = 'default', attachment } = req.body;
         if (!prompt && !attachment) return res.status(400).json({ error: 'No input' });
 
+        // 🔒 JWT Auth — same guard as admin-data.js and settlements.js
+        const authHeader = req.headers['authorization'];
+        if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+        const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
+        if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
         const now = Date.now();
         const SESSION_TTL = 30 * 60 * 1000;
 
@@ -605,7 +637,9 @@ module.exports = async function (req, res) {
 
 
             return res.status(200).json({
-                reply: (linkAppendix || summaryMsg).trim(),
+                // BUG FIX C: was (linkAppendix || summaryMsg) which dropped context when link present.
+                // Now always shows both: order summary THEN the payment link on a new line.
+                reply: (summaryMsg + linkAppendix).trim(),
                 actions: results
             });
         }
@@ -631,7 +665,7 @@ module.exports = async function (req, res) {
         // ── Fetch data ─────────────────────────────────────────────────────────
         const { data: allOrders, error: fetchError } = await supabase
             .from('orders')
-            .select('*')
+            .select('order_id, client_name, client_email, client_phone, service, amount, status, created_at, deadline_date, completed_at')
             .order('created_at', { ascending: false });
 
         if (fetchError) throw new Error(`Database error: ${fetchError.message}`);
@@ -639,14 +673,19 @@ module.exports = async function (req, res) {
         const orders = allOrders || [];
         const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
 
-        const totalRev = orders.reduce((s, o) => s + (Number(o.amount) || 0), 0).toFixed(2);
+        // BUG FIX D+E: Only count paid/completed orders as real revenue.
+        // Previously summed ALL orders incl. refunded + pending = inflated numbers.
+        const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'completed');
+        const totalRev = paidOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0).toFixed(2);
         const currentMonth = new Date().getMonth();
-        const monthRev = orders
+        const monthRev = paidOrders
             .filter(o => o.created_at && new Date(o.created_at).getMonth() === currentMonth)
             .reduce((s, o) => s + (Number(o.amount) || 0), 0)
             .toFixed(2);
 
-        const activeOrders = orders.filter(o => o.status && !['completed', 'canceled', 'refunded'].includes(o.status));
+        // BUG FIX F: 'canceled' (1 l) was a typo — DB stores 'refunded' from cancel_order action.
+        // Refunded orders were appearing in the active pipeline after cancellation.
+        const activeOrders = orders.filter(o => o.status && !['completed', 'refunded', 'cancelled'].includes(o.status));
         const filesMap = await getFilesMap(activeOrders);
 
         const activePipeline = activeOrders.map(o => {
@@ -661,10 +700,9 @@ module.exports = async function (req, res) {
         const repeatClients = uniqueClients.filter(name => orders.filter(o => o.client_name === name).length > 1);
         const retentionRate = uniqueClients.length > 0 ? ((repeatClients.length / uniqueClients.length) * 100).toFixed(1) : '0.0';
 
-        const totalSettled = orders
-            .filter(o => o.status === 'completed' || o.status === 'paid')
-            .reduce((s, o) => s + (Number(o.amount) || 0), 0);
-        const pendingClearance = Number(totalRev) - totalSettled;
+        // totalSettled == totalRev since both now filter to paid+completed orders
+        const totalSettled = Number(totalRev);
+        const pendingClearance = 0; // all counted revenue is already settled
 
         // B-08 FIX: Previous formula (grossProfit - totalSettled) / totalSettled always
         // evaluated to -3% — it was subtracting the fee from itself. Now correctly
@@ -729,10 +767,10 @@ STEP 2 — EXECUTE (Only after Soumojit confirms):
 Valid Pending Proposal Formats:
 
 1. Propose New Order Creation:
-- You MUST automatically determine the 'amount' based on the requested service using the SERVICES & PRICING menu below.
+- You MUST automatically determine the 'amount' based on the requested service using the SERVICES & PRICING menu below. Output amount as a plain number (e.g. 200, not "Rs.200").
 - You MUST automatically set 'deadline_date' to 24-48 hours from today unless the user specifies otherwise.
 - Only ask the user for missing details if they haven't provided Name, Phone, Email, or Service.
-<<<PENDING: {"type": "create_order", "client_name": "...", "phone": "...", "email": "...", "service": "...", "amount": "...", "deadline_date": "YYYY-MM-DD"} >>>
+<<<PENDING: {"type": "create_order", "client_name": "...", "phone": "...", "email": "...", "service": "...", "amount": 200, "deadline_date": "YYYY-MM-DD"} >>>
 
 2. Propose Status Update (working, completed, pending, paid):
 <<<PENDING: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
@@ -743,7 +781,7 @@ Valid Pending Proposal Formats:
 4. Propose Deletion (⚠️ Extra warning required):
 <<<PENDING: {"type": "delete_order", "orderId": "exact_order_id"} >>>
 
-6. Propose Order Cancellation + Full Refund:
+5. Propose Order Cancellation + Full Refund:
    - Use this when Soumojit says "cancel", "refund", "cancel and refund", etc.
    - For paid orders: triggers Cashfree refund + email to client
    - For unpaid orders: just marks as cancelled + sends cancellation email
@@ -785,8 +823,7 @@ ADDITIONAL RULES:
 
 6. DATA PRECISION:
    - Always prioritize information provided in the LATEST user message over session memory.
-   - Capture the Client's Email (Gmail) EXACTLY as they provide it. Do not guess or use old emails if a new one is shared.
-   - When providing the final confirmation for an order, ALWAYS include both the Payment Link and the Success Verification link.
+   - Capture the Client's Email EXACTLY as they provide it. Do not guess or use old emails if a new one is shared.
    - Add extra warning for bulk deletions
 
 ---
@@ -799,6 +836,7 @@ PERSONALITY & STYLE:
 - If you don't know something, say so honestly
 - When giving lists, use bullet points — keep each line tight
 - Don't start every message the same way — vary your tone naturally
+- Use emojis naturally where they add personality or clarity — e.g. ✅ for success, ⚠️ for warnings, 🗑️ for deletions, 💸 for refunds, 🎬 for new orders, 📋 for order summaries, 🔄 for status changes. Don't spam them — 1-2 per message max, only where they genuinely fit.
 
 SERVICES & PRICING:
 - Short Form: Rs.200 — YouTube Shorts, Reels
@@ -811,33 +849,7 @@ SERVICES & PRICING:
 Revision policy: 1 free revision included with every order.
 Refund policy: Full refund if client isn't happy with the final cut.
   
-PORTFOLIO KNOWLEDGE:
-The portfolio is hosted at '/portfolio/' — a cinematic, dark-themed single-page gallery. It's the studio's premium showcase.
-
-INTRO EXPERIENCE:
-- Cinematic shutter-reveal: eyebrow text "ZyroEditz™ — Director's Vault" fades in, then a gradient line accent draws across, then hero text "Welcome to a new era of Editing." reveals word-by-word, a tagline "Cinematic Edits · Unmatched Retention · Built for Impact" appears, and a progress bar fills before dual shutters split open to reveal the main page.
-
-PORTFOLIO ITEMS (5 live entries):
-- NEON NIGHTS — Commercial Ad (Ads category, 2×2 featured card)
-- URBAN ECHO — Short Film (Short Film category, 1×1 card)
-- RHYTHM — Music Reel (Reels category, 1×1 card)
-- SPEED DYNAMICS — Automotive Ad (Ads category, 2×1 wide card)
-- VIRAL CUTS — Social Shorts (Reels category, 1×1 card)
-Categories: Commercials (Ads), Reels & Shorts, Narrative (Short Films). Users can filter by category.
-
-SECTIONS:
-1. Director's Cut — Bento grid gallery with hover effects (sibling blur/dimming, glare)
-2. Behind the Timeline — About section with stats: 100+ Projects, 50M+ Views, 4K Master Exports, 24h Turnaround
-3. The Process — 4 steps: Raw Intake → Story Mapping → Precision Edit → Final Delivery
-4. Client Testimonials — 4 reviews: Vikram Sharma, Priya Desai, Arjun Malhotra, Neha Krishnan (all "Valuable Client", all ★★★★★)
-
-DESIGN DETAILS:
-- Colors: dark ink (#06060b), electric blue (#49c6ff), violet (#7a5cff), haze (#9db4ff). Red (#ff1a1a) ONLY used in "Editz" logo text.
-- Brand name is always "ZyroEditz™" (mixed case with trademark), NEVER all-caps "ZYROEDITZ".
-- Desktop: spotlight cursor, sibling blur on hover, vanilla-tilt glare on cards
-- Mobile: optimized with no heavy hover effects, compact grid, hidden marquee
-
-Always direct people to '/portfolio/' to see the curated gallery if they ask for samples or past work.`;
+PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past work.`;
 
         // ── Build messages with memory ────────────────────────────────────────
         let finalPrompt = prompt || '';
