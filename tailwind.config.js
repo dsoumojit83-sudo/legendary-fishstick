@@ -6,6 +6,7 @@ module.exports = {
     './payment-success/index.html',
     './payment-failed/index.html',
     './portfolio/index.html',
+    './checkout/index.html',
   ],
   theme: {
     extend: {
