@@ -6,10 +6,10 @@
     <title>ZyroEditz&trade; | Securing Portal...</title>
     <!-- Prevent search engines from indexing this transactional bridge page -->
     <meta name="robots" content="noindex, nofollow">
-    <!-- Same fonts used in main site -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap">
-    <!-- Cashfree SDK V3 -->
-    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <!-- Same fonts used in main site — display=block prevents FOUT on the redirect animation -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=block">
+    <!-- Cashfree SDK V3: defer so it doesn't block paint — called inside DOMContentLoaded -->
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
