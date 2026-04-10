@@ -140,7 +140,7 @@ module.exports = async function (req, res) {
 
                     const freshRes = await axios.post('https://api.cashfree.com/pg/orders', {
                         order_id: order_id + '_R' + Date.now().toString().slice(-4),
-                        order_amount: Number(order.amount).toFixed(2),
+                        order_amount: parseFloat(Number(order.amount).toFixed(2)),
                         order_currency: 'INR',
                         customer_details: {
                             customer_id: order_id,
@@ -199,7 +199,7 @@ module.exports = async function (req, res) {
             // Fetch current order details from your database
             const { data: orderData, error: fetchError } = await supabase
                 .from('orders')
-                .select('*')
+                .select('order_id, client_name, client_email, client_phone, service, amount, status, deadline_date, created_at')
                 .eq('order_id', order_id)
                 .single();
 
