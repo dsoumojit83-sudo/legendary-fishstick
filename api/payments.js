@@ -5,6 +5,15 @@ const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 module.exports = async function (req, res) {
+    // CORS — same pattern as all other admin APIs (settlements, admin-data, etc.)
+    const _pAllowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _pOrigin = req.headers.origin;
+    res.setHeader('Access-Control-Allow-Origin', _pAllowed.includes(_pOrigin) ? _pOrigin : _pAllowed[0]);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Vary', 'Origin');
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
     // Prevent 304 Browser/Vercel Caching
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
