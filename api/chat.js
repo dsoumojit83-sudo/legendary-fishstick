@@ -88,7 +88,7 @@ module.exports = async function (req, res) {
             'https://api.cashfree.com/pg/orders',
             {
                 order_id: orderId,
-                order_amount: numericAmount.toFixed(2),
+                order_amount: parseFloat(numericAmount.toFixed(2)),
                 order_currency: "INR",
                 customer_details: {
                     customer_id: sessionId || "CUST_" + Date.now(),
