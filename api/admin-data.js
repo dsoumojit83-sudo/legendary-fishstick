@@ -145,7 +145,7 @@ module.exports = async function (req, res) {
         // Fetch all orders to compute metrics
         const { data: orders, error } = await supabase
             .from('orders')
-            .select('*')
+            .select('order_id, client_name, client_email, client_phone, service, amount, status, created_at, deadline_date, completed_at, project_notes')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
