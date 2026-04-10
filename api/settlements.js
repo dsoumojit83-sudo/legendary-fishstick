@@ -92,12 +92,12 @@ module.exports = async function (req, res) {
         });
 
     } catch (err) {
+        // Log full error server-side (Vercel logs) — do NOT expose gateway internals to browser
         console.error("Settlement Error:", err.response?.data || err.message);
 
         return res.status(500).json({
             success: false,
-            error: "Failed to fetch settlements",
-            details: err.response?.data || err.message
+            error: "Failed to fetch settlements. Please try again or check your date range.",
         });
     }
 };
