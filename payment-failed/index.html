@@ -352,9 +352,10 @@
         // Previously showed a form tied to 'ZYRO_MANUAL' which hit a 404 on submit.
         if (!orderId || orderId === 'ZYRO_MANUAL') {
             window.location.replace('/');
+            return; // Stop all JS execution — page is navigating away
         }
 
-        document.getElementById('orderIdDisplay').textContent = orderId || 'ZYRO_MANUAL';
+        document.getElementById('orderIdDisplay').textContent = orderId;
 
         // Brief auto-save + character counter
         const projectBrief = document.getElementById('projectBrief');
@@ -598,7 +599,10 @@
                 console.error('[Retry]', err);
                 txtEl.textContent = err.message || 'Retry Failed — Please Try Again';
                 btn.disabled = false;
-                setTimeout(() => { txtEl.textContent = 'Retry Payment — Same Order'; }, 3500);
+                // Cancel any previous label-reset timer before starting a new one
+                // (prevents race when user taps retry multiple times quickly)
+                clearTimeout(btn._resetTimer);
+                btn._resetTimer = setTimeout(() => { txtEl.textContent = 'Retry Payment — Same Order'; }, 3500);
             }
         });
     </script>
