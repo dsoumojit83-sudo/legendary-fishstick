@@ -71,6 +71,12 @@ module.exports = async function (req, res) {
         const orderId = generateOrderId();
         const numericAmount = parseFloat(amount);
 
+        // Guard: reject invalid amounts before hitting Cashfree
+        // Negative, zero, or NaN amounts cause a confusing 422 from Cashfree's API.
+        if (!numericAmount || numericAmount <= 0 || !Number.isFinite(numericAmount)) {
+            return res.status(400).json({ reply: "Invalid payment amount. Please contact support." });
+        }
+
         // ── BUG FIX #9: Safer IST deadline — compute using explicit UTC year/month/day ──
         // Avoids setUTCDate() month-rollover edge cases when adding days near month boundaries.
         const daysToAdd = deadlineMap[selectedService] || 3;
