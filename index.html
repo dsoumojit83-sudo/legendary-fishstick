@@ -71,9 +71,9 @@
     <link rel="preconnect" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://img.youtube.com">
     <link rel="dns-prefetch" href="https://unpkg.com">
-    <!-- Preload GSAP so it's downloaded while body renders -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" as="script">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" as="script">
+    <!-- Preload GSAP so it's downloaded while body renders (crossorigin required to avoid double-fetch) -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" as="script" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" as="script" crossorigin>
     <!-- Roboto: synchronous/blocking load — headings, bold and brand name never flicker -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@700;900&display=block">
     <!-- Outfit: display=optional — shows text immediately in fallback; uses Outfit if it arrives within ~100ms -->
@@ -96,22 +96,14 @@
     <meta name="theme-color" content="#ff1a1a">
 
     <script>
-        setTimeout(function () {
-            if (!window.gsap) {
-                const revealElements = document.querySelectorAll('.reveal');
-                revealElements.forEach(el => {
-                    el.style.opacity = '1';
-                    el.style.transform = 'none';
-                });
-            }
-        }, 3000);
-
+        // Single consolidated GSAP fallback — runs after 3s if GSAP failed to load.
+        // Reveals all hidden .reveal elements so page is never permanently blank.
         setTimeout(function () {
             if (!window.gsap) {
                 document.documentElement.classList.add('reveal-loaded');
-                const style = document.createElement('style');
-                style.textContent = '.reveal { opacity: 1 !important; transform: none !important; }';
-                document.head.appendChild(style);
+                const s = document.createElement('style');
+                s.textContent = '.reveal { opacity: 1 !important; transform: none !important; }';
+                document.head.appendChild(s);
             }
         }, 3000);
     </script>
@@ -1255,6 +1247,9 @@
             align-items: center; justify-content: center;
             opacity: 0; visibility: hidden;
             transition: opacity 0.4s ease, visibility 0.4s ease;
+            /* iOS Fix: prevent momentum scroll from panning the modal off-screen */
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: auto;
         }
         #msvp-modal.open { opacity: 1; visibility: visible; }
         #msvp-content {
@@ -1335,7 +1330,7 @@
 
     <!-- Tailwind CSS: pre-built at deploy time by Vercel (npm run build → Tailwind CLI) -->
     <!-- This is ~10-15KB minified static file vs ~480KB CDN runtime JS -->
-    <link rel="stylesheet" href="/tailwind.css">
+    <link rel="stylesheet" href="/tailwind.css?v=2">
 
     <!-- Vercel Web Analytics -->
     <script>
@@ -2568,10 +2563,8 @@
                 if (!window.gsap) return;
                 if (window.ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
 
-                window.addEventListener('load', () => {
-                    if (prefersReducedMotion) return;
-                    gsap.from('body', { opacity: 0, duration: 1, ease: 'power2.out', willChange: 'opacity' });
-                });
+                // Removed: gsap.from('body') on window.load fires after preloader is
+                // already gone and conflicts with the preloader exit animation.
 
                 document.querySelectorAll('.magnetic-btn').forEach((btn) => {
                     btn.addEventListener('mousemove', (e) => {
@@ -2964,8 +2957,10 @@
                     }
                     draw() {
                         ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                        ctx.shadowBlur = 12; ctx.shadowColor = '#ff1a1a';
-                        ctx.fillStyle = `rgba(255, 26, 26, ${this.alpha})`; ctx.fill(); ctx.shadowBlur = 0;
+                        // PERF FIX: shadowBlur forces software rasterization on every particle
+                        // (bypasses GPU canvas acceleration). Removed — particles are still
+                        // visible as solid red dots without the glow overhead.
+                        ctx.fillStyle = `rgba(255, 26, 26, ${this.alpha})`; ctx.fill();
                     }
                 }
 
@@ -3321,7 +3316,7 @@
                                 body: JSON.stringify({
                                     message: `Client ready to pay. INITIATE_CHECKOUT_NOW`,
                                     selectedService: orderData.service,
-                                    amount: orderData.price,
+                                    amount: parseInt(orderData.price, 10),
                                     name: orderData.name,
                                     email: orderData.email,
                                     phone: orderData.phone,
@@ -3357,19 +3352,23 @@
                                 // screen on fast PCs where getCashfree() resolves instantly.
                                 // getCashfree() polls the SDK in parallel — whichever takes
                                 // longer wins, so slow mobile networks are unaffected.
-                                const [cfInstance] = await Promise.all([
-                                    getCashfree(),
+                                // FIX #3: getCashfree() was undefined — crashed every payment.
+                                // Cashfree SDK (deferred) exposes window.Cashfree directly.
+                                // Get a Cashfree instance directly; fall back to direct URL if SDK not loaded.
+                                const cfInstance = window.Cashfree ? Cashfree({ mode: 'production' }) : null;
+                                const [_cf] = await Promise.all([
+                                    Promise.resolve(cfInstance),
                                     new Promise(res => setTimeout(res, 1500))
                                 ]);
                                 if (!cfInstance) {
-                                    // SDK genuinely unavailable after retries → direct URL
+                                    // SDK unavailable after retries → direct URL fallback
                                     console.warn('Cashfree SDK unavailable, falling back to direct URL');
                                     window.location.href = `https://payments.cashfree.com/order/#/${data.paymentSessionId}`;
                                     return;
                                 }
 
                                 try {
-                                    const checkoutPromise = cfInstance.checkout({
+                                    const checkoutPromise = _cf.checkout({
                                         paymentSessionId: data.paymentSessionId,
                                         redirectTarget: "_top"
                                     });
@@ -3427,7 +3426,7 @@
             // ── Real studio online/offline status from Supabase via API ──────
             async function syncStudioStatus() {
                 try {
-                    const res = await fetch('/api/save-brief', { cache: 'no-store' });
+                    const res = await fetch('/api/save-brief', { cache: 'default' });
                     const data = await res.json();
                     const isOnline = data.is_online !== false;
                     window.__studioIsOnline = isOnline;
