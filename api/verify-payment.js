@@ -14,18 +14,20 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
 function isRateLimited(ip) {
     const now = Date.now();
-    // Step 1: Evict all timestamps older than the sliding window — runs unconditionally
+    // Step 1: Evict all timestamps older than the sliding window
     const recent = (_rateLimitMap[ip] || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-    // Step 2: If this IP is at or over the limit, reject without recording the attempt
+    // Step 2: GC — if all old timestamps expired, drop the key entirely (memory cleanup)
+    if (recent.length === 0) {
+        delete _rateLimitMap[ip];
+    }
+    // Step 3: If this IP is at or over the limit, reject without recording the attempt
     if (recent.length >= RATE_LIMIT_MAX) {
-        _rateLimitMap[ip] = recent; // persist the pruned list
+        _rateLimitMap[ip] = recent;
         return true;
     }
-    // Step 3: Record this request and store back
+    // Step 4: Record this request and store back
     recent.push(now);
     _rateLimitMap[ip] = recent;
-    // Step 4: GC — remove the key entirely when the list is empty (saves map memory on idle IPs)
-    if (recent.length === 0) delete _rateLimitMap[ip];
     return false;
 }
 
