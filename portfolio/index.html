@@ -847,14 +847,27 @@
                 }
             });
 
-            // Fast animation on interval to make it look alive when playing
-            setInterval(() => {
-                if (!demoAudio.paused) {
+            // BUG FIX: store interval ID so it can be cleared when audio pauses/ends
+            // Previously leaked forever — ran 10x/sec burning CPU with no audio playing
+            let _visIntervalId = null;
+
+            function startVisualizer() {
+                if (_visIntervalId) return; // already running
+                _visIntervalId = setInterval(() => {
                     Array.from(visContainer.children).forEach(bar => {
                         bar.style.height = `${Math.max(20, Math.random() * 100)}%`;
                     });
-                }
-            }, 100);
+                }, 100);
+            }
+
+            function stopVisualizer() {
+                clearInterval(_visIntervalId);
+                _visIntervalId = null;
+            }
+
+            demoAudio.addEventListener('play',  startVisualizer);
+            demoAudio.addEventListener('pause', stopVisualizer);
+            demoAudio.addEventListener('ended', stopVisualizer);
         }
     </script>
 
@@ -904,14 +917,12 @@
                 const play_size  = item.grid_rows >= 2 ? 'w-20 h-20' : 'w-16 h-16';
                 const icon_size  = item.grid_rows >= 2 ? 'w-8 h-8'  : 'w-6 h-6';
 
-                // Escape title for safe injection
-                const safeTitle    = item.title.replace(/'/g, "\\'");
-                const safeCategory = item.category.replace(/'/g, "\\'");
-                const safeFilename = item.filename.replace(/'/g, "\\'");
-
+                // BUG FIX #5 (XSS): Never inject user data into onclick strings.
+                // Use data-* attributes and read them in a single safe delegated listener.
                 const card = document.createElement('div');
-                card.setAttribute('onclick', `openVideo('${safeTitle}','${safeCategory}','${safeFilename}')`);
-                card.setAttribute('data-category', item.category);
+                card.dataset.title    = item.title;
+                card.dataset.category = item.category;
+                card.dataset.filename = item.filename;
                 card.setAttribute('data-hover-color', color);
                 card.setAttribute('data-tilt', '');
                 card.setAttribute('data-tilt-max', '1');
@@ -945,6 +956,17 @@
                     max: 1, speed: 1000, glare: true, 'max-glare': 0.08
                 });
             }
+
+            // Attach delegated video-open click listener on each card (XSS-safe)
+            // Reads title/category/filename from data attributes — never from executable strings
+            grid.querySelectorAll('.portfolio-item').forEach(c => {
+                c.addEventListener('click', () => {
+                    const t = c.dataset.title;
+                    const cat = c.dataset.category;
+                    const f = c.dataset.filename;
+                    if (t && f && typeof openVideo === 'function') openVideo(t, cat, f);
+                });
+            });
 
             // Re-attach interactive hover color listeners
             grid.querySelectorAll('.interactive-element').forEach(el => {
