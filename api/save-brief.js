@@ -22,10 +22,16 @@ module.exports = async function(req, res) {
                 .single();
 
             return res.status(200).json({
-                is_online: (!error && data) ? data.is_online : true
+                is_online: (!error && data) ? data.is_online : true,
+                supabaseUrl: process.env.SUPABASE_URL || null,
+                supabaseAnonKey: process.env.SUPABASE_ANON_KEY || null
             });
         } catch (e) {
-            return res.status(200).json({ is_online: true });
+            return res.status(200).json({
+                is_online: true,
+                supabaseUrl: process.env.SUPABASE_URL || null,
+                supabaseAnonKey: process.env.SUPABASE_ANON_KEY || null
+            });
         }
     }
 
