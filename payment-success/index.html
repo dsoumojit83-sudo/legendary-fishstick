@@ -350,8 +350,8 @@
     </div>
 
     <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
+        // Initialize Lucide icons — called inside revealPage() so icons render AFTER
+        // payment is verified and the page content is actually visible.
         
         // Capture and display Order ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -364,6 +364,8 @@
             const content = document.getElementById('page-content');
             overlay.classList.add('hidden');
             requestAnimationFrame(function () { content.classList.add('verified'); });
+            // ✅ Initialize icons HERE — after content is visible, not before
+            if (window.lucide) lucide.createIcons();
             triggerCelebration();
             setTimeout(function () { overlay.remove(); }, 400);
         }
@@ -386,7 +388,9 @@
                     body: JSON.stringify({ order_id: orderId })
                 });
                 const data = await res.json();
-                if (!data.success || (data.status && data.status !== 'paid')) {
+                // 'completed' = paid AND delivered — both are valid success states
+                const isPaid = data.success && (data.status === 'paid' || data.status === 'completed');
+                if (!isPaid) {
                     window.location.replace(`/payment-failed?order_id=${encodeURIComponent(orderId)}`);
                     return;
                 }
