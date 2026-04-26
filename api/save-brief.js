@@ -5,6 +5,13 @@ const supabase = createClient(
     process.env.SUPABASE_KEY
 );
 
+// FIX C1: Safety assertion — ensure the anon key env var is not accidentally
+// set to the service role key (which would leak full DB access to the client).
+if (process.env.SUPABASE_ANON_KEY && process.env.SUPABASE_KEY &&
+    process.env.SUPABASE_ANON_KEY === process.env.SUPABASE_KEY) {
+    console.error('[CRITICAL] SUPABASE_ANON_KEY === SUPABASE_KEY — refusing to expose service role key!');
+}
+
 module.exports = async function(req, res) {
 
     // ── PUBLIC: GET /api/save-brief → returns studio online/offline status ──
@@ -40,10 +47,16 @@ module.exports = async function(req, res) {
     }
 
     try {
-        const { orderId, notes } = req.body;
+        const { orderId, notes, email } = req.body;
 
         if (!orderId || !notes) {
             return res.status(400).json({ error: "Missing required data" });
+        }
+
+        // FIX M2: Basic auth — verify the caller knows the order's email.
+        // Prevents anyone who guesses an order_id from overwriting briefs.
+        if (!email) {
+            return res.status(400).json({ error: "Email is required for verification." });
         }
 
         // Basic input sanitization
@@ -53,12 +66,17 @@ module.exports = async function(req, res) {
         // Prevents anyone from overwriting notes on a random/guessed order_id.
         const { data: existingOrder, error: fetchError } = await supabase
             .from('orders')
-            .select('order_id, status')
+            .select('order_id, status, client_email')
             .eq('order_id', orderId)
             .single();
 
         if (fetchError || !existingOrder) {
             return res.status(404).json({ error: "Order not found." });
+        }
+
+        // FIX M2: Verify email matches the order owner
+        if (existingOrder.client_email && existingOrder.client_email.toLowerCase() !== email.toLowerCase()) {
+            return res.status(403).json({ error: "Email does not match order." });
         }
 
         // Don't allow editing notes on already-completed projects
