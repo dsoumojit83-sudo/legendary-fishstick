@@ -42,9 +42,18 @@ module.exports = async function (req, res) {
     }
 
     try {
-        const { sessionId, phone, email, name, selectedService, amount } = req.body;
+        const { sessionId, phone, email, name, selectedService, amount, cartItems } = req.body;
 
-        if (!selectedService || !amount) {
+        // ── Cart-based checkout (multi-service) ──
+        let resolvedService = selectedService;
+        let resolvedAmount  = amount;
+
+        if (Array.isArray(cartItems) && cartItems.length > 0) {
+            resolvedService = cartItems.map(i => i.service).join(' + ');
+            resolvedAmount  = cartItems.reduce((sum, i) => sum + parseFloat(i.price || 0), 0);
+        }
+
+        if (!resolvedService || !resolvedAmount) {
             return res.status(400).json({ reply: "Please select a valid service and pricing to proceed." });
         }
 
@@ -69,7 +78,7 @@ module.exports = async function (req, res) {
         const safePhone = String(phone).trim(); // always valid — guarded above
 
         const orderId = generateOrderId();
-        const numericAmount = parseFloat(amount);
+        const numericAmount = parseFloat(resolvedAmount);
 
         // Guard: reject invalid amounts before hitting Cashfree
         // Negative, zero, or NaN amounts cause a confusing 422 from Cashfree's API.
@@ -79,7 +88,10 @@ module.exports = async function (req, res) {
 
         // ── BUG FIX #9: Safer IST deadline — compute using explicit UTC year/month/day ──
         // Avoids setUTCDate() month-rollover edge cases when adding days near month boundaries.
-        const daysToAdd = deadlineMap[selectedService] || 3;
+        // For multi-service, use the longest deadline among chosen services
+        const daysToAdd = Array.isArray(cartItems) && cartItems.length > 0
+            ? Math.max(...cartItems.map(i => deadlineMap[i.service] || 3))
+            : (deadlineMap[resolvedService] || 3);
         const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
         const nowIST = new Date(Date.now() + IST_OFFSET_MS);
         // Extract IST calendar date components, then add daysToAdd cleanly via a new Date constructor
@@ -135,7 +147,7 @@ module.exports = async function (req, res) {
             client_name: safeName,
             client_email: safeEmail,
             client_phone: safePhone,
-            service: selectedService,
+            service: resolvedService,
             amount: numericAmount || 0,
             status: 'pending',
             deadline_date: formattedDeadline
@@ -146,7 +158,7 @@ module.exports = async function (req, res) {
             throw new Error("Database insertion failed");
         }
 
-        const replyText = `Excellent choice. Our studio is ready to deliver premium, cinematic quality for your ${selectedService} project.\n\nPlease note: We require full payment before starting a project. However, we offer a 100% refund if you are not satisfied with the final result.\n\nSecuring your project slot and opening the secure payment portal...`;
+        const replyText = `Excellent choice. Our studio is ready to deliver premium, cinematic quality for your ${resolvedService} project.\n\nPlease note: We require full payment before starting a project. However, we offer a 100% refund if you are not satisfied with the final result.\n\nSecuring your project slot and opening the secure payment portal...`;
 
         return res.json({
             reply: replyText,
