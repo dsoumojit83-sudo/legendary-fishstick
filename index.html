@@ -71,10 +71,10 @@
     <link rel="preconnect" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://img.youtube.com">
     <link rel="dns-prefetch" href="https://unpkg.com">
-    <!-- Preload GSAP so it's downloaded while body renders (crossorigin required to avoid double-fetch) -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" as="script" crossorigin>
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" as="script"
-        crossorigin>
+    <!-- Preload GSAP so it's downloaded while body renders -->
+    <!-- crossorigin="anonymous" must match the deferred script's implicit anonymous mode -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" as="script" crossorigin="anonymous">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" as="script" crossorigin="anonymous">
     <!-- Roboto: synchronous/blocking load — headings, bold and brand name never flicker -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@700;900&display=block">
     <!-- Outfit: display=optional — shows text immediately in fallback; uses Outfit if it arrives within ~100ms -->
@@ -3206,10 +3206,6 @@
                     const lenis = new Lenis({
                         duration: 1.2,
                         easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-                        direction: 'vertical',
-                        gestureDirection: 'vertical',
-                        smooth: true,
-                        mouseMultiplier: 1,
                         smoothTouch: false,
                         touchMultiplier: 2,
                         infinite: false,
@@ -4126,7 +4122,7 @@
                         price: item.price
                     }));
 
-                    const { error } = await window.supabaseClient.from('cart_items').insert(inserts);
+                    const { error } = await window.supabaseClient.from('cart').insert(inserts);
                     if (!error) {
                         localStorage.removeItem('zyro_cart'); // clear local after sync
                     }
@@ -4137,7 +4133,7 @@
                 if (!currentUser || !window.supabaseClient) return;
                 try {
                     const { data, error } = await window.supabaseClient
-                        .from('cart_items')
+                        .from('cart')
                         .select('*')
                         .eq('user_id', currentUser.id);
 
@@ -4161,7 +4157,7 @@
                     // Save to DB
                     try {
                         const { data, error } = await window.supabaseClient
-                            .from('cart_items')
+                            .from('cart')
                             .insert([{ user_id: currentUser.id, service, price }])
                             .select();
 
@@ -4188,7 +4184,7 @@
                 if (currentUser && window.supabaseClient && !String(id).startsWith('local_')) {
                     // Remove from DB
                     try {
-                        await window.supabaseClient.from('cart_items').delete().eq('id', id);
+                        await window.supabaseClient.from('cart').delete().eq('id', id);
                     } catch (e) { console.error("Error deleting from DB cart", e); }
                 } else {
                     saveLocalCart();
