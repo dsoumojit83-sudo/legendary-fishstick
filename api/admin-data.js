@@ -5,7 +5,9 @@ const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // ── Backblaze B2 S3-compatible client ────────────────────────────────────────
-const B2_ENDPOINT = process.env.B2_ENDPOINT || '';
+// FIX C2: Normalize endpoint — if env var is bare hostname (no scheme), prepend https://
+const _rawB2Endpoint = process.env.B2_ENDPOINT || '';
+const B2_ENDPOINT = _rawB2Endpoint.startsWith('http') ? _rawB2Endpoint : `https://${_rawB2Endpoint || 's3.us-west-004.backblazeb2.com'}`;
 const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-west-004';
 
 const b2 = new S3Client({
