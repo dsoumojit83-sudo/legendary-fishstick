@@ -231,6 +231,13 @@ module.exports = async function (req, res) {
                 throw new Error("Database update failed");
             }
 
+            // --- EMPTY CART AFTER PAYMENT SUCCESS ---
+            if (orderData.client_email) {
+                // Try to find the user ID to clear their DB cart
+                const { data: userData } = await supabase.auth.admin.listUsers(); // Needs service role key to work perfectly, but let's try direct delete by user_id if possible
+                // Better approach since we don't have user_id in orders: we will handle cart clearance on the frontend payment-success page.
+            }
+
             log('INFO', order_id, 'DB status updated to "paid". Triggering sendInvoice()...');
 
             // Fire the invoice system with the client's data ONE TIME
