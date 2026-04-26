@@ -1463,6 +1463,10 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.4 7h12.8M7 13H5.4M10 21a1 1 0 110-2 1 1 0 010 2zm8 0a1 1 0 110-2 1 1 0 010 2z"/></svg>
                 <span id="cartBadge" class="hidden absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-[#ff1a1a] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">0</span>
             </button>
+            <!-- Orders Icon -->
+            <button id="ordersNavBtn" onclick="openOrdersPanel()" class="relative p-2.5 text-gray-400 hover:text-white transition-colors group" aria-label="My Orders" title="My Orders">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            </button>
             <!-- Account Button -->
             <div class="relative">
                 <button id="accountNavBtn" onclick="toggleAccountDrop()" class="flex items-center gap-2 px-5 py-2.5 border border-white/20 text-xs uppercase tracking-widest hover:border-[#ff1a1a] hover:text-[#ff1a1a] transition-all magnetic-btn" aria-label="Account" aria-expanded="false">
@@ -1482,7 +1486,7 @@
                             <p id="accountDropEmail" class="text-gray-500 text-[11px] truncate mt-0.5"></p>
                         </div>
                         <div class="p-2">
-                            <button onclick="toggleAccountDrop()" class="w-full text-left px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors">My Orders</button>
+                            <button onclick="toggleAccountDrop();openOrdersPanel()" class="w-full text-left px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors">My Orders</button>
                             <button onclick="signOut()" class="w-full text-left px-3 py-2.5 text-sm text-[#ff1a1a] hover:bg-[#ff1a1a]/10 rounded-lg transition-colors">Sign Out</button>
                         </div>
                     </div>
@@ -1519,6 +1523,10 @@
             <button onclick="openCartDrawer();closeMobileMenu()" class="relative flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors" aria-label="Cart">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.4 7h12.8M10 21a1 1 0 110-2 1 1 0 010 2zm8 0a1 1 0 110-2 1 1 0 010 2z"/></svg>
                 <span class="text-xs uppercase tracking-widest relative">Cart<span id="cartBadgeMobile" class="hidden absolute -top-2 -right-3 min-w-[16px] h-[16px] bg-[#ff1a1a] text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">0</span></span>
+            </button>
+            <button onclick="openOrdersPanel();closeMobileMenu()" class="flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors" aria-label="My Orders">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                <span class="text-xs uppercase tracking-widest">Orders</span>
             </button>
             <button onclick="openAuthModal('signin');closeMobileMenu()" class="flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors" aria-label="Account">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>
@@ -2413,8 +2421,46 @@
         </div>
     </div>
 
-    <!-- Cart + Modal Backdrop -->
-    <div id="globalOverlay" onclick="closeCartDrawer();closeAuthModal();closeAccountDrop()" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9998;display:none;backdrop-filter:blur(4px);"></div>
+    <!-- ═══════════════════════════════════════════
+         ORDERS PANEL
+    ═══════════════════════════════════════════ -->
+    <div id="ordersPanel" style="position:fixed;top:0;right:0;height:100%;width:100%;max-width:420px;background:#0a0a0a;border-left:1px solid rgba(255,255,255,0.08);z-index:9999;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;">
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.08);background:#0d0d0d;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <svg width="20" height="20" fill="none" stroke="#ff1a1a" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                <span style="color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;letter-spacing:0.05em;">My Orders</span>
+            </div>
+            <button onclick="closeOrdersPanel()" style="background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:1.4rem;line-height:1;padding:0.25rem;" aria-label="Close orders">&times;</button>
+        </div>
+        <!-- Body -->
+        <div id="ordersPanelBody" style="flex:1;overflow-y:auto;padding:1.25rem 1.5rem;">
+            <div id="ordersLoading" style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div style="height:80px;background:rgba(255,255,255,0.04);border-radius:0.75rem;animation:orders-shimmer 1.4s infinite;"></div>
+                <div style="height:80px;background:rgba(255,255,255,0.04);border-radius:0.75rem;animation:orders-shimmer 1.4s infinite 0.2s;"></div>
+                <div style="height:80px;background:rgba(255,255,255,0.04);border-radius:0.75rem;animation:orders-shimmer 1.4s infinite 0.4s;"></div>
+            </div>
+            <div id="ordersListEl" style="display:none;flex-direction:column;gap:0.75rem;"></div>
+            <div id="ordersEmpty" style="display:none;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;gap:1rem;text-align:center;">
+                <svg width="48" height="48" fill="none" stroke="rgba(255,255,255,0.15)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <p style="color:rgba(255,255,255,0.3);font-family:'Outfit',sans-serif;font-size:0.9rem;">No orders yet</p>
+                <button onclick="closeOrdersPanel()" style="padding:0.6rem 1.5rem;border:1px solid rgba(255,26,26,0.4);color:#ff1a1a;background:none;border-radius:0.5rem;cursor:pointer;font-family:'Outfit',sans-serif;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;">Browse Services</button>
+            </div>
+            <div id="ordersSignIn" style="display:none;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;gap:1rem;text-align:center;">
+                <svg width="48" height="48" fill="none" stroke="rgba(255,255,255,0.15)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <p style="color:rgba(255,255,255,0.3);font-family:'Outfit',sans-serif;font-size:0.9rem;">Sign in to view your orders</p>
+                <button onclick="closeOrdersPanel();openAuthModal('signin')" style="padding:0.75rem 2rem;background:#ff1a1a;color:#000;border:none;border-radius:0.75rem;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;">Sign In</button>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes orders-shimmer {
+            0%,100%{opacity:0.4} 50%{opacity:0.8}
+        }
+    </style>
+
+
+    <div id="globalOverlay" onclick="closeCartDrawer();closeOrdersPanel();closeAuthModal();closeAccountDrop()" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9998;display:none;backdrop-filter:blur(4px);"></div>
 
     <!-- ═══════════════════════════════════════════
          CHECKOUT DETAILS MODAL (name/phone)
@@ -2858,49 +2904,34 @@
                     });
                 });
 
-                if (!prefersReducedMotion && window.ScrollTrigger) {
-                    gsap.to('#orb1', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: 600, x: 200, ease: 'none' });
-                    gsap.to('#orb2', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -500, x: -300, ease: 'none' });
-                    gsap.to('#orb3', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -550, x: -200, ease: 'none' });
-                    gsap.to('#shape1', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.8 }, y: -350, rotation: 200, ease: 'none' });
-                    gsap.to('#shape2', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.8 }, y: -250, rotation: 280, ease: 'none' });
-                    gsap.to('#shape3', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.8 }, y: -400, rotation: -120, ease: 'none' });
+                // Scroll-scrub parallax on orbs/shapes/images removed — was the
+                // primary source of scroll glitchiness (continuous layout + composite work).
+                // Orbs now sit fixed in place via CSS; only reveal animations remain.
 
-                    document.querySelectorAll('.group img').forEach((img, index) => {
-                        gsap.to(img, { scrollTrigger: { trigger: img, start: 'top bottom', end: 'bottom top', scrub: 2 }, y: -50 * (index + 1), scale: 1.05, ease: 'none' });
-                    });
-                }
-
-                // FIX: Removed duplicate infinite orb animations.
-                // ScrollTrigger scrub tweens on orbs (lines above) already move them.
-                // Running a second repeat:-1 infinite tween simultaneously caused
-                // GSAP to fight itself → orbs jittered/snapped during scroll.
-
-                // Apply 3D perspective to the container so that 3D transforms pop
-                gsap.set(document.body, { perspective: 1500 });
-
+                // ── Scroll Reveal (clean 2D fade-up only, no 3D jitter) ──
                 const gridContainers = document.querySelectorAll('.grid');
                 gridContainers.forEach(container => {
                     const gridItems = container.querySelectorAll('.reveal');
                     if (gridItems.length > 0 && !prefersReducedMotion && window.ScrollTrigger) {
-                        // Advanced 3D Grid Stagger Reveal
-                        gsap.fromTo(gridItems, { y: 80, z: -100, rotationX: -15, opacity: 0, willChange: 'transform, opacity' }, {
-                            y: 0, z: 0, rotationX: 0, opacity: 1, duration: 1.0, ease: 'power3.out', stagger: 0.1, willChange: 'auto',
-                            onComplete: function () { gridItems.forEach((el) => { if (el.classList.contains('service-card')) { el.classList.add('reveal-active'); gsap.set(el, { clearProps: "transform" }); } }); },
-                            scrollTrigger: { trigger: container, start: 'top 80%', toggleActions: 'play none none reverse' }
-                        });
+                        gsap.fromTo(gridItems,
+                            { y: 40, opacity: 0 },
+                            { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out', stagger: 0.08,
+                              onComplete: function() { gridItems.forEach(el => gsap.set(el, { clearProps: 'all' })); },
+                              scrollTrigger: { trigger: container, start: 'top 85%', toggleActions: 'play none none none' }
+                            });
                     }
                 });
 
-                const revealEls = gsap.utils.toArray('.reveal:not(.grid .reveal)'); // don't double-animate grid items
+                const revealEls = gsap.utils.toArray('.reveal:not(.grid .reveal)');
                 revealEls.forEach((el) => {
                     if (!(el instanceof Element)) return;
                     if (prefersReducedMotion || !window.ScrollTrigger) { el.style.opacity = '1'; el.style.transform = 'none'; return; }
-                    // Modern 3D Parallax Reveal
-                    gsap.fromTo(el, 
-                        { y: 80, z: -80, rotationX: -10, opacity: 0, willChange: 'transform, opacity' }, 
-                        { y: 0, z: 0, rotationX: 0, opacity: 1, duration: 1.2, ease: 'power3.out', willChange: 'auto', scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none reverse' } }
-                    );
+                    gsap.fromTo(el,
+                        { y: 40, opacity: 0 },
+                        { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out',
+                          onComplete: () => gsap.set(el, { clearProps: 'all' }),
+                          scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+                        });
                 });
 
                 gsap.utils.toArray('[data-count]').forEach((el) => {
@@ -3359,7 +3390,7 @@
 
 
             initCustomCursor();
-            initGlobalParallax();
+            // initGlobalParallax() removed — mousemove orb tracking was glitchy.
             initNavigation();
             initAnimations();
             initCanvasBackground();
@@ -3414,6 +3445,95 @@
                 document.getElementById('cartDrawer').style.transform = 'translateX(100%)';
                 document.getElementById('globalOverlay').style.display = 'none';
             };
+
+            // ── Orders Panel ──
+            window.openOrdersPanel = function() {
+                const panel = document.getElementById('ordersPanel');
+                panel.style.transform = 'translateX(0)';
+                document.getElementById('globalOverlay').style.display = 'block';
+                _fetchOrders();
+            };
+            window.closeOrdersPanel = function() {
+                const panel = document.getElementById('ordersPanel');
+                if(panel) panel.style.transform = 'translateX(100%)';
+                const overlay = document.getElementById('globalOverlay');
+                if(overlay) overlay.style.display = 'none';
+            };
+
+            async function _fetchOrders() {
+                const loading = document.getElementById('ordersLoading');
+                const list    = document.getElementById('ordersListEl');
+                const empty   = document.getElementById('ordersEmpty');
+                const signIn  = document.getElementById('ordersSignIn');
+
+                // Reset state
+                loading.style.display = 'flex';
+                list.style.display    = 'none';
+                empty.style.display   = 'none';
+                signIn.style.display  = 'none';
+                list.innerHTML        = '';
+
+                // Require sign-in
+                if(!currentUser || !window.supabaseClient) {
+                    loading.style.display = 'none';
+                    signIn.style.display  = 'flex';
+                    return;
+                }
+
+                try {
+                    const userEmail = currentUser.email;
+                    const { data: orders, error } = await window.supabaseClient
+                        .from('orders')
+                        .select('order_id, service, amount, status, deadline_date, created_at')
+                        .eq('client_email', userEmail)
+                        .order('created_at', { ascending: false })
+                        .limit(20);
+
+                    loading.style.display = 'none';
+
+                    if(error || !orders || orders.length === 0) {
+                        empty.style.display = 'flex';
+                        return;
+                    }
+
+                    const statusStyle = {
+                        pending:   { bg:'rgba(234,179,8,0.12)',   color:'#eab308', label:'Pending'   },
+                        working:   { bg:'rgba(59,130,246,0.12)',  color:'#3b82f6', label:'In Progress'},
+                        paid:      { bg:'rgba(34,197,94,0.12)',   color:'#22c55e', label:'Paid'      },
+                        completed: { bg:'rgba(34,197,94,0.12)',   color:'#22c55e', label:'Completed' },
+                        refunded:  { bg:'rgba(255,26,26,0.12)',   color:'#ff1a1a', label:'Refunded'  },
+                        cancelled: { bg:'rgba(255,26,26,0.12)',   color:'#ff1a1a', label:'Cancelled' },
+                    };
+
+                    orders.forEach(order => {
+                        const s = statusStyle[order.status] || { bg:'rgba(255,255,255,0.06)', color:'#aaa', label: order.status };
+                        const date = order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '—';
+                        const deadline = order.deadline_date ? new Date(order.deadline_date).toLocaleDateString('en-IN', { day:'numeric', month:'short' }) : '—';
+                        const card = document.createElement('div');
+                        card.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:0.85rem;padding:1rem 1.1rem;display:flex;flex-direction:column;gap:0.5rem;';
+                        card.innerHTML = `
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
+                                <span style="color:#fff;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;flex:1;">${escapeHtml(order.service)}</span>
+                                <span style="background:${s.bg};color:${s.color};font-family:'Outfit',sans-serif;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:0.2rem 0.6rem;border-radius:99px;white-space:nowrap;">${s.label}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="color:rgba(255,255,255,0.35);font-family:'Outfit',sans-serif;font-size:0.72rem;">${order.order_id}</span>
+                                <span style="color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.9rem;">₹${Number(order.amount).toLocaleString('en-IN')}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.05);padding-top:0.5rem;">
+                                <span style="color:rgba(255,255,255,0.3);font-family:'Outfit',sans-serif;font-size:0.68rem;">Ordered: ${date}</span>
+                                <span style="color:rgba(255,255,255,0.3);font-family:'Outfit',sans-serif;font-size:0.68rem;">Deadline: ${deadline}</span>
+                            </div>`;
+                        list.appendChild(card);
+                    });
+
+                    list.style.display = 'flex';
+                } catch(e) {
+                    loading.style.display = 'none';
+                    empty.style.display   = 'flex';
+                    console.warn('Orders fetch error:', e);
+                }
+            }
             
             window.toggleAccountDrop = function() {
                 const drop = document.getElementById('accountDrop');
