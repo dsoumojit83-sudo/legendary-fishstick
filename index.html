@@ -287,9 +287,11 @@
         .reveal {
             opacity: 0;
             transform: translateY(50px);
+            /* No CSS transition here — GSAP controls this entirely.
+               Having both causes the browser to run two competing
+               animation systems on the same properties → jitter. */
             will-change: transform, opacity;
             backface-visibility: hidden;
-            transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .reveal.active {
@@ -297,11 +299,10 @@
             transform: translateY(0);
         }
 
-        /* FIX L3: Removed global will-change on SVG — was creating unnecessary GPU
-           compositor layers for every SVG icon. Only animated SVGs need this. */
+        /* FIX: No global SVG transition — it triggers on every icon on the page
+           and causes unnecessary composite layer promotion on all inline SVGs. */
         svg {
             backface-visibility: hidden;
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             shape-rendering: geometricPrecision;
         }
 
@@ -313,7 +314,8 @@
             font-family: 'Outfit', sans-serif;
             font-size: 0.875rem;
             border-radius: 0.5rem;
-            will-change: border-color, box-shadow, background;
+            /* border-color/box-shadow/background are NOT GPU-compositable.
+               will-change on these forces a useless compositor layer — removed. */
         }
 
         .input-field:focus {
@@ -2842,6 +2844,7 @@
                 // Removed: gsap.from('body') on window.load fires after preloader is
                 // already gone and conflicts with the preloader exit animation.
 
+                // Magnetic button: subtle positional follow + tilt on desktop only
                 document.querySelectorAll('.magnetic-btn').forEach((btn) => {
                     btn.addEventListener('mousemove', (e) => {
                         if (prefersReducedMotion) return;
@@ -2868,11 +2871,10 @@
                     });
                 }
 
-                if (!prefersReducedMotion) {
-                    gsap.to('#orb1', { duration: 12, x: '+=100', y: '+=50', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
-                    gsap.to('#orb2', { duration: 15, x: '-=80', y: '-=60', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
-                    gsap.to('#orb3', { duration: 10, x: '+=60', y: '-=70', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
-                }
+                // FIX: Removed duplicate infinite orb animations.
+                // ScrollTrigger scrub tweens on orbs (lines above) already move them.
+                // Running a second repeat:-1 infinite tween simultaneously caused
+                // GSAP to fight itself → orbs jittered/snapped during scroll.
 
                 // Apply 3D perspective to the container so that 3D transforms pop
                 gsap.set(document.body, { perspective: 1500 });
@@ -2913,41 +2915,8 @@
                     }
                 });
 
-                // Modern 3D Mouse Tilt Effect for Cards
-                const tiltElements = document.querySelectorAll('.service-card, .price-card');
-                tiltElements.forEach(el => {
-                    if (prefersReducedMotion || window.matchMedia('(pointer: coarse)').matches) return;
-                    
-                    // Add CSS for depth
-                    el.style.transformStyle = 'preserve-3d';
-                    el.style.perspective = '1000px';
-                    // We need a subtle transition when returning to center
-                    el.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                    
-                    el.addEventListener('mousemove', (e) => {
-                        // Remove transition during active movement so it perfectly tracks the cursor
-                        el.style.transition = 'none';
-                        const rect = el.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const y = e.clientY - rect.top;
-                        
-                        const centerX = rect.width / 2;
-                        const centerY = rect.height / 2;
-                        
-                        // Maximum tilt angle (in degrees)
-                        const maxTilt = 12;
-                        const rotateX = ((y - centerY) / centerY) * -maxTilt; 
-                        const rotateY = ((x - centerX) / centerX) * maxTilt;
-                        
-                        el.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-                    });
-                    
-                    el.addEventListener('mouseleave', () => {
-                        // Re-enable smooth transition back to center
-                        el.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                        el.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                    });
-                });
+                // Cursor-tracking 3D tilt on cards removed — was causing
+                // per-mousemove getBoundingClientRect + transform writes contributing to glitchiness.
             }
 
             // L2: initPerformance() removed — was empty stub.
@@ -3323,6 +3292,12 @@
                     mouseY = (event.clientY - windowHalfY);
                 });
 
+                // Cache scrollY outside the RAF loop to prevent layout thrashing.
+                // Reading window.scrollY inside RAF forces the browser to flush
+                // layout before every frame — the #1 cause of 3D background jitter.
+                let _cachedScrollY = 0;
+                window.addEventListener('scroll', function() { _cachedScrollY = window.scrollY; }, { passive: true });
+
                 // Animation loop
                 const clock = new THREE.Clock();
                 let _canvasAnimId = null;
@@ -3348,8 +3323,8 @@
                     // Slowly drift particles
                     particlesMesh.position.y = Math.sin(elapsedTime * 0.2) * 5;
 
-                    // SCROLL PARALLAX: Move the camera down through the 3D scene as the user scrolls down
-                    camera.position.y = 20 - (window.scrollY * 0.05);
+                    // Use cached scrollY — avoids forced layout reflow every frame
+                    camera.position.y = 20 - (_cachedScrollY * 0.05);
 
                     renderer.render(scene, camera);
                 }
