@@ -129,7 +129,9 @@ const _handler = async function(req, res) {
     }
 };
 
-// Export handler first, then attach config — order matters.
-// If config is set before module.exports = _handler, the assignment wipes the config.
+// FIX C3: Use the reliable Vercel config export pattern.
+// Vercel's bundler scans for `module.exports.config` OR a named `config` export.
+// Assigning config as a property on the function object works, but can be fragile
+// across bundler versions. This pattern is explicitly documented by Vercel.
+_handler.config = { api: { bodyParser: false } };
 module.exports = _handler;
-module.exports.config = { api: { bodyParser: false } };
