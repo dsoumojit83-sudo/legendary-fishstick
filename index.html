@@ -1459,22 +1459,7 @@
             theme: {
                 extend: {
                     colors: { brand: { red: '#ff1a1a', dark: '#050505' }, zyrored: "#ff1a1a" },
-                    fontFamily: { sans: ['Outfit', 'sans-serif'], brand: ['"Roboto"', 'sans-serif'] },
-                    fontSize: {
-                        'xs': 'var(--text-xs)',
-                        'sm': 'var(--text-sm)',
-                        'base': 'var(--text-base)',
-                        'lg': 'var(--text-lg)',
-                        'xl': 'var(--text-xl)',
-                        '2xl': 'var(--text-2xl)',
-                        '3xl': 'var(--text-3xl)',
-                        '4xl': 'var(--text-4xl)',
-                        '5xl': 'var(--text-5xl)',
-                        '6xl': 'var(--text-6xl)',
-                        '7xl': 'var(--text-7xl)',
-                        '8xl': 'var(--text-8xl)',
-                        '9xl': 'var(--text-9xl)'
-                    }
+                    fontFamily: { sans: ['Outfit', 'sans-serif'], brand: ['"Roboto"', 'sans-serif'] }
                 }
             }
         }
@@ -1708,17 +1693,13 @@
                     projects</span>
             </div>
 
-            <h1 class="reveal brand-name"
-                style="font-size: var(--text-9xl); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 1.5rem; background: linear-gradient(to bottom, #fff, #fff, rgba(255,255,255,0.2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                Zyro<span class="animated-text-gradient">Editz</span><sup
-                    style="font-size:0.3em; vertical-align:super; letter-spacing:normal; -webkit-text-fill-color:#aaaaaa; color:#aaaaaa; font-weight:300; position:relative; top:-0.1em;">&trade;</sup>
+            <h1 class="reveal brand-name text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter mb-6 bg-gradient-to-b from-white via-white to-white/20 bg-clip-text text-transparent">
+                Zyro<span class="animated-text-gradient">Editz</span><sup class="text-[0.3em] align-super tracking-normal text-[#aaaaaa] font-light relative -top-[0.1em]">&trade;</sup>
             </h1>
 
-            <p class="reveal text-lg md:text-2xl font-light text-gray-400 uppercase mb-6 text-center"
-                style="margin-bottom: 2rem; letter-spacing: 0.5em;">Speed. Motion. Precision.</p>
+            <p class="reveal text-lg md:text-2xl font-light text-gray-400 uppercase mb-8 text-center tracking-[0.5em]">Speed. Motion. Precision.</p>
 
-            <p class="reveal"
-                style="color: rgba(255,255,255,0.5); font-size: var(--text-base); max-width: 28rem; margin: 0 auto 4rem; line-height: 1.6;">
+            <p class="reveal text-white/50 text-base max-w-[28rem] mx-auto mb-16 leading-[1.6]">
                 Premium video editing & motion graphics for brands that demand excellence.
                 Transforming raw footage into cinematic experiences.
             </p>
@@ -3471,7 +3452,7 @@
                             { y: 40, opacity: 0 },
                             {
                                 y: 0, opacity: 1, duration: 0.7, ease: 'power2.out', stagger: 0.08,
-                                onComplete: function () { gridItems.forEach(el => gsap.set(el, { clearProps: 'all' })); },
+                                onComplete: function () { gridItems.forEach(el => gsap.set(el, { clearProps: 'opacity,transform' })); },
                                 scrollTrigger: { trigger: container, start: 'top 85%', toggleActions: 'play none none none' }
                             });
                     }
@@ -3485,7 +3466,7 @@
                         { y: 40, opacity: 0 },
                         {
                             y: 0, opacity: 1, duration: 0.7, ease: 'power2.out',
-                            onComplete: () => gsap.set(el, { clearProps: 'all' }),
+                            onComplete: () => gsap.set(el, { clearProps: 'opacity,transform' }),
                             scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
                         });
                 });
