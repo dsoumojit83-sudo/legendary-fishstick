@@ -1453,17 +1453,33 @@
          B-04 FIX: CDN Tailwind was synchronous — stalled paint by 150-300ms on slow connections.
          The CLS-critical inline CSS block above already covers all layout utilities (display,
          position, overflow, grid) so there is zero layout shift while Tailwind JIT loads. -->
-    <script src="https://cdn.tailwindcss.com" async></script>
     <script>
-        tailwind.config = {
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
             theme: {
                 extend: {
                     colors: { brand: { red: '#ff1a1a', dark: '#050505' }, zyrored: "#ff1a1a" },
-                    fontFamily: { sans: ['Outfit', 'sans-serif'], brand: ['"Roboto"', 'sans-serif'] }
+                    fontFamily: { sans: ['Outfit', 'sans-serif'], brand: ['"Roboto"', 'sans-serif'] },
+                    fontSize: {
+                        'xs': 'var(--text-xs)',
+                        'sm': 'var(--text-sm)',
+                        'base': 'var(--text-base)',
+                        'lg': 'var(--text-lg)',
+                        'xl': 'var(--text-xl)',
+                        '2xl': 'var(--text-2xl)',
+                        '3xl': 'var(--text-3xl)',
+                        '4xl': 'var(--text-4xl)',
+                        '5xl': 'var(--text-5xl)',
+                        '6xl': 'var(--text-6xl)',
+                        '7xl': 'var(--text-7xl)',
+                        '8xl': 'var(--text-8xl)',
+                        '9xl': 'var(--text-9xl)'
+                    }
                 }
             }
         }
     </script>
+    <script src="https://cdn.tailwindcss.com" async></script>
 
     <!-- Vercel Web Analytics -->
     <script>
@@ -3066,8 +3082,8 @@
     <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
 
     <!-- GSAP: deferred so preload hint (in head) starts download during body render -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" crossorigin="anonymous" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" crossorigin="anonymous" defer></script>
 
     <script>
         // Configure ScrollTrigger — runs after deferred GSAP executes
@@ -3949,7 +3965,7 @@
             let sbKey = "";
 
             // Try to get anon key from API (since it was used for the chatbot before)
-            fetch('/api/save-brief').then(r => r.json()).then(data => {
+            fetch('/api/verify-payment?config=true').then(r => r.json()).then(data => {
                 if (data.supabaseUrl) window._sbUrl = data.supabaseUrl;
                 if (data.supabaseAnonKey && data.supabaseUrl) {
                     window._sbKey = data.supabaseAnonKey;
