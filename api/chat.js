@@ -1,0 +1,242 @@
+const axios = require('axios');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+const generateOrderId = () => {
+    return "ZYRO" + Date.now() + Math.random().toString(16).slice(2, 6).toUpperCase();
+};
+
+// B-04 FIX: Rate limiter — prevents bots from spamming order creation.
+// Sliding window: 10 requests per IP per 60 seconds (tighter than verify-payment
+// because each request hits both Cashfree AND Supabase).
+const _chatRateMap = {};
+const CHAT_RATE_MAX = 10;
+const CHAT_RATE_WINDOW_MS = 60 * 1000;
+let _chatRateGcCounter = 0;
+function isChatRateLimited(ip) {
+    const now = Date.now();
+    const recent = (_chatRateMap[ip] || []).filter(t => now - t < CHAT_RATE_WINDOW_MS);
+    if (recent.length >= CHAT_RATE_MAX) { _chatRateMap[ip] = recent; return true; }
+    recent.push(now);
+    _chatRateMap[ip] = recent;
+    // GC: Every 100 requests, evict stale IPs to prevent memory leak
+    if (++_chatRateGcCounter % 100 === 0) {
+        Object.keys(_chatRateMap).forEach(k => {
+            if (_chatRateMap[k].every(t => now - t >= CHAT_RATE_WINDOW_MS)) delete _chatRateMap[k];
+        });
+    }
+    return false;
+}
+
+// --- DEADLINE TIMETABLE ---
+const deadlineMap = {
+    "Short Form": 2,
+    "Long Form": 4,
+    "Motion Graphics": 4,
+    "Thumbnails": 1,
+    "Sound Design": 3,
+    "Coloring": 1
+};
+
+module.exports = async function (req, res) {
+    // ── CORS ───────────────────────────────────────────────────────────────
+    const _chatOrigin = req.headers.origin || '';
+    const _chatAllowed = [
+        'https://zyroeditz.xyz',
+        'https://www.zyroeditz.xyz',
+        'https://zyroeditz.vercel.app'
+    ];
+    res.setHeader('Access-Control-Allow-Origin', _chatAllowed.includes(_chatOrigin) ? _chatOrigin : _chatAllowed[0]);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    // B-04 FIX: Reject abusive IPs before hitting Cashfree or Supabase
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+    if (isChatRateLimited(clientIp)) {
+        return res.status(429).json({ reply: 'Too many requests. Please wait a moment before trying again.' });
+    }
+
+    try {
+        const { sessionId, phone, email, name, selectedService, amount, cartItems, coupon_code, client_brief } = req.body;
+
+        // ── Cart-based checkout (multi-service) ──
+        let resolvedService = selectedService;
+        let resolvedAmount  = amount;
+
+        if (Array.isArray(cartItems) && cartItems.length > 0) {
+            resolvedService = cartItems.map(i => i.service).join(' + ');
+            resolvedAmount  = cartItems.reduce((sum, i) => sum + parseFloat(i.price || 0), 0);
+        }
+
+        // ── Server-side coupon validation ──
+        let appliedCoupon = null;
+        if (coupon_code && typeof coupon_code === 'string') {
+            const code = coupon_code.trim().toUpperCase();
+            const { data: coupon, error: couponErr } = await supabase
+                .from('coupons')
+                .select('*')
+                .eq('code', code)
+                .eq('active', true)
+                .single();
+
+            if (!couponErr && coupon) {
+                // Check expiry
+                const now = new Date();
+                const expired = coupon.expires_at && new Date(coupon.expires_at) < now;
+                // M-01 FIX: Column is 'uses_count' (matches admin-data.js insert schema),
+                // not 'used_count'. The mismatch caused coupon counters to never increment
+                // on the column the admin panel reads, making all coupons appear unlimited.
+                const maxedOut = coupon.max_uses && (coupon.uses_count || 0) >= coupon.max_uses;
+
+                if (!expired && !maxedOut) {
+                    const discount = resolvedAmount * (coupon.discount_percent / 100);
+                    resolvedAmount = Math.round(resolvedAmount - discount);
+                    appliedCoupon = { code, discount_percent: coupon.discount_percent, discount_amount: discount };
+
+                    // Increment uses_count (correct column name)
+                    await supabase
+                        .from('coupons')
+                        .update({ uses_count: (coupon.uses_count || 0) + 1 })
+                        .eq('id', coupon.id);
+                }
+            }
+        }
+
+        if (!resolvedService || !resolvedAmount) {
+            return res.status(400).json({ reply: "Please select a valid service and pricing to proceed." });
+        }
+
+        // ── Validate user-supplied fields before sending to Cashfree / Supabase ──
+        // Cashfree strictly requires a valid 10-digit phone number.
+        const phoneRegex = /^[0-9]{10}$/;
+        // B5 FIX: phone is now REQUIRED — reject if missing, not just if malformed.
+        // A fake default (9999999999) creates junk customer records in Cashfree.
+        if (!phone || !phoneRegex.test(String(phone).trim())) {
+            return res.status(400).json({ reply: "Please provide a valid 10-digit phone number (no spaces or country code)." });
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (email && !emailRegex.test(String(email).trim())) {
+            return res.status(400).json({ reply: "Please provide a valid email address." });
+        }
+        if (name && String(name).trim().length > 100) {
+            return res.status(400).json({ reply: "Name is too long. Please use a shorter name." });
+        }
+
+        const safeName  = name  ? String(name).trim().substring(0, 100)  : "Zyro Client";
+        const safeEmail = email ? String(email).trim().substring(0, 200) : "zyroeditz.official@gmail.com";
+        const safePhone = String(phone).trim(); // always valid — guarded above
+
+        const orderId = generateOrderId();
+        const numericAmount = parseFloat(resolvedAmount);
+
+        // Guard: reject invalid amounts before hitting Cashfree
+        // Negative, zero, or NaN amounts cause a confusing 422 from Cashfree's API.
+        if (!numericAmount || numericAmount <= 0 || !Number.isFinite(numericAmount)) {
+            return res.status(400).json({ reply: "Invalid payment amount. Please contact support." });
+        }
+
+        // ── BUG FIX #9: Safer IST deadline — compute using explicit UTC year/month/day ──
+        // Avoids setUTCDate() month-rollover edge cases when adding days near month boundaries.
+        // For multi-service, use the longest deadline among chosen services
+        const daysToAdd = Array.isArray(cartItems) && cartItems.length > 0
+            ? Math.max(...cartItems.map(i => deadlineMap[i.service] || 3))
+            : (deadlineMap[resolvedService] || 3);
+        const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+        const nowIST = new Date(Date.now() + IST_OFFSET_MS);
+        // Extract IST calendar date components, then add daysToAdd cleanly via a new Date constructor
+        const [istYear, istMonth, istDay] = nowIST.toISOString().split('T')[0].split('-').map(Number);
+        const deadlineIST = new Date(Date.UTC(istYear, istMonth - 1, istDay + daysToAdd));
+        const formattedDeadline = deadlineIST.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        // --- FIX: CREATE CASHFREE SESSION FIRST ---
+        // Only save to DB after Cashfree confirms a valid session.
+        // This prevents zombie orders when Cashfree is down or misconfigured.
+        const cashfreeResponse = await axios.post(
+            'https://api.cashfree.com/pg/orders',
+            {
+                order_id: orderId,
+                order_amount: parseFloat(numericAmount.toFixed(2)),
+                order_currency: "INR",
+                customer_details: {
+                    customer_id: sessionId || "CUST_" + Date.now(),
+                    customer_name: safeName,
+                    customer_email: safeEmail,
+                    customer_phone: safePhone
+                },
+                order_meta: {
+                    // Build return_url from request origin so payment redirects back to
+                    // whichever domain the user initiated from (zyroeditz.xyz OR zyroeditz.vercel.app)
+                    return_url: (function() {
+                        const allowedReturnOrigins = [
+                            'https://zyroeditz.xyz',
+                            'https://zyroeditz.vercel.app',
+                        ];
+                        const incomingOrigin = req.headers.origin || req.headers.referer || '';
+                        const matchedOrigin = allowedReturnOrigins.find(o => incomingOrigin.startsWith(o));
+                        const base = matchedOrigin || process.env.SITE_URL || 'https://zyroeditz.xyz';
+                        return `${base}/payment-success?order_id={order_id}`;
+                    })()
+                }
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-version': '2025-01-01',
+                    'x-client-id': process.env.CASHFREE_APP_ID,
+                    'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                }
+            }
+        );
+
+        const paymentSessionId = cashfreeResponse.data.payment_session_id;
+
+        // --- SAVE TO SUPABASE ONLY AFTER CASHFREE SUCCEEDS ---
+        // Store cart breakdown and coupon info in project_notes
+        let cartBreakdown = null;
+        if (Array.isArray(cartItems) && cartItems.length > 1) {
+             cartBreakdown = cartItems.map(i => ({ service: i.service, price: parseFloat(i.price || 0) }));
+        }
+        
+        let projectNotesData = null;
+        if (cartBreakdown || appliedCoupon || client_brief) {
+            projectNotesData = JSON.stringify({
+                items: cartBreakdown,
+                coupon: appliedCoupon,
+                brief: client_brief ? String(client_brief).trim().substring(0, 1000) : null
+            });
+        }
+
+        const { error: dbError } = await supabase.from('orders').insert([{
+            order_id: orderId,
+            client_name: safeName,
+            client_email: safeEmail,
+            client_phone: safePhone,
+            service: resolvedService,
+            amount: numericAmount || 0,
+            status: 'pending',
+            deadline_date: formattedDeadline,
+            project_notes: projectNotesData
+        }]);
+
+        if (dbError) {
+            console.error("Supabase Insert Failed:", dbError);
+            throw new Error("Database insertion failed");
+        }
+
+        const replyText = `Excellent choice. Our studio is ready to deliver premium, cinematic quality for your ${resolvedService} project.\n\nPlease note: We require full payment before starting a project. However, we offer a 100% refund if you are not satisfied with the final result.\n\nSecuring your project slot and opening the secure payment portal...`;
+
+        return res.json({
+            reply: replyText,
+            paymentSessionId
+        });
+
+    } catch (error) {
+        console.error("Chat Checkout Error:", error.response?.data || error.message);
+        return res.status(500).json({ reply: "Our payment gateway is currently handling high volume. Please try again in a moment." });
+    }
+};

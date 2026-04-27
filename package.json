@@ -1,0 +1,26 @@
+{
+  "name": "zyroeditz-backend",
+  "version": "1.0.0",
+  "description": "ZyroEditz — Video Editing Studio Platform (Vercel Serverless)",
+  "scripts": {
+    "build": "tailwindcss -i ./src/input.css -o ./tailwind.css --config ./tailwind.config.js --minify",
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@aws-sdk/s3-request-presigner": "^3.750.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "axios": "^1.7.0",
+    "openai": "^4.0.0",
+    "pdfkit": "^0.18.0",
+    "resend": "^4.0.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17",
+    "caniuse-lite": "latest"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}

@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZyroEditz&trade; | Selected Work</title>
+    <meta name="description" content="A curated gallery of cinematic video edits. No sales. Just the work." />
+    <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
+    <link rel="apple-touch-icon" sizes="128x128" href="/favicon.png">
+    <meta name="theme-color" content="#ff1a1a">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@700;900&display=swap" rel="stylesheet" />
+
+    <!-- Tailwind CSS (CDN for local dev, no build step required) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { ink: "#06060b", midnight: "#0b1020", electric: "#49c6ff", violet: "#7a5cff", haze: "#9db4ff", zyrored: "#ff1a1a" },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], brand: ['"Roboto"', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            background-color: #06060b;
+            color: #fff;
+            margin: 0;
+            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        ::selection { background: #49c6ff; color: #06060b; }
+
+        .marquee {
+            white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+            user-select: none;
+            gap: 2rem;
+            will-change: transform;
+            transform: translateZ(0);
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        .marquee-content {
+            display: flex;
+            flex-shrink: 0;
+            gap: 2rem;
+            will-change: transform;
+            animation: scroll 30s linear infinite;
+        }
+        @keyframes scroll {
+            from { transform: translate3d(0, 0, 0); }
+            to { transform: translate3d(-100%, 0, 0); }
+        }
+
+        /* --- SIBLING DIMMING (desktop only) --- */
+        @media (hover: hover) {
+            #bento-grid:hover .bento-item:not(:hover) {
+                opacity: 0.35;
+                filter: grayscale(40%) blur(2px);
+                transform: scale(0.98);
+            }
+        }
+        .bento-item {
+            transition: opacity 0.4s ease, filter 0.4s ease, border-color 0.4s ease;
+            opacity: 0;
+            transform: translateY(40px);
+            transform-style: preserve-3d;
+        }
+        /* Vanilla-tilt glare fix */
+        .js-tilt-glare { border-radius: inherit; }
+        .js-tilt-glare-inner { mix-blend-mode: overlay; }
+
+        /* === MOBILE OPTIMIZATIONS === */
+        @media (max-width: 767px) {
+            #bento-grid { grid-template-columns: 1fr; grid-auto-rows: 220px; gap: 1rem; }
+            .bento-item { border-radius: 1rem; }
+            #portfolio-filters { gap: 0.5rem; }
+            .filter-btn { padding: 0.4rem 0.8rem; font-size: 10px; }
+            .process-step { padding: 1.25rem; }
+            .process-num { font-size: 3rem; }
+            #landing-eyebrow { font-size: 8px; letter-spacing: 0.3em; }
+            #landing-tagline-bottom { font-size: 9px; letter-spacing: 0.2em; }
+            .marquee { display: none; }
+        }
+        
+        .bg-grid-pattern {
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Hide scrollbar completely while keeping scroll functionality */
+        ::-webkit-scrollbar { display: none; }
+        html { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* BUG-10 FIX: loading spinner keyframe */
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #mouse-spotlight {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            mix-blend-mode: screen;
+            filter: blur(80px);
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            transition: background-color 0.5s ease;
+        }
+
+        /* Color Changing Ambient Glow */
+        @keyframes ambientColorShift {
+            0% { 
+                box-shadow: 0 0 40px rgba(73,198,255,0.4); 
+                border-color: rgba(73,198,255,0.5); 
+            }
+            33% { 
+                box-shadow: 0 0 60px rgba(122,92,255,0.5); 
+                border-color: rgba(122,92,255,0.6); 
+            }
+            66% { 
+                box-shadow: 0 0 50px rgba(157,180,255,0.45); 
+                border-color: rgba(157,180,255,0.5); 
+            }
+            100% { 
+                box-shadow: 0 0 40px rgba(73,198,255,0.4); 
+                border-color: rgba(73,198,255,0.5); 
+            }
+        }
+        .animate-ambient-shift {
+            box-shadow: none;
+            border-color: rgba(255,255,255,0.1);
+        }
+        .animate-ambient-shift:hover {
+            animation: ambientColorShift 1.5s infinite alternate ease-in-out;
+        }
+        @media (pointer: fine) {
+            #mouse-spotlight { display: block; }
+            .hover-blur-bg { transition: opacity 0.5s ease; }
+            .group:hover .hover-blur-bg { opacity: 1; }
+        }
+
+        .word-reveal span {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        /* === CINEMATIC INTRO EXTRAS === */
+        #landing-eyebrow {
+            opacity: 0;
+            letter-spacing: 0.45em;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            font-weight: 500;
+            margin-bottom: 2rem;
+        }
+        #landing-line-accent {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(73,198,255,0.5), transparent);
+            width: 0%;
+            margin: 0 auto 2rem;
+            opacity: 0;
+        }
+        #landing-tagline-bottom {
+            opacity: 0;
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.2);
+            font-weight: 400;
+            margin-top: 2rem;
+        }
+        #landing-progress-wrap {
+            position: absolute;
+            bottom: 10vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        #landing-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #49c6ff;
+        }
+        .landing-vignette {
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(6,6,11,0.9) 100%);
+        }
+
+        /* === ANIMATED STAT NUMBERS === */
+        .stat-card {
+            transition: border-color 0.4s ease, transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+        .stat-num { font-variant-numeric: tabular-nums; }
+
+
+        /* ── CUSTOM VIDEO PLAYER ─────────────────────────────────────────── */
+        #vp-controls {
+            background: linear-gradient(to top, rgba(6,6,11,0.98) 0%, rgba(6,6,11,0.6) 70%, transparent 100%);
+        }
+        #vp-progress-track {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 99px;
+            cursor: pointer;
+            position: relative;
+            transition: height 0.15s ease;
+        }
+        #vp-progress-track:hover { height: 7px; }
+        #vp-progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #49c6ff, #7a5cff);
+            box-shadow: 0 0 10px rgba(73,198,255,0.6);
+            pointer-events: none;
+            transition: width 0.1s linear;
+        }
+        #vp-progress-buf {
+            position: absolute;
+            top: 0; left: 0;
+            height: 100%;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.12);
+            pointer-events: none;
+        }
+        .vp-btn {
+            background: none; border: none; cursor: pointer;
+            color: rgba(255,255,255,0.8); padding: 6px;
+            display:flex; align-items:center; justify-content:center;
+            border-radius: 8px; transition: color 0.2s, background 0.2s;
+        }
+        .vp-btn:hover { color: #49c6ff; background: rgba(73,198,255,0.1); }
+        #vp-spinner {
+            width: 52px; height: 52px;
+            border: 3px solid rgba(73,198,255,0.2);
+            border-top-color: #49c6ff;
+            border-radius: 50%;
+            animation: vp-spin 0.8s linear infinite;
+        }
+        @keyframes vp-spin { to { transform: rotate(360deg); } }
+        #vp-error {
+            color: #ff6b6b; font-size: 13px; text-align: center;
+            display: none; flex-direction: column; align-items: center; gap: 10px;
+        }
+    </style>
+</head>
+<body class="relative min-h-screen bg-grid-pattern">
+    <div id="mouse-spotlight"></div>
+    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet/5 rounded-full blur-[150px] pointer-events-none z-0"></div>
+
+    <section id="landing-view" class="fixed inset-0 z-[60] flex flex-col items-center justify-center w-full h-full pointer-events-none">
+        <div id="shutter-top" class="absolute top-0 left-0 w-full h-1/2 bg-ink z-0 origin-top pointer-events-auto"></div>
+        <div id="shutter-bottom" class="absolute bottom-0 left-0 w-full h-1/2 bg-ink z-0 origin-bottom pointer-events-auto"></div>
+        <div class="absolute inset-0 landing-vignette z-[1] pointer-events-none"></div>
+        
+        <div class="flex flex-col items-center z-10 text-center px-4" id="landing-content">
+            <div id="landing-eyebrow">ZyroEditz™ — Director's Vault</div>
+            <div id="landing-line-accent"></div>
+            <h1 class="text-4xl md:text-6xl font-black mb-4 tracking-tight drop-shadow-2xl relative z-10 word-reveal" id="hero-text"></h1>
+            <div id="landing-tagline-bottom">Cinematic Edits · Unmatched Retention · Built for Impact</div>
+        </div>
+        <div id="landing-progress-wrap" class="z-10 pointer-events-none">
+            <div id="landing-progress-bar"></div>
+        </div>
+    </section>
+
+    <main id="main-website" class="relative z-10 w-full min-h-screen opacity-0 pt-24">
+        
+        <nav class="fixed top-0 w-full px-6 md:px-12 py-5 flex justify-between items-center bg-ink/80 backdrop-blur-xl border-b border-white/5 z-40 transform -translate-y-full" id="navbar">
+            <div class="text-2xl font-brand font-black tracking-widest cursor-pointer interactive-element" onclick="scrollToSection('work')" data-hover-color="rgba(73,198,255,0.3)">
+                Zyro<span class="text-zyrored">Editz</span><sup style="font-size:0.4em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase font-semibold text-gray-400">
+                <!-- Empty for alignment -->
+            </div>
+            
+            <a href="/" class="interactive-element px-6 py-2 border border-white/10 rounded-full text-xs tracking-[0.1em] uppercase font-bold hover:bg-white hover:text-black transition-all md:hidden" data-hover-color="rgba(255,255,255,0.3)">
+                Main Site
+            </a>
+            
+            <a href="/" class="hidden md:flex interactive-element px-6 py-2 border border-white/10 rounded-full text-xs tracking-[0.1em] uppercase font-bold hover:bg-white hover:text-black transition-all" data-hover-color="rgba(255,255,255,0.3)">
+                Return to Main
+            </a>
+        </nav>
+
+        <section id="work" class="px-6 md:px-12 max-w-7xl mx-auto pt-10 min-h-[90vh] relative z-10">
+            <div class="marquee absolute top-0 -left-[10%] w-[120%] -z-10 opacity-5 pointer-events-none transform -skew-y-3">
+                <div class="marquee-content text-9xl font-black uppercase text-white">
+                    COMMERCIALS • SHORT FILMS • MUSIC VIDEOS • BRAND ACCELERATION • COMMERCIALS • SHORT FILMS • MUSIC VIDEOS • 
+                </div>
+                <div class="marquee-content text-9xl font-black uppercase text-white" aria-hidden="true">
+                    COMMERCIALS • SHORT FILMS • MUSIC VIDEOS • BRAND ACCELERATION • COMMERCIALS • SHORT FILMS • MUSIC VIDEOS • 
+                </div>
+            </div>
+            <div class="gsap-reveal">
+                <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="folder-lock" class="w-4 h-4"></i> Selected Work
+                </div>
+                <h2 class="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-4">Director's <span class="text-electric">Cut</span></h2>
+                <p class="text-haze max-w-xl text-base md:text-lg leading-relaxed mb-8 border-l-2 border-electric pl-4">
+                    A curated collection of high-impact visual storytelling. Click any project to view the raw edit.
+                </p>
+                
+                <div class="flex flex-wrap gap-3 mb-12" id="portfolio-filters">
+                    <button class="filter-btn active px-5 py-2 rounded-full border border-electric bg-electric/10 text-electric text-xs uppercase tracking-widest font-bold" data-filter="all">All</button>
+                    <button class="filter-btn px-5 py-2 rounded-full border border-white/10 bg-white/5 text-gray-400 text-xs uppercase tracking-widest font-bold hover:border-electric/50 hover:text-electric transition-colors" data-filter="Reels">Reels & Shorts</button>
+                    <button class="filter-btn px-5 py-2 rounded-full border border-white/10 bg-white/5 text-gray-400 text-xs uppercase tracking-widest font-bold hover:border-electric/50 hover:text-electric transition-colors" data-filter="Ads">Commercials</button>
+                    <button class="filter-btn px-5 py-2 rounded-full border border-white/10 bg-white/5 text-gray-400 text-xs uppercase tracking-widest font-bold hover:border-electric/50 hover:text-electric transition-colors" data-filter="Short Film">Narrative</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 auto-rows-[220px] md:auto-rows-[280px] lg:auto-rows-[320px] gap-4 md:gap-6" id="bento-grid">
+                <!-- Cards are dynamically rendered by loadPortfolioItems() -->
+                <div class="col-span-1 md:col-span-3 flex items-center justify-center py-12 text-gray-500" id="portfolio-loading">
+                    <div style="width:32px;height:32px;border:2px solid rgba(73,198,255,0.2);border-top-color:#49c6ff;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:12px"></div>
+                    Loading portfolio…
+                </div>
+            </div>
+        </section>
+
+
+        <section id="comparisons" class="px-6 md:px-12 max-w-7xl mx-auto relative z-10 py-12 border-t border-white/5 mt-24 gsap-scroll">
+            <div class="text-haze text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="split-square-horizontal" class="w-4 h-4"></i> Color Grade
+            </div>
+            <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4">Before & <span class="text-haze">After</span></h2>
+            <p class="text-haze max-w-xl text-base md:text-lg leading-relaxed mb-12 border-l-2 border-haze pl-4">
+                Witness the transformation. Drag the slider to reveal the difference between flat, raw camera footage and a cinematic final grade.
+            </p>
+            
+            <div class="interactive-element relative w-full aspect-video rounded-2xl overflow-hidden bg-midnight border border-white/10 hover:border-haze/30 transition-colors duration-500 group select-none" data-hover-color="rgba(157,180,255,0.2)" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.15">
+                <!-- Bottom Image (After) -->
+                <img src="https://images.unsplash.com/photo-1538370621607-4919ce7889b3?q=80&w=1200" alt="Graded" class="absolute inset-0 w-full h-full object-cover pointer-events-none" style="filter: contrast(1.1) saturate(1.4);">
+                
+                <!-- Top Image (Before - clipped) using clip-path -->
+                <img src="https://images.unsplash.com/photo-1538370621607-4919ce7889b3?q=80&w=1200" alt="Raw" class="absolute inset-0 w-full h-full object-cover pointer-events-none" style="clip-path: inset(0 50% 0 0); filter: grayscale(80%) contrast(0.8);" id="before-img">
+
+                <!-- Slider -->
+                <input type="range" min="0" max="100" value="50" class="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" id="ba-slider">
+                
+                <!-- Drag Handle -->
+                <div class="absolute inset-y-0 w-0.5 bg-white left-1/2 -translate-x-1/2 pointer-events-none z-10 shadow-[0_0_20px_rgba(255,255,255,0.8)]" id="ba-handle">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center text-black border border-white/20">
+                        <i data-lucide="chevrons-left-right" class="w-4 h-4"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="sound" class="px-6 md:px-12 max-w-7xl mx-auto relative z-10 py-12 border-t border-white/5 mt-24 gsap-scroll">
+            <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="waves" class="w-4 h-4"></i> Sound Design
+            </div>
+            <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4">Audio <span class="text-electric">Engineering</span></h2>
+            <p class="text-haze max-w-xl text-base md:text-lg leading-relaxed mb-12 border-l-2 border-electric pl-4">
+                Sound is half the experience. Click play to listen to a layered, high-fidelity audio environment mixed for maximum impact.
+            </p>
+            
+            <div id="sound-card" class="interactive-element p-8 md:p-12 rounded-2xl bg-midnight border border-white/5 flex flex-col md:flex-row items-center gap-8" data-hover-color="rgba(73,198,255,0.2)">
+                <button id="audio-play-btn" class="w-20 h-20 rounded-full bg-electric/10 border border-electric/30 flex items-center justify-center shrink-0 hover:scale-110 hover:bg-electric hover:text-black transition-all text-white focus:outline-none z-20">
+                    <span id="icon-play" class="block"><i data-lucide="play" class="w-8 h-8 ml-1"></i></span>
+                    <span id="icon-pause" class="hidden"><i data-lucide="pause" class="w-8 h-8"></i></span>
+                </button>
+                <div class="flex-1 w-full relative h-16 flex items-center gap-1 opacity-50 transition-opacity" id="audio-visualizer">
+                    <!-- Generating bars via JS -->
+                </div>
+                <div class="hidden md:block text-right">
+                    <div class="text-white font-bold tracking-widest uppercase mb-1">Foley & SFX</div>
+                    <div class="text-xs text-electric tracking-[0.2em]">HQ AUDIO MIX</div>
+                </div>
+                <!-- Actual Audio Element -->
+                <audio id="demo-audio" src="/portfolio/audio.mp3" preload="auto" loop></audio>
+            </div>
+        </section>
+        <section class="max-w-7xl mx-auto px-6 md:px-12 flex justify-center mt-32 mb-8 relative z-10 gsap-scroll">
+            <a href="/" class="animate-ambient-shift interactive-element w-full max-w-4xl group relative px-8 py-16 md:px-16 md:py-20 rounded-3xl bg-midnight border overflow-hidden flex flex-col items-center justify-center transition-all duration-700 hover:-translate-y-2 hover:scale-[1.01]" data-tilt data-tilt-max="2" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.1">
+                <!-- Color cycling internal glow on hover -->
+                <div class="absolute inset-0 bg-gradient-to-br from-electric/10 via-violet/10 to-haze/10 opacity-60 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none z-0"></div>
+                
+                <h2 class="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white z-10 text-center leading-tight mb-8">
+                    Ready for the <span class="text-electric block md:inline mt-2 md:mt-0">Final Cut?</span>
+                </h2>
+                
+                <div class="px-8 py-4 rounded-full bg-electric text-black font-bold text-xs tracking-[0.3em] uppercase z-10 flex items-center gap-3 hover:bg-white transition-colors duration-300 transform-gpu hover:scale-105">
+                    Return to Main <i data-lucide="arrow-right" class="w-4 h-4 transition-transform duration-300"></i>
+                </div>
+            </a>
+        </section>
+
+        <footer class="mt-24 py-12 border-t border-white/5 text-center flex flex-col items-center relative z-10 bg-midnight">
+            <div class="text-2xl font-brand font-black tracking-widest mb-4 opacity-80">Zyro<span class="text-zyrored">Editz</span><sup style="font-size:0.4em; vertical-align:super; font-weight:400;">&trade;</sup></div>
+            <p class="text-xs text-gray-500 tracking-widest font-mono">&copy; 2026 ZyroEditz&trade;. All rights reserved.</p>
+        </footer>
+    </main>
+
+    <!-- ── CINEMATIC VIDEO MODAL ──────────────────────────────────────────── -->
+    <div id="video-modal" class="fixed inset-0 z-[100] bg-ink/95 backdrop-blur-xl flex flex-col items-center justify-center opacity-0 invisible transition-all duration-500">
+        <!-- Close -->
+        <button onclick="closeVideo()" class="absolute top-6 right-6 md:top-10 md:right-12 text-gray-400 hover:text-electric transition-colors flex items-center gap-2 text-xs uppercase tracking-widest group z-20">
+            <span class="hidden md:inline">Close</span>
+            <div class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:border-electric transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </div>
+        </button>
+
+        <div class="w-full max-w-6xl px-4 md:px-12 flex flex-col transform scale-95 transition-transform duration-500 max-h-[92dvh] overflow-y-auto" id="video-content">
+            <!-- Header -->
+            <div class="flex items-center gap-4 mb-4">
+                <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold border border-electric/30 px-3 py-1 rounded-full" id="modal-type">Category</div>
+                <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white m-0" id="modal-title">Title</h3>
+            </div>
+
+            <!-- Player shell -->
+            <div class="relative w-full aspect-video bg-black rounded-2xl border border-white/10 overflow-hidden shadow-[0_0_60px_rgba(73,198,255,0.08)] max-h-[70dvh]" id="vp-shell">
+
+                <!-- Spinner / loading state -->
+                <div id="vp-loading" class="absolute inset-0 flex items-center justify-center z-30 bg-black/60">
+                    <div id="vp-spinner"></div>
+                </div>
+
+                <!-- Error state -->
+                <div id="vp-error" class="absolute inset-0 flex items-center justify-center z-30 bg-black/80" style="display:none;flex-direction:column;gap:10px;">
+                    <i data-lucide="wifi-off" class="w-10 h-10 text-red-400"></i>
+                    <p style="color:#ff6b6b;font-size:13px;">Couldn't load video. Try again.</p>
+                    <button onclick="retryVideo()" style="padding:8px 20px;border-radius:99px;border:1px solid #49c6ff;color:#49c6ff;background:none;cursor:pointer;font-size:12px;letter-spacing:.1em;">RETRY</button>
+                </div>
+
+                <!-- Actual video element -->
+                <video id="vp-video" class="w-full h-full object-contain" preload="auto" playsinline></video>
+
+                <!-- Big play overlay (click to play) -->
+                <div id="vp-play-overlay" class="absolute inset-0 flex items-center justify-center z-20 cursor-pointer" onclick="vpTogglePlay()" style="display:none;">
+                    <div class="w-20 h-20 rounded-full bg-ink/70 backdrop-blur-md border border-electric/50 flex items-center justify-center shadow-[0_0_40px_rgba(73,198,255,0.3)] hover:scale-110 transition-transform">
+                        <i data-lucide="play" class="w-9 h-9 text-electric ml-1" id="vp-big-play-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Controls bar -->
+                <div id="vp-controls" class="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4 pt-10 opacity-0 transition-opacity duration-300" style="display:none;">
+                    <!-- Progress -->
+                    <div id="vp-progress-track" onclick="vpSeek(event)">
+                        <div id="vp-progress-buf" style="width:0%"></div>
+                        <div id="vp-progress-fill" style="width:0%"></div>
+                    </div>
+                    <!-- Buttons row -->
+                    <div class="flex items-center gap-2 mt-3">
+                        <button class="vp-btn" onclick="vpTogglePlay()" id="vp-play-btn">
+                            <i data-lucide="play" class="w-5 h-5" id="vp-play-icon"></i>
+                        </button>
+                        <button class="vp-btn" onclick="vpToggleMute()">
+                            <i data-lucide="volume-2" class="w-5 h-5" id="vp-vol-icon"></i>
+                        </button>
+                        <!-- Volume slider -->
+                        <input id="vp-vol-slider" type="range" min="0" max="1" step="0.05" value="1"
+                            style="width:70px;accent-color:#49c6ff;cursor:pointer;"
+                            oninput="vpSetVolume(this.value)">
+                        <!-- Time -->
+                        <span id="vp-time" style="font-size:11px;color:rgba(255,255,255,0.5);font-family:monospace;margin-left:4px;">0:00 / 0:00</span>
+                        <!-- Spacer -->
+                        <div class="flex-1"></div>
+                        <!-- Fullscreen -->
+                        <button class="vp-btn" onclick="vpFullscreen()">
+                            <i data-lucide="maximize-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Reveal words logic
+        const heroTextStr = "Welcome to a new era of Editing.";
+        const heroContainer = document.getElementById("hero-text");
+        heroTextStr.split(" ").forEach(word => {
+            const span = document.createElement("span");
+            span.innerText = word + "\u00A0";
+            heroContainer.appendChild(span);
+        });
+
+        // Set initial state for main-website explicitly via GSAP before animations
+        gsap.set("#main-website", { opacity: 0 });
+        gsap.set("#navbar", { y: -80 });
+        gsap.set(".gsap-reveal > *", { y: 40, opacity: 0 });
+
+        // Intro animation sequence
+        const introTL = gsap.timeline({ delay: 0.2 });
+        introTL.to("#landing-eyebrow", { opacity: 1, duration: 0.8, ease: "power2.out" });
+        introTL.to("#landing-line-accent", { width: "120px", opacity: 1, duration: 0.6, ease: "power2.out" }, "-=0.3");
+        introTL.to(".word-reveal span", { y: 0, opacity: 1, duration: 0.9, stagger: 0.07, ease: "power3.out" }, "-=0.2");
+        introTL.to("#landing-tagline-bottom", { opacity: 1, duration: 0.8, ease: "power2.out" }, "-=0.4");
+        introTL.to("#landing-progress-bar", { width: "100%", duration: 1.8, ease: "power1.inOut",
+            onComplete: () => openWebsite()
+        }, "-=0.6");
+
+        const isPC = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+        
+        if (isPC) {
+            const spotlight = document.getElementById('mouse-spotlight');
+            let defaultColor = "rgba(73, 198, 255, 0.12)";
+            
+            gsap.set(spotlight, { xPercent: -50, yPercent: -50, x: window.innerWidth/2, y: window.innerHeight/2 });
+            spotlight.style.background = `radial-gradient(circle, ${defaultColor} 0%, transparent 60%)`;
+
+            window.addEventListener('mousemove', (e) => {
+                if (spotlight.style.opacity == 0) spotlight.style.opacity = 1;
+                gsap.to(spotlight, { x: e.clientX, y: e.clientY, duration: 0.6, ease: "power2.out", overwrite: 'auto' });
+            }, { passive: true });
+
+            document.querySelectorAll('.interactive-element').forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    const hoverColor = el.getAttribute('data-hover-color') || "rgba(73, 198, 255, 0.4)";
+                    gsap.to(spotlight, { scale: 1.5, duration: 0.5, ease: "power2.out", overwrite: 'auto' });
+                    spotlight.style.background = `radial-gradient(circle, ${hoverColor} 0%, transparent 60%)`;
+                });
+                el.addEventListener('mouseleave', () => {
+                    gsap.to(spotlight, { scale: 1, duration: 0.6, ease: "power2.out", overwrite: 'auto' });
+                    spotlight.style.background = `radial-gradient(circle, ${defaultColor} 0%, transparent 60%)`;
+                });
+            });
+        }
+
+        function openWebsite() {
+            const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+            if (isPC) gsap.to("#mouse-spotlight", { opacity: 0, duration: 0.3 });
+
+            // Fade out all landing content
+            tl.to("#landing-content", { opacity: 0, scale: 0.95, duration: 0.5, ease: "power2.out" }, 0);
+            tl.to("#landing-progress-wrap", { opacity: 0, duration: 0.3 }, 0);
+            // Shutter open animation
+            tl.to("#shutter-top", { scaleY: 0, duration: 1.2, ease: "expo.inOut" }, 0.1);
+            tl.to("#shutter-bottom", { scaleY: 0, duration: 1.2, ease: "expo.inOut" }, 0.1);
+            
+            tl.to("#landing-view", {
+                duration: 0.1,
+                onComplete: () => {
+                    document.getElementById("landing-view").style.display = "none";
+                    document.body.style.overflowY = "auto";
+                    if (isPC) gsap.to("#mouse-spotlight", { opacity: 1, duration: 0.6 });
+                    // Trigger bento animations AFTER shutter opens
+                    setupScrollAnimations();
+                }
+            }, 1.0);
+
+            // Reveal main site elements in sync with shutters opening
+            tl.to("#main-website", { opacity: 1, duration: 0.8 }, 0.4);
+            tl.to("#navbar", { y: 0, duration: 0.8 }, 0.6);
+            tl.to(".gsap-reveal > *", { y: 0, opacity: 1, duration: 0.8, stagger: 0.08 }, 0.6);
+        }
+
+        function setupScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Bento items: staggered entrance as they enter viewport
+            gsap.utils.toArray('.bento-item').forEach((item) => {
+                ScrollTrigger.create({
+                    trigger: item,
+                    start: "top 92%",
+                    onEnter: () => {
+                        gsap.to(item, {
+                            y: 0,
+                            opacity: 1,
+                            duration: 0.9,
+                            ease: "power3.out",
+                            overwrite: true
+                        });
+                    },
+                    once: true
+                });
+            });
+
+            // Scroll sections: about, reviews
+            gsap.utils.toArray('.gsap-scroll').forEach(el => {
+                gsap.set(el, { y: 50, opacity: 0 });
+                ScrollTrigger.create({
+                    trigger: el,
+                    start: "top 88%",
+                    onEnter: () => {
+                        gsap.to(el, { y: 0, opacity: 1, duration: 1, ease: "power3.out", overwrite: true });
+                    },
+                    once: true
+                });
+            });
+
+
+        }
+
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                const y = element.getBoundingClientRect().top + window.scrollY - 100;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+        }
+
+        // Filters — BUG-4 FIX: query .portfolio-item inside click handler (not at parse time)
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => {
+                    b.classList.remove('active', 'border-electric', 'bg-electric/10', 'text-electric');
+                    b.classList.add('border-white/10', 'bg-white/5', 'text-gray-400');
+                });
+                
+                btn.classList.add('active', 'border-electric', 'bg-electric/10', 'text-electric');
+                btn.classList.remove('border-white/10', 'bg-white/5', 'text-gray-400');
+
+                const filterValue = btn.getAttribute('data-filter');
+                // Query live DOM here — cards are added asynchronously after page load
+                const portfolioItems = document.querySelectorAll('.portfolio-item');
+
+                portfolioItems.forEach(item => {
+                    if (filterValue === 'all' || item.getAttribute('data-category') === filterValue) {
+                        item.style.display = 'block';
+                        gsap.fromTo(item, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4 });
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // ── VIDEO PLAYER ENGINE ──────────────────────────────────────────────
+        const vpVideo     = document.getElementById('vp-video');
+        const vpLoading   = document.getElementById('vp-loading');
+        const vpErrorEl   = document.getElementById('vp-error');
+        const vpControls  = document.getElementById('vp-controls');
+        const vpOverlay   = document.getElementById('vp-play-overlay');
+        const vpFill      = document.getElementById('vp-progress-fill');
+        const vpBuf       = document.getElementById('vp-progress-buf');
+        const vpTime      = document.getElementById('vp-time');
+        const vpPlayIcon  = document.getElementById('vp-play-icon');
+        const vpBigIcon   = document.getElementById('vp-big-play-icon');
+        const vpVolIcon   = document.getElementById('vp-vol-icon');
+        let _currentFile  = null;
+        let _hideCtrlTimer = null;
+
+        function fmtTime(s) {
+            if (!isFinite(s)) return '0:00';
+            const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2,'0')}`;
+        }
+
+        vpVideo.addEventListener('timeupdate', () => {
+            if (!vpVideo.duration) return;
+            const pct = (vpVideo.currentTime / vpVideo.duration) * 100;
+            vpFill.style.width = pct + '%';
+            vpTime.textContent = `${fmtTime(vpVideo.currentTime)} / ${fmtTime(vpVideo.duration)}`;
+        });
+        vpVideo.addEventListener('progress', () => {
+            if (!vpVideo.duration || !vpVideo.buffered.length) return;
+            vpBuf.style.width = ((vpVideo.buffered.end(vpVideo.buffered.length - 1) / vpVideo.duration) * 100) + '%';
+        });
+        vpVideo.addEventListener('canplay', () => {
+            vpLoading.style.display = 'none';
+            vpControls.style.display = 'block';
+            vpOverlay.style.display  = 'flex';
+            vpVideo.play().then(() => syncPlayIcon()).catch(() => {});
+        });
+        vpVideo.addEventListener('waiting', () => { vpLoading.style.display = 'flex'; });
+        vpVideo.addEventListener('playing', () => { vpLoading.style.display = 'none'; syncPlayIcon(); });
+        vpVideo.addEventListener('play',  syncPlayIcon);
+        vpVideo.addEventListener('pause', syncPlayIcon);
+        vpVideo.addEventListener('error', () => {
+            if (!vpVideo.getAttribute('src')) return;
+            console.error('[portfolio] Video playback error. Code:', vpVideo.error ? vpVideo.error.code : 'Unknown', vpVideo.error ? vpVideo.error.message : '');
+            vpLoading.style.display = 'none';
+            vpErrorEl.style.display = 'flex';
+        });
+
+        function syncPlayIcon() {
+            const paused = vpVideo.paused;
+            vpPlayIcon.setAttribute('data-lucide', paused ? 'play' : 'pause');
+            vpBigIcon.setAttribute('data-lucide',  paused ? 'play' : 'pause');
+            vpOverlay.style.display = paused ? 'flex' : 'none';
+            lucide.createIcons();
+        }
+        function vpTogglePlay() {
+            if (vpVideo.paused) {
+                const p = vpVideo.play();
+                if (p !== undefined) p.catch(() => {});
+            } else {
+                vpVideo.pause();
+            }
+        }
+        function vpToggleMute() {
+            vpVideo.muted = !vpVideo.muted;
+            vpVolIcon.setAttribute('data-lucide', vpVideo.muted ? 'volume-x' : 'volume-2');
+            lucide.createIcons();
+        }
+        function vpSetVolume(v) {
+            vpVideo.volume = v;
+            vpVideo.muted  = (v == 0);
+            vpVolIcon.setAttribute('data-lucide', v == 0 ? 'volume-x' : 'volume-2');
+            lucide.createIcons();
+        }
+        function vpSeek(e) {
+            const track = document.getElementById('vp-progress-track');
+            const pct   = e.offsetX / track.offsetWidth;
+            vpVideo.currentTime = pct * vpVideo.duration;
+        }
+        function vpFullscreen() {
+            const shell = document.getElementById('vp-shell');
+            if (document.fullscreenElement) document.exitFullscreen();
+            else shell.requestFullscreen && shell.requestFullscreen();
+        }
+
+        // Show / hide controls on mouse move inside player
+        document.getElementById('vp-shell').addEventListener('mousemove', () => {
+            vpControls.style.opacity = '1';
+            clearTimeout(_hideCtrlTimer);
+            _hideCtrlTimer = setTimeout(() => { if (!vpVideo.paused) vpControls.style.opacity = '0'; }, 2500);
+        });
+
+        async function openVideo(title, type, filename) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-type').innerText  = type;
+            _currentFile = filename;
+
+            // Reset player state
+            vpVideo.removeAttribute('src'); vpVideo.load();
+            vpFill.style.width = '0%';
+            vpBuf.style.width  = '0%';
+            vpTime.textContent = '0:00 / 0:00';
+            vpLoading.style.display  = 'flex';
+            vpErrorEl.style.display  = 'none';
+            vpControls.style.display = 'none';
+            vpOverlay.style.display  = 'none';
+
+            // Show modal
+            const modal   = document.getElementById('video-modal');
+            const content = document.getElementById('video-content');
+            modal.style.visibility = 'visible';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'invisible');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+
+            // Fetch signed URL from backend
+            try {
+                const resp = await fetch(`/api/get-files?portfolio=true&file=${encodeURIComponent(filename)}`);
+                const data = await resp.json();
+                if (!resp.ok || !data.url) throw new Error(data.error || 'No URL');
+                vpVideo.src = data.url;
+                vpVideo.load();
+            } catch (err) {
+                console.error('[portfolio] video load error:', err);
+                vpLoading.style.display = 'none';
+                vpErrorEl.style.display = 'flex';
+            }
+        }
+
+        function retryVideo() {
+            if (_currentFile) {
+                const title = document.getElementById('modal-title').innerText;
+                const type  = document.getElementById('modal-type').innerText;
+                openVideo(title, type, _currentFile);
+            }
+        }
+
+        function closeVideo() {
+            const modal   = document.getElementById('video-modal');
+            const content = document.getElementById('video-content');
+            modal.classList.add('opacity-0', 'invisible');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.style.visibility = 'hidden';
+                document.body.style.overflow = 'auto';
+                vpVideo.pause();
+                vpVideo.removeAttribute('src'); vpVideo.load();
+            }, 500);
+        }
+
+        // Before & After Slider Logic
+        const baSlider = document.getElementById('ba-slider');
+        const baHandle = document.getElementById('ba-handle');
+        const beforeImg = document.getElementById('before-img');
+        if (baSlider) {
+            baSlider.addEventListener('input', (e) => {
+                const val = e.target.value;
+                // Update clip-path and handle position
+                beforeImg.style.clipPath = `inset(0 ${100 - val}% 0 0)`;
+                baHandle.style.left = `${val}%`;
+            });
+        }
+
+        // Sound Visualizer Bars Generation & Audio Playback
+        const visContainer = document.getElementById('audio-visualizer');
+        const demoAudio = document.getElementById('demo-audio');
+        const playBtn = document.getElementById('audio-play-btn');
+        const iconPlay = document.getElementById('icon-play');
+        const iconPause = document.getElementById('icon-pause');
+        
+        if (visContainer && demoAudio && playBtn) {
+            for(let i=0; i<30; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'flex-1 bg-electric rounded-full transition-all duration-300 transform-gpu';
+                bar.style.height = `${Math.max(15, Math.random() * 100)}%`;
+                visContainer.appendChild(bar);
+            }
+            
+            playBtn.addEventListener('click', () => {
+                if (demoAudio.paused) {
+                    demoAudio.volume = 0.5;
+                    const playPromise = demoAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            iconPlay.classList.replace('block', 'hidden');
+                            iconPause.classList.replace('hidden', 'block');
+                            visContainer.style.opacity = '1';
+                        }).catch(e => console.log('Audio playback prevented.'));
+                    }
+                } else {
+                    demoAudio.pause();
+                    iconPause.classList.replace('block', 'hidden');
+                    iconPlay.classList.replace('hidden', 'block');
+                    visContainer.style.opacity = '0.5';
+                    
+                    // Reset visualizer bars
+                    Array.from(visContainer.children).forEach(bar => {
+                        bar.style.height = `${Math.max(15, Math.random() * 100)}%`;
+                    });
+                }
+            });
+
+            // BUG FIX: store interval ID so it can be cleared when audio pauses/ends
+            // Previously leaked forever — ran 10x/sec burning CPU with no audio playing
+            let _visIntervalId = null;
+
+            function startVisualizer() {
+                if (_visIntervalId) return; // already running
+                _visIntervalId = setInterval(() => {
+                    Array.from(visContainer.children).forEach(bar => {
+                        bar.style.height = `${Math.max(20, Math.random() * 100)}%`;
+                    });
+                }, 100);
+            }
+
+            function stopVisualizer() {
+                clearInterval(_visIntervalId);
+                _visIntervalId = null;
+            }
+
+            demoAudio.addEventListener('play',  startVisualizer);
+            demoAudio.addEventListener('pause', stopVisualizer);
+            demoAudio.addEventListener('ended', stopVisualizer);
+        }
+    </script>
+
+    <script>
+    // ── Dynamic Portfolio Loader ─────────────────────────────────────────────
+    // Called once on DOMContentLoaded; re-renders bento grid from Supabase DB.
+    async function loadPortfolioItems() {
+        const grid   = document.getElementById('bento-grid');
+        const loader = document.getElementById('portfolio-loading');
+        try {
+            const res  = await fetch('/api/get-files?portfolio_items=true');
+            const data = await res.json();
+            if (!res.ok || !data.items) throw new Error(data.error || 'API error');
+
+            // Remove loading spinner
+            if (loader) loader.remove();
+
+            if (!data.items.length) {
+                grid.innerHTML = '<div class="col-span-3 text-center text-gray-500 py-16 text-sm">No portfolio items found.</div>';
+                return;
+            }
+
+            // Helper: pick glow/accent color for play button
+            function accentClass(color) {
+                // inline style since color is dynamic
+                return `style="border-color:${color};box-shadow:0 0 30px ${color}"`;
+            }
+
+            const colSpanMap = { 1: 'col-span-1', 2: 'md:col-span-2' };
+            const rowSpanMap = { 1: 'row-span-1', 2: 'row-span-2' };
+
+            const fallbackThumbs = [
+                'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80',
+                'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=500&q=80',
+                'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
+                'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80',
+                'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=500&q=80',
+            ];
+
+            // M-03 FIX: Moved _esc() outside the forEach — was being redeclared as a new
+            // function object on every iteration, wasting memory unnecessarily.
+            function _esc(str) {
+                return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+            }
+
+            data.items.forEach((item, idx) => {
+                const thumb   = item.thumbnail_url || fallbackThumbs[idx % fallbackThumbs.length];
+                const color   = item.accent_color  || 'rgba(73,198,255,0.5)';
+                const colSpan = colSpanMap[item.grid_cols] || 'col-span-1';
+                const rowSpan = rowSpanMap[item.grid_rows] || 'row-span-1';
+                const padding = item.grid_rows >= 2 ? 'p-8' : 'p-6';
+                const title_size = item.grid_cols >= 2 ? 'text-3xl md:text-4xl' : 'text-xl md:text-2xl';
+                const play_size  = item.grid_rows >= 2 ? 'w-20 h-20' : 'w-16 h-16';
+                const icon_size  = item.grid_rows >= 2 ? 'w-8 h-8'  : 'w-6 h-6';
+
+                const safeTitle = _esc(item.title);
+                const safeCat   = _esc(item.category);
+
+                // BUG FIX #5 (XSS): Never inject user data into onclick strings.
+                // Use data-* attributes and read them in a single safe delegated listener.
+                const card = document.createElement('div');
+                card.dataset.title    = item.title;
+                card.dataset.category = item.category;
+                card.dataset.filename = item.filename;
+                card.setAttribute('data-hover-color', color);
+                card.setAttribute('data-tilt', '');
+                card.setAttribute('data-tilt-max', '1');
+                card.setAttribute('data-tilt-speed', '1000');
+                card.setAttribute('data-tilt-glare', '');
+                card.setAttribute('data-tilt-max-glare', '0.08');
+                card.className = `portfolio-item interactive-element cursor-video bento-item relative group overflow-hidden rounded-2xl bg-midnight border border-white/5 transition-colors duration-500 cursor-pointer col-span-1 ${colSpan} ${rowSpan}`;
+
+                card.innerHTML = `
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-60 transition-opacity duration-700" style="background: linear-gradient(135deg, ${color} 0%, transparent 60%)"></div>
+                    <img src="${thumb}" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity duration-500" alt="${safeTitle}" loading="lazy">
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100 z-20">
+                        <div class="${play_size} rounded-full bg-ink/60 backdrop-blur-md border flex items-center justify-center hover:scale-110 transition-transform" ${accentClass(color)}>
+                            <i data-lucide="play" class="${icon_size} ml-1" style="color:${color}"></i>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-0 left-0 ${padding} z-10 w-full bg-gradient-to-t from-ink via-ink/80 to-transparent transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                        <div class="text-[10px] tracking-[0.2em] uppercase font-bold mb-1" style="color:${color}">${safeCat}</div>
+                        <div class="${title_size} font-black tracking-tight text-white">${safeTitle}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Reinitialize Lucide icons on new DOM nodes
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // H-04 FIX: Guard against double-init. VanillaTilt adds a 'vanillaTilt' property
+            // to each element when initialized. Re-initializing the same element causes tilt
+            // instances to fight each other, producing jitter and a memory leak.
+            // Reinitialize VanillaTilt only on non-touch devices (R-06 FIX: prevents Android card jitter)
+            if (typeof VanillaTilt !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+                const untiltedCards = Array.from(grid.querySelectorAll('[data-tilt]')).filter(el => !el.vanillaTilt);
+                if (untiltedCards.length) {
+                    VanillaTilt.init(untiltedCards, {
+                        max: 1, speed: 1000, glare: true, 'max-glare': 0.08
+                    });
+                }
+            }
+
+            // Attach delegated video-open click listener on each card (XSS-safe)
+            // Reads title/category/filename from data attributes — never from executable strings
+            grid.querySelectorAll('.portfolio-item').forEach(c => {
+                c.addEventListener('click', () => {
+                    const t = c.dataset.title;
+                    const cat = c.dataset.category;
+                    const f = c.dataset.filename;
+                    if (t && f && typeof openVideo === 'function') openVideo(t, cat, f);
+                });
+            });
+
+            // Re-attach interactive hover color listeners
+            grid.querySelectorAll('.interactive-element').forEach(el => {
+                const hoverColor = el.dataset.hoverColor;
+                if (!hoverColor) return;
+                el.addEventListener('mouseenter', () => {
+                    const cursor = document.querySelector('.custom-cursor');
+                    if (cursor) cursor.style.background = hoverColor.replace(/[\d.]+\)$/, '0.15)');
+                });
+            });
+
+            // Rerun active filter if one is selected
+            const activeFilter = document.querySelector('.filter-btn.active');
+            if (activeFilter && activeFilter.dataset.filter !== 'all') {
+                const cat = activeFilter.dataset.filter;
+                grid.querySelectorAll('.portfolio-item').forEach(card => {
+                    card.style.display = card.dataset.category === cat ? '' : 'none';
+                });
+            }
+
+            // BUG-6 FIX: Trigger GSAP scroll animations on newly added cards
+            if (typeof ScrollTrigger !== 'undefined') {
+                grid.querySelectorAll('.bento-item').forEach(item => {
+                    ScrollTrigger.create({
+                        trigger: item,
+                        start: 'top 92%',
+                        onEnter: () => gsap.to(item, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', overwrite: true }),
+                        once: true
+                    });
+                });
+                ScrollTrigger.refresh();
+            }
+
+        } catch (err) {
+            console.error('[portfolio] Failed to load items:', err);
+            if (loader) loader.innerHTML = '<span style="color:#ff6b6b">⚠ Failed to load portfolio. Please refresh.</span>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPortfolioItems);
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{
+  "outputDirectory": ".",
+  "crons": [
+    {
+      "path": "/api/save-brief",
+      "schedule": "0 22 * * *"
+    }
+  ],
+  "functions": {
+    "api/upload-files.js":   { "maxDuration": 20 },
+    "api/admin-chat.js":     { "maxDuration": 30 },
+    "api/admin-data.js":     { "maxDuration": 20 },
+    "api/webhook.js":        { "maxDuration": 30 },
+    "api/verify-payment.js": { "maxDuration": 20 },
+    "api/payments.js":       { "maxDuration": 30 },
+    "api/settlements.js":    { "maxDuration": 15 },
+    "api/chat.js":           { "maxDuration": 20 },
+    "api/save-brief.js":     { "maxDuration": 15 },
+    "api/get-files.js":      { "maxDuration": 20 },
+    "api/update-status.js":  { "maxDuration": 20 }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" },
+        { "key": "Pragma",        "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options",        "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy",        "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",     "value": "camera=(), microphone=(), geolocation=()" },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://www.googletagmanager.com https://*.cashfree.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.cashfree.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https: blob: data:; connect-src 'self' https://api.cashfree.com https://api.groq.com https://*.supabase.co https://*.supabase.com https://*.backblazeb2.com https://api.resend.com wss://*.supabase.co wss://*.supabase.com; frame-src https://*.cashfree.com https://www.youtube.com https://accounts.google.com; object-src 'none'; worker-src 'self' blob: https://cdnjs.cloudflare.com;"
+        }
+      ]
+    },
+    {
+      "source": "/favicon.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/og-image.PNG",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/og-image.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/tailwind.css",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
+}

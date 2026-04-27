@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZyroEditz&trade; | Securing Portal...</title>
+    <!-- Prevent search engines from indexing this transactional bridge page -->
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="Redirecting to secure payment portal for ZyroEditz order.">
+    <!-- Same fonts used in main site — display=block prevents FOUT on the redirect animation -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=block">
+    <!-- Cashfree SDK V3: defer so it doesn't block paint — called inside DOMContentLoaded -->
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* ── Copied Exactly from index.html ────────────────────────────────── */
+        @keyframes yt-spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+
+        #payRedirectOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #050505;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .pay-redirect-ring {
+            width: 52px;
+            height: 52px;
+            border: 3px solid rgba(255, 26, 26, 0.2);
+            border-top-color: #ff1a1a;
+            border-radius: 50%;
+            animation: yt-spin 0.9s linear infinite;
+        }
+
+        .pay-redirect-label {
+            font-size: 12px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
+        }
+        /* ───────────────────────────────────────────────────────────────────── */
+
+        .error-msg {
+            color: #ff1a1a;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 10px;
+        }
+        .retry-link {
+            color: #ff1a1a;
+            font-size: 11px;
+            text-decoration: underline;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="payRedirectOverlay">
+        <div class="pay-redirect-ring"></div>
+        <p id="status-text" class="pay-redirect-label">Securing payment portal&hellip;</p>
+    </div>
+
+    <script>
+        // FIX H6: Retry-polling for Cashfree SDK (matches index.html pattern)
+        // The SDK script loads with `defer` — on slow mobile connections it may
+        // not have executed yet by DOMContentLoaded. Poll up to 5 times with backoff.
+        async function getCashfreeInstance() {
+            for (let i = 0; i < 5; i++) {
+                if (typeof Cashfree !== 'undefined') {
+                    try { return Cashfree({ mode: 'production' }); } catch (e) { }
+                }
+                await new Promise(r => setTimeout(r, 400 * (i + 1))); // 400, 800, 1200, 1600, 2000ms
+            }
+            return null; // SDK failed to load after retries
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const sessionId = params.get('session_id');
+            const statusEl = document.getElementById('status-text');
+
+            if (!sessionId) {
+                statusEl.innerText = "Error: Invalid Session ID";
+                statusEl.classList.add('error-msg');
+                return;
+            }
+
+            // H-02 FIX: Validate sessionId format before injecting into any URL.
+            // Cashfree session IDs are alphanumeric with hyphens/underscores only.
+            // Blocks open-redirect attempts via crafted ?session_id= values.
+            if (!/^[a-zA-Z0-9_-]{8,128}$/.test(sessionId)) {
+                statusEl.innerText = "Error: Malformed Session ID";
+                statusEl.classList.add('error-msg');
+                return;
+            }
+
+            try {
+                const cashfree = await getCashfreeInstance();
+
+                if (!cashfree) {
+                    // SDK unavailable after retries → direct URL fallback
+                    console.warn('Cashfree SDK unavailable after retries, using direct URL');
+                    window.location.href = `https://payments.cashfree.com/order/#/${sessionId}`;
+                    return;
+                }
+
+                // Launch official checkout flow
+                const result = await cashfree.checkout({
+                    paymentSessionId: sessionId,
+                    redirectTarget: "_self"
+                });
+
+                if (result && result.error) {
+                    console.error(result.error);
+                    statusEl.innerText = result.error.message;
+                    statusEl.classList.add('error-msg');
+                }
+            } catch (err) {
+                console.error(err);
+                statusEl.innerHTML = 'Connection failed. <a class="retry-link" onclick="location.reload()">Tap to retry</a>';
+                statusEl.classList.add('error-msg');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+name: ZyroEditz Deployment Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─────────────────────────────────────────────
+  # CHECK 1: Tailwind Build
+  # Proves the CSS actually builds before deploy
+  # ─────────────────────────────────────────────
+  tailwind-build:
+    name: Tailwind Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Tailwind build
+        run: npm run build
+
+      - name: Verify tailwind.css was generated
+        run: |
+          if [ ! -f tailwind.css ]; then
+            echo "❌ tailwind.css was NOT generated"
+            exit 1
+          fi
+          SIZE=$(wc -c < tailwind.css)
+          echo "tailwind.css size: ${SIZE} bytes"
+          if [ "$SIZE" -lt 5000 ]; then
+            echo "❌ tailwind.css is suspiciously small (${SIZE} bytes) — build may have failed silently"
+            exit 1
+          fi
+          echo "✅ tailwind.css generated successfully (${SIZE} bytes)"
+
+  # ─────────────────────────────────────────────
+  # CHECK 2: Config File Validation
+  # Ensures JSON files are valid + required files exist
+  # ─────────────────────────────────────────────
+  config-validation:
+    name: Config Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate vercel.json
+        run: |
+          python3 -c "import json; json.load(open('vercel.json'))" \
+            && echo "✅ vercel.json is valid JSON" \
+            || (echo "❌ vercel.json has invalid JSON syntax" && exit 1)
+
+      - name: Validate package.json
+        run: |
+          python3 -c "import json; json.load(open('package.json'))" \
+            && echo "✅ package.json is valid JSON" \
+            || (echo "❌ package.json has invalid JSON syntax" && exit 1)
+
+      - name: Check all required files exist
+        run: |
+          REQUIRED=(
+            "index.html"
+            "vercel.json"
+            "package.json"
+            "tailwind.config.js"
+            "src/input.css"
+            "favicon.png"
+            ".gitignore"
+            "api/chat.js"
+            "api/verify-payment.js"
+            "api/webhook.js"
+            "api/upload-files.js"
+            "api/sendInvoice.js"
+            "api/admin-chat.js"
+            "api/admin-data.js"
+            "admin/index.html"
+            "payment-success/index.html"
+            "payment-failed/index.html"
+          )
+          MISSING=0
+          for f in "${REQUIRED[@]}"; do
+            if [ -f "$f" ]; then
+              echo "  ✅ $f"
+            else
+              echo "  ❌ MISSING: $f"
+              MISSING=1
+            fi
+          done
+          if [ $MISSING -eq 1 ]; then
+            echo "❌ One or more required files are missing"
+            exit 1
+          fi
+          echo "✅ All required files present"
+
+      - name: Check build script is defined
+        run: |
+          BUILD=$(python3 -c "import json; d=json.load(open('package.json')); print(d.get('scripts',{}).get('build',''))")
+          if [ -z "$BUILD" ]; then
+            echo "❌ No build script in package.json — Vercel won't run Tailwind"
+            exit 1
+          fi
+          echo "✅ Build script: $BUILD"
+
+  # ─────────────────────────────────────────────
+  # CHECK 3: Security Scan
+  # Stops accidental secret/junk file commits
+  # ─────────────────────────────────────────────
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check no .env files committed
+        run: |
+          FOUND=$(find . -name ".env" -o -name ".env.local" -o -name ".env.production" \
+            | grep -v ".git/" || true)
+          if [ -n "$FOUND" ]; then
+            echo "❌ SECURITY: .env file committed to repository:"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "✅ No .env files committed"
+
+      - name: Check node_modules not committed
+        run: |
+          if [ -d "node_modules" ]; then
+            echo "❌ node_modules/ is committed — add it to .gitignore"
+            exit 1
+          fi
+          echo "✅ node_modules not committed"
+
+      - name: Check tailwind.css not committed (it is a build artifact)
+        run: |
+          if [ -f "tailwind.css" ]; then
+            echo "❌ tailwind.css is committed — it should be built by Vercel, not stored in git"
+            echo "   Add 'tailwind.css' to your .gitignore"
+            exit 1
+          fi
+          echo "✅ tailwind.css is correctly excluded from git"
+
+      - name: Scan for accidental API key patterns in source
+        run: |
+          # Match hardcoded secrets: hex tokens, JWT-format keys (eyJ...), Cashfree secrets
+          BAD=$(grep -rEn \
+            -e "SUPABASE_KEY[[:space:]]*=[[:space:]]*['\"][a-zA-Z0-9._-]{20,}" \
+            -e "CASHFREE_SECRET[[:space:]]*=[[:space:]]*['\"][a-zA-Z0-9._-]{10,}" \
+            -e "(service_role|anon)[[:space:]]*:[[:space:]]*['\"]eyJ[a-zA-Z0-9._-]{40,}" \
+            -e "RESEND_API_KEY[[:space:]]*=[[:space:]]*['\"]re_[a-zA-Z0-9]{20,}" \
+            --include="*.js" --include="*.html" --include="*.json" \
+            . 2>/dev/null | grep -v ".git/" | grep -v "node_modules/" || true)
+          if [ -n "$BAD" ]; then
+            echo "❌ SECURITY: Possible hardcoded secrets found:"
+            echo "$BAD"
+            exit 1
+          fi
+          echo "✅ No hardcoded API keys detected"
+
+      - name: Check for committed _patch scripts (contain plaintext system prompt)
+        run: |
+          PATCHES=$(find . -name "_patch_*.js" -o -name "_patch_*.ps1" -o -name "_patch_*.sh" \
+            | grep -v ".git/" || true)
+          if [ -n "$PATCHES" ]; then
+            echo "❌ SECURITY: One-time patch scripts committed to repo (may contain system prompt / business logic):"
+            echo "$PATCHES"
+            echo "   Add 'admin/_patch_*' to .gitignore and remove from git history."
+            exit 1
+          fi
+          echo "✅ No patch scripts committed"
