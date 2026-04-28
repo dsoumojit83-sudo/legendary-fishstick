@@ -23,12 +23,28 @@ const b2 = new S3Client({
 });
 
 const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
-const B2_PORTFOLIO_BUCKET = process.env.B2_PORTFOLIO_BUCKET || 'zyroeditz-portfolio';
+const B2_PORTFOLIO_BUCKET = process.env.B2_PORTFOLIO_BUCKET || process.env.B2_BUCKET_NAME || 'zyroeditz-portfolio';
 
 // ALLOWED_PORTFOLIO_FILES removed — now validated dynamically from portfolio_items table (see BUG-7 fix)
 
 
 module.exports = async function (req, res) {
+    // Enable CORS for allowed origins (e.g., admin subdomains)
+    const allowedOrigins = ['https://zyroeditz.xyz', 'https://www.zyroeditz.xyz', 'https://admin.zyroeditz.xyz', 'https://zyroeditz.vercel.app'];
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0]);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Vary', 'Origin');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed.' });
     }
