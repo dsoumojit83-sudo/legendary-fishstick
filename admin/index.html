@@ -4019,15 +4019,15 @@
     let _ecommServices = [], _ecommCoupons = [];
 
     function ecommHeaders() {
-        return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (window.authToken || '') };
+        return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (authToken || '') };
     }
 
     async function fetchEcommData() {
-        if (!window.authToken) return;
+        if (!authToken) return;
         try {
             const [sRes, cRes] = await Promise.all([
-                fetch('/api/admin-data?action=getServices', { headers: { 'Authorization': 'Bearer ' + window.authToken } }),
-                fetch('/api/admin-data?action=getCoupons',  { headers: { 'Authorization': 'Bearer ' + window.authToken } })
+                fetch('/api/admin-data?action=getServices', { headers: { 'Authorization': 'Bearer ' + authToken } }),
+                fetch('/api/admin-data?action=getCoupons',  { headers: { 'Authorization': 'Bearer ' + authToken } })
             ]);
             if (sRes.status === 401 || cRes.status === 401) { window.logout && window.logout(); return; }
             const sData = await sRes.json();
