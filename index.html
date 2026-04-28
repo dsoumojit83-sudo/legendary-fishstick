@@ -1628,6 +1628,10 @@
                 <input id="sm-name" type="text" placeholder="Full Name" required style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
                 <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:-8px;margin-top:4px;">Mobile Number</label>
                 <input id="sm-phone" type="tel" placeholder="Mobile Number" required style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+                <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:-8px;margin-top:4px;">Company / Brand Name <span style="text-transform:none;color:#555;">(Optional)</span></label>
+                <input id="sm-company" type="text" placeholder="e.g. Zyro Studio" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+                <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:-8px;margin-top:4px;">Discord Username <span style="text-transform:none;color:#555;">(Optional)</span></label>
+                <input id="sm-discord" type="text" placeholder="e.g. username#1234" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
                 <button type="submit" id="sm-btn" style="background:#ff1a1a;color:#000;border:none;border-radius:10px;padding:13px;font-weight:900;font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Roboto',sans-serif;transition:opacity .2s;margin-top:12px;">Save Changes</button>
             </form>
         </div>
@@ -3414,6 +3418,19 @@
                     });
                 });
 
+                couponInp.addEventListener('input', function() {
+                    if (currentValidatedCoupon !== null) {
+                        currentValidatedCoupon = null;
+                        const cart = getCart();
+                        const total = cart.reduce((s, i) => s + i.price * (i.qty || 1), 0);
+                        payAmount.textContent = '₹' + total.toLocaleString('en-IN');
+                        applyCouponBtn.className = 'bg-white/10 text-white px-4 py-2 rounded text-xs font-bold hover:bg-white hover:text-black transition-colors whitespace-nowrap';
+                        applyCouponBtn.textContent = 'Apply';
+                        applyCouponBtn.disabled = false;
+                        couponMsg.classList.add('hidden');
+                    }
+                });
+
                 applyCouponBtn.addEventListener('click', async function() {
                     const cart = getCart();
                     if (cart.length === 0) return;
@@ -4144,6 +4161,8 @@
         const user = session.user;
         document.getElementById('sm-name').value = user.user_metadata?.full_name || '';
         document.getElementById('sm-phone').value = user.user_metadata?.phone || '';
+        document.getElementById('sm-company').value = user.user_metadata?.company_name || '';
+        document.getElementById('sm-discord').value = user.user_metadata?.discord_username || '';
         
         document.getElementById('settings-modal').style.display = 'flex';
     }
@@ -4156,6 +4175,8 @@
         const succEl = document.getElementById('sm-success');
         const name = document.getElementById('sm-name').value.trim();
         const phone = document.getElementById('sm-phone').value.trim();
+        const company = document.getElementById('sm-company').value.trim();
+        const discord = document.getElementById('sm-discord').value.trim();
         
         errEl.style.display = 'none';
         succEl.style.display = 'none';
@@ -4166,7 +4187,7 @@
             if (!window._supabaseClient) throw new Error('Auth service not ready.');
             
             const { error } = await window._supabaseClient.auth.updateUser({
-                data: { full_name: name, phone: phone }
+                data: { full_name: name, phone: phone, company_name: company, discord_username: discord }
             });
             if (error) throw error;
             
