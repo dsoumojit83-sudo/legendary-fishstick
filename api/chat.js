@@ -83,25 +83,25 @@ module.exports = async function (req, res) {
         const deadlineMap = await fetchDeadlineMap();
 
         // ── Validate user-supplied fields before sending to Cashfree / Supabase ──
-        // Cashfree strictly requires a valid 10-digit phone number.
-        const phoneRegex = /^[0-9]{10}$/;
-        // B5 FIX: phone is now REQUIRED — reject if missing, not just if malformed.
-        // A fake default (9999999999) creates junk customer records in Cashfree.
-        if (!phone || !phoneRegex.test(String(phone).trim())) {
-            return res.status(400).json({ reply: "Please provide a valid 10-digit phone number (no spaces or country code)." });
-        }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (email && !emailRegex.test(String(email).trim())) {
-            return res.status(400).json({ reply: "Please provide a valid email address." });
-        }
-        if (name && String(name).trim().length > 100) {
-            return res.status(400).json({ reply: "Name is too long. Please use a shorter name." });
+        if (action !== 'validateCoupon') {
+            // Cashfree strictly requires a valid 10-digit phone number.
+            const phoneRegex = /^[0-9]{10}$/;
+            // B5 FIX: phone is now REQUIRED — reject if missing, not just if malformed.
+            if (!phone || !phoneRegex.test(String(phone).trim())) {
+                return res.status(400).json({ reply: "Please provide a valid 10-digit phone number (no spaces or country code)." });
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email && !emailRegex.test(String(email).trim())) {
+                return res.status(400).json({ reply: "Please provide a valid email address." });
+            }
+            if (name && String(name).trim().length > 100) {
+                return res.status(400).json({ reply: "Name is too long. Please use a shorter name." });
+            }
         }
 
         const safeName  = name  ? String(name).trim().substring(0, 100)  : "Zyro Client";
         const safeEmail = email ? String(email).trim().substring(0, 200) : "zyroeditz.official@gmail.com";
-        const safePhone = String(phone).trim(); // always valid — guarded above
-
+        const safePhone = phone ? String(phone).trim() : "9999999999";
         const orderId = generateOrderId();
 
         // ── Compute Total Amount from Cart ──
