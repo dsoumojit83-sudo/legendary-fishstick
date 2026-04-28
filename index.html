@@ -3633,6 +3633,10 @@
                     const isOnline = data.is_online !== false;
                     window.__studioIsOnline = isOnline;
 
+                    // Store Supabase credentials for client auth init polling
+                    if (data.supabaseUrl)    window.__supaUrl      = data.supabaseUrl;
+                    if (data.supabaseAnonKey) window.__supaAnonKey = data.supabaseAnonKey;
+
                     // ── Chatbot header dot ────────────────────────────────────
                     const dot = document.getElementById('chatbot-status-dot');
                     const label = document.getElementById('chatbot-status-text');
