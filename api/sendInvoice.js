@@ -1,9 +1,20 @@
 const { Resend } = require("resend");
 const PDFDocument = require("pdfkit");
 const { createClient } = require('@supabase/supabase-js');
-// BUG FIX #6: Removed unused 'pino' import — this file uses its own log() function.
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// Fetch order_items for multi-item invoices; falls back to null (single-item mode)
+async function fetchOrderItems(orderId) {
+    try {
+        const { data, error } = await supabase
+            .from('order_items')
+            .select('service_name, unit_price, quantity, subtotal')
+            .eq('order_id', orderId);
+        if (error || !data || !data.length) return null;
+        return data;
+    } catch { return null; }
+}
 
 // ─── STRUCTURED LOGGER ───────────────────────────────────────────────────────
 // All logs use a prefix so they are easy to filter in the Vercel logs dashboard.
@@ -81,6 +92,13 @@ async function sendInvoice(order) {
     // Initialize Resend instance
     const resend = new Resend(process.env.RESEND_API_KEY);
 
+    // --- Fetch line items BEFORE Promise (await only works in async scope) ---
+    const orderItems = await fetchOrderItems(order.order_id);
+    const isMultiItem = orderItems && orderItems.length > 0;
+    const invoiceTotal = isMultiItem
+        ? orderItems.reduce((sum, item) => sum + (Number(item.subtotal) || Number(item.unit_price) * (item.quantity || 1)), 0)
+        : Number(order.amount) || 0;
+
     return new Promise((resolve, reject) => {
         try {
             // --- Date Formatting Logic ---
@@ -88,8 +106,6 @@ async function sendInvoice(order) {
             const formattedToday = new Date().toLocaleDateString('en-US', dateOptions);
             let formattedDeadline = "TBD";
             if (order.deadline_date) {
-                // Parse YYYY-MM-DD as a LOCAL date (not UTC midnight) to avoid
-                // timezone off-by-one day on the PDF invoice.
                 const [dy, dm, dd] = order.deadline_date.split('-').map(Number);
                 formattedDeadline = new Date(dy, dm - 1, dd).toLocaleDateString('en-US', dateOptions);
             }
@@ -241,29 +257,49 @@ async function sendInvoice(order) {
                 .text('EST. DELIVERY', 295, 283, { width: 120, align: 'center' })
                 .text('AMOUNT', 430, 283, { width: 100, align: 'right' });
 
-            // ── TABLE ROW ──
-            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(`${sanitizeText(order.service)} Package`, 65, 323); // UPDATED
-            doc.fillColor('#666666').fontSize(10).font('Helvetica')
-                .text('Premium cinematic editing and post-production. Includes 1 free revision.', 65, 341, { width: 220 });
-            doc.fillColor('#000000').fontSize(14).font('Helvetica').text(formattedDeadline, 295, 331, { width: 120, align: 'center' });
-            doc.fillColor('#000000').fontSize(14).text(`Rs.${safeAmount(order.amount)}`, 430, 331, { width: 100, align: 'right' }); // UPDATED: safeAmount strips \u00B9/\u20B9 junk; Rs. is ASCII-safe
+            // ── TABLE ROW(S) — multi-item if order_items exist, else single-item fallback ──
+            let rowY = 316;
+            const ROW_HEIGHT = 58;
+            if (isMultiItem) {
+                orderItems.forEach((item, i) => {
+                    const lineTotal = Number(item.subtotal) || Number(item.unit_price) * (item.quantity || 1);
+                    doc.fillColor('#000000').fontSize(13).font('Helvetica-Bold').text(`${sanitizeText(item.service_name)}`, 65, rowY + 7);
+                    doc.fillColor('#666666').fontSize(9).font('Helvetica').text(`Qty: ${item.quantity || 1}`, 65, rowY + 24);
+                    doc.fillColor('#000000').fontSize(13).font('Helvetica').text(formattedDeadline, 295, rowY + 13, { width: 120, align: 'center' });
+                    doc.fillColor('#000000').fontSize(13).text(`Rs.${safeAmount(lineTotal)}`, 430, rowY + 13, { width: 100, align: 'right' });
+                    if (i < orderItems.length - 1) {
+                        doc.moveTo(50, rowY + ROW_HEIGHT - 2).lineTo(545, rowY + ROW_HEIGHT - 2).lineWidth(0.5).strokeColor('#eeeeee').stroke();
+                    }
+                    rowY += ROW_HEIGHT;
+                });
+            } else {
+                doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text(`${sanitizeText(order.service)} Package`, 65, rowY + 7);
+                doc.fillColor('#666666').fontSize(10).font('Helvetica')
+                    .text('Premium cinematic editing and post-production. Includes 1 free revision.', 65, rowY + 25, { width: 220 });
+                doc.fillColor('#000000').fontSize(14).font('Helvetica').text(formattedDeadline, 295, rowY + 15, { width: 120, align: 'center' });
+                doc.fillColor('#000000').fontSize(14).text(`Rs.${safeAmount(order.amount)}`, 430, rowY + 15, { width: 100, align: 'right' });
+                rowY += ROW_HEIGHT;
+            }
 
             // Row divider
-            doc.moveTo(50, 382).lineTo(545, 382).lineWidth(1).strokeColor('#eeeeee').stroke();
+            const dividerY = rowY + 6;
+            doc.moveTo(50, dividerY).lineTo(545, dividerY).lineWidth(1).strokeColor('#eeeeee').stroke();
 
             // ── TOTAL ROW ──
-            doc.rect(50, 394, 495, 44).fill('#f8f8f8');
-            doc.moveTo(50, 438).lineTo(545, 438).lineWidth(2).strokeColor('#050505').stroke();
+            const totalY = dividerY + 12;
+            doc.rect(50, totalY, 495, 44).fill('#f8f8f8');
+            doc.moveTo(50, totalY + 44).lineTo(545, totalY + 44).lineWidth(2).strokeColor('#050505').stroke();
             doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold')
-                .text('TOTAL PAID:', 50, 409, { width: 370, align: 'right' });
+                .text('TOTAL PAID:', 50, totalY + 15, { width: 370, align: 'right' });
             doc.fillColor('#ff1a1a').fontSize(18).font('Helvetica-Bold')
-                .text(`Rs.${safeAmount(order.amount)}`, 390, 405, { width: 150, align: 'right' }); // UPDATED
+                .text(`Rs.${safeAmount(invoiceTotal)}`, 390, totalY + 11, { width: 150, align: 'right' });
 
             // ── PAYMENT STATUS ──
-            doc.fillColor('#888888').fontSize(12).font('Helvetica-Bold').text('PAYMENT STATUS', 50, 502);
-            doc.fillColor('#22c55e').fontSize(18).font('Helvetica-Bold').text('Paid in Full', 50, 520, { continued: false }); // UPDATED: continued:false kills stray PDFKit cursor bleed from earlier {continued:true} chain
+            const statusY = totalY + 68;
+            doc.fillColor('#888888').fontSize(12).font('Helvetica-Bold').text('PAYMENT STATUS', 50, statusY);
+            doc.fillColor('#22c55e').fontSize(18).font('Helvetica-Bold').text('Paid in Full', 50, statusY + 18, { continued: false });
             doc.fillColor('#888888').fontSize(12).font('Helvetica-Oblique')
-                .text('Thanks for giving us a chance to serve you.', 50, 544);
+                .text('Thanks for giving us a chance to serve you.', 50, statusY + 42);
 
             // ── FOOTER ──
             doc.moveTo(50, 750).lineTo(545, 750).lineWidth(1).strokeColor('#cccccc').stroke();

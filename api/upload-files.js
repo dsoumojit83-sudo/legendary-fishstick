@@ -1,9 +1,23 @@
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { createClient } = require('@supabase/supabase-js');
 
 // Supabase used to verify orderId belongs to a real order before issuing upload URL
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// ── IP Rate limiter: 10 upload URL requests per IP per 60s ──────────────────
+const _uploadRateMap = {};
+const UPLOAD_RATE_MAX = 10;
+const UPLOAD_RATE_WINDOW_MS = 60 * 1000;
+function isUploadRateLimited(ip) {
+    const now = Date.now();
+    const recent = (_uploadRateMap[ip] || []).filter(t => now - t < UPLOAD_RATE_WINDOW_MS);
+    if (recent.length >= UPLOAD_RATE_MAX) { _uploadRateMap[ip] = recent; return true; }
+    recent.push(now); _uploadRateMap[ip] = recent;
+    return false;
+}
+
+const MAX_FILES_PER_ORDER = 20; // prevent bucket spam from a single order
 
 // ── Backblaze B2 S3-compatible client ────────────────────────────────────────
 const rawEndpoint = process.env.B2_ENDPOINT || '';
@@ -179,6 +193,12 @@ module.exports = async function (req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+    // ── Rate limit: 10 presign requests per IP per 60s ──────────────────────
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+    if (isUploadRateLimited(clientIp)) {
+        return res.status(429).json({ error: 'Too many upload requests. Please wait a moment.' });
+    }
+
     // ── Block until CORS is confirmed set on B2 ─────────────────────────
     // On cold start, the first request waits here until b2_update_bucket finishes.
     // Subsequent requests in the same instance resolve instantly (promise is cached).
@@ -207,8 +227,23 @@ module.exports = async function (req, res) {
     if (authError || !existingOrder) {
         return res.status(403).json({ error: 'Invalid or unknown order ID.' });
     }
-    if (existingOrder.status === 'completed') {
-        return res.status(403).json({ error: 'Cannot upload files to a completed order.' });
+    // FIX #13: Block uploads for any non-active order — completed, refunded, or cancelled
+    const blockedStatuses = ['completed', 'refunded', 'cancelled', 'canceled'];
+    if (blockedStatuses.includes(existingOrder.status)) {
+        return res.status(403).json({ error: `Cannot upload files to a ${existingOrder.status} order.` });
+    }
+
+    // ── Per-order file cap: prevent bucket spam ──────────────────────────────
+    try {
+        const listResp = await b2.send(new ListObjectsV2Command({
+            Bucket: B2_BUCKET, Prefix: `${orderId}/`, MaxKeys: MAX_FILES_PER_ORDER + 1
+        }));
+        if ((listResp.KeyCount || 0) >= MAX_FILES_PER_ORDER) {
+            return res.status(400).json({ error: `Maximum file limit (${MAX_FILES_PER_ORDER}) reached for this order.` });
+        }
+    } catch (e) {
+        // Non-fatal — if B2 list fails, don't block the upload
+        console.warn('[upload-files] File count check failed:', e.message);
     }
 
     const safe = fileName.replace(/[^\w.\-]/g, '_').substring(0, 200);

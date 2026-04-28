@@ -69,6 +69,20 @@ module.exports = async function (req, res) {
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
     try {
+        // ── Services catalog (GET ?action=getServices) ──────────────────────────
+        if (req.method === 'GET' && req.query.action === 'getServices') {
+            const { data, error } = await supabase.from('services').select('*').order('price');
+            if (error) throw error;
+            return res.status(200).json({ services: data });
+        }
+
+        // ── Coupons listing (GET ?action=getCoupons) ──────────────────────────────
+        if (req.method === 'GET' && req.query.action === 'getCoupons') {
+            const { data, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            return res.status(200).json({ coupons: data });
+        }
+
         // ── Portfolio admin listing (GET ?type=portfolio) ────────────────────────
         if (req.method === 'GET' && req.query.type === 'portfolio') {
             const { data, error } = await supabase
@@ -138,6 +152,85 @@ module.exports = async function (req, res) {
                 return res.status(200).json({ ok: true });
             }
 
+            // ── Services CRUD ────────────────────────────────────────────────────
+            if (action === 'createService') {
+                const { name, price, delivery_days, description, is_active } = body;
+                if (!name || price == null) return res.status(400).json({ error: 'name and price are required.' });
+                const { data, error } = await supabase.from('services').insert([{
+                    name: name.trim(),
+                    price: parseFloat(price),
+                    delivery_days: delivery_days || null,
+                    description: description || null,
+                    is_active: is_active !== false
+                }]).select().single();
+                if (error) throw error;
+                return res.status(201).json({ service: data });
+            }
+
+            if (action === 'updateService') {
+                const { id } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const allowed = ['name','price','delivery_days','description','is_active'];
+                const updates = {};
+                allowed.forEach(k => { if (k in body) updates[k] = body[k]; });
+                if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields.' });
+                if (updates.name) updates.name = updates.name.trim();
+                if (updates.price != null) updates.price = parseFloat(updates.price);
+                const { data, error } = await supabase.from('services').update(updates).eq('id', id).select().single();
+                if (error) throw error;
+                return res.status(200).json({ service: data });
+            }
+
+            if (action === 'deleteService') {
+                const { id } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const { error } = await supabase.from('services').delete().eq('id', id);
+                if (error) throw error;
+                return res.status(200).json({ ok: true });
+            }
+
+            // ── Coupons CRUD ─────────────────────────────────────────────────────
+            if (action === 'createCoupon') {
+                const { code, discount_type, discount_value, min_order_value, max_uses, expires_at, is_active } = body;
+                if (!code || !discount_value) return res.status(400).json({ error: 'code and discount_value are required.' });
+                const { data, error } = await supabase.from('coupons').insert([{
+                    code: code.toUpperCase().trim(),
+                    discount_type: discount_type || 'percent',
+                    discount_value: parseFloat(discount_value),
+                    min_order_value: parseFloat(min_order_value) || 0,
+                    max_uses: parseInt(max_uses) || 0,
+                    times_used: 0,
+                    expires_at: expires_at || null,
+                    is_active: is_active !== false
+                }]).select().single();
+                if (error) throw error;
+                return res.status(201).json({ coupon: data });
+            }
+
+            if (action === 'updateCoupon') {
+                const { id } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const allowed = ['code','discount_type','discount_value','min_order_value','max_uses','expires_at','is_active'];
+                const updates = {};
+                allowed.forEach(k => { if (k in body) updates[k] = body[k]; });
+                if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields.' });
+                if (updates.code) updates.code = updates.code.toUpperCase().trim();
+                if (updates.discount_value != null) updates.discount_value = parseFloat(updates.discount_value);
+                if (updates.min_order_value != null) updates.min_order_value = parseFloat(updates.min_order_value);
+                if (updates.max_uses != null) updates.max_uses = parseInt(updates.max_uses);
+                const { data, error } = await supabase.from('coupons').update(updates).eq('id', id).select().single();
+                if (error) throw error;
+                return res.status(200).json({ coupon: data });
+            }
+
+            if (action === 'deleteCoupon') {
+                const { id } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const { error } = await supabase.from('coupons').delete().eq('id', id);
+                if (error) throw error;
+                return res.status(200).json({ ok: true });
+            }
+
             return res.status(400).json({ error: 'Unknown action.' });
         }
 
@@ -189,25 +282,20 @@ module.exports = async function (req, res) {
             }
 
             // Active Pipeline & Urgent Tasks Logistics
-            if (order.status === 'pending' || order.status === 'working' || order.status === 'paid') {
+            // FIX #5: Only count genuinely active (paid/working) orders — 'pending' means
+            // payment not received yet, so no real work has started. Excluding 'pending'
+            // from activeProjects gives an accurate count of in-flight projects.
+            if (order.status === 'working' || order.status === 'paid') {
                 activeProjects++;
 
-                // BUG FIX #8: Only count real, paid/in-progress projects as urgent.
-                // 'pending' = payment not received yet, so deadline pressure isn't real yet.
-                if ((order.status === 'working' || order.status === 'paid') && order.deadline_date) {
-                    // Strip the time from 'now' to ensure accurate day-diff calculation
+                // Flag as urgent if deadline is within 2 days
+                if (order.deadline_date) {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    // Parse YYYY-MM-DD as local date (not UTC midnight) to avoid IST off-by-one
                     const [dy, dm, dd] = order.deadline_date.split('-').map(Number);
                     const deadline = new Date(dy, dm - 1, dd);
-
-                    const diffTime = deadline - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                    if (diffDays <= 2 && diffDays >= 0) {
-                        urgentTasks++;
-                    }
+                    const diffDays = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+                    if (diffDays <= 2 && diffDays >= 0) urgentTasks++;
                 }
             }
         });
@@ -215,8 +303,9 @@ module.exports = async function (req, res) {
         // Check B2 for ACTIVE orders only (pending/in_progress/paid) — not every historical order.
         // This prevents a Vercel timeout as the total order count grows over time.
         // Uses the 60s module-level cache to avoid N concurrent B2 calls per dashboard refresh.
+        // FIX #5: Only check B2 for genuinely active (paid/working) orders — not unpaid pending
         const activeOrders = orders.filter(o =>
-            o.status === 'pending' || o.status === 'working' || o.status === 'paid'
+            o.status === 'working' || o.status === 'paid'
         );
 
         // Build a quick lookup map: order_id -> has_files (result from cache or fresh B2 calls)

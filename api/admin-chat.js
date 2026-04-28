@@ -13,6 +13,23 @@ const groq = new OpenAI({
     apiKey: process.env.GROQ_API_KEY
 });
 
+// Fetch live services from DB for system prompt injection
+async function fetchServicesForPrompt() {
+    try {
+        const { data, error } = await supabase
+            .from('services')
+            .select('name, price, delivery_days, description')
+            .eq('is_active', true)
+            .order('price');
+        if (error || !data || !data.length) return null;
+        return data.map(s => {
+            const days = s.delivery_days || 'varies';
+            const desc = s.description || '';
+            return `- ${s.name}: Rs.${s.price} — ${desc}${desc ? ' ' : ''}(Delivery: ${days})`;
+        }).join('\n');
+    } catch { return null; }
+}
+
 const B2_ENDPOINT = process.env.B2_ENDPOINT || '';
 const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-west-004';
 
@@ -673,6 +690,18 @@ module.exports = async function (req, res) {
         const orders = allOrders || [];
         const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
 
+        // Fetch live services for system prompt
+        const fetchedServicesBlock = await fetchServicesForPrompt();
+        const _fallbackServices = [
+            '- Short Form: Rs.200 — YouTube Shorts, Reels (Delivery: 2 Days)',
+            '- Long Form: Rs.500 — Full YouTube videos, vlogs (Delivery: 4 Days)',
+            '- Motion Graphics: Rs.400 — Effects, branding (Delivery: 4 Days)',
+            '- Thumbnails: Rs.100 — Standalone designs (Delivery: 1 Day)',
+            '- Sound Design: Rs.200 — Audio editing, SFX, music sync (Delivery: 3 Days)',
+            '- Color Grading & Correction: Rs.175 — Cinematic color work (Delivery: 1 Day)',
+        ].join('\n');
+        const liveServicesBlock = fetchedServicesBlock || _fallbackServices;
+
         // BUG FIX D+E: Only count paid/completed orders as real revenue.
         // Previously summed ALL orders incl. refunded + pending = inflated numbers.
         const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'completed');
@@ -839,12 +868,7 @@ PERSONALITY & STYLE:
 - Use emojis naturally where they add personality or clarity — e.g. ✅ for success, ⚠️ for warnings, 🗑️ for deletions, 💸 for refunds, 🎬 for new orders, 📋 for order summaries, 🔄 for status changes. Don't spam them — 1-2 per message max, only where they genuinely fit.
 
 SERVICES & PRICING:
-- Short Form: Rs.200 — YouTube Shorts, Reels
-- Long Form: Rs.500 — Full YouTube videos, vlogs
-- Motion Graphics: Rs.400 — Effects, branding
-- Thumbnails: Rs.100 — Standalone designs
-- Sound Design: Rs.200 — Audio editing, SFX, music sync
-- Color Grading & Correction: Rs.175 — Cinematic color work, correction
+${liveServicesBlock}
 
 Revision policy: 1 free revision included with every order.
 Refund policy: Full refund if client isn't happy with the final cut.

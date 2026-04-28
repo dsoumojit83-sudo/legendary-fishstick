@@ -4,6 +4,22 @@ const sendInvoice = require('./sendInvoice');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+// ── Retry helper with exponential backoff ─────────────────────────────────────
+// Attempts fn up to maxAttempts times; waits 2^attempt * 500ms between tries.
+async function withRetry(fn, maxAttempts = 3, label = '') {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            await fn();
+            return; // success
+        } catch (err) {
+            const isLast = attempt === maxAttempts;
+            console.error(`[ZYRO][webhook][RETRY] ${label} attempt ${attempt}/${maxAttempts} FAILED:`, err.message);
+            if (isLast) throw err;
+            await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 500)); // 1s, 2s, 4s...
+        }
+    }
+}
+
 // ── Disable Vercel's auto body-parser so we can capture the raw body ──
 // Cashfree signs the EXACT raw HTTP body bytes. If Vercel parses JSON first and we
 // re-stringify it, key order / whitespace may differ → HMAC mismatch → false 401.
@@ -109,12 +125,18 @@ const _handler = async function(req, res) {
                 if (dbError) {
                     console.error(`[ZYRO][webhook][ERROR] ${new Date().toISOString()} | order=${orderId} | DB update to 'paid' FAILED:`, dbError.message);
                 } else {
-                    console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | DB updated to 'paid'. Firing sendInvoice()...`);
+                    console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | DB updated to 'paid'. Firing sendInvoice() with retry...`);
                     try {
-                        await sendInvoice({ ...orderData, status: 'paid' });
+                        await withRetry(
+                            () => sendInvoice({ ...orderData, status: 'paid' }),
+                            3,
+                            `sendInvoice(${orderId})`
+                        );
                         console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | Invoice email sent successfully.`);
                     } catch (invoiceErr) {
-                        console.error(`[ZYRO][webhook][ERROR] ${new Date().toISOString()} | order=${orderId} | sendInvoice() FAILED:`, invoiceErr.message);
+                        console.error(`[ZYRO][webhook][ERROR] ${new Date().toISOString()} | order=${orderId} | sendInvoice() FAILED after 3 retries:`, invoiceErr.message);
+                        // Mark invoice_failed so it can be manually retried from admin
+                        await supabase.from('orders').update({ project_notes: (orderData.project_notes ? orderData.project_notes + ' | ' : '') + '[INVOICE_FAILED]' }).eq('order_id', orderId);
                     }
                 }
             }

@@ -22,8 +22,8 @@ function isChatRateLimited(ip) {
     return false;
 }
 
-// --- DEADLINE TIMETABLE ---
-const deadlineMap = {
+// --- DEADLINE TIMETABLE (fallback if DB unreachable) ---
+const _defaultDeadlineMap = {
     "Short Form": 2,
     "Long Form": 4,
     "Motion Graphics": 4,
@@ -31,6 +31,24 @@ const deadlineMap = {
     "Sound Design": 3,
     "Coloring": 1
 };
+
+// Fetch live services from DB — returns { name → delivery_days_int }
+async function fetchDeadlineMap() {
+    try {
+        const { data, error } = await supabase
+            .from('services')
+            .select('name, delivery_days, price')
+            .eq('is_active', true);
+        if (error || !data || !data.length) return _defaultDeadlineMap;
+        const map = {};
+        data.forEach(s => {
+            // delivery_days may be "3-5 Days" or "3" — extract first integer
+            const days = parseInt(String(s.delivery_days || '').match(/\d+/)?.[0] || '3');
+            map[s.name] = days;
+        });
+        return map;
+    } catch { return _defaultDeadlineMap; }
+}
 
 module.exports = async function (req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -47,6 +65,22 @@ module.exports = async function (req, res) {
         if (!selectedService || !amount) {
             return res.status(400).json({ reply: "Please select a valid service and pricing to proceed." });
         }
+
+        // FIX #14: Server-side studio Away check — the frontend check can be bypassed
+        // by calling this API directly. Enforce the studio status gate at the API level.
+        try {
+            const { data: studioConfig } = await supabase
+                .from('studio_config')
+                .select('is_online')
+                .eq('id', 1)
+                .single();
+            if (studioConfig && studioConfig.is_online === false) {
+                return res.status(503).json({ reply: 'ZyroEditz\u2122 Studio is currently closed and not accepting new orders. Please check back soon or reach out via email.' });
+            }
+        } catch { /* If studio_config table doesn't exist, allow order creation */ }
+
+        // Load live deadline map from DB
+        const deadlineMap = await fetchDeadlineMap();
 
         // ── Validate user-supplied fields before sending to Cashfree / Supabase ──
         // Cashfree strictly requires a valid 10-digit phone number.

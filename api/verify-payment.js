@@ -122,7 +122,11 @@ module.exports = async function (req, res) {
                 return res.status(200).json({ already_paid: true });
             }
 
-            // 2. Fetch the existing Cashfree order to get its payment_session_id.
+            // FIX #4: Store the new retry order ID in Supabase so the webhook can
+            // find and confirm the payment. Without this, the webhook fires with the
+            // new _R order_id which doesn't exist in the DB — payment is lost.
+            const retryOrderId = order_id + '_R' + Date.now().toString().slice(-4);
+
             let paymentSessionId = null;
             try {
                 const cfRes = await axios.get(`https://api.cashfree.com/pg/orders/${order_id}`, {
@@ -134,24 +138,24 @@ module.exports = async function (req, res) {
                 });
                 paymentSessionId = cfRes.data.payment_session_id || null;
             } catch (cfErr) {
-                // Cashfree order doesn't exist or expired, fall back to creating a new one
+                // Cashfree order doesn't exist or expired — create a fresh one
                 if (cfErr.response?.status === 404 || !paymentSessionId) {
                     const cleanPhone = order.client_phone
                         ? String(order.client_phone).replace(/\D/g, '').slice(-10)
                         : '9999999999';
 
                     const freshRes = await axios.post('https://api.cashfree.com/pg/orders', {
-                        order_id: order_id + '_R' + Date.now().toString().slice(-4),
+                        order_id: retryOrderId,
                         order_amount: parseFloat(Number(order.amount).toFixed(2)),
                         order_currency: 'INR',
                         customer_details: {
-                            customer_id: order_id,
+                            customer_id: retryOrderId,
                             customer_name: order.client_name || 'Zyro Client',
                             customer_email: order.client_email || 'zyroeditz.official@gmail.com',
                             customer_phone: cleanPhone
                         },
                         order_meta: {
-                            return_url: `https://zyroeditz.xyz/payment-success?order_id=${order_id}`
+                            return_url: `https://zyroeditz.xyz/payment-success?order_id=${retryOrderId}`
                         }
                     }, {
                         headers: {
@@ -162,6 +166,20 @@ module.exports = async function (req, res) {
                         }
                     });
                     paymentSessionId = freshRes.data.payment_session_id;
+
+                    // FIX #4: Insert the retry order into Supabase so the webhook
+                    // can find it by the new _R order_id when payment completes.
+                    await supabase.from('orders').insert([{
+                        order_id: retryOrderId,
+                        client_name: order.client_name,
+                        client_email: order.client_email,
+                        client_phone: order.client_phone,
+                        service: order.service,
+                        amount: order.amount,
+                        status: 'pending',
+                        deadline_date: order.deadline_date
+                    }]);
+                    log('INFO', order_id, `Retry order created: ${retryOrderId} inserted into DB.`);
                 } else {
                     throw cfErr;
                 }
@@ -171,7 +189,7 @@ module.exports = async function (req, res) {
                 return res.status(500).json({ error: 'Could not retrieve payment session from gateway.' });
             }
 
-            return res.status(200).json({ paymentSessionId, order_id });
+            return res.status(200).json({ paymentSessionId, order_id: retryOrderId });
         }
 
         log('INFO', order_id, 'Verification request received. Calling Cashfree API...');
