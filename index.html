@@ -1555,21 +1555,51 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <div id="login-modal" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(5,5,5,0.92);backdrop-filter:blur(20px);align-items:center;justify-content:center;">
-        <div style="background:#0a0a0a;border:1px solid rgba(255,26,26,0.2);border-radius:16px;padding:36px;width:100%;max-width:400px;margin:16px;position:relative;">
-            <button onclick="closeLoginModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#666;cursor:pointer;font-size:20px;">&times;</button>
-            <div style="text-align:center;margin-bottom:28px;">
-                <h2 style="font-size:22px;font-weight:900;font-family:'Roboto',sans-serif;">Zyro<span style="color:#ff1a1a;">Editz</span></h2>
-                <p style="font-size:11px;letter-spacing:.3em;color:#555;margin-top:6px;text-transform:uppercase;">Account Access</p>
+    <!-- Login Modal — Google OAuth + Email/Password -->
+    <div id="login-modal" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(5,5,5,0.92);backdrop-filter:blur(20px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeLoginModal()">
+        <div style="background:#0a0a0a;border:1px solid rgba(255,26,26,0.15);border-radius:20px;padding:40px 36px;width:100%;max-width:420px;margin:16px;position:relative;box-shadow:0 0 60px rgba(255,26,26,0.06);">
+            <button onclick="closeLoginModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#555;cursor:pointer;font-size:20px;line-height:1;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#555'">&times;</button>
+
+            <!-- Brand header -->
+            <div style="text-align:center;margin-bottom:32px;">
+                <h2 style="font-size:24px;font-weight:900;font-family:'Roboto',sans-serif;margin:0;">Zyro<span style="color:#ff1a1a;">Editz</span><sup style="font-size:.4em;font-weight:300;color:#777;">™</sup></h2>
+                <p style="font-size:10px;letter-spacing:.4em;color:#444;margin-top:8px;text-transform:uppercase;">Client Account Access</p>
             </div>
-            <div id="lm-error" style="display:none;background:rgba(255,26,26,.08);border:1px solid rgba(255,26,26,.25);border-radius:8px;padding:10px 14px;color:#f87171;font-size:12px;margin-bottom:16px;text-align:center;"></div>
-            <form id="lm-form" onsubmit="handleLogin(event)" style="display:flex;flex-direction:column;gap:14px;">
-                <input id="lm-email" type="email" placeholder="Email address" required style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;">
-                <input id="lm-pass" type="password" placeholder="Password" required style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;">
-                <button type="submit" id="lm-btn" style="background:#ff1a1a;color:#000;border:none;border-radius:10px;padding:14px;font-weight:900;font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Roboto',sans-serif;">Sign In</button>
+
+            <!-- Error box -->
+            <div id="lm-error" style="display:none;background:rgba(255,26,26,.08);border:1px solid rgba(255,26,26,.25);border-radius:10px;padding:10px 14px;color:#f87171;font-size:12px;margin-bottom:20px;text-align:center;"></div>
+
+            <!-- Google Sign-In Button -->
+            <button id="lm-google-btn" onclick="handleGoogleSignIn()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#111;border:none;border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;transition:transform .15s,box-shadow .15s;margin-bottom:20px;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 8px 24px rgba(255,255,255,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                <!-- Google SVG logo -->
+                <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                    <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+            </button>
+
+            <!-- Divider -->
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                <div style="flex:1;height:1px;background:rgba(255,255,255,.07);"></div>
+                <span style="color:#444;font-size:11px;letter-spacing:.15em;text-transform:uppercase;">or email</span>
+                <div style="flex:1;height:1px;background:rgba(255,255,255,.07);"></div>
+            </div>
+
+            <!-- Email / Password form -->
+            <form id="lm-form" onsubmit="handleLogin(event)" style="display:flex;flex-direction:column;gap:12px;">
+                <input id="lm-email" type="email" placeholder="Email address" autocomplete="email" required
+                    style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;"
+                    onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+                <input id="lm-pass" type="password" placeholder="Password" autocomplete="current-password" required
+                    style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;"
+                    onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+                <button type="submit" id="lm-btn" style="background:#ff1a1a;color:#000;border:none;border-radius:10px;padding:13px;font-weight:900;font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Roboto',sans-serif;transition:opacity .2s;">Sign In</button>
             </form>
-            <p style="text-align:center;color:#444;font-size:11px;margin-top:20px;">Don't have an account? <a href="/payment-success" style="color:#ff1a1a;text-decoration:none;">Track order</a> with your Order ID.</p>
+
+            <p style="text-align:center;color:#3a3a3a;font-size:11px;margin-top:20px;line-height:1.7;">Track your order at <a href="/payment-success" style="color:#ff1a1a;text-decoration:none;">payment-success</a> &nbsp;·&nbsp; By signing in you agree to our <span style="color:#555;">Terms</span></p>
         </div>
     </div>
 
@@ -3943,6 +3973,35 @@
         if (e.target === this) closeLoginModal();
     });
 
+    // ── GOOGLE SIGN-IN ─────────────────────────────────────────────────────
+    async function handleGoogleSignIn() {
+        const btn = document.getElementById('lm-google-btn');
+        const errEl = document.getElementById('lm-error');
+        errEl.style.display = 'none';
+        if (!window._supabaseClient) {
+            errEl.textContent = 'Auth service not ready. Please refresh the page.';
+            errEl.style.display = 'block'; return;
+        }
+        btn.textContent = 'Redirecting to Google…'; btn.disabled = true;
+        try {
+            const { error } = await window._supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/',  // returns to homepage
+                    queryParams: { access_type: 'offline', prompt: 'select_account' }
+                }
+            });
+            if (error) throw error;
+            // Browser will redirect — no further code runs here
+        } catch(err) {
+            errEl.textContent = err.message || 'Google sign-in failed.';
+            errEl.style.display = 'block';
+            btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg> Continue with Google';
+            btn.disabled = false;
+        }
+    }
+    window.handleGoogleSignIn = handleGoogleSignIn;
+
     async function handleLogin(e) {
         e.preventDefault();
         const btn = document.getElementById('lm-btn');
@@ -3952,7 +4011,6 @@
         errEl.style.display = 'none';
         btn.textContent = 'Signing in…'; btn.disabled = true;
         try {
-            // Try Supabase if available
             if (window._supabaseClient) {
                 const { error } = await window._supabaseClient.auth.signInWithPassword({ email, password: pass });
                 if (error) throw error;
@@ -3967,24 +4025,57 @@
         } finally { btn.textContent = 'Sign In'; btn.disabled = false; }
     }
 
-    // ── ACCOUNT STATE ──────────────────────────────────────────────────────
+    // ── ACCOUNT STATE — shows Google avatar + full name if available ────────
     async function initAccountState() {
         if (!window._supabaseClient) return;
         const { data: { session } } = await window._supabaseClient.auth.getSession();
-        const guest = document.getElementById('acct-guest');
+        const guest    = document.getElementById('acct-guest');
         const loggedin = document.getElementById('acct-loggedin');
-        const header = document.getElementById('acct-header');
+        const header   = document.getElementById('acct-header');
         if (session?.user) {
             guest.classList.add('hidden');
             loggedin.classList.remove('hidden');
-            const name = session.user.email?.split('@')[0] || 'Account';
-            header.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+
+            const user = session.user;
+            // Google OAuth provides full_name + avatar_url in user_metadata
+            const fullName  = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Account';
+            const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
+            const firstName = fullName.split(' ')[0];
+
+            // Header: show avatar circle + first name if Google, else just first name
+            if (avatarUrl) {
+                header.innerHTML = `<img src="${avatarUrl}" alt="${firstName}" referrerpolicy="no-referrer" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,26,26,0.5);vertical-align:middle;margin-right:5px;"> ${firstName}`;
+            } else {
+                header.textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+            }
+
+            // Insert a welcome card at the top of the logged-in dropdown (once)
+            if (!document.getElementById('acct-welcome')) {
+                const welcome = document.createElement('div');
+                welcome.id = 'acct-welcome';
+                welcome.style.cssText = 'padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:4px;';
+                welcome.innerHTML = avatarUrl
+                    ? `<div style="display:flex;align-items:center;gap:10px;">
+                           <img src="${avatarUrl}" referrerpolicy="no-referrer" style="width:38px;height:38px;border-radius:50%;border:2px solid rgba(255,26,26,0.4);flex-shrink:0;">
+                           <div>
+                               <div style="font-size:13px;font-weight:700;color:#fff;">${fullName}</div>
+                               <div style="font-size:10px;color:#555;margin-top:2px;">${user.email}</div>
+                           </div>
+                       </div>`
+                    : `<div style="font-size:13px;font-weight:700;color:#fff;">${fullName}</div>
+                       <div style="font-size:10px;color:#555;margin-top:2px;">${user.email}</div>`;
+                loggedin.insertBefore(welcome, loggedin.firstChild);
+            }
         } else {
             guest.classList.remove('hidden');
             loggedin.classList.add('hidden');
             header.textContent = 'Account';
+            // Clean up welcome block on logout
+            const w = document.getElementById('acct-welcome');
+            if (w) w.remove();
         }
     }
+
 
     async function acctSignOut() {
         if (window._supabaseClient) await window._supabaseClient.auth.signOut();
@@ -4014,15 +4105,20 @@
                 const cfg = typeof window.__SUPA_CONFIG__ !== 'undefined' ? window.__SUPA_CONFIG__ : null;
                 if (cfg) {
                     window._supabaseClient = window.supabase.createClient(cfg.url, cfg.key);
+                } else if (window.__supaUrl && window.__supaAnonKey) {
+                    window._supabaseClient = window.supabase.createClient(window.__supaUrl, window.__supaAnonKey);
+                }
+                if (window._supabaseClient) {
+                    // Listen for auth state changes — fires after Google OAuth redirect returns
+                    window._supabaseClient.auth.onAuthStateChange(function(event, session) {
+                        initAccountState();
+                        // Auto-close login modal on successful OAuth return
+                        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                            closeLoginModal();
+                        }
+                    });
                     initAccountState();
                     clearInterval(interval);
-                } else {
-                    // Fallback: grab from save-brief API response stored on window
-                    if (window.__supaUrl && window.__supaAnonKey) {
-                        window._supabaseClient = window.supabase.createClient(window.__supaUrl, window.__supaAnonKey);
-                        initAccountState();
-                        clearInterval(interval);
-                    }
                 }
             }
         }, 500);

@@ -132,18 +132,8 @@ async function undoLastAction(sessionId) {
                 : { success: true, actionType: 'restored deleted order', orderId: originalData.order_id };
         }
         
-        if (action.type === 'create_order') {
-            // Restore by deleting the mistakenly created order
-            const { error } = await supabase
-                .from('orders')
-                .delete()
-                .eq('order_id', action.orderId);
-            
-            return error
-                ? { success: false, error: error.message }
-                : { success: true, actionType: 'removed mistakenly created order', orderId: action.orderId };
-        }
-        
+
+
         if (action.type === 'cancel_order') {
             return { success: false, error: 'Refunds cannot be automatically undone once sent to Cashfree. Please contact support.' };
         }
@@ -187,7 +177,9 @@ async function executeAction(action, sessionId) {
 
         if (status === 'in_progress') status = 'working';
 
-        const validStatuses = ['pending', 'working', 'paid', 'completed'];
+        // NOTE: emails for 'working' and 'completed' are handled by /api/update-status
+        // to avoid duplicate sends. Admin-chat only updates the DB.
+        const validStatuses = ['pending', 'working', 'paid', 'completed', 'refunded'];
         if (!validStatuses.includes(status)) return { success: false, error: `Invalid status: ${status}` };
 
         const updatePayload = { status };
@@ -198,32 +190,7 @@ async function executeAction(action, sessionId) {
             .update(updatePayload)
             .eq('order_id', orderId);
 
-        if (!error && sessionId) {
-            await saveActionHistory(sessionId, action, originalData);
-        }
-
-        if (!error && originalData && originalData.client_email) {
-            if (status === 'working') {
-                await resend.emails.send({
-                    from: 'updates@zyroeditz.xyz',
-                    to: originalData.client_email,
-                    subject: `Status Update: ${originalData.service}`,
-                    html: `<p>Hi there,</p><p>Your project is now being worked on.</p><p>Best regards,<br>ZyroEditz™</p>`
-                }).catch(e => console.log('Resend error:', e));
-            } else if (status === 'completed') {
-                // B-18 FIX: Removed [Insert Final Link Here] placeholder — never send
-                // a placeholder to a real client. Delivery link must be shared manually
-                // via the admin panel's file-sharing feature or a separate message.
-                if (originalData.client_email) {
-                    await resend.emails.send({
-                        from: 'updates@zyroeditz.xyz',
-                        to: originalData.client_email,
-                        subject: `Project Completed: ${originalData.service}`,
-                        html: `<p>Hi there,</p><p>Your <strong>${originalData.service}</strong> project is now complete! Our team will share the final delivery link with you shortly via email or WhatsApp.</p><p>Your Order ID for reference: <strong>${originalData.order_id}</strong></p><p>If you have any questions, reply to this email or reach us at zyroeditz.official@gmail.com.</p><p>Best regards,<br>ZyroEditz&#8482;</p>`
-                    }).catch(e => console.log('Resend error:', e));
-                }
-            }
-        }
+        if (!error && sessionId) await saveActionHistory(sessionId, action, originalData);
 
         return error
             ? { success: false, error: error.message }
@@ -245,9 +212,7 @@ async function executeAction(action, sessionId) {
             .update(updates)
             .eq('order_id', orderId);
 
-        if (!error && sessionId) {
-            await saveActionHistory(sessionId, action, originalData);
-        }
+        if (!error && sessionId) await saveActionHistory(sessionId, action, originalData);
 
         return error
             ? { success: false, error: error.message }
@@ -263,88 +228,11 @@ async function executeAction(action, sessionId) {
             .delete()
             .eq('order_id', orderId);
 
-        if (!error && sessionId) {
-            await saveActionHistory(sessionId, action, originalData);
-        }
+        if (!error && sessionId) await saveActionHistory(sessionId, action, originalData);
 
         return error
             ? { success: false, error: error.message }
             : { success: true, orderId, actionType: 'deleted' };
-    }
-
-    if (action.type === 'create_order') {
-        const { client_name, phone, email, service, deadline_date } = action;
-        if (!client_name || !email || !service || !action.amount) return { success: false, error: 'Missing required fields' };
-
-        // Strip currency symbols/formatting — AI may output "Rs. 200", "₹200", "200.00", etc.
-        const cleanAmount = parseFloat(String(action.amount).replace(/[^\d.]/g, ''));
-        if (isNaN(cleanAmount) || cleanAmount <= 0) return { success: false, error: `Invalid amount: "${action.amount}"` };
-
-        const orderId = 'ZYRO' + Date.now().toString().slice(-6) + Math.random().toString(36).substring(2, 6).toUpperCase();
-        const payload = {
-            order_id: orderId,
-            client_name,
-            client_phone: phone || 'N/A',
-            client_email: email,
-            service,
-            amount: cleanAmount,
-            deadline_date: deadline_date || null,
-            status: 'pending'
-        };
-
-        const { error } = await supabase.from('orders').insert(payload);
-        if (error) return { success: false, error: error.message };
-
-        action.orderId = orderId;
-        if (sessionId) {
-            await saveActionHistory(sessionId, action, null);
-        }
-
-        let payment_link = null;
-        try {
-            const cleanPhone = phone && String(phone).replace(/\D/g, '').length >= 10
-                ? String(phone).replace(/\D/g, '').slice(-10)
-                : '9999999999';
-
-            // ── Use Cashfree Orders API (/pg/orders) ─────────────────────
-            // This works for all Cashfree accounts without special approval.
-            // We construct a hosted link using the session ID.
-            const cfResponse = await axios.post('https://api.cashfree.com/pg/orders', {
-                order_amount: cleanAmount,
-                order_currency: 'INR',
-                order_note: `${service} — ZyroEditz™`,
-                order_id: orderId,
-                customer_details: {
-                    customer_id: orderId,
-                    customer_name: client_name,
-                    customer_email: email,
-                    customer_phone: cleanPhone
-                },
-                order_meta: {
-                    return_url: `https://zyroeditz.xyz/payment-success?order_id=${orderId}`
-                }
-            }, {
-                headers: {
-                    'x-client-id': process.env.CASHFREE_APP_ID,
-                    'x-client-secret': process.env.CASHFREE_SECRET_KEY,
-                    'x-api-version': '2025-01-01'
-                }
-            });
-
-            // Construct our own "Payment Link" pointing to our checkout bridge
-            // BUG FIX B: renamed from 'sessionId' to avoid shadowing the outer admin sessionId
-            const cfSessionId = cfResponse.data.payment_session_id;
-            if (cfSessionId) {
-                payment_link = `https://zyroeditz.xyz/checkout?session_id=${cfSessionId}`;
-            } else {
-                payment_link = null;
-            }
-        } catch (e) {
-            console.log('Cashfree Payment Link error:', e.response?.data || e.message);
-            return { success: false, error: `Order created in DB but Cashfree link generation failed: ${e.response?.data?.message || e.message}` };
-        }
-
-        return { success: true, actionType: 'created order', orderId, payment_link };
     }
 
     // generate_upload_link removed (automated in success page)
@@ -626,14 +514,10 @@ module.exports = async function (req, res) {
                     if (action.type === 'delete_order') {
                         summaryMsg = `Deleted order ${action.orderId}.`;
                     } else if (action.type === 'update_status') {
-                        summaryMsg = `Updated ${action.orderId} to ${action.status}.`;
-                    } else if (action.type === 'create_order') {
-                        summaryMsg = `Order **${r.orderId}** created for **${action.client_name}** (${action.service}).`;
-                    } else if (action.type === 'generate_upload_link') {
-                        summaryMsg = `Generated upload link for ${results[0].orderId}.`;
+                        summaryMsg = `Updated ${action.orderId} to ${r.newStatus}.`;
                     } else if (action.type === 'cancel_order') {
                         const refunded = r.amountRefunded > 0;
-                        summaryMsg = `Order **${r.orderId}** cancelled.${refunded ? ` Refund of **Rs.${r.amountRefunded}** initiated to Cashfree (status: ${r.refundStatus}).${r.refundArn ? ` ARN: \`${r.refundArn}\`` : ''} Cancellation email sent to client.` : ' No payment was on record, so no refund was required.'}`;
+                        summaryMsg = `Order **${r.orderId}** cancelled.${refunded ? ` Refund of **Rs.${r.amountRefunded}** initiated (status: ${r.refundStatus}).${r.refundArn ? ` ARN: \`${r.refundArn}\`` : ''} Cancellation email sent to client.` : ' No payment on record — no refund required.'}`;
                     } else {
                         summaryMsg = `Updated order ${action.orderId}.`;
                     }
@@ -795,28 +679,24 @@ STEP 2 — EXECUTE (Only after Soumojit confirms):
 
 Valid Pending Proposal Formats:
 
-1. Propose New Order Creation:
-- You MUST automatically determine the 'amount' based on the requested service using the SERVICES & PRICING menu below. Output amount as a plain number (e.g. 200, not "Rs.200").
-- You MUST automatically set 'deadline_date' to 24-48 hours from today unless the user specifies otherwise.
-- Only ask the user for missing details if they haven't provided Name, Phone, Email, or Service.
-<<<PENDING: {"type": "create_order", "client_name": "...", "phone": "...", "email": "...", "service": "...", "amount": 200, "deadline_date": "YYYY-MM-DD"} >>>
-
-2. Propose Status Update (working, completed, pending, paid):
+1. Propose Status Update (working, completed, pending, paid, refunded):
 <<<PENDING: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
 
-3. Propose Field Update:
+2. Propose Field Update:
 <<<PENDING: {"type": "update_order", "orderId": "exact_order_id", "updates": {"project_notes": "Urgent"}} >>>
 
-4. Propose Deletion (⚠️ Extra warning required):
+3. Propose Deletion (⚠️ Extra warning required):
 <<<PENDING: {"type": "delete_order", "orderId": "exact_order_id"} >>>
 
-5. Propose Order Cancellation + Full Refund:
+4. Propose Order Cancellation + Full Refund:
    - Use this when Soumojit says "cancel", "refund", "cancel and refund", etc.
-   - For paid orders: triggers Cashfree refund + email to client
+   - For paid orders: triggers Cashfree refund + cancellation email to client
    - For unpaid orders: just marks as cancelled + sends cancellation email
    - You MUST include a reason (use "Client request" if none given)
-   - ⚠️ This is IRREVERSIBLE — add an explicit warning in your message before the PENDING block
+   - ⚠️ This is IRREVERSIBLE — add an explicit warning before the PENDING block
 <<<PENDING: {"type": "cancel_order", "orderId": "exact_order_id", "reason": "e.g. Client requested cancellation"} >>>
+
+NOTE: Creating new orders is NOT available via this chat. All new orders come through the client chatbot on the main site which handles Cashfree payment collection. If Soumojit asks to create an order manually, tell him to direct the client to zyroeditz.xyz to place it themselves.
 
 --- 
 INSTANT ACTIONS:
