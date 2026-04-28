@@ -60,10 +60,10 @@ module.exports = async function (req, res) {
     }
 
     try {
-        const { sessionId, phone, email, name, selectedService, amount } = req.body;
+        const { sessionId, phone, email, name, cartItems, couponCode, action } = req.body;
 
-        if (!selectedService || !amount) {
-            return res.status(400).json({ reply: "Please select a valid service and pricing to proceed." });
+        if (!cartItems || !cartItems.length) {
+            return res.status(400).json({ reply: "Your cart is empty. Please add items to proceed." });
         }
 
         // FIX #14: Server-side studio Away check — the frontend check can be bypassed
@@ -103,17 +103,77 @@ module.exports = async function (req, res) {
         const safePhone = String(phone).trim(); // always valid — guarded above
 
         const orderId = generateOrderId();
-        const numericAmount = parseFloat(amount);
+
+        // ── Compute Total Amount from Cart ──
+        let subtotal = 0;
+        let selectedService = '';
+        const serviceNames = [];
+
+        cartItems.forEach(item => {
+            const itemTotal = (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1);
+            subtotal += itemTotal;
+            serviceNames.push(`${item.name} (x${item.qty || 1})`);
+        });
+        selectedService = serviceNames.join(', ').substring(0, 500);
+
+        let numericAmount = subtotal;
+
+        // Apply Coupon Logic
+        if (couponCode && typeof couponCode === 'string') {
+            const { data: coupon, error: couponError } = await supabase
+                .from('coupons')
+                .select('*')
+                .eq('code', couponCode.toUpperCase().trim())
+                .eq('is_active', true)
+                .single();
+
+            if (!couponError && coupon) {
+                // Validate min order value
+                if (coupon.min_order_value && subtotal < coupon.min_order_value) {
+                    return res.status(400).json({ reply: `Coupon requires a minimum order value of ₹${coupon.min_order_value}` });
+                }
+                // Validate usage limits
+                if (coupon.max_uses > 0 && coupon.times_used >= coupon.max_uses) {
+                    return res.status(400).json({ reply: `Coupon has reached its maximum usage limit.` });
+                }
+                // Validate expiry
+                if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+                    return res.status(400).json({ reply: `Coupon has expired.` });
+                }
+
+                // Apply discount
+                if (coupon.discount_type === 'fixed') {
+                    numericAmount = Math.max(0, subtotal - parseFloat(coupon.discount_value));
+                } else if (coupon.discount_type === 'percent') {
+                    const discount = subtotal * (parseFloat(coupon.discount_value) / 100);
+                    numericAmount = Math.max(0, subtotal - discount);
+                }
+            } else {
+                return res.status(400).json({ reply: `Invalid or inactive coupon code.` });
+            }
+        }
+
+        if (action === 'validateCoupon') {
+            return res.status(200).json({
+                valid: true,
+                finalAmount: numericAmount,
+                discount: subtotal - numericAmount
+            });
+        }
 
         // Guard: reject invalid amounts before hitting Cashfree
-        // Negative, zero, or NaN amounts cause a confusing 422 from Cashfree's API.
-        if (!numericAmount || numericAmount <= 0 || !Number.isFinite(numericAmount)) {
-            return res.status(400).json({ reply: "Invalid payment amount. Please contact support." });
+        if (numericAmount <= 0 || !Number.isFinite(numericAmount)) {
+            return res.status(400).json({ reply: "Final amount must be greater than zero." });
         }
 
         // ── BUG FIX #9: Safer IST deadline — compute using explicit UTC year/month/day ──
-        // Avoids setUTCDate() month-rollover edge cases when adding days near month boundaries.
-        const daysToAdd = deadlineMap[selectedService] || 3;
+        // Extract longest delivery days from the cart
+        let maxDays = 3;
+        cartItems.forEach(item => {
+            const days = deadlineMap[item.name] || 3;
+            if (days > maxDays) maxDays = days;
+        });
+        const daysToAdd = maxDays;
         const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
         const nowIST = new Date(Date.now() + IST_OFFSET_MS);
         // Extract IST calendar date components, then add daysToAdd cleanly via a new Date constructor
