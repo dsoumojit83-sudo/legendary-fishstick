@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZyroEditz&trade; | Securing Portal...</title>
+    <!-- Prevent search engines from indexing this transactional bridge page -->
+    <meta name="robots" content="noindex, nofollow">
+    <!-- Same fonts used in main site — display=block prevents FOUT on the redirect animation -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=block">
+    <!-- Cashfree SDK V3: defer so it doesn't block paint — called inside DOMContentLoaded -->
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* ── Copied Exactly from index.html ────────────────────────────────── */
+        @keyframes yt-spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+
+        #payRedirectOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #050505;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .pay-redirect-ring {
+            width: 52px;
+            height: 52px;
+            border: 3px solid rgba(255, 26, 26, 0.2);
+            border-top-color: #ff1a1a;
+            border-radius: 50%;
+            animation: yt-spin 0.9s linear infinite;
+        }
+
+        .pay-redirect-label {
+            font-size: 12px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
+        }
+        /* ───────────────────────────────────────────────────────────────────── */
+
+        .error-msg {
+            color: #ff1a1a;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="payRedirectOverlay">
+        <div class="pay-redirect-ring"></div>
+        <p id="status-text" class="pay-redirect-label">Securing payment portal&hellip;</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const sessionId = params.get('session_id');
+            const statusEl = document.getElementById('status-text');
+
+            if (!sessionId) {
+                statusEl.innerText = "Error: Invalid Session ID";
+                statusEl.classList.add('error-msg');
+                return;
+            }
+
+            try {
+                // Initialize Cashfree Production engine
+                const cashfree = Cashfree({
+                    mode: "production"
+                });
+
+                // Launch official checkout flow
+                cashfree.checkout({
+                    paymentSessionId: sessionId,
+                    redirectTarget: "_self"
+                }).then((result) => {
+                    if (result.error) {
+                        console.error(result.error);
+                        statusEl.innerText = result.error.message;
+                        statusEl.classList.add('error-msg');
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+                statusEl.innerText = "Connection failed. Please refresh.";
+                statusEl.classList.add('error-msg');
+            }
+        });
+    </script>
+</body>
+</html>
