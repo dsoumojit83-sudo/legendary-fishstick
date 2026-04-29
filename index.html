@@ -3311,7 +3311,6 @@
                 const couponMsg = document.getElementById('chkCouponMsg');
                 const errorDiv = document.getElementById('chkError');
                 const payBtn = document.getElementById('chkPayBtn');
-                const payAmount = document.getElementById('chkPayAmount');
 
                 let currentValidatedCoupon = null;
 
@@ -3382,7 +3381,7 @@
                     
                     // Calculate total
                     const total = cart.reduce((s, i) => s + i.price * (i.qty || 1), 0);
-                    payAmount.textContent = '₹' + total.toLocaleString('en-IN');
+                    document.getElementById('chkPayAmount').textContent = '₹' + total.toLocaleString('en-IN');
                     
                     // Show modal
                     modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -3419,15 +3418,22 @@
                 });
 
                 couponInp.addEventListener('input', function() {
+                    // Always clear error states on new input
+                    couponMsg.classList.add('hidden');
+                    
                     if (currentValidatedCoupon !== null) {
                         currentValidatedCoupon = null;
                         const cart = getCart();
                         const total = cart.reduce((s, i) => s + i.price * (i.qty || 1), 0);
-                        payAmount.textContent = '₹' + total.toLocaleString('en-IN');
+                        document.getElementById('chkPayAmount').textContent = '₹' + total.toLocaleString('en-IN');
                         applyCouponBtn.className = 'bg-white/10 text-white px-4 py-2 rounded text-xs font-bold hover:bg-white hover:text-black transition-colors whitespace-nowrap';
                         applyCouponBtn.textContent = 'Apply';
                         applyCouponBtn.disabled = false;
-                        couponMsg.classList.add('hidden');
+                    } else if (applyCouponBtn.textContent === 'Invalid' || applyCouponBtn.textContent === 'Error') {
+                        // Reset button from error state immediately
+                        applyCouponBtn.className = 'bg-white/10 text-white px-4 py-2 rounded text-xs font-bold hover:bg-white hover:text-black transition-colors whitespace-nowrap';
+                        applyCouponBtn.textContent = 'Apply';
+                        applyCouponBtn.disabled = false;
                     }
                 });
 
@@ -3460,7 +3466,7 @@
                         
                         if (response.ok && data.valid) {
                             currentValidatedCoupon = code;
-                            payAmount.textContent = '₹' + data.finalAmount.toLocaleString('en-IN');
+                            document.getElementById('chkPayAmount').textContent = '₹' + data.finalAmount.toLocaleString('en-IN');
                             applyCouponBtn.className = 'bg-green-500 text-black px-4 py-2 rounded text-xs font-bold whitespace-nowrap transition-colors';
                             applyCouponBtn.textContent = 'Applied';
                             couponMsg.textContent = `-₹${data.discount.toLocaleString('en-IN')}`;
@@ -3469,7 +3475,7 @@
                         } else {
                             currentValidatedCoupon = null;
                             const total = cart.reduce((s, i) => s + i.price * (i.qty || 1), 0);
-                            payAmount.textContent = '₹' + total.toLocaleString('en-IN');
+                            document.getElementById('chkPayAmount').textContent = '₹' + total.toLocaleString('en-IN');
                             applyCouponBtn.className = 'bg-[#ff1a1a] text-black px-4 py-2 rounded text-xs font-bold whitespace-nowrap transition-colors';
                             applyCouponBtn.textContent = 'Invalid';
                             couponMsg.textContent = data.reply || data.error || 'Invalid coupon.';
