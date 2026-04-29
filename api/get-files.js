@@ -141,7 +141,7 @@ module.exports = async function (req, res) {
             MaxKeys: 100,
         }));
 
-        const objects = listResp.Contents || [];
+        const objects = (listResp.Contents || []).filter(obj => obj.Key !== `${orderId}/`);
 
         if (objects.length === 0) {
             return res.status(200).json({ files: [] });
