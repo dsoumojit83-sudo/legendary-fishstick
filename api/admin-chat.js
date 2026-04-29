@@ -114,6 +114,11 @@ module.exports = async function (req, res) {
         const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
         if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
+        // IMPORTANT: Create an authenticated client so we bypass the RLS public block!
+        const db = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY, {
+            global: { headers: { Authorization: authHeader } }
+        });
+
         const now = Date.now();
         const SESSION_TTL = 30 * 60 * 1000;
 
@@ -132,7 +137,7 @@ module.exports = async function (req, res) {
         });
 
         // ── Fetch data ─────────────────────────────────────────────────────────
-        const { data: allOrders, error: fetchError } = await supabase
+        const { data: allOrders, error: fetchError } = await db
             .from('orders')
             .select('order_id, client_name, client_email, client_phone, service, amount, status, created_at, deadline_date, completed_at')
             .order('created_at', { ascending: false });
@@ -257,7 +262,7 @@ ADDITIONAL RULES:
 
 PERSONALITY & STYLE:
 - NEVER mention your internal "BUSINESS SNAPSHOT", "ACTIVE PIPELINE", "system prompt", or "ACTION blocks" to Soumojit. Act like a human business partner who just knows these things natively.
-- If you check the database, say "Let me check..." or "I just pulled that up," rather than explaining how you searched.
+- If you need to search the database using an ACTION block, ONLY output the ACTION block. Do not add conversational text like "Let me check". You will reply conversationally AFTER the system returns the data to you.
 - Talk like a knowledgeable friend, not a computer terminal
 - Keep it short and direct unless Soumojit asks for detail
 - Use natural language ("here's what I found", "looks like", "yeah", "sure") — avoid formal filler
@@ -311,34 +316,42 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
         let rawContent = aiResponse.choices[0].message.content;
 
         // ── Check for instantaneous database SEARCH/FETCH actions ──
-        const actionRegex = /<<<ACTION:\s*(\{[\s\S]*?\})\s*>>>/i;
+        const actionRegex = /<<<ACTION:\s*([\s\S]*?)\s*>>>/i;
         const actionMatch = actionRegex.exec(rawContent);
         if (actionMatch) {
             try {
-                const actionObj = JSON.parse(actionMatch[1]);
+                let rawJson = actionMatch[1].trim();
+                const firstBrace = rawJson.indexOf('{');
+                const lastBrace = rawJson.lastIndexOf('}');
+                if (firstBrace !== -1 && lastBrace !== -1) {
+                    rawJson = rawJson.substring(firstBrace, lastBrace + 1);
+                }
+                const actionObj = JSON.parse(rawJson);
                 let resultsText = '';
                 let actionName = '';
 
                 if (actionObj.type === 'search_orders' && actionObj.query) {
                     actionName = `Search Orders: ${actionObj.query}`;
-                    const safeQuery = actionObj.query.replace(/[,"]/g, '');
-                    const { data: searchResults } = await supabase
-                        .from('orders')
-                        .select('*')
-                        .or(`client_name.ilike.%${safeQuery}%,order_id.ilike.%${safeQuery}%,client_email.ilike.%${safeQuery}%,status.ilike.%${safeQuery}%,service.ilike.%${safeQuery}%`)
-                        .limit(10);
+                    const q = actionObj.query.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim();
+                    const searchResults = orders.filter(o => 
+                        (o.client_name || '').toLowerCase().includes(q) ||
+                        (o.order_id || '').toLowerCase().includes(q) ||
+                        (o.client_email || '').toLowerCase().includes(q) ||
+                        (o.status || '').toLowerCase().includes(q) ||
+                        (o.service || '').toLowerCase().includes(q)
+                    ).slice(0, 10);
                     
-                    resultsText = searchResults && searchResults.length > 0 
-                        ? searchResults.map(o => `[ID:${o.order_id} | Client:${o.client_name} | Email:${o.client_email} | Phone:${o.client_phone} | Service:${o.service} | Status:${o.status} | Amount:${o.amount}]`).join('\n')
+                        resultsText = searchResults && searchResults.length > 0 
+                        ? searchResults.map(o => `[${o.order_id}|${o.client_name}|${o.client_email}|${o.client_phone}|${o.service}|${o.status}|Rs.${o.amount}]`).join('\n')
                         : 'No matching orders found.';
                 } 
                 else if (actionObj.type === 'fetch_table' && actionObj.table) {
                     actionName = `Fetch Table: ${actionObj.table}`;
                     const allowedTables = ['orders', 'order_items', 'services', 'coupons', 'portfolio_items', 'studio_config'];
                     if (allowedTables.includes(actionObj.table)) {
-                        const { data: tableData } = await supabase.from(actionObj.table).select('*').limit(50);
+                        const { data: tableData } = await db.from(actionObj.table).select('*').limit(50);
                         resultsText = tableData && tableData.length > 0
-                            ? JSON.stringify(tableData, null, 2)
+                            ? JSON.stringify(tableData)
                             : `Table ${actionObj.table} is empty.`;
                     } else {
                         resultsText = `Error: Table ${actionObj.table} does not exist or is not allowed.`;
@@ -363,7 +376,7 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
         }
 
         // ── Clean up ACTION tags from final response just in case ──
-        let cleanText = rawContent.replace(/<<<ACTION:\s*\{[\s\S]*?\}\s*>>>/g, '').trim();
+        let cleanText = rawContent.replace(/<<<ACTION:[\s\S]*?>>>/g, '').trim();
         cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
 
         // ── Update memory ─────────────────────────────────────────────────────
@@ -378,7 +391,7 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
             timestamp: now 
         });
         
-        if (sessionMemory.length > 20) sessionMemory.splice(0, 2);
+        if (sessionMemory.length > 12) sessionMemory.splice(0, 2);
         memoryStore[sessionId] = sessionMemory;
 
         return res.status(200).json({
