@@ -163,7 +163,7 @@ module.exports = async function (req, res) {
             .reduce((s, o) => s + (Number(o.amount) || 0), 0)
             .toFixed(2);
 
-        const activeOrders = orders.filter(o => o.status && !['completed', 'refunded', 'cancelled'].includes(o.status));
+        const activeOrders = orders.filter(o => o.status && !['completed', 'refunded', 'cancelled', 'canceled'].includes(o.status));
         const filesMap = await getFilesMap(activeOrders);
 
         const activePipeline = activeOrders.map(o => {
@@ -229,10 +229,13 @@ NOTE: You are a read-only assistant. You CANNOT modify the database, update stat
 
 --- 
 INSTANT ACTIONS:
-If you need to query the database, you can emit an ACTION block bypassing confirmation. The system will intercept it and give you the data to answer the user!
+You have direct read access to the entire database. If you need information that is not in the BUSINESS SNAPSHOT, emit an ACTION block. The system will intercept it and give you the data to answer the user!
 
-Search Orders:
-<<<ACTION: {"type": "search_orders", "query": "client name or id or email"} >>>
+1. Search Orders (Finds specific orders by name, email, or ID):
+<<<ACTION: {"type": "search_orders", "query": "client name or id"} >>>
+
+2. Fetch Table (Returns up to 50 rows from ANY table: 'coupons', 'portfolio_items', 'services', 'order_items', 'studio_config', 'orders'):
+<<<ACTION: {"type": "fetch_table", "table": "coupons"} >>>
 ---
 
 ADDITIONAL RULES:
@@ -303,25 +306,43 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
 
         let rawContent = aiResponse.choices[0].message.content;
 
-        // ── Check for instantaneous database SEARCH action ──
-        const searchRegex = /<<<ACTION:\s*(\{.*?type.*?search_orders.*?\})\s*>>>/i;
-        const searchMatch = searchRegex.exec(rawContent);
-        if (searchMatch) {
+        // ── Check for instantaneous database SEARCH/FETCH actions ──
+        const actionRegex = /<<<ACTION:\s*(\{.*?\})\s*>>>/i;
+        const actionMatch = actionRegex.exec(rawContent);
+        if (actionMatch) {
             try {
-                const searchObj = JSON.parse(searchMatch[1]);
-                if (searchObj.query) {
+                const actionObj = JSON.parse(actionMatch[1]);
+                let resultsText = '';
+                let actionName = '';
+
+                if (actionObj.type === 'search_orders' && actionObj.query) {
+                    actionName = `Search Orders: ${actionObj.query}`;
                     const { data: searchResults } = await supabase
                         .from('orders')
                         .select('*')
-                        .or(`client_name.ilike.%${searchObj.query}%,order_id.eq.${searchObj.query},client_email.ilike.%${searchObj.query}%`)
+                        .or(`client_name.ilike.%${actionObj.query}%,order_id.ilike.%${actionObj.query}%,client_email.ilike.%${actionObj.query}%`)
                         .limit(10);
                     
-                    const resultsText = searchResults && searchResults.length > 0 
+                    resultsText = searchResults && searchResults.length > 0 
                         ? searchResults.map(o => `[ID:${o.order_id} | Client:${o.client_name} | Email:${o.client_email} | Phone:${o.client_phone} | Service:${o.service} | Status:${o.status} | Amount:${o.amount}]`).join('\n')
                         : 'No matching orders found.';
+                } 
+                else if (actionObj.type === 'fetch_table' && actionObj.table) {
+                    actionName = `Fetch Table: ${actionObj.table}`;
+                    const allowedTables = ['orders', 'order_items', 'services', 'coupons', 'portfolio_items', 'studio_config'];
+                    if (allowedTables.includes(actionObj.table)) {
+                        const { data: tableData } = await supabase.from(actionObj.table).select('*').limit(50);
+                        resultsText = tableData && tableData.length > 0
+                            ? JSON.stringify(tableData, null, 2)
+                            : `Table ${actionObj.table} is empty.`;
+                    } else {
+                        resultsText = `Error: Table ${actionObj.table} does not exist or is not allowed.`;
+                    }
+                }
 
+                if (resultsText) {
                     currentMessages.push({ role: 'assistant', content: rawContent });
-                    currentMessages.push({ role: 'system', content: `[Database Search Results for "${searchObj.query}"]:\n${resultsText}\n\nContinue responding to the user using these results without using the search_orders action again.` });
+                    currentMessages.push({ role: 'system', content: `[Database Results for ${actionName}]:\n${resultsText}\n\nContinue responding to the user using these results without using another action.` });
 
                     aiResponse = await groq.chat.completions.create({
                         model: selectedModel,
@@ -332,7 +353,7 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
                     rawContent = aiResponse.choices[0].message.content;
                 }
             } catch (e) {
-                console.log("Search parsing error:", e);
+                console.log("Action parsing error:", e);
             }
         }
 
