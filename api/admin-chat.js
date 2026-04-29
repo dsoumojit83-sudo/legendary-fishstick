@@ -231,8 +231,8 @@ NOTE: You are a read-only assistant. You CANNOT modify the database, update stat
 INSTANT ACTIONS:
 You have direct read access to the entire database. If you need information that is not in the BUSINESS SNAPSHOT, emit an ACTION block. The system will intercept it and give you the data to answer the user!
 
-1. Search Orders (Finds specific orders by name, email, or ID):
-<<<ACTION: {"type": "search_orders", "query": "client name or id"} >>>
+1. Search Orders (Finds specific orders by name, email, ID, status, or service):
+<<<ACTION: {"type": "search_orders", "query": "client name, id, email, or status (e.g. 'refunded')"} >>>
 
 2. Fetch Table (Returns up to 50 rows from ANY table: 'coupons', 'portfolio_items', 'services', 'order_items', 'studio_config', 'orders'):
 <<<ACTION: {"type": "fetch_table", "table": "coupons"} >>>
@@ -307,7 +307,7 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
         let rawContent = aiResponse.choices[0].message.content;
 
         // ── Check for instantaneous database SEARCH/FETCH actions ──
-        const actionRegex = /<<<ACTION:\s*(\{.*?\})\s*>>>/i;
+        const actionRegex = /<<<ACTION:\s*(\{[\s\S]*?\})\s*>>>/i;
         const actionMatch = actionRegex.exec(rawContent);
         if (actionMatch) {
             try {
@@ -317,10 +317,11 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
 
                 if (actionObj.type === 'search_orders' && actionObj.query) {
                     actionName = `Search Orders: ${actionObj.query}`;
+                    const safeQuery = actionObj.query.replace(/[,"]/g, '');
                     const { data: searchResults } = await supabase
                         .from('orders')
                         .select('*')
-                        .or(`client_name.ilike.%${actionObj.query}%,order_id.ilike.%${actionObj.query}%,client_email.ilike.%${actionObj.query}%`)
+                        .or(`client_name.ilike.%${safeQuery}%,order_id.ilike.%${safeQuery}%,client_email.ilike.%${safeQuery}%,status.ilike.%${safeQuery}%,service.ilike.%${safeQuery}%`)
                         .limit(10);
                     
                     resultsText = searchResults && searchResults.length > 0 
