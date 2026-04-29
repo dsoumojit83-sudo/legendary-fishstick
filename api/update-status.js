@@ -1,7 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 const { Resend } = require('resend');
+const axios = require('axios');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
+const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
+const CASHFREE_API_URL = process.env.NODE_ENV === 'production' ? 'https://api.cashfree.com/pg' : 'https://sandbox.cashfree.com/pg';
 
 module.exports = async function(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -43,15 +48,49 @@ module.exports = async function(req, res) {
         let updatePayload = { status: normalizedStatus };
         if (normalizedStatus === 'completed') updatePayload.completed_at = new Date().toISOString();
 
-        // Fetch order details BEFORE updating (needed for completion email)
+        // Fetch order details BEFORE updating (needed for completion email and refunds)
         let orderRecord = null;
-        if (normalizedStatus === 'completed') {
+        if (normalizedStatus === 'completed' || normalizedStatus === 'refunded') {
             const { data } = await supabase
                 .from('orders')
                 .select('order_id, client_name, client_email, service, amount')
                 .eq('order_id', orderId)
                 .single();
             orderRecord = data;
+        }
+
+        // ── FIX: Add Cashfree Refund Logic ────────────────────────────────────
+        if (normalizedStatus === 'refunded' && orderRecord) {
+            try {
+                // Determine order amount for full refund
+                const orderAmount = parseFloat(orderRecord.amount || 0);
+                if (orderAmount > 0) {
+                    const refundId = `REFUND_${orderId}_${Date.now().toString().slice(-6)}`;
+                    
+                    const cfRefundRes = await axios.post(
+                        `https://api.cashfree.com/pg/orders/${orderId}/refunds`,
+                        {
+                            refund_amount: orderAmount,
+                            refund_id: refundId.substring(0, 40),
+                            refund_note: 'Refund processed by admin',
+                            refund_speed: 'STANDARD'
+                        },
+                        {
+                            headers: {
+                                'x-api-version': '2023-08-01',
+                                'x-client-id': CASHFREE_APP_ID,
+                                'x-client-secret': CASHFREE_SECRET_KEY,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    );
+                    console.log(`[update-status] Refund initiated for ${orderId}:`, cfRefundRes.data?.refund_status);
+                }
+            } catch (refErr) {
+                const refundError = refErr.response?.data?.message || refErr.message;
+                console.error(`[update-status] Cashfree refund FAILED for ${orderId}:`, refundError);
+                return res.status(400).json({ error: `Cashfree refund failed: ${refundError}. Order NOT refunded.` });
+            }
         }
 
         const { error } = await supabase
