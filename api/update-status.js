@@ -1,8 +1,27 @@
 const { createClient } = require('@supabase/supabase-js');
 const { Resend } = require('resend');
 const axios = require('axios');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+const rawEndpoint = process.env.B2_ENDPOINT || '';
+const B2_ENDPOINT = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint || 's3.us-west-004.backblazeb2.com'}`;
+const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-west-004';
+
+const b2 = new S3Client({
+    region: extractedRegion,
+    endpoint: B2_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.B2_KEY_ID,
+        secretAccessKey: process.env.B2_APPLICATION_KEY,
+    },
+    forcePathStyle: true,
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
+});
+const B2_BUCKET = process.env.B2_BUCKET_NAME;
 
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
@@ -18,7 +37,7 @@ module.exports = async function(req, res) {
     if (uErr || !u) return res.status(401).json({ error: 'Unauthorized' });
 
     try {
-        const { action, orderId, status, is_online } = req.body;
+        const { action, orderId, status, is_online, deliveryMessage, deliveryFiles } = req.body;
 
         // ── ACTION: Toggle studio online/offline status ──────────────────────
         if (action === 'set_studio_status') {
@@ -103,6 +122,39 @@ module.exports = async function(req, res) {
         // FIX #12: Send completion notification email to client ────────────────
         if (normalizedStatus === 'completed' && orderRecord?.client_email) {
             try {
+                // Generate download links if files were provided
+                let filesHtml = '';
+                if (deliveryFiles && Array.isArray(deliveryFiles) && deliveryFiles.length > 0) {
+                    const links = await Promise.all(deliveryFiles.map(async (key) => {
+                        const url = await getSignedUrl(
+                            b2,
+                            new GetObjectCommand({ Bucket: B2_BUCKET, Key: key, ResponseContentDisposition: 'attachment' }),
+                            { expiresIn: 7 * 24 * 60 * 60 } // 7 days
+                        );
+                        // Extract just the filename for display (remove order folder prefix and timestamp)
+                        const filename = key.split('/').pop().replace(/^\\d+-/, '').replace(/^delivery_/, '');
+                        return { filename, url };
+                    }));
+                    
+                    filesHtml = `
+                        <div style="background:#1a1a1a; border:1px solid #ff1a1a; border-radius:8px; padding:20px; margin:30px 0;">
+                            <h3 style="color:#fff; margin-top:0; font-size:16px;">\uD83D\uDCE5 Final Deliverables</h3>
+                            <p style="color:#aaa; font-size:12px; margin-bottom:15px;">Secure download links (valid for 7 days)</p>
+                            ${links.map(l => `
+                                <a href="${l.url}" style="display:block; background:#ff1a1a; color:#000; text-decoration:none; padding:12px 15px; border-radius:6px; font-weight:bold; font-size:14px; margin-bottom:10px; text-align:center;">
+                                    \u2B07\uFE0F Download: ${l.filename}
+                                </a>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                const customMsgHtml = deliveryMessage ? `
+                    <div style="background:#111; border-left:4px solid #ff1a1a; padding:15px 20px; margin:20px 0; font-style:italic; color:#ddd; font-size:15px; line-height:1.6;">
+                        "${deliveryMessage.replace(/\\n/g, '<br>')}"
+                    </div>
+                ` : '';
+
                 const resend = new Resend(process.env.RESEND_API_KEY);
                 await resend.emails.send({
                     from: 'ZyroEditz\u2122 <billing@zyroeditz.xyz>',
@@ -119,13 +171,19 @@ module.exports = async function(req, res) {
                                 <h2 style="color:#22c55e;margin-top:0;">\u2705 Your Project is Complete!</h2>
                                 <p style="color:#ccc;font-size:15px;line-height:1.6;">Hi <strong>${orderRecord.client_name || 'there'}</strong>,</p>
                                 <p style="color:#ccc;font-size:15px;line-height:1.6;">Your <strong>${orderRecord.service}</strong> project has been completed and is ready for delivery!</p>
+                                
+                                ${customMsgHtml}
+                                
                                 <div style="background:#111;border:1px solid #333;border-radius:8px;padding:20px;margin:30px 0;">
                                     <table style="width:100%;border-collapse:collapse;">
                                         <tr><td style="padding:10px 0;color:#888;font-size:12px;text-transform:uppercase;">Order ID</td><td style="padding:10px 0;color:#ff1a1a;font-weight:bold;text-align:right;font-family:monospace;">${orderId}</td></tr>
                                         <tr><td style="padding:10px 0;color:#888;font-size:12px;text-transform:uppercase;border-top:1px solid #222;">Service</td><td style="padding:10px 0;color:#fff;font-weight:bold;text-align:right;border-top:1px solid #222;">${orderRecord.service}</td></tr>
                                     </table>
                                 </div>
-                                <p style="color:#ccc;font-size:14px;line-height:1.6;">Our team will deliver your files shortly. If you have any questions or need revisions, please reply to this email.</p>
+                                
+                                ${filesHtml}
+                                
+                                ${!filesHtml ? '<p style="color:#ccc;font-size:14px;line-height:1.6;">Our team will deliver your files shortly. If you have any questions or need revisions, please reply to this email.</p>' : '<p style="color:#ccc;font-size:14px;line-height:1.6;">If you have any questions or need revisions, simply reply to this email.</p>'}
                                 <p style="color:#ccc;font-size:14px;line-height:1.6;">Thank you for choosing ZyroEditz\u2122!</p>
                             </div>
                             <div style="background:#0a0a0a;padding:25px 30px;text-align:center;border-top:1px solid #1a1a1a;">
