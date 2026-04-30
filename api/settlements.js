@@ -1,7 +1,6 @@
 const axios = require("axios");
 const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
 module.exports = async function (req, res) {
     // B-20 FIX: Browser sends an OPTIONS preflight before the POST.
     // Without handling OPTIONS, it returned 405 → the real POST never fired
@@ -24,6 +23,12 @@ module.exports = async function (req, res) {
     if (!authH?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
     const { data: { user: u }, error: uErr } = await supabase.auth.getUser(authH.slice(7));
     if (uErr || !u) return res.status(401).json({ error: 'Unauthorized' });
+
+    const userEmail = u.email ? u.email.toLowerCase() : '';
+    if (userEmail !== 'zyroeditz.official@gmail.com') {
+        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('email').eq('email', userEmail).maybeSingle();
+        if (adminErr || !adminRecord) return res.status(403).json({ error: 'Forbidden: Admin access required' });
+    }
 
     try {
         const { startDate, endDate, cursor = null } = req.body;

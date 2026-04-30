@@ -1,9 +1,7 @@
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const sendInvoice = require('./sendInvoice');
-
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
 // ─── RATE LIMITER (Bug Fix A8) ────────────────────────────────────────────────
 // Prevents polling attacks that exhaust Cashfree API quota.
 // Simple sliding-window: 20 requests per IP per 60 seconds.
@@ -241,7 +239,7 @@ module.exports = async function (req, res) {
             // If it hasn't been marked as paid yet, update the Database now
             const { error: dbError } = await supabase
                 .from('orders')
-                .update({ status: 'paid' })
+                .update({ status: 'paid', paid_at: new Date().toISOString() })
                 .eq('order_id', order_id);
 
             if (dbError) {

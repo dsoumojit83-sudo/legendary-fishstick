@@ -7,6 +7,7 @@ module.exports = {
     './payment-failed/index.html',
     './portfolio/index.html',
     './checkout/index.html',
+    './review/index.html',
   ],
   theme: {
     extend: {

@@ -60,10 +60,42 @@ module.exports = async function (req, res) {
     }
 
     try {
-        const { sessionId, phone, email, name, selectedService, amount } = req.body;
+        const { sessionId, phone, email, name, cartItems, couponCode, action, order_id, rating, review_text } = req.body;
 
-        if (!selectedService || !amount) {
-            return res.status(400).json({ reply: "Please select a valid service and pricing to proceed." });
+        if (action === 'submitReview') {
+            if (!order_id || !rating || !review_text) {
+                return res.status(400).json({ error: "Missing required fields." });
+            }
+
+            const { error } = await supabase.from('reviews').insert([{
+                order_id: String(order_id).trim(),
+                client_email: email ? String(email).trim() : null,
+                client_name: name ? String(name).trim() : 'Anonymous Client',
+                rating: parseInt(rating),
+                review_text: String(review_text).trim(),
+                is_approved: false 
+            }]);
+            
+            if (error) {
+                console.error("Review Insert Error:", error);
+                return res.status(500).json({ error: "Failed to submit review." });
+            }
+            return res.status(200).json({ success: true, message: "Review submitted successfully!" });
+        }
+
+        if (action === 'fetchReviews') {
+            const { data, error } = await supabase
+                .from('reviews')
+                .select('client_name, rating, review_text, created_at')
+                .eq('is_approved', true)
+                .order('created_at', { ascending: false })
+                .limit(20);
+            if (error) return res.status(500).json({ error: "Failed to fetch reviews." });
+            return res.status(200).json(data);
+        }
+
+        if (action !== 'validateCoupon' && (!cartItems || !cartItems.length)) {
+            return res.status(400).json({ reply: "Your cart is empty. Please add items to proceed." });
         }
 
         // FIX #14: Server-side studio Away check — the frontend check can be bypassed
@@ -83,37 +115,99 @@ module.exports = async function (req, res) {
         const deadlineMap = await fetchDeadlineMap();
 
         // ── Validate user-supplied fields before sending to Cashfree / Supabase ──
-        // Cashfree strictly requires a valid 10-digit phone number.
-        const phoneRegex = /^[0-9]{10}$/;
-        // B5 FIX: phone is now REQUIRED — reject if missing, not just if malformed.
-        // A fake default (9999999999) creates junk customer records in Cashfree.
-        if (!phone || !phoneRegex.test(String(phone).trim())) {
-            return res.status(400).json({ reply: "Please provide a valid 10-digit phone number (no spaces or country code)." });
-        }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (email && !emailRegex.test(String(email).trim())) {
-            return res.status(400).json({ reply: "Please provide a valid email address." });
-        }
-        if (name && String(name).trim().length > 100) {
-            return res.status(400).json({ reply: "Name is too long. Please use a shorter name." });
+        if (action !== 'validateCoupon') {
+            // Cashfree strictly requires a valid 10-digit phone number.
+            const phoneRegex = /^[0-9]{10}$/;
+            // B5 FIX: phone is now REQUIRED — reject if missing, not just if malformed.
+            if (!phone || !phoneRegex.test(String(phone).trim())) {
+                return res.status(400).json({ reply: "Please provide a valid 10-digit phone number (no spaces or country code)." });
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email && !emailRegex.test(String(email).trim())) {
+                return res.status(400).json({ reply: "Please provide a valid email address." });
+            }
+            if (name && String(name).trim().length > 100) {
+                return res.status(400).json({ reply: "Name is too long. Please use a shorter name." });
+            }
         }
 
         const safeName  = name  ? String(name).trim().substring(0, 100)  : "Zyro Client";
         const safeEmail = email ? String(email).trim().substring(0, 200) : "zyroeditz.official@gmail.com";
-        const safePhone = String(phone).trim(); // always valid — guarded above
-
+        const safePhone = phone ? String(phone).trim() : "9999999999";
         const orderId = generateOrderId();
-        const numericAmount = parseFloat(amount);
+
+        // ── Compute Total Amount from Cart ──
+        let subtotal = 0;
+        let selectedService = '';
+        const serviceNames = [];
+
+        cartItems.forEach(item => {
+            const itemTotal = (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1);
+            subtotal += itemTotal;
+            serviceNames.push(`${item.name} (x${item.qty || 1})`);
+        });
+        selectedService = serviceNames.join(', ').substring(0, 500);
+
+        let numericAmount = subtotal;
+        let validCoupon = null;
+
+        // Apply Coupon Logic
+        if (couponCode && typeof couponCode === 'string') {
+            const { data: coupon, error: couponError } = await supabase
+                .from('coupons')
+                .select('*')
+                .eq('code', couponCode.toUpperCase().trim())
+                .eq('is_active', true)
+                .single();
+
+            if (!couponError && coupon) {
+                // Validate min order value
+                if (coupon.min_order_value && subtotal < coupon.min_order_value) {
+                    return res.status(400).json({ reply: `Coupon requires a minimum order value of ₹${coupon.min_order_value}` });
+                }
+                // Validate usage limits
+                if (coupon.max_uses > 0 && coupon.times_used >= coupon.max_uses) {
+                    return res.status(400).json({ reply: `Coupon has reached its maximum usage limit.` });
+                }
+                // Validate expiry
+                if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+                    return res.status(400).json({ reply: `Coupon has expired.` });
+                }
+
+                // Apply discount
+                if (coupon.discount_type === 'fixed') {
+                    numericAmount = Math.max(0, subtotal - parseFloat(coupon.discount_value));
+                } else if (coupon.discount_type === 'percent') {
+                    const discount = subtotal * (parseFloat(coupon.discount_value) / 100);
+                    numericAmount = Math.max(0, subtotal - discount);
+                }
+                validCoupon = coupon;
+            } else {
+                return res.status(400).json({ reply: `Invalid or inactive coupon code.` });
+            }
+        }
+
+        if (action === 'validateCoupon') {
+            return res.status(200).json({
+                valid: true,
+                finalAmount: numericAmount,
+                discount: subtotal - numericAmount
+            });
+        }
 
         // Guard: reject invalid amounts before hitting Cashfree
-        // Negative, zero, or NaN amounts cause a confusing 422 from Cashfree's API.
-        if (!numericAmount || numericAmount <= 0 || !Number.isFinite(numericAmount)) {
-            return res.status(400).json({ reply: "Invalid payment amount. Please contact support." });
+        if (numericAmount <= 0 || !Number.isFinite(numericAmount)) {
+            return res.status(400).json({ reply: "Final amount must be greater than zero." });
         }
 
         // ── BUG FIX #9: Safer IST deadline — compute using explicit UTC year/month/day ──
-        // Avoids setUTCDate() month-rollover edge cases when adding days near month boundaries.
-        const daysToAdd = deadlineMap[selectedService] || 3;
+        // Extract longest delivery days from the cart
+        let maxDays = 3;
+        cartItems.forEach(item => {
+            const days = deadlineMap[item.name] || 3;
+            if (days > maxDays) maxDays = days;
+        });
+        const daysToAdd = maxDays;
         const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
         const nowIST = new Date(Date.now() + IST_OFFSET_MS);
         // Extract IST calendar date components, then add daysToAdd cleanly via a new Date constructor
@@ -178,6 +272,31 @@ module.exports = async function (req, res) {
         if (dbError) {
             console.error("Supabase Insert Failed:", dbError);
             throw new Error("Database insertion failed");
+        }
+
+        // --- SAVE ITEMS TO order_items TABLE ---
+        if (cartItems && cartItems.length > 0) {
+            const itemsToInsert = cartItems.map(item => ({
+                order_id: orderId,
+                service_name: item.name,
+                price: parseFloat(item.price) || 0,
+                quantity: parseInt(item.qty) || 1
+            }));
+            const { error: itemsErr } = await supabase.from('order_items').insert(itemsToInsert);
+            if (itemsErr) {
+                console.error("Failed to insert order_items:", itemsErr);
+            }
+        }
+
+        // --- INCREMENT COUPON USAGE ---
+        if (validCoupon) {
+            const { error: updateErr } = await supabase
+                .from('coupons')
+                .update({ times_used: (validCoupon.times_used || 0) + 1 })
+                .eq('code', validCoupon.code);
+            if (updateErr) {
+                console.error("Failed to increment coupon usage:", updateErr);
+            }
         }
 
         const replyText = `Excellent choice. Our studio is ready to deliver premium, cinematic quality for your ${selectedService} project.\n\nPlease note: We require full payment before starting a project. However, we offer a 100% refund if you are not satisfied with the final result.\n\nSecuring your project slot and opening the secure payment portal...`;

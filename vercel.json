@@ -1,5 +1,6 @@
 {
   "outputDirectory": ".",
+  "cleanUrls": true,
   "functions": {
     "api/upload-files.js":    { "maxDuration": 20 },
     "api/admin-chat.js":      { "maxDuration": 30 },

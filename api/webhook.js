@@ -119,7 +119,7 @@ const _handler = async function(req, res) {
                 // Status is 'pending' — we are first. Update to 'paid'.
                 const { error: dbError } = await supabase
                     .from('orders')
-                    .update({ status: 'paid' })
+                    .update({ status: 'paid', paid_at: new Date().toISOString() })
                     .eq('order_id', orderId);
 
                 if (dbError) {
