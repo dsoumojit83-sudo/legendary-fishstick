@@ -1615,6 +1615,7 @@
     </div>
 
     <!-- Account Settings Modal -->
+<<<<<<< HEAD
     <div id="settings-modal" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(5,5,5,0.92);backdrop-filter:blur(20px);align-items:center;justify-content:center;overflow-y:auto;" onclick="if(event.target===this)closeSettingsModal()">
         <div style="background:#0a0a0a;border:1px solid rgba(255,26,26,0.15);border-radius:20px;padding:40px 36px;width:100%;max-width:550px;margin:auto;position:relative;box-shadow:0 0 60px rgba(255,26,26,0.06); max-height: 90vh; overflow-y: auto;">
             <button onclick="closeSettingsModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#555;cursor:pointer;font-size:20px;line-height:1;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#555'">&times;</button>
@@ -1652,23 +1653,53 @@
                     <div style="flex:1;"><input id="sm-zip" type="text" placeholder="Pincode" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;color:#fff;font-size:14px;outline:none;"></div>
                 </div>
                 <button type="submit" id="sm-btn" style="background:#ff1a1a;color:#000;border:none;border-radius:10px;padding:14px;font-weight:900;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Roboto',sans-serif;transition:opacity .2s;margin-top:8px;">Save Profile Data</button>
+=======
+    <div id="settings-modal" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(5,5,5,0.92);backdrop-filter:blur(20px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeSettingsModal()">
+        <div style="background:#0a0a0a;border:1px solid rgba(255,26,26,0.15);border-radius:20px;padding:40px 36px;width:100%;max-width:420px;margin:16px;position:relative;box-shadow:0 0 60px rgba(255,26,26,0.06);">
+            <button onclick="closeSettingsModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#555;cursor:pointer;font-size:20px;line-height:1;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#555'">&times;</button>
+            <div style="text-align:center;margin-bottom:32px;">
+                <h2 style="font-size:24px;font-weight:900;font-family:'Roboto',sans-serif;margin:0;">Account <span style="color:#ff1a1a;">Settings</span></h2>
+            </div>
+            <div id="sm-error" style="display:none;background:rgba(255,26,26,.08);border:1px solid rgba(255,26,26,.25);border-radius:10px;padding:10px 14px;color:#f87171;font-size:12px;margin-bottom:20px;text-align:center;"></div>
+            <div id="sm-success" style="display:none;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:10px;padding:10px 14px;color:#4ade80;font-size:12px;margin-bottom:20px;text-align:center;"></div>
+            <form id="sm-form" onsubmit="handleSaveSettings(event)" style="display:flex;flex-direction:column;gap:12px;">
+                <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:-8px;">Full Name</label>
+                <input id="sm-name" type="text" placeholder="Full Name" required style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+                <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:-8px;margin-top:4px;">Mobile Number</label>
+                <input id="sm-phone" type="tel" placeholder="Mobile Number" required style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+                <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:-8px;margin-top:4px;">Company / Brand Name <span style="text-transform:none;color:#555;">(Optional)</span></label>
+                <input id="sm-company" type="text" placeholder="e.g. Zyro Studio" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+                <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:-8px;margin-top:4px;">Discord Username <span style="text-transform:none;color:#555;">(Optional)</span></label>
+                <input id="sm-discord" type="text" placeholder="e.g. username#1234" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='rgba(255,26,26,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+                <button type="submit" id="sm-btn" style="background:#ff1a1a;color:#000;border:none;border-radius:10px;padding:13px;font-weight:900;font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Roboto',sans-serif;transition:opacity .2s;margin-top:12px;">Save Changes</button>
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
             </form>
         </div>
     </div>
 
     <!-- Past Orders Modal -->
     <div id="orders-modal" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(5,5,5,0.92);backdrop-filter:blur(20px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeOrdersModal()">
+<<<<<<< HEAD
         <div style="background:#0a0a0a;border:1px solid rgba(255,26,26,0.15);border-radius:20px;padding:40px 36px;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;margin:16px;position:relative;box-shadow:0 0 60px rgba(255,26,26,0.06);">
             <button onclick="closeOrdersModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#555;cursor:pointer;font-size:20px;line-height:1;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#555'">&times;</button>
             <div style="text-align:center;margin-bottom:24px;">
                 <h2 style="font-size:24px;font-weight:900;font-family:'Roboto',sans-serif;margin:0;">My <span style="color:#ff1a1a;">Orders</span></h2>
             </div>
             <div id="orders-list-container" style="display:flex;flex-direction:column;gap:16px;">
+=======
+        <div style="background:#0a0a0a;border:1px solid rgba(255,26,26,0.15);border-radius:20px;padding:40px 36px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;margin:16px;position:relative;box-shadow:0 0 60px rgba(255,26,26,0.06);">
+            <button onclick="closeOrdersModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#555;cursor:pointer;font-size:20px;line-height:1;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#555'">&times;</button>
+            <div style="text-align:center;margin-bottom:24px;">
+                <h2 style="font-size:24px;font-weight:900;font-family:'Roboto',sans-serif;margin:0;">Past <span style="color:#ff1a1a;">Orders</span></h2>
+            </div>
+            <div id="orders-list-container" style="display:flex;flex-direction:column;gap:12px;">
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
                 <div style="text-align:center;color:#888;font-size:14px;padding:20px;">Loading orders...</div>
             </div>
         </div>
     </div>
 
+<<<<<<< HEAD
     <!-- Order Tracking Sub-Modal -->
     <div id="tracking-modal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeTrackingModal()">
         <div style="background:#111;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:30px;width:100%;max-width:450px;margin:16px;position:relative;">
@@ -1690,6 +1721,8 @@
         </div>
     </div>
 
+=======
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
     <section id="home" class="min-h-screen flex items-center justify-center relative z-10 px-6"
         style="will-change: transform, filter, opacity;">
         <div class="text-center max-w-4xl">
@@ -4205,6 +4238,7 @@
         if (!session || !session.user) return;
         
         const user = session.user;
+<<<<<<< HEAD
         
         // Fetch from client_info
         const { data } = await window._supabaseClient.from('client_info').select('*').eq('user_id', user.id).single();
@@ -4225,6 +4259,12 @@
             document.getElementById('sm-lname').value = parts.slice(1).join(' ') || '';
             document.getElementById('sm-phone').value = user.user_metadata?.phone || '';
         }
+=======
+        document.getElementById('sm-name').value = user.user_metadata?.full_name || '';
+        document.getElementById('sm-phone').value = user.user_metadata?.phone || '';
+        document.getElementById('sm-company').value = user.user_metadata?.company_name || '';
+        document.getElementById('sm-discord').value = user.user_metadata?.discord_username || '';
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
         
         document.getElementById('settings-modal').style.display = 'flex';
     }
@@ -4235,14 +4275,26 @@
         const btn = document.getElementById('sm-btn');
         const errEl = document.getElementById('sm-error');
         const succEl = document.getElementById('sm-success');
+<<<<<<< HEAD
         
         errEl.style.display = 'none';
         succEl.style.display = 'none';
         btn.textContent = 'Saving...';
+=======
+        const name = document.getElementById('sm-name').value.trim();
+        const phone = document.getElementById('sm-phone').value.trim();
+        const company = document.getElementById('sm-company').value.trim();
+        const discord = document.getElementById('sm-discord').value.trim();
+        
+        errEl.style.display = 'none';
+        succEl.style.display = 'none';
+        btn.textContent = 'Saving…';
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
         btn.disabled = true;
         
         try {
             if (!window._supabaseClient) throw new Error('Auth service not ready.');
+<<<<<<< HEAD
             const { data: { session } } = await window._supabaseClient.auth.getSession();
             if (!session) throw new Error('Not logged in.');
             
@@ -4266,12 +4318,31 @@
             succEl.style.display = 'block';
             
             setTimeout(() => { closeSettingsModal(); }, 1500);
+=======
+            
+            const { error } = await window._supabaseClient.auth.updateUser({
+                data: { full_name: name, phone: phone, company_name: company, discord_username: discord }
+            });
+            if (error) throw error;
+            
+            succEl.textContent = 'Profile updated successfully!';
+            succEl.style.display = 'block';
+            initAccountState();
+            
+            setTimeout(() => {
+                closeSettingsModal();
+            }, 1500);
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
             
         } catch(err) {
             errEl.textContent = err.message || 'Failed to update profile.';
             errEl.style.display = 'block';
         } finally {
+<<<<<<< HEAD
             btn.textContent = 'Save Profile Data';
+=======
+            btn.textContent = 'Save Changes';
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
             btn.disabled = false;
         }
     }
@@ -4280,6 +4351,7 @@
     window.closeOrdersModal = function() {
         document.getElementById('orders-modal').style.display = 'none';
     };
+<<<<<<< HEAD
     
     window.closeTrackingModal = function() {
         document.getElementById('tracking-modal').style.display = 'none';
@@ -4374,6 +4446,8 @@
             })();
         }
     };
+=======
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
 
     async function openOrdersModal(event) {
         if (event) event.preventDefault();
@@ -4390,7 +4464,11 @@
         try {
             const { data: orders, error } = await window._supabaseClient
                 .from('orders')
+<<<<<<< HEAD
                 .select('order_id, service, amount, status, created_at, paid_at, working_at, completed_at, deadline_date')
+=======
+                .select('order_id, service, amount, status, created_at, deadline_date')
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
                 .eq('client_email', session.user.email)
                 .order('created_at', { ascending: false });
                 
@@ -4404,6 +4482,7 @@
             let html = '';
             orders.forEach(order => {
                 const date = new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+<<<<<<< HEAD
                 const isCompleted = order.status === 'completed';
                 const statusColor = isCompleted ? '#4ade80' : 
                                     order.status === 'pending' ? '#facc15' : '#4299e1';
@@ -4423,6 +4502,24 @@
                         <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.05);padding-top:10px;margin-top:10px;">
                             <span style="color:#666;font-size:11px;">Ordered: ${date}</span>
                             <span style="color:#ff1a1a;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;">Track Order ➔</span>
+=======
+                const statusColor = order.status === 'paid' || order.status === 'completed' ? '#4ade80' : 
+                                    order.status === 'pending' ? '#facc15' : '#f87171';
+                
+                html += `
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:700;color:#fff;font-size:14px;">${order.service}</span>
+                            <span style="color:${statusColor};font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">${order.status}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="color:#777;font-size:12px;">Order ID: ${order.order_id}</span>
+                            <span style="color:#ff1a1a;font-weight:700;font-size:14px;">₹${order.amount}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;margin-top:4px;">
+                            <span style="color:#666;font-size:11px;">Ordered: ${date}</span>
+                            <a href="/payment-success?order_id=${order.order_id}" style="color:#aaa;font-size:11px;text-decoration:underline;">View Details</a>
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
                         </div>
                     </div>
                 `;

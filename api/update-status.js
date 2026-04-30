@@ -38,6 +38,7 @@ module.exports = async function(req, res) {
 
     try {
         const { action, orderId, status, is_online, deliveryMessage, deliveryFiles } = req.body;
+<<<<<<< HEAD
 
         // ── ADMIN ONLY GATE (except for get_delivery) ─────────────────────────
         if (action !== 'get_delivery') {
@@ -47,6 +48,8 @@ module.exports = async function(req, res) {
                 if (adminErr || !adminRecord) return res.status(403).json({ error: 'Forbidden: Admin access required' });
             }
         }
+=======
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
 
         // ── ACTION: Toggle studio online/offline status ──────────────────────
         if (action === 'set_studio_status') {
@@ -177,6 +180,7 @@ module.exports = async function(req, res) {
                         return { filename, url };
                     }));
                     
+<<<<<<< HEAD
                     // Insert keys into deliveries table for persistent dashboard downloads
                     const deliveryRecords = deliveryFiles.map(key => ({
                         order_id: orderId,
@@ -184,6 +188,8 @@ module.exports = async function(req, res) {
                     }));
                     await supabase.from('deliveries').upsert(deliveryRecords).catch(e => console.error("Deliveries insert error:", e));
                     
+=======
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
                     filesHtml = `
                         <div style="background:#1a1a1a; border:1px solid #ff1a1a; border-radius:8px; padding:20px; margin:30px 0;">
                             <h3 style="color:#fff; margin-top:0; font-size:16px;">\uD83D\uDCE5 Final Deliverables</h3>
@@ -203,6 +209,7 @@ module.exports = async function(req, res) {
                     </div>
                 ` : '';
 
+<<<<<<< HEAD
                 // --- GENERATE REFERRAL & REVIEW HTML ---
                 const referralCode = `ZYRO-${orderId.slice(-5)}`;
                 
@@ -239,6 +246,8 @@ module.exports = async function(req, res) {
                     </div>
                 `;
 
+=======
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
                 const resend = new Resend(process.env.RESEND_API_KEY);
                 await resend.emails.send({
                     from: 'ZyroEditz\u2122 <billing@zyroeditz.xyz>',
@@ -268,9 +277,12 @@ module.exports = async function(req, res) {
                                 ${filesHtml}
                                 
                                 ${!filesHtml ? '<p style="color:#ccc;font-size:14px;line-height:1.6;">Our team will deliver your files shortly. If you have any questions or need revisions, please reply to this email.</p>' : '<p style="color:#ccc;font-size:14px;line-height:1.6;">If you have any questions or need revisions, simply reply to this email.</p>'}
+<<<<<<< HEAD
                                 
                                 ${extrasHtml}
                                 
+=======
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
                                 <p style="color:#ccc;font-size:14px;line-height:1.6;">Thank you for choosing ZyroEditz\u2122!</p>
                             </div>
                             <div style="background:#0a0a0a;padding:25px 30px;text-align:center;border-top:1px solid #1a1a1a;">

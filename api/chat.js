@@ -60,6 +60,7 @@ module.exports = async function (req, res) {
     }
 
     try {
+<<<<<<< HEAD
         const { sessionId, phone, email, name, cartItems, couponCode, action, order_id, rating, review_text } = req.body;
 
         if (action === 'submitReview') {
@@ -95,6 +96,11 @@ module.exports = async function (req, res) {
         }
 
         if (action !== 'validateCoupon' && (!cartItems || !cartItems.length)) {
+=======
+        const { sessionId, phone, email, name, cartItems, couponCode, action } = req.body;
+
+        if (!cartItems || !cartItems.length) {
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
             return res.status(400).json({ reply: "Your cart is empty. Please add items to proceed." });
         }
 
@@ -149,7 +155,10 @@ module.exports = async function (req, res) {
         selectedService = serviceNames.join(', ').substring(0, 500);
 
         let numericAmount = subtotal;
+<<<<<<< HEAD
         let validCoupon = null;
+=======
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
 
         // Apply Coupon Logic
         if (couponCode && typeof couponCode === 'string') {
@@ -181,7 +190,10 @@ module.exports = async function (req, res) {
                     const discount = subtotal * (parseFloat(coupon.discount_value) / 100);
                     numericAmount = Math.max(0, subtotal - discount);
                 }
+<<<<<<< HEAD
                 validCoupon = coupon;
+=======
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
             } else {
                 return res.status(400).json({ reply: `Invalid or inactive coupon code.` });
             }

@@ -114,12 +114,15 @@ module.exports = async function (req, res) {
         const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
         if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
+<<<<<<< HEAD
         const userEmail = user.email ? user.email.toLowerCase() : '';
         if (userEmail !== 'zyroeditz.official@gmail.com') {
             const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('email').eq('email', userEmail).maybeSingle();
             if (adminErr || !adminRecord) return res.status(403).json({ error: 'Forbidden: Admin access required' });
         }
 
+=======
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
         // IMPORTANT: Create an authenticated client so we bypass the RLS public block!
         const db = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY, {
             global: { headers: { Authorization: authHeader } }
@@ -339,13 +342,18 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
                 if (actionObj.type === 'search_orders' && actionObj.query) {
                     actionName = `Search Orders: ${actionObj.query}`;
                     const q = actionObj.query.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim();
+<<<<<<< HEAD
                     const searchResults = orders.filter(o =>
+=======
+                    const searchResults = orders.filter(o => 
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
                         (o.client_name || '').toLowerCase().includes(q) ||
                         (o.order_id || '').toLowerCase().includes(q) ||
                         (o.client_email || '').toLowerCase().includes(q) ||
                         (o.status || '').toLowerCase().includes(q) ||
                         (o.service || '').toLowerCase().includes(q)
                     ).slice(0, 10);
+<<<<<<< HEAD
 
                     resultsText = searchResults && searchResults.length > 0
                         ? searchResults.map(o => `[${o.order_id}|${o.client_name}|${o.client_email}|${o.client_phone}|${o.service}|${o.status}|Rs.${o.amount}]`).join('\n')
@@ -354,6 +362,16 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
                 else if (actionObj.type === 'fetch_table' && actionObj.table) {
                     actionName = `Fetch Table: ${actionObj.table}`;
                     const allowedTables = ['orders', 'order_items', 'services', 'coupons', 'portfolio_items', 'studio_config', 'referrals', 'reviews'];
+=======
+                    
+                        resultsText = searchResults && searchResults.length > 0 
+                        ? searchResults.map(o => `[${o.order_id}|${o.client_name}|${o.client_email}|${o.client_phone}|${o.service}|${o.status}|Rs.${o.amount}]`).join('\n')
+                        : 'No matching orders found.';
+                } 
+                else if (actionObj.type === 'fetch_table' && actionObj.table) {
+                    actionName = `Fetch Table: ${actionObj.table}`;
+                    const allowedTables = ['orders', 'order_items', 'services', 'coupons', 'portfolio_items', 'studio_config'];
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
                     if (allowedTables.includes(actionObj.table)) {
                         const { data: tableData } = await db.from(actionObj.table).select('*').limit(50);
                         resultsText = tableData && tableData.length > 0
@@ -391,12 +409,21 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
             content: finalPrompt + (hasImage ? ` [Attached Image: ${attachment.name}]` : ''),
             timestamp: now
         });
+<<<<<<< HEAD
         sessionMemory.push({
             role: 'assistant',
             content: cleanText,
             timestamp: now
         });
 
+=======
+        sessionMemory.push({ 
+            role: 'assistant', 
+            content: cleanText, 
+            timestamp: now 
+        });
+        
+>>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
         if (sessionMemory.length > 12) sessionMemory.splice(0, 2);
         memoryStore[sessionId] = sessionMemory;
 
