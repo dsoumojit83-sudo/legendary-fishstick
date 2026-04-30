@@ -81,6 +81,13 @@ module.exports = async function (req, res) {
             return res.status(200).json({ coupons: data });
         }
 
+        // ── Admins listing (GET ?action=getAdmins) ────────────────────────────────
+        if (req.method === 'GET' && req.query.action === 'getAdmins') {
+            const { data, error } = await supabase.from('admins').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            return res.status(200).json({ admins: data });
+        }
+
         // ── Portfolio admin listing (GET ?type=portfolio) ────────────────────────
         if (req.method === 'GET' && req.query.type === 'portfolio') {
             const { data, error } = await supabase
@@ -226,6 +233,37 @@ module.exports = async function (req, res) {
                 if (!id) return res.status(400).json({ error: 'id is required.' });
                 const { error } = await supabase.from('coupons').delete().eq('id', id);
                 if (error) throw error;
+                return res.status(200).json({ ok: true });
+            }
+
+            if (action === 'addAdmin') {
+                const { email, password } = body;
+                if (!email || !password) return res.status(400).json({ error: 'Email and password required.' });
+                
+                // Create or update user in Supabase Auth (requires SERVICE_ROLE_KEY or anon key with right settings)
+                const adminClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
+                const { error: authError } = await adminClient.auth.admin.createUser({
+                    email,
+                    password,
+                    email_confirm: true
+                });
+                if (authError && authError.message !== 'User already registered') throw authError;
+
+                // Add to admins table
+                const { error: dbError } = await supabase.from('admins').upsert({ email }).select().single();
+                if (dbError) throw dbError;
+
+                return res.status(200).json({ ok: true });
+            }
+
+            if (action === 'deleteAdmin') {
+                const { email } = body;
+                if (!email) return res.status(400).json({ error: 'Email required.' });
+                
+                // Remove from admins table (we don't delete from auth to preserve their normal account)
+                const { error: dbError } = await supabase.from('admins').delete().eq('email', email);
+                if (dbError) throw dbError;
+                
                 return res.status(200).json({ ok: true });
             }
 
