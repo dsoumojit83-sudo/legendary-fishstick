@@ -1,7 +1,9 @@
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const sendInvoice = require('./sendInvoice');
+
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
 // ─── RATE LIMITER (Bug Fix A8) ────────────────────────────────────────────────
 // Prevents polling attacks that exhaust Cashfree API quota.
 // Simple sliding-window: 20 requests per IP per 60 seconds.
@@ -62,19 +64,12 @@ function log(level, orderId, message, extra) {
 }
 
 module.exports = async function (req, res) {
-    // CORS — locked to known production origins; localhost for development
-    const allowedOrigins = [
-        'https://zyroeditz.xyz',
-        'https://www.zyroeditz.xyz',
-        'https://zyroeditz.vercel.app',
-    ];
-    const requestOrigin = req.headers.origin || '';
-    const originOk = allowedOrigins.includes(requestOrigin) ||
-                     requestOrigin.startsWith('http://localhost') ||
-                     requestOrigin.startsWith('http://127.0.0.1');
-    res.setHeader('Access-Control-Allow-Origin', originOk ? requestOrigin : allowedOrigins[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _origin = req.headers.origin;
+    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -136,8 +131,8 @@ module.exports = async function (req, res) {
                 });
                 paymentSessionId = cfRes.data.payment_session_id || null;
             } catch (cfErr) {
-                // Cashfree order doesn't exist or expired — create a fresh one
-                if (cfErr.response?.status === 404 || !paymentSessionId) {
+                // Cashfree order doesn't exist (404) — create a fresh one
+                if (cfErr.response?.status === 404) {
                     const cleanPhone = order.client_phone
                         ? String(order.client_phone).replace(/\D/g, '').slice(-10)
                         : '9999999999';
@@ -239,7 +234,7 @@ module.exports = async function (req, res) {
             // If it hasn't been marked as paid yet, update the Database now
             const { error: dbError } = await supabase
                 .from('orders')
-                .update({ status: 'paid', paid_at: new Date().toISOString() })
+                .update({ status: 'paid' })
                 .eq('order_id', order_id);
 
             if (dbError) {

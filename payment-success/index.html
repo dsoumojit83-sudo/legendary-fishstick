@@ -395,8 +395,6 @@
                     return;
                 }
                 revealPage();
-                // Empty the cart on successful order
-                localStorage.removeItem('zyro_cart');
             } catch (err) {
                 // BUG FIX: On network errors, DON'T silently show the success page.
                 // Redirect to payment-failed so the user knows to check their payment status.

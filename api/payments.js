@@ -3,13 +3,14 @@ const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-module.exports = async function (req, res) {
-    // CORS — same pattern as all other admin APIs (settlements, admin-data, etc.)
-    const _pAllowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _pOrigin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _pAllowed.includes(_pOrigin) ? _pOrigin : _pAllowed[0]);
+
+module.exports = async function(req, res) {
+    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _origin = req.headers.origin;
+    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -28,12 +29,6 @@ module.exports = async function (req, res) {
     if (!authH?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
     const { data: { user: u }, error: uErr } = await supabase.auth.getUser(authH.slice(7));
     if (uErr || !u) return res.status(401).json({ error: 'Unauthorized' });
-
-    const userEmail = u.email ? u.email.toLowerCase() : '';
-    if (userEmail !== 'zyroeditz.official@gmail.com') {
-        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('email').eq('email', userEmail).maybeSingle();
-        if (adminErr || !adminRecord) return res.status(403).json({ error: 'Forbidden: Admin access required' });
-    }
 
     try {
         // 1. Fetch the latest 30 successful/paid orders from Supabase

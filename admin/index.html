@@ -534,11 +534,6 @@
                     <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                     <span class="font-medium text-sm">Store Manager</span>
                 </button>
-                <button onclick="switchView('admins-view', this); fetchAdminsData();"
-                    class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all border border-transparent">
-                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
-                    <span class="font-medium text-sm">Access Control</span>
-                </button>
             </nav>
 
             <!-- FIX 2: Studio toggle — mobile sidebar only (hidden on desktop via lg:hidden) -->
@@ -1469,35 +1464,6 @@
                     </div>
                 </div>
 
-                <!-- ========== ADMINS ACCESS VIEW ========== -->
-                <div id="admins-view" class="view-section space-y-8">
-                    <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
-                        <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
-                            <div>
-                                <h3 class="text-lg font-bold text-white">Administrators</h3>
-                                <p class="text-xs text-gray-400 mt-1">Manage command center access</p>
-                            </div>
-                            <button onclick="openAddAdminModal()" class="flex items-center gap-2 px-4 py-2 bg-[#ff1a1a] text-black text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-all shrink-0">
-                                <i data-lucide="user-plus" class="w-4 h-4"></i> Add Admin
-                            </button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left min-w-[600px]">
-                                <thead class="border-b border-white/5 bg-black/20">
-                                    <tr class="text-[10px] uppercase tracking-widest text-gray-500">
-                                        <th class="p-4">Email Address</th>
-                                        <th class="p-4">Added On</th>
-                                        <th class="p-4 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="admins-tbody" class="text-sm divide-y divide-white/5">
-                                    <tr><td colspan="3" class="p-6 text-center text-gray-500 text-xs">Loading admins...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </main>
 
@@ -1646,94 +1612,6 @@
         </div>
     </div>
 
-    <!-- ==================== DELIVERY MODAL ==================== -->
-    <div id="delivery-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity duration-300 opacity-0">
-        <div id="delivery-modal-content" class="bg-[#0a0a0a] border border-[#ff1a1a]/20 w-full max-w-lg rounded-xl shadow-[0_0_50px_rgba(255,26,26,0.1)] p-6 transform scale-95 transition-transform duration-300 relative">
-            
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <h3 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="send" class="w-5 h-5 text-[#ff1a1a]"></i> Deliver Project</h3>
-                    <p id="delivery-modal-order-id" class="text-xs text-gray-500 uppercase tracking-widest mt-1 font-mono"></p>
-                </div>
-                <button onclick="closeDeliveryModal()" class="text-gray-500 hover:text-white transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-
-            <div class="space-y-4">
-                <!-- Delivery Message -->
-                <div>
-                    <label class="block text-xs text-gray-400 uppercase tracking-wider mb-2">Message to Client (Optional)</label>
-                    <textarea id="delivery-message" rows="3" class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-[#ff1a1a] focus:ring-1 focus:ring-[#ff1a1a] outline-none transition-all resize-none" placeholder="e.g. Here is your final edited video! Let me know if you need any tweaks."></textarea>
-                </div>
-
-                <!-- File Uploader -->
-                <div>
-                    <label class="block text-xs text-gray-400 uppercase tracking-wider mb-2">Final Files (Auto-Uploads to Vault)</label>
-                    <input type="file" id="delivery-file-input" multiple class="hidden">
-                    <label for="delivery-file-input" id="delivery-drop-zone" class="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-white/10 rounded-lg cursor-pointer hover:border-[#ff1a1a]/50 hover:bg-[#ff1a1a]/5 transition-all group">
-                        <i data-lucide="upload-cloud" class="w-6 h-6 text-gray-500 group-hover:text-[#ff1a1a] mb-2 transition-colors"></i>
-                        <span class="text-sm font-medium text-gray-400 group-hover:text-white transition-colors">Click to attach final videos</span>
-                        <span id="delivery-file-names" class="text-xs text-[#ff1a1a] mt-2 text-center break-all hidden"></span>
-                    </label>
-                </div>
-                
-                <!-- Progress Bar -->
-                <div id="delivery-progress-wrapper" class="hidden">
-                    <div class="flex justify-between text-xs mb-1">
-                        <span id="delivery-progress-label" class="text-gray-400">Uploading...</span>
-                        <span id="delivery-progress-pct" class="text-[#ff1a1a] font-bold">0%</span>
-                    </div>
-                    <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div id="delivery-progress-bar" class="h-full bg-gradient-to-r from-[#cc0000] to-[#ff1a1a] transition-all" style="width: 0%"></div>
-                    </div>
-                </div>
-
-                <!-- Submit Button -->
-                <div class="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-                    <button onclick="closeDeliveryModal()" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white text-sm font-medium transition-colors">Cancel</button>
-                    <button id="delivery-submit-btn" class="px-5 py-2 rounded-lg bg-[#ff1a1a] hover:bg-white text-black text-sm font-bold transition-colors flex items-center gap-2">
-                        <i id="delivery-submit-icon" data-lucide="send" class="w-4 h-4"></i>
-                        <span id="delivery-submit-text">Upload & Deliver</span>
-                    </button>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-<<<<<<< HEAD
-    <!-- Add Admin Modal -->
-    <div id="add-admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] hidden flex items-center justify-center opacity-0 transition-opacity p-4">
-        <div class="bg-[#050505] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="add-admin-modal-content">
-            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
-                <h3 class="text-lg font-bold text-white">Add / Update Administrator</h3>
-                <button onclick="closeAddAdminModal()" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="p-6">
-                <p class="text-xs text-gray-400 mb-6">Create a new admin account or reset password for an existing admin.</p>
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Admin Email</label>
-                        <input type="email" id="admin-email" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="admin@zyroeditz.xyz">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Secure Password</label>
-                        <input type="password" id="admin-password" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Min 6 characters">
-                    </div>
-                </div>
-
-                <div class="mt-8 flex justify-end gap-3">
-                    <button onclick="closeAddAdminModal()" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white text-sm transition-colors">Cancel</button>
-                    <button onclick="submitAddAdmin()" class="px-5 py-2 rounded-lg bg-[#ff1a1a] hover:bg-white text-black text-sm font-bold transition-colors">Save Admin</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-=======
->>>>>>> 7090901b4a55de26c47e41642cd7ca393c108093
     <div id="toast-notification"
         class="fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all duration-300 z-[300] flex items-center gap-3 bg-[#22c55e] text-black hidden">
     </div>
@@ -2019,99 +1897,6 @@
             }
         };
 
-        // ── ADMINS MANAGEMENT ──────────────────────────────────────────
-        async function fetchAdminsData() {
-            if (!authToken) return;
-            const tbody = document.getElementById('admins-tbody');
-            tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-gray-500 text-xs">Loading admins...</td></tr>';
-            try {
-                const res = await fetch('/api/admin-data?action=getAdmins', {
-                    headers: { 'Authorization': 'Bearer ' + authToken }
-                });
-                if (!res.ok) throw new Error('Failed to fetch admins');
-                const { admins } = await res.json();
-                
-                if (!admins || admins.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-gray-500 text-xs">No extra admins found. Only zyroeditz.official@gmail.com has access.</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = admins.map(a => `
-                    <tr class="hover:bg-white/5 transition-colors group">
-                        <td class="p-4 text-white font-medium">${a.email}</td>
-                        <td class="p-4 text-gray-400 text-xs">${new Date(a.created_at).toLocaleDateString()}</td>
-                        <td class="p-4 text-right">
-                            <button onclick="deleteAdmin('${a.email}')" class="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100" title="Remove Admin Access">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
-                if(window.lucide) lucide.createIcons();
-            } catch(e) {
-                console.error(e);
-                tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-red-400 text-xs">Error loading admins. Did you create the admins table?</td></tr>';
-            }
-        }
-
-        function openAddAdminModal() {
-            document.getElementById('admin-email').value = '';
-            document.getElementById('admin-password').value = '';
-            const m = document.getElementById('add-admin-modal');
-            const c = document.getElementById('add-admin-modal-content');
-            m.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                m.classList.remove('opacity-0');
-                c.classList.remove('scale-95');
-            });
-        }
-
-        function closeAddAdminModal() {
-            const m = document.getElementById('add-admin-modal');
-            const c = document.getElementById('add-admin-modal-content');
-            m.classList.add('opacity-0');
-            c.classList.add('scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        }
-
-        async function submitAddAdmin() {
-            const email = document.getElementById('admin-email').value;
-            const password = document.getElementById('admin-password').value;
-            if (!email || !password) return showToast('Email and password required', false);
-            
-            try {
-                const res = await fetch('/api/admin-data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-                    body: JSON.stringify({ action: 'addAdmin', email, password })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Failed to add admin');
-                showToast('Admin added/updated successfully!', true);
-                closeAddAdminModal();
-                fetchAdminsData();
-            } catch(e) {
-                showToast(e.message, false);
-            }
-        }
-
-        async function deleteAdmin(email) {
-            if (!confirm(`Revoke admin access for ${email}?`)) return;
-            try {
-                const res = await fetch('/api/admin-data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-                    body: JSON.stringify({ action: 'deleteAdmin', email })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Failed to remove admin');
-                showToast('Admin removed.', true);
-                fetchAdminsData();
-            } catch(e) {
-                showToast(e.message, false);
-            }
-        }
-
         function showToast(message, isGreen = true) {
             const toast = document.getElementById('toast-notification');
             if (!toast) return;
@@ -2358,156 +2143,33 @@
         // ── 2-step project status toggle ───────────────────────────────────
         // 1st click (pending/paid): sets status to in_progress (no confirm needed)
         // 2nd click (in_progress):  sets status to completed (confirm required)
-        // ── DELIVER PROJECT (Modal + File Upload) ───────────────────────────
-        let currentDeliveryOrderId = null;
-
-        window.openDeliveryModal = function(orderId) {
-            currentDeliveryOrderId = orderId;
-            document.getElementById('delivery-modal-order-id').textContent = `Order: ${orderId}`;
-            document.getElementById('delivery-message').value = '';
-            document.getElementById('delivery-file-input').value = '';
-            document.getElementById('delivery-file-names').classList.add('hidden');
-            
-            const modal = document.getElementById('delivery-modal');
-            const content = document.getElementById('delivery-modal-content');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-            }, 10);
-            safeCreateIcons();
-        };
-
-        window.closeDeliveryModal = function() {
-            const modal = document.getElementById('delivery-modal');
-            const content = document.getElementById('delivery-modal-content');
-            modal.classList.add('opacity-0');
-            content.classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-            currentDeliveryOrderId = null;
-        };
-
-        document.getElementById('delivery-file-input').addEventListener('change', function() {
-            const display = document.getElementById('delivery-file-names');
-            if (this.files && this.files.length > 0) {
-                display.textContent = `${this.files.length} file(s): ${Array.from(this.files).map(f => f.name).join(', ')}`;
-                display.classList.remove('hidden');
-            } else {
-                display.classList.add('hidden');
-            }
-        });
-
-        // Handle B2 direct upload + status update
-        document.getElementById('delivery-submit-btn').addEventListener('click', async function() {
-            if (!currentDeliveryOrderId) return;
-            
-            const btn = this;
-            const btnText = document.getElementById('delivery-submit-text');
-            const btnIcon = document.getElementById('delivery-submit-icon');
-            const message = document.getElementById('delivery-message').value.trim();
-            const fileInput = document.getElementById('delivery-file-input');
-            const progressWrapper = document.getElementById('delivery-progress-wrapper');
-            const progressBar = document.getElementById('delivery-progress-bar');
-            const progressPct = document.getElementById('delivery-progress-pct');
-            const progressLabel = document.getElementById('delivery-progress-label');
-
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
-            btnIcon.classList.add('hidden');
-            btnText.textContent = "Processing...";
-
+        // ── DELIVER PROJECT ─────────────────────────────────────────────────────
+        // Marks project as completed AND fires a completion email to the client.
+        // Uses the same authToken, showToast, and fetchDashboardData pattern
+        // as markProjectCompleted — so it works identically.
+        window.deliverProject = async function (orderId) {
+            if (!confirm(`Deliver project ${orderId}?\n\nThis will mark it COMPLETED and send a notification email to the client.`)) return;
             try {
-                let uploadedKeys = [];
-                
-                // 1. Upload files to B2 (if any)
-                if (fileInput.files && fileInput.files.length > 0) {
-                    const files = Array.from(fileInput.files);
-                    const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
-                    const bytesUploaded = new Array(files.length).fill(0);
-
-                    progressWrapper.classList.remove('hidden');
-                    
-                    function updateProgress() {
-                        const done = bytesUploaded.reduce((a, b) => a + b, 0);
-                        const pct = totalBytes > 0 ? Math.min(100, Math.round((done / totalBytes) * 100)) : 0;
-                        progressBar.style.width = pct + '%';
-                        progressPct.textContent = pct + '%';
-                    }
-
-                    for (let i = 0; i < files.length; i++) {
-                        const file = files[i];
-                        progressLabel.textContent = `Uploading file ${i + 1}/${files.length}`;
-                        
-                        // Get presigned URL
-                        const urlRes = await fetch('/api/upload-files', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                                orderId: currentDeliveryOrderId, 
-                                fileName: 'delivery_' + file.name, 
-                                contentType: file.type || 'application/octet-stream' 
-                            })
-                        });
-                        
-                        if (!urlRes.ok) throw new Error(`Failed to get upload URL for ${file.name}`);
-                        const { uploadUrl, key } = await urlRes.json();
-                        
-                        // Execute PUT request
-                        await new Promise((resolve, reject) => {
-                            const xhr = new XMLHttpRequest();
-                            xhr.upload.addEventListener('progress', e => {
-                                if (e.lengthComputable) {
-                                    bytesUploaded[i] = e.loaded;
-                                    updateProgress();
-                                }
-                            });
-                            xhr.addEventListener('load', () => {
-                                if (xhr.status >= 200 && xhr.status < 300) resolve();
-                                else reject(new Error(`B2 HTTP ${xhr.status}`));
-                            });
-                            xhr.addEventListener('error', () => reject(new Error('Network error')));
-                            xhr.open('PUT', uploadUrl);
-                            xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-                            xhr.send(file);
-                        });
-                        
-                        bytesUploaded[i] = file.size;
-                        updateProgress();
-                        uploadedKeys.push(key);
-                    }
-                    progressLabel.textContent = "Uploads complete. Sending email...";
-                }
-
-                // 2. Call update-status with the new data
                 const response = await fetch('/api/update-status', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-                    body: JSON.stringify({ 
-                        orderId: currentDeliveryOrderId, 
-                        status: 'completed',
-                        deliveryMessage: message,
-                        deliveryFiles: uploadedKeys
-                    })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken
+                    },
+                    body: JSON.stringify({ orderId: orderId, status: 'completed' })
                 });
-
-                if (!response.ok) throw new Error("Failed to update status");
-
-                showToast(`✅ Project ${currentDeliveryOrderId} delivered! Client notified.`, true);
-                closeDeliveryModal();
-                fetchDashboardData();
-
+                if (response.ok) {
+                    showToast(`✉️ Project ${orderId} delivered! Client notified by email.`, true);
+                    fetchDashboardData();
+                } else {
+                    const d = await response.json().catch(() => ({}));
+                    showToast('Delivery failed: ' + (d.error || response.status), false);
+                }
             } catch (err) {
-                console.error("Delivery error:", err);
-                progressWrapper.classList.remove('hidden');
-                progressLabel.textContent = "Delivery failed. " + err.message;
-                progressBar.classList.replace('bg-gradient-to-r', 'bg-[#ff1a1a]');
-                
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnIcon.classList.remove('hidden');
-                btnText.textContent = "Retry Upload & Deliver";
+                console.error('Deliver error:', err);
+                showToast('Network error. Could not deliver project.', false);
             }
-        });
+        };
 
         // ── REFUND ORDER ────────────────────────────────────────────────────────
         // Marks order as refunded. Double-confirm to prevent accidental clicks.
@@ -2615,7 +2277,7 @@
                     const isWorking = order.status === 'working';
                     completeBtnHTML = `
                         <button onclick="markProjectCompleted('${order.id}', '${order.status}')"
-                            class="action-touch-btn w-8 h-8 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all flex items-center justify-center"
+                            class="action-touch-btn p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
                             title="${isWorking ? 'Click to mark as COMPLETED' : 'Click to mark as WORKING'}">
                             <i data-lucide="${isWorking ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
                         </button>
@@ -2624,29 +2286,31 @@
 
                 // DELIVER button: shown for working/paid orders — marks complete + emails client
                 const deliverBtn = (order.status === 'working' || order.status === 'paid')
-                    ? `<button onclick="openDeliveryModal('${order.id}')"
-                          class="action-touch-btn w-8 h-8 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center gap-1"
+                    ? `<button onclick="deliverProject('${order.id}')"
+                          class="action-touch-btn p-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center gap-1"
                           title="Deliver Project & Notify Client">
                           <i data-lucide="send" class="w-4 h-4"></i>
+                          <span class="text-[10px] uppercase font-bold hidden sm:inline">Deliver</span>
                        </button>`
                     : '';
 
                 // REFUND button: shown for paid/working/completed orders only
                 const refundBtn = (order.status === 'paid' || order.status === 'working' || order.status === 'completed')
                     ? `<button onclick="refundOrder('${order.id}', '${order.amount}')"
-                          class="action-touch-btn w-8 h-8 rounded bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/50 text-orange-400 hover:text-orange-300 transition-all flex items-center justify-center gap-1"
+                          class="action-touch-btn p-1.5 rounded bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/50 text-orange-400 hover:text-orange-300 transition-all flex items-center gap-1"
                           title="Issue Refund">
                           <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                          <span class="text-[10px] uppercase font-bold hidden sm:inline">Refund</span>
                        </button>`
                     : '';
 
                 // Files button: green if files exist, grey/disabled if not
                 const filesBtn = order.has_files
-                    ? `<button onclick="openFilesModal('${order.id}')" class="w-8 h-8 rounded bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 transition-all flex items-center justify-center gap-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]" title="View Uploaded Files">
-                           <i data-lucide="folder-open" class="w-4 h-4"></i>
+                    ? `<button onclick="openFilesModal('${order.id}')" class="p-1.5 rounded bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 transition-all flex items-center gap-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]" title="View Uploaded Files">
+                           <i data-lucide="folder-open" class="w-4 h-4"></i> <span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span>
                        </button>`
-                    : `<button onclick="openFilesModal('${order.id}')" class="w-8 h-8 rounded bg-white/5 hover:bg-white/10 text-gray-400 border border-white/10 transition-all flex items-center justify-center gap-1" title="Check Files">
-                           <i data-lucide="folder" class="w-4 h-4"></i>
+                    : `<button class="p-1.5 rounded bg-white/5 text-gray-600 cursor-not-allowed flex items-center gap-1" title="Awaiting Client Upload" disabled>
+                           <i data-lucide="folder-clock" class="w-4 h-4"></i> <span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span>
                        </button>`;
 
                 const actionBtn = `
@@ -2655,7 +2319,7 @@
                         ${deliverBtn}
                         ${refundBtn}
                         ${filesBtn}
-                        <button onclick="openNotesModal('${clientName}', '${safeNotes}')" class="action-touch-btn w-8 h-8 flex items-center justify-center rounded bg-white/5 hover:bg-[#ff1a1a]/20 border border-white/10 hover:border-[#ff1a1a]/50 text-gray-400 hover:text-[#ff1a1a] transition-all" title="View Brief">
+                        <button onclick="openNotesModal('${clientName}', '${safeNotes}')" class="action-touch-btn p-1.5 rounded bg-white/5 hover:bg-[#ff1a1a]/20 border border-white/10 hover:border-[#ff1a1a]/50 text-gray-400 hover:text-[#ff1a1a] transition-all" title="View Brief">
                             <i data-lucide="file-text" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -2677,6 +2341,7 @@
                             <td class="p-3 text-right">
                                 <div class="flex items-center justify-end gap-3">
                                     <span class="status-badge ${badgeClass}">${statusLabel(order.status)}</span>
+                                    ${actionBtn}
                                 </div>
                             </td>
                         </tr>
@@ -2995,25 +2660,25 @@
                 if (order.status !== 'completed' && order.status !== 'refunded' && order.status !== 'canceled' && order.status !== 'cancelled') {
                     const isWorking = order.status === 'working';
                     completeBtnHTML = `<button onclick="markProjectCompleted('${order.id}', '${order.status}')"
-                        class="w-8 h-8 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all flex items-center justify-center gap-1"
+                        class="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
                         title="${isWorking ? 'Click to mark as COMPLETED' : 'Click to mark as WORKING'}">
                         <i data-lucide="${isWorking ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
                     </button>`;
                 }
 
                 const deliverBtn = (order.status === 'working' || order.status === 'paid')
-                    ? `<button onclick="openDeliveryModal('${order.id}')" class="w-8 h-8 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center gap-1" title="Deliver Project & Notify Client"><i data-lucide="send" class="w-4 h-4"></i></button>`
+                    ? `<button onclick="deliverProject('${order.id}')" class="p-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center gap-1" title="Deliver Project & Notify Client"><i data-lucide="send" class="w-4 h-4"></i><span class="text-[10px] uppercase font-bold hidden sm:inline">Deliver</span></button>`
                     : '';
 
                 const refundBtn = (order.status === 'paid' || order.status === 'working' || order.status === 'completed')
-                    ? `<button onclick="refundOrder('${order.id}', '${order.amount}')" class="w-8 h-8 rounded bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/50 text-orange-400 hover:text-orange-300 transition-all flex items-center justify-center gap-1" title="Issue Refund"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>`
+                    ? `<button onclick="refundOrder('${order.id}', '${order.amount}')" class="p-1.5 rounded bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/50 text-orange-400 hover:text-orange-300 transition-all flex items-center gap-1" title="Issue Refund"><i data-lucide="rotate-ccw" class="w-4 h-4"></i><span class="text-[10px] uppercase font-bold hidden sm:inline">Refund</span></button>`
                     : '';
 
                 const filesBtn = order.has_files
-                    ? `<button onclick="openFilesModal('${order.id}')" class="w-8 h-8 rounded bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 transition-all flex items-center justify-center gap-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]" title="View Uploaded Files"><i data-lucide="folder-open" class="w-4 h-4"></i></button>`
-                    : `<button onclick="openFilesModal('${order.id}')" class="w-8 h-8 rounded bg-white/5 hover:bg-white/10 text-gray-400 border border-white/10 transition-all flex items-center justify-center gap-1" title="Check Files"><i data-lucide="folder" class="w-4 h-4"></i></button>`;
+                    ? `<button onclick="openFilesModal('${order.id}')" class="p-1.5 rounded bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 transition-all flex items-center gap-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]" title="View Uploaded Files"><i data-lucide="folder-open" class="w-4 h-4"></i><span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span></button>`
+                    : `<button class="p-1.5 rounded bg-white/5 text-gray-600 cursor-not-allowed flex items-center gap-1" title="Awaiting Upload" disabled><i data-lucide="folder-clock" class="w-4 h-4"></i><span class="text-[10px] uppercase font-bold hidden sm:inline">Files</span></button>`;
 
-                const actionBtn = `<div class="flex items-center gap-2 flex-wrap">${completeBtnHTML}${deliverBtn}${refundBtn}${filesBtn}<button onclick="openNotesModal('${clientName}', '${safeNotes}')" class="w-8 h-8 flex items-center justify-center rounded bg-white/5 hover:bg-[#ff1a1a]/20 border border-white/10 hover:border-[#ff1a1a]/50 text-gray-400 hover:text-[#ff1a1a] transition-all" title="View Brief"><i data-lucide="file-text" class="w-4 h-4"></i></button></div>`;
+                const actionBtn = `<div class="flex items-center gap-2 flex-wrap">${completeBtnHTML}${deliverBtn}${refundBtn}${filesBtn}<button onclick="openNotesModal('${clientName}', '${safeNotes}')" class="p-1.5 rounded bg-white/5 hover:bg-[#ff1a1a]/20 border border-white/10 hover:border-[#ff1a1a]/50 text-gray-400 hover:text-[#ff1a1a] transition-all" title="View Brief"><i data-lucide="file-text" class="w-4 h-4"></i></button></div>`;
 
                 html += `
                 <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
@@ -4354,15 +4019,15 @@
     let _ecommServices = [], _ecommCoupons = [];
 
     function ecommHeaders() {
-        return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (authToken || '') };
+        return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (window.authToken || '') };
     }
 
     async function fetchEcommData() {
-        if (!authToken) return;
+        if (!window.authToken) return;
         try {
             const [sRes, cRes] = await Promise.all([
-                fetch('/api/admin-data?action=getServices', { headers: { 'Authorization': 'Bearer ' + authToken } }),
-                fetch('/api/admin-data?action=getCoupons',  { headers: { 'Authorization': 'Bearer ' + authToken } })
+                fetch('/api/admin-data?action=getServices', { headers: { 'Authorization': 'Bearer ' + window.authToken } }),
+                fetch('/api/admin-data?action=getCoupons',  { headers: { 'Authorization': 'Bearer ' + window.authToken } })
             ]);
             if (sRes.status === 401 || cRes.status === 401) { window.logout && window.logout(); return; }
             const sData = await sRes.json();

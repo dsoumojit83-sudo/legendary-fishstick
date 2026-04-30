@@ -1,15 +1,14 @@
 const axios = require("axios");
 const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
 module.exports = async function (req, res) {
-    // B-20 FIX: Browser sends an OPTIONS preflight before the POST.
-    // Without handling OPTIONS, it returned 405 → the real POST never fired
-    // → settlements tab silently failed to load on first open.
-    const _sAllowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _sOrigin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _sAllowed.includes(_sOrigin) ? _sOrigin : _sAllowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _origin = req.headers.origin;
+    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -23,12 +22,6 @@ module.exports = async function (req, res) {
     if (!authH?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
     const { data: { user: u }, error: uErr } = await supabase.auth.getUser(authH.slice(7));
     if (uErr || !u) return res.status(401).json({ error: 'Unauthorized' });
-
-    const userEmail = u.email ? u.email.toLowerCase() : '';
-    if (userEmail !== 'zyroeditz.official@gmail.com') {
-        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('email').eq('email', userEmail).maybeSingle();
-        if (adminErr || !adminRecord) return res.status(403).json({ error: 'Forbidden: Admin access required' });
-    }
 
     try {
         const { startDate, endDate, cursor = null } = req.body;

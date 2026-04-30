@@ -23,27 +23,17 @@ const b2 = new S3Client({
 });
 
 const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
-const B2_PORTFOLIO_BUCKET = process.env.B2_PORTFOLIO_BUCKET || process.env.B2_BUCKET_NAME || 'zyroeditz-portfolio';
-
-// ALLOWED_PORTFOLIO_FILES removed — now validated dynamically from portfolio_items table (see BUG-7 fix)
-
+const B2_PORTFOLIO_BUCKET = process.env.B2_PORTFOLIO_BUCKET || 'zyroeditz-portfolio';
 
 module.exports = async function (req, res) {
-    // Enable CORS for allowed origins (e.g., admin subdomains)
-    const allowedOrigins = ['https://zyroeditz.xyz', 'https://www.zyroeditz.xyz', 'https://admin.zyroeditz.xyz', 'https://zyroeditz.vercel.app'];
-    const origin = req.headers.origin;
-    if (origin && allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-    } else {
-        res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0]);
-    }
+    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _origin = req.headers.origin;
+    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
-
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
 
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed.' });
@@ -127,12 +117,6 @@ module.exports = async function (req, res) {
         return res.status(401).json({ error: 'Unauthorized.' });
     }
 
-    const userEmail = user.email ? user.email.toLowerCase() : '';
-    if (userEmail !== 'zyroeditz.official@gmail.com') {
-        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('email').eq('email', userEmail).maybeSingle();
-        if (adminErr || !adminRecord) return res.status(403).json({ error: 'Forbidden: Admin access required' });
-    }
-
     const { orderId } = req.query;
 
     if (!orderId) {
@@ -147,7 +131,7 @@ module.exports = async function (req, res) {
             MaxKeys: 100,
         }));
 
-        const objects = (listResp.Contents || []).filter(obj => obj.Key !== `${orderId}/`);
+        const objects = listResp.Contents || [];
 
         if (objects.length === 0) {
             return res.status(200).json({ files: [] });

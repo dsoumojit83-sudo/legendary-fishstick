@@ -1,325 +1,113 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Checkout - ZyroEditz™</title>
-    <!-- Prevent indexing -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZyroEditz&trade; | Securing Portal...</title>
+    <!-- Prevent search engines from indexing this transactional bridge page -->
     <meta name="robots" content="noindex, nofollow">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: { zyroRed: '#ff1a1a', zyroDark: '#050505', zyroCard: '#111111' },
-                    fontFamily: { sans: ['Outfit', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=block">
+    <!-- Same fonts used in main site — display=block prevents FOUT on the redirect animation -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=block">
+    <!-- Cashfree SDK V3: defer so it doesn't block paint — called inside DOMContentLoaded -->
     <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #050505; color: #fff; font-family: 'Outfit', sans-serif; }
-        .input-field {
-            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s; color: #fff; border-radius: 0.5rem; outline: none; width: 100%;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
-        .input-field:focus { border-color: #ff1a1a; background: rgba(255, 26, 26, 0.05); }
-        .loader {
-            border: 3px solid rgba(255,26,26,0.3); border-top: 3px solid #ff1a1a;
-            border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;
+
+        /* ── Copied Exactly from index.html ────────────────────────────────── */
+        @keyframes yt-spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #payRedirectOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #050505;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .pay-redirect-ring {
+            width: 52px;
+            height: 52px;
+            border: 3px solid rgba(255, 26, 26, 0.2);
+            border-top-color: #ff1a1a;
+            border-radius: 50%;
+            animation: yt-spin 0.9s linear infinite;
+        }
+
+        .pay-redirect-label {
+            font-size: 12px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
+        }
+        /* ───────────────────────────────────────────────────────────────────── */
+
+        .error-msg {
+            color: #ff1a1a;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 10px;
+        }
     </style>
 </head>
-<body class="min-h-screen pb-20">
+<body>
 
-    <header class="py-6 border-b border-white/10 bg-zyroDark sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 flex justify-between items-center">
-            <a href="/" class="text-2xl font-black tracking-widest text-white decoration-none">ZYRO<span class="text-zyroRed">EDITZ</span>™</a>
-            <div class="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2">
-                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                Secure Checkout
-            </div>
-        </div>
-    </header>
-
-    <div class="max-w-6xl mx-auto px-4 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
-        
-        <!-- Left Column: Details -->
-        <div class="lg:col-span-2 space-y-6">
-            
-            <div class="bg-zyroCard border border-white/10 rounded-2xl p-6">
-                <h2 class="text-xl font-bold mb-6 flex items-center gap-3"><span class="bg-zyroRed text-black w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">1</span> Contact Information</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-widest mb-2">Full Name</label>
-                        <input type="text" id="chkName" class="input-field p-3 text-sm" placeholder="John Doe" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
-                        <input type="email" id="chkEmail" class="input-field p-3 text-sm" placeholder="john@example.com" required>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs text-gray-400 uppercase tracking-widest mb-2">Mobile Number (Required)</label>
-                        <input type="tel" id="chkPhone" class="input-field p-3 text-sm" placeholder="10-digit number" pattern="[0-9]{10}" maxlength="10" required>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-zyroCard border border-white/10 rounded-2xl p-6">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-3"><span class="bg-zyroRed text-black w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">2</span> Delivery Estimate</h2>
-                <p class="text-gray-400 text-sm mb-4">Based on your cart, your project will be delivered by:</p>
-                <div class="bg-black/50 border border-green-500/30 rounded-xl p-4 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    </div>
-                    <div>
-                        <div class="text-xs text-green-500 font-bold uppercase tracking-widest">Guaranteed Delivery</div>
-                        <div id="deliveryDateEl" class="text-lg font-bold text-white">Calculating...</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-zyroCard border border-white/10 rounded-2xl p-6">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-3"><span class="bg-zyroRed text-black w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">3</span> Apply Coupon / Referral</h2>
-                <div class="flex gap-3">
-                    <input type="text" id="couponCode" class="input-field p-3 uppercase text-sm" placeholder="ENTER CODE (e.g. ZYRO-XXXX)">
-                    <button id="applyCouponBtn" class="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-lg text-sm font-bold transition">Apply</button>
-                </div>
-                <div id="couponMsg" class="text-xs mt-3 hidden"></div>
-            </div>
-            
-            <div id="errorMsg" class="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm hidden"></div>
-        </div>
-
-        <!-- Right Column: Order Summary -->
-        <div class="relative">
-            <div class="bg-zyroCard border border-white/10 rounded-2xl p-6 sticky top-28">
-                <h2 class="text-xl font-bold mb-6">Order Summary</h2>
-                
-                <div id="cartItemsList" class="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
-                    <!-- JS fills this -->
-                </div>
-
-                <div class="border-t border-white/10 pt-4 space-y-3 text-sm">
-                    <div class="flex justify-between text-gray-400">
-                        <span>Subtotal</span>
-                        <span id="subtotalEl">₹0</span>
-                    </div>
-                    <div class="flex justify-between text-green-500 hidden" id="discountRow">
-                        <span>Discount</span>
-                        <span id="discountEl">-₹0</span>
-                    </div>
-                    <div class="flex justify-between font-bold text-xl pt-3 border-t border-white/10">
-                        <span>Total Pay</span>
-                        <span id="totalEl" class="text-zyroRed">₹0</span>
-                    </div>
-                </div>
-
-                <button id="payBtn" class="w-full bg-zyroRed hover:bg-red-700 text-white font-black text-lg py-4 rounded-xl mt-8 transition flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(255,26,26,0.3)]">
-                    <span>Proceed to Secure Pay</span>
-                    <div id="payLoader" class="loader hidden"></div>
-                </button>
-                
-                <div class="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                    Payments securely processed by Cashfree
-                </div>
-            </div>
-        </div>
-
+    <div id="payRedirectOverlay">
+        <div class="pay-redirect-ring"></div>
+        <p id="status-text" class="pay-redirect-label">Securing payment portal&hellip;</p>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
-            if (cartItems.length === 0) {
-                document.body.innerHTML = `
-                    <div class="min-h-screen flex flex-col items-center justify-center p-4 text-center">
-                        <div class="text-6xl mb-4">🛒</div>
-                        <h1 class="text-3xl font-bold mb-4">Your cart is empty.</h1>
-                        <a href="/" class="bg-zyroRed text-white px-8 py-3 rounded-xl font-bold">Return to Studio</a>
-                    </div>
-                `;
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const sessionId = params.get('session_id');
+            const statusEl = document.getElementById('status-text');
+
+            if (!sessionId) {
+                statusEl.innerText = "Error: Invalid Session ID";
+                statusEl.classList.add('error-msg');
                 return;
             }
 
-            // Estimate Delivery (Base 3 days max logic)
-            let maxDays = 3;
-            // Fake deadline map logic for frontend display, actual enforcement is backend
-            cartItems.forEach(item => {
-                if (item.name.toLowerCase().includes('documentary')) maxDays = Math.max(maxDays, 5);
-                if (item.name.toLowerCase().includes('montage')) maxDays = Math.max(maxDays, 4);
-            });
-            const deadline = new Date(Date.now() + (maxDays * 24 * 60 * 60 * 1000));
-            document.getElementById('deliveryDateEl').innerText = deadline.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            try {
+                // Initialize Cashfree Production engine
+                const cashfree = Cashfree({
+                    mode: "production"
+                });
 
-            // Render Cart
-            const listEl = document.getElementById('cartItemsList');
-            let subtotal = 0;
-            cartItems.forEach(item => {
-                subtotal += item.price;
-                listEl.innerHTML += `
-                    <div class="flex justify-between items-start gap-4 pb-4 border-b border-white/5 last:border-0 last:pb-0">
-                        <div>
-                            <div class="font-bold text-sm">${item.name}</div>
-                        </div>
-                        <div class="font-bold text-zyroRed text-sm shrink-0">₹${item.price}</div>
-                    </div>
-                `;
-            });
-            
-            let finalAmount = subtotal;
-            let appliedCoupon = '';
-
-            const updateTotals = (discount = 0) => {
-                document.getElementById('subtotalEl').innerText = `₹${subtotal}`;
-                if (discount > 0) {
-                    document.getElementById('discountRow').classList.remove('hidden');
-                    document.getElementById('discountEl').innerText = `-₹${discount}`;
-                } else {
-                    document.getElementById('discountRow').classList.add('hidden');
-                }
-                finalAmount = subtotal - discount;
-                document.getElementById('totalEl').innerText = `₹${finalAmount}`;
-            };
-            updateTotals(0);
-
-            // Supabase Auto-fill
-            const interval = setInterval(async () => {
-                if (window.supabase) {
-                    clearInterval(interval);
-                    try {
-                        const cfgRes = await fetch('/api/save-brief', { cache: 'default' });
-                        const cfg = await cfgRes.json();
-                        if (cfg.supabaseUrl && cfg.supabaseAnonKey) {
-                            const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-                            const { data: { session } } = await client.auth.getSession();
-                            if (session && session.user) {
-                                // Auto-fill email and make read-only for security
-                                const emailInput = document.getElementById('chkEmail');
-                                emailInput.value = session.user.email;
-                                emailInput.readOnly = true;
-                                emailInput.classList.add('opacity-70', 'cursor-not-allowed');
-
-                                // Fetch profile info
-                                const { data: info } = await client.from('client_info').select('*').eq('user_id', session.user.id).single();
-                                if (info) {
-                                    if (info.first_name || info.last_name) {
-                                        document.getElementById('chkName').value = `${info.first_name || ''} ${info.last_name || ''}`.trim();
-                                    }
-                                    if (info.phone) {
-                                        document.getElementById('chkPhone').value = info.phone;
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Supabase auto-fill error:', e);
+                // Launch official checkout flow
+                cashfree.checkout({
+                    paymentSessionId: sessionId,
+                    redirectTarget: "_self"
+                }).then((result) => {
+                    if (result.error) {
+                        console.error(result.error);
+                        statusEl.innerText = result.error.message;
+                        statusEl.classList.add('error-msg');
                     }
-                }
-            }, 500);
-
-            // Apply Coupon
-            document.getElementById('applyCouponBtn').addEventListener('click', async () => {
-                const code = document.getElementById('couponCode').value.trim();
-                const msgEl = document.getElementById('couponMsg');
-                if (!code) return;
-                
-                msgEl.className = 'text-xs mt-3 text-gray-400';
-                msgEl.innerText = 'Validating...';
-                msgEl.classList.remove('hidden');
-
-                try {
-                    const res = await fetch('/api/chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'validateCoupon', couponCode: code, cartItems })
-                    });
-                    const data = await res.json();
-                    
-                    if (res.ok && data.valid) {
-                        appliedCoupon = code;
-                        updateTotals(data.discount);
-                        msgEl.className = 'text-xs mt-3 text-green-500 font-bold';
-                        msgEl.innerText = `✓ Coupon Applied: ₹${data.discount} OFF`;
-                    } else {
-                        appliedCoupon = '';
-                        updateTotals(0);
-                        msgEl.className = 'text-xs mt-3 text-red-500';
-                        msgEl.innerText = data.reply || 'Invalid coupon';
-                    }
-                } catch(err) {
-                    msgEl.className = 'text-xs mt-3 text-red-500';
-                    msgEl.innerText = 'Connection error. Try again.';
-                }
-            });
-
-            // Proceed to Pay
-            document.getElementById('payBtn').addEventListener('click', async () => {
-                const name = document.getElementById('chkName').value.trim();
-                const email = document.getElementById('chkEmail').value.trim();
-                const phone = document.getElementById('chkPhone').value.trim();
-                const errorMsg = document.getElementById('errorMsg');
-                const btn = document.getElementById('payBtn');
-                const loader = document.getElementById('payLoader');
-
-                errorMsg.classList.add('hidden');
-
-                if (!name || !email || !phone) {
-                    errorMsg.innerText = 'Please fill out all contact information.';
-                    errorMsg.classList.remove('hidden');
-                    return;
-                }
-
-                if (!/^[0-9]{10}$/.test(phone)) {
-                    errorMsg.innerText = 'Please enter a valid 10-digit mobile number.';
-                    errorMsg.classList.remove('hidden');
-                    return;
-                }
-
-                btn.disabled = true;
-                loader.classList.remove('hidden');
-                btn.querySelector('span').innerText = 'Processing...';
-
-                try {
-                    const res = await fetch('/api/chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            sessionId: 'CUST_' + Date.now(),
-                            phone, email, name, cartItems, couponCode: appliedCoupon, action: 'checkout'
-                        })
-                    });
-                    
-                    const data = await res.json();
-                    
-                    if (!res.ok) throw new Error(data.reply || 'Checkout failed');
-
-                    // If they came via the old route, they'd get a payment_session_id.
-                    if (data.payment_session_id) {
-                        const cashfree = Cashfree({ mode: "production" });
-                        cashfree.checkout({
-                            paymentSessionId: data.payment_session_id,
-                            redirectTarget: "_self"
-                        });
-                    } else {
-                        throw new Error('No payment session received');
-                    }
-
-                } catch(err) {
-                    errorMsg.innerText = err.message;
-                    errorMsg.classList.remove('hidden');
-                    btn.disabled = false;
-                    loader.classList.add('hidden');
-                    btn.querySelector('span').innerText = 'Proceed to Secure Pay';
-                }
-            });
-
+                });
+            } catch (err) {
+                console.error(err);
+                statusEl.innerText = "Connection failed. Please refresh.";
+                statusEl.classList.add('error-msg');
+            }
         });
     </script>
 </body>

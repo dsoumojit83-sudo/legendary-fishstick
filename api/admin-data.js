@@ -46,14 +46,12 @@ async function getCachedFilesMap(activeOrders) {
 }
 
 module.exports = async function (req, res) {
-    // B-14 FIX: Restrict CORS to known trusted origins only.
-    // admin-data returns sensitive revenue, client names, emails, and phone numbers.
-    // Reflecting any Origin allows cross-origin abuse with a stolen JWT token.
-    const _adAllowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _adOrigin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _adAllowed.includes(_adOrigin) ? _adOrigin : _adAllowed[0]);
+    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _origin = req.headers.origin;
+    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -68,12 +66,6 @@ module.exports = async function (req, res) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
-    const userEmail = user.email ? user.email.toLowerCase() : '';
-    if (userEmail !== 'zyroeditz.official@gmail.com') {
-        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('email').eq('email', userEmail).maybeSingle();
-        if (adminErr || !adminRecord) return res.status(403).json({ error: 'Forbidden: Admin access required' });
-    }
-
     try {
         // ── Services catalog (GET ?action=getServices) ──────────────────────────
         if (req.method === 'GET' && req.query.action === 'getServices') {
@@ -87,13 +79,6 @@ module.exports = async function (req, res) {
             const { data, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
             if (error) throw error;
             return res.status(200).json({ coupons: data });
-        }
-
-        // ── Admins listing (GET ?action=getAdmins) ───────────────────────────────
-        if (req.method === 'GET' && req.query.action === 'getAdmins') {
-            const { data, error } = await supabase.from('admins').select('*');
-            if (error && error.code !== '42P01') throw error; // Ignore if table doesn't exist yet
-            return res.status(200).json({ admins: data || [] });
         }
 
         // ── Portfolio admin listing (GET ?type=portfolio) ────────────────────────
@@ -241,51 +226,6 @@ module.exports = async function (req, res) {
                 if (!id) return res.status(400).json({ error: 'id is required.' });
                 const { error } = await supabase.from('coupons').delete().eq('id', id);
                 if (error) throw error;
-                return res.status(200).json({ ok: true });
-            }
-
-            // ── Admins CRUD ──────────────────────────────────────────────────────
-            if (action === 'addAdmin') {
-                const { email, password } = body;
-                if (!email || !password) return res.status(400).json({ error: 'email and password are required.' });
-                
-                const cleanEmail = email.toLowerCase().trim();
-
-                // 1. Create or update user in Supabase Auth
-                const { data: authData, error: authErr } = await supabase.auth.admin.createUser({
-                    email: cleanEmail,
-                    password: password,
-                    email_confirm: true
-                });
-
-                // If user already exists, update their password
-                if (authErr && authErr.message.includes('already registered')) {
-                    const { data: usersData } = await supabase.auth.admin.listUsers();
-                    const existingUser = usersData?.users?.find(u => u.email === cleanEmail);
-                    if (existingUser) {
-                        await supabase.auth.admin.updateUserById(existingUser.id, { password: password });
-                    }
-                } else if (authErr) {
-                    return res.status(400).json({ error: authErr.message });
-                }
-                
-                // 2. Add to admins table
-                const { error: dbErr } = await supabase.from('admins').upsert([{ email: cleanEmail }], { onConflict: 'email' });
-                if (dbErr) return res.status(500).json({ error: dbErr.message });
-                
-                return res.status(201).json({ ok: true, message: 'Admin added successfully.' });
-            }
-
-            if (action === 'deleteAdmin') {
-                const { email } = body;
-                if (!email) return res.status(400).json({ error: 'email is required.' });
-                const cleanEmail = email.toLowerCase().trim();
-                if (cleanEmail === 'zyroeditz.official@gmail.com') return res.status(403).json({ error: 'Cannot delete primary admin.' });
-                
-                // Remove from admins table
-                const { error: dbErr } = await supabase.from('admins').delete().eq('email', cleanEmail);
-                if (dbErr) throw dbErr;
-
                 return res.status(200).json({ ok: true });
             }
 

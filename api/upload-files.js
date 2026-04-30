@@ -180,16 +180,13 @@ const corsReady = (async () => {
 // Returns: { uploadUrl: string, key: string }
 // ─────────────────────────────────────────────────────────────────────────────
 module.exports = async function (req, res) {
-    // B-07 FIX: Reflect only known trusted origins instead of any Origin.
-    // open-CORS on an upload presigner allows external sites to call this API
-    // with a stolen JWT and get signed upload URLs into your B2 bucket.
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
     const _origin = req.headers.origin;
     res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
-
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 

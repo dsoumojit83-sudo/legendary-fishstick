@@ -6,7 +6,15 @@ const supabase = createClient(
 );
 
 module.exports = async function(req, res) {
-
+    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _origin = req.headers.origin;
+    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    
     // ── PUBLIC: GET /api/save-brief → returns studio online/offline status ──
     // (No auth needed — this is read-only and public so the website can check it)
     if (req.method === 'GET') {
