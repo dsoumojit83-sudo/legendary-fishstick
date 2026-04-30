@@ -60,6 +60,18 @@ module.exports = async function (req, res) {
     res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
+    if (req.method === 'GET' && req.query.action === 'getTestimonials') {
+        try {
+            const { data, error } = await supabase.from('reviews')
+                .select('client_name, rating, review_text')
+                .eq('is_approved', true)
+                .order('created_at', { ascending: false })
+                .limit(2);
+            if (error) throw error;
+            return res.status(200).json({ testimonials: data });
+        } catch(e) { return res.status(500).json({ error: 'Failed to fetch testimonials' }); }
+    }
+
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     // B-04 FIX: Reject abusive IPs before hitting Cashfree or Supabase
@@ -69,7 +81,20 @@ module.exports = async function (req, res) {
     }
 
     try {
-        const { sessionId, phone, email, name, selectedService, amount } = req.body;
+        const { action, rating, review_text, order_id, sessionId, phone, email, name, selectedService, amount } = req.body;
+
+        if (action === 'submitReview') {
+            if (!rating || !review_text) return res.status(400).json({ error: 'Rating and review text are required.' });
+            const { error: dbError } = await supabase.from('reviews').insert([{
+                order_id: order_id || null,
+                client_name: name || 'Anonymous',
+                rating: parseInt(rating),
+                review_text: review_text,
+                is_approved: false
+            }]);
+            if (dbError) throw dbError;
+            return res.status(200).json({ success: true });
+        }
 
         if (!selectedService || !amount) {
             return res.status(400).json({ reply: "Please select a valid service and pricing to proceed." });
