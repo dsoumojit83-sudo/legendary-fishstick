@@ -831,7 +831,7 @@ PORTFOLIO: Hosted at '/portfolio/' — direct clients there for samples or past 
             timestamp: now 
         });
         
-        if (sessionMemory.length > 20) sessionMemory.splice(0, 2);
+        if (sessionMemory.length > 8) sessionMemory.splice(0, 2);
         memoryStore[sessionId] = sessionMemory;
 
         return res.status(200).json({
