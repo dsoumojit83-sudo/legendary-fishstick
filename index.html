@@ -1506,27 +1506,9 @@
 
             <!-- Account Icon -->
             <div class="relative" id="account-wrapper">
-                <button id="account-btn" onclick="toggleAccountDropdown()" aria-label="Account" class="nav-icon-btn">
+                <button id="account-btn" onclick="handleAccountIconClick()" aria-label="Account" class="nav-icon-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </button>
-                <!-- Account Dropdown -->
-                <div id="account-dropdown" class="nav-dropdown hidden" style="width:240px;right:0;">
-                    <div class="nd-header" id="acct-header">Account</div>
-                    <!-- Guest state -->
-                    <div id="acct-guest" class="nd-body">
-                        <a href="#" onclick="openLoginModal();return false;" class="nd-link"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>Track Order</a>
-                        <div class="nd-divider"></div>
-                        <p class="nd-hint">Sign in for full account access</p>
-                        <button onclick="openLoginModal()" class="nd-cta-btn" style="margin-top:8px;">Sign In / Register</button>
-                    </div>
-                    <!-- Logged-in state (hidden by default) -->
-                    <div id="acct-loggedin" class="nd-body hidden">
-                        <a href="#" onclick="openClientPortal();switchPortalTab('orders');closeAllDropdowns();return false;" class="nd-link"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>My Orders</a>
-                        <a href="#" onclick="openAccountSettings();return false;" class="nd-link"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
-                        <div class="nd-divider"></div>
-                        <button onclick="acctSignOut()" class="nd-link nd-danger"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out</button>
-                    </div>
-                </div>
             </div>
 
             <!-- Hamburger (mobile) -->
@@ -1551,7 +1533,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                 <span class="text-xs uppercase tracking-widest">Cart</span>
             </button>
-            <button onclick="closeMobileMenu();setTimeout(toggleAccountDropdown,300)" class="flex flex-col items-center gap-1 text-gray-400 hover:text-[#ff1a1a] transition-colors">
+            <button onclick="closeMobileMenu();setTimeout(handleAccountIconClick,300)" class="flex flex-col items-center gap-1 text-gray-400 hover:text-[#ff1a1a] transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span class="text-xs uppercase tracking-widest">Account</span>
             </button>
@@ -1760,7 +1742,7 @@
                         pacing engineered for retention.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Short Form',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Short Form',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Short Form',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1769,7 +1751,7 @@
                         and clean flow across chapters.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Long Form',500)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Long Form',500)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Long Form',500)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1778,7 +1760,7 @@
                         that matches your brand identity.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Coloring',175)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Coloring',175)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Coloring',175)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1787,7 +1769,7 @@
                         graphic packages for a premium finish.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Motion Graphics',400)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Motion Graphics',400)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Motion Graphics',400)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1796,7 +1778,7 @@
                         overpowering the message.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Sound Design',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Sound Design',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Sound Design',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1805,7 +1787,7 @@
                         options for fast publishing.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Thumbnails',100)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Thumbnails',100)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Thumbnails',100)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
             </div>
@@ -1908,8 +1890,7 @@
                         card.addEventListener('click', function () {
                             var svc = this.dataset.service;
                             var price = parseFloat(this.dataset.price);
-                            if (window.startSpecificOrder) window.startSpecificOrder(svc, price);
-                            else if (window.openZyroChat) window.openZyroChat();
+                            window.buyNow(svc, price);
                         });
                     });
                 } catch (e) {
@@ -3267,17 +3248,8 @@
                 }
 
                 window.startSpecificOrder = function (serviceName, price) {
-                    if (!isOpen) toggleChat();
-                    messages.innerHTML = '';
-                    // Block order flow if studio is Away
-                    if (window.__studioIsOnline === false) {
-                        renderAwayMessage();
-                        return;
-                    }
-                    orderData.service = serviceName;
-                    orderData.price = price;
-                    addBotMessage(`Great choice! Let's get your ${serviceName} project started.`);
-                    renderStep1();
+                    // Redirect to checkout instead of opening chatbot
+                    window.buyNow(serviceName, price);
                 };
 
                 // BUG FIX #8: Guard close button — toggleChat() flips state blindly,
@@ -3867,7 +3839,7 @@
         renderCart();
         // Open cart dropdown briefly
         document.getElementById('cart-dropdown').classList.remove('hidden');
-        document.getElementById('account-dropdown').classList.add('hidden');
+        document.getElementById('account-dropdown')?.classList.add('hidden');
         // Supabase sync — fire-and-forget so the UI badge is never blocked
         _syncCartToSupabase(cart);
     }
@@ -3991,7 +3963,7 @@
     // ── DROPDOWNS ──────────────────────────────────────────────────────────
     function closeAllDropdowns() {
         document.getElementById('cart-dropdown').classList.add('hidden');
-        document.getElementById('account-dropdown').classList.add('hidden');
+        document.getElementById('account-dropdown')?.classList.add('hidden');
     }
 
     function toggleCartDropdown() {
@@ -4004,6 +3976,7 @@
 
     function toggleAccountDropdown() {
         const dd = document.getElementById('account-dropdown');
+        if (!dd) { handleAccountIconClick(); return; }
         const isHidden = dd.classList.contains('hidden');
         closeAllDropdowns();
         if (isHidden) dd.classList.remove('hidden');
@@ -4095,6 +4068,7 @@
         const guest    = document.getElementById('acct-guest');
         const loggedin = document.getElementById('acct-loggedin');
         const header   = document.getElementById('acct-header');
+        if (!guest || !loggedin || !header) return;
         if (session?.user) {
             guest.classList.add('hidden');
             loggedin.classList.remove('hidden');
@@ -4606,6 +4580,56 @@
         if (typeof _origOpenClientPortal === "function") _origOpenClientPortal();
         portalLoadProfile();
     };
+
+    // ── BUY NOW: redirect to checkout, require login first if not authed ─────
+    window.buyNow = function(serviceName, price) {
+        var serviceId = encodeURIComponent(serviceName);
+        var destUrl = '/checkout/?service_id=' + serviceId + '&price=' + encodeURIComponent(price) + '&flow=buy_now';
+        var sb = window._supabaseClient;
+        if (!sb) { window.location.href = destUrl; return; }
+        sb.auth.getSession().then(function(res) {
+            var session = res && res.data && res.data.session;
+            if (session) {
+                window.location.href = destUrl;
+            } else {
+                // Store intended destination so we can redirect after login
+                try { sessionStorage.setItem('zyro_post_login_redirect', destUrl); } catch(e) {}
+                if (typeof openLoginModal === 'function') openLoginModal();
+            }
+        }).catch(function() { window.location.href = destUrl; });
+    };
+
+    // ── ACCOUNT ICON: open portal if logged in, login modal if not ───────────
+    window.handleAccountIconClick = function() {
+        var sb = window._supabaseClient;
+        if (!sb) { if (typeof openLoginModal === 'function') openLoginModal(); return; }
+        sb.auth.getSession().then(function(res) {
+            var session = res && res.data && res.data.session;
+            if (session) {
+                closeAllDropdowns();
+                if (typeof openClientPortal === 'function') openClientPortal();
+                if (typeof switchPortalTab === 'function') switchPortalTab('account');
+            } else {
+                if (typeof openLoginModal === 'function') openLoginModal();
+            }
+        }).catch(function() {
+            if (typeof openLoginModal === 'function') openLoginModal();
+        });
+    };
+
+    // ── After login: honour post-login redirect (set by buyNow above) ────────
+    (function() {
+        var sb = window._supabaseClient;
+        if (!sb) return;
+        sb.auth.onAuthStateChange(function(event) {
+            if (event === 'SIGNED_IN') {
+                try {
+                    var dest = sessionStorage.getItem('zyro_post_login_redirect');
+                    if (dest) { sessionStorage.removeItem('zyro_post_login_redirect'); window.location.href = dest; }
+                } catch(e) {}
+            }
+        });
+    })();
     </script>
 </body>
 
