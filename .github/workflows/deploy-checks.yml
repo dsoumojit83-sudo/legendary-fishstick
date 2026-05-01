@@ -82,8 +82,8 @@ jobs:
             "api/upload-files.js"
             "api/sendInvoice.js"
             "admin/index.html"
-            "payment-success/index.html"
-            "payment-failed/index.html"
+            "checkout/index.html"
+            "review/index.html"
           )
           MISSING=0
           for f in "${REQUIRED[@]}"; do

@@ -882,6 +882,16 @@
                     <i data-lucide="shield-alert" class="w-5 h-5"></i>
                     <span class="font-medium text-sm">Access Control</span>
                 </button>
+                <button onclick="switchView('reviews-view', this); fetchReviewsData();"
+                    class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all border border-transparent">
+                    <i data-lucide="star" class="w-5 h-5"></i>
+                    <span class="font-medium text-sm">Reviews</span>
+                </button>
+                <button onclick="switchView('referrals-view', this); fetchReferralsData();"
+                    class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all border border-transparent">
+                    <i data-lucide="gift" class="w-5 h-5"></i>
+                    <span class="font-medium text-sm">Referrals</span>
+                </button>
             </nav>
 
             <!-- FIX 2: Studio toggle — mobile sidebar only (hidden on desktop via lg:hidden) -->
@@ -1893,11 +1903,16 @@
 
             <!-- ========== ADMINS ACCESS VIEW ========== -->
             <div id="admins-view" class="view-section space-y-8 hidden">
+                <!-- Search bar -->
+                <div class="flex items-center gap-4">
+                    <input id="admins-search" type="text" placeholder="Search by email or role..." oninput="adminsFilterTable(this.value)"
+                        class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
+                </div>
                 <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
                     <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
                         <div>
-                            <h3 class="text-lg font-bold text-white">Administrators</h3>
-                            <p class="text-xs text-gray-400 mt-1">Manage command center access</p>
+                            <h3 class="text-lg font-bold text-white">Access Control</h3>
+                            <p class="text-xs text-gray-400 mt-1">All users with command center access — role & status</p>
                         </div>
                         <button onclick="openAddAdminModal()"
                             class="flex items-center gap-2 px-4 py-2 bg-[#ff1a1a] text-black text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-all shrink-0">
@@ -1905,18 +1920,88 @@
                         </button>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left min-w-[600px]">
+                        <table class="w-full text-left min-w-[750px]">
                             <thead class="border-b border-white/5 bg-black/20">
                                 <tr class="text-[10px] uppercase tracking-widest text-gray-500">
                                     <th class="p-4">Email Address</th>
+                                    <th class="p-4">Role</th>
                                     <th class="p-4">Added On</th>
+                                    <th class="p-4">Last Login</th>
+                                    <th class="p-4">Status</th>
                                     <th class="p-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="admins-tbody" class="text-sm divide-y divide-white/5">
-                                <tr>
-                                    <td colspan="3" class="p-6 text-center text-gray-500 text-xs">Loading admins...</td>
+                                <tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">Loading admins...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== REVIEWS MANAGEMENT VIEW ========== -->
+            <div id="reviews-view" class="view-section space-y-8 hidden">
+                <div class="flex items-center gap-4">
+                    <input id="reviews-search" type="text" placeholder="Search by client or review text..." oninput="reviewsFilterTable(this.value)"
+                        class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
+                </div>
+                <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                    <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Client Reviews</h3>
+                            <p class="text-xs text-gray-400 mt-1">Approve, reject, or delete client testimonials</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-gray-500">Pending: <span id="reviews-pending-count" class="text-yellow-400 font-bold">0</span></span>
+                            <span class="text-xs text-gray-500">Approved: <span id="reviews-approved-count" class="text-green-400 font-bold">0</span></span>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left min-w-[700px]">
+                            <thead class="border-b border-white/5 bg-black/20">
+                                <tr class="text-[10px] uppercase tracking-widest text-gray-500">
+                                    <th class="p-4">Client</th>
+                                    <th class="p-4">Rating</th>
+                                    <th class="p-4">Review</th>
+                                    <th class="p-4">Date</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4 text-right">Actions</th>
                                 </tr>
+                            </thead>
+                            <tbody id="reviews-tbody" class="text-sm divide-y divide-white/5">
+                                <tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">Loading reviews...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== REFERRALS TRACKER VIEW ========== -->
+            <div id="referrals-view" class="view-section space-y-8 hidden">
+                <div class="flex items-center gap-4">
+                    <input id="referrals-search" type="text" placeholder="Search by email or referral code..." oninput="referralsFilterTable(this.value)"
+                        class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
+                </div>
+                <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                    <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Referral Records</h3>
+                            <p class="text-xs text-gray-400 mt-1">All referral activity across clients</p>
+                        </div>
+                        <span class="text-xs text-gray-500">Total: <span id="referrals-total-count" class="text-[#ff1a1a] font-bold">0</span></span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left min-w-[600px]">
+                            <thead class="border-b border-white/5 bg-black/20">
+                                <tr class="text-[10px] uppercase tracking-widest text-gray-500">
+                                    <th class="p-4">Referrer</th>
+                                    <th class="p-4">Referred Email</th>
+                                    <th class="p-4">Code</th>
+                                    <th class="p-4">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="referrals-tbody" class="text-sm divide-y divide-white/5">
+                                <tr><td colspan="4" class="p-6 text-center text-gray-500 text-xs">Loading referrals...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -2235,7 +2320,10 @@
                 'crm-view': 'Client Database',
                 'ledger-view': 'Bank Ledger',
                 'portfolio-vault-view': 'Portfolio Vault',
-                'ecomm-view': 'Store Manager'
+                'ecomm-view': 'Store Manager',
+                'admins-view': 'Access Control',
+                'reviews-view': 'Reviews Management',
+                'referrals-view': 'Referrals Tracker'
             };
             document.getElementById('header-title').innerText = titles[viewId] || 'Command Center';
 
@@ -2385,10 +2473,25 @@
         };
 
         // ── ADMINS MANAGEMENT ──────────────────────────────────────────
+        // Keeps a copy of all rows for client-side search filtering
+        var _allAdminRows = [];
+
+        function adminsFilterTable(query) {
+            var q = (query || '').toLowerCase();
+            var tbody = document.getElementById('admins-tbody');
+            if (!tbody) return;
+            if (!q) { tbody.innerHTML = _allAdminRows.join(''); if (window.lucide) lucide.createIcons(); return; }
+            var filtered = _allAdminRows.filter(function(r) { return r.toLowerCase().includes(q); });
+            tbody.innerHTML = filtered.length
+                ? filtered.join('')
+                : '<tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">No users match your search.</td></tr>';
+            if (window.lucide) lucide.createIcons();
+        }
+
         async function fetchAdminsData() {
             if (!authToken) return;
             const tbody = document.getElementById('admins-tbody');
-            tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-gray-500 text-xs">Loading admins...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">Loading admins...</td></tr>';
             try {
                 const res = await fetch('/api/admin-data?action=getAdmins', {
                     headers: { 'Authorization': 'Bearer ' + authToken }
@@ -2397,25 +2500,43 @@
                 const { admins } = await res.json();
 
                 if (!admins || admins.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-gray-500 text-xs">No extra admins found. Only zyroeditz.official@gmail.com has access.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">No users found. Only zyroeditz.official@gmail.com has access.</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = admins.map(a => `
-                    <tr class="hover:bg-white/5 transition-colors group">
-                        <td class="p-4 text-white font-medium">${a.email}</td>
-                        <td class="p-4 text-gray-400 text-xs">${new Date(a.created_at).toLocaleDateString()}</td>
-                        <td class="p-4 text-right">
-                            <button onclick="deleteAdmin('${a.email}')" class="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100" title="Remove Admin Access">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
+                _allAdminRows = admins.map(a => {
+                    const role = a.role || 'admin';
+                    const lastLogin = a.last_sign_in_at
+                        ? new Date(a.last_sign_in_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : '—';
+                    const isActive = a.banned === false || a.banned == null;
+                    const statusBadge = isActive
+                        ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-[10px] uppercase tracking-widest border border-green-500/20"><span class="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>Active</span>'
+                        : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 text-[10px] uppercase tracking-widest border border-red-500/20"><span class="w-1.5 h-1.5 rounded-full bg-red-400 inline-block"></span>Inactive</span>';
+                    const roleBadge = role === 'superadmin'
+                        ? '<span class="inline-block px-2 py-0.5 rounded-full bg-[#ff1a1a]/10 text-[#ff1a1a] text-[10px] uppercase tracking-widest border border-[#ff1a1a]/20">Super Admin</span>'
+                        : '<span class="inline-block px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] uppercase tracking-widest border border-blue-500/20">Admin</span>';
+                    return `
+                        <tr class="hover:bg-white/5 transition-colors group" data-email="${a.email}">
+                            <td class="p-4 text-white font-medium">${a.email}</td>
+                            <td class="p-4">${roleBadge}</td>
+                            <td class="p-4 text-gray-400 text-xs">${new Date(a.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                            <td class="p-4 text-gray-400 text-xs">${lastLogin}</td>
+                            <td class="p-4">${statusBadge}</td>
+                            <td class="p-4 text-right">
+                                <button onclick="deleteAdmin('${a.email}')" class="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100" title="Remove Admin Access">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = _allAdminRows.join('');
                 if (window.lucide) lucide.createIcons();
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-red-400 text-xs">Error loading admins. Did you create the admins table?</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-400 text-xs">Error loading admins. ' + (e.message || '') + '</td></tr>';
             }
         }
 
@@ -2474,6 +2595,130 @@
                 fetchAdminsData();
             } catch (e) {
                 showToast(e.message, false);
+            }
+        }
+
+        // ── REVIEWS MANAGEMENT ────────────────────────────────────────────
+        var _allReviewRows = [];
+
+        function reviewsFilterTable(query) {
+            var q = (query || '').toLowerCase();
+            var tbody = document.getElementById('reviews-tbody');
+            if (!tbody) return;
+            if (!q) { tbody.innerHTML = _allReviewRows.join(''); if (window.lucide) lucide.createIcons(); return; }
+            var filtered = _allReviewRows.filter(function(r) { return r.toLowerCase().includes(q); });
+            tbody.innerHTML = filtered.length ? filtered.join('') : '<tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">No reviews match your search.</td></tr>';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        async function fetchReviewsData() {
+            if (!authToken) return;
+            var tbody = document.getElementById('reviews-tbody');
+            tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">Loading reviews...</td></tr>';
+            try {
+                var res = await fetch('/api/admin-data?action=getReviews', { headers: { 'Authorization': 'Bearer ' + authToken } });
+                if (!res.ok) throw new Error('Failed to fetch reviews');
+                var data = await res.json();
+                var reviews = data.reviews || [];
+                var pending = reviews.filter(r => !r.is_approved).length;
+                var approved = reviews.filter(r => r.is_approved).length;
+                document.getElementById('reviews-pending-count').textContent = pending;
+                document.getElementById('reviews-approved-count').textContent = approved;
+                if (!reviews.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">No reviews yet.</td></tr>';
+                    return;
+                }
+                _allReviewRows = reviews.map(r => {
+                    var stars = '';
+                    for (var i = 0; i < (r.rating || 0); i++) stars += '★';
+                    var statusBadge = r.is_approved
+                        ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-[10px] uppercase tracking-widest border border-green-500/20"><span class="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>Approved</span>'
+                        : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] uppercase tracking-widest border border-yellow-500/20"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block"></span>Pending</span>';
+                    var toggleLabel = r.is_approved ? 'Reject' : 'Approve';
+                    var toggleClass = r.is_approved ? 'text-yellow-400 border-yellow-500/20 hover:border-yellow-500/40' : 'text-green-400 border-green-500/20 hover:border-green-500/40';
+                    var reviewText = (r.review_text || '').length > 80 ? (r.review_text || '').substring(0, 80) + '…' : (r.review_text || '');
+                    return '<tr class="hover:bg-white/5 transition-colors group">'
+                        + '<td class="p-4 text-white font-medium">' + esc(r.client_name || 'Anonymous') + '</td>'
+                        + '<td class="p-4 text-[#ff1a1a]">' + stars + '</td>'
+                        + '<td class="p-4 text-gray-400 text-xs max-w-[200px] truncate">' + esc(reviewText) + '</td>'
+                        + '<td class="p-4 text-gray-400 text-xs">' + new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</td>'
+                        + '<td class="p-4">' + statusBadge + '</td>'
+                        + '<td class="p-4 text-right"><div class="flex items-center justify-end gap-2">'
+                        + '<button onclick="toggleReview(\'' + r.id + '\',' + (!r.is_approved) + ')" class="px-3 py-1.5 text-xs border rounded-lg transition-all ' + toggleClass + '">' + toggleLabel + '</button>'
+                        + '<button onclick="deleteReview(\'' + r.id + '\')" class="px-3 py-1.5 text-xs border border-red-900/30 rounded-lg text-red-500/70 hover:border-red-500/40 hover:text-red-400 transition-all">Delete</button>'
+                        + '</div></td></tr>';
+                });
+                tbody.innerHTML = _allReviewRows.join('');
+                if (window.lucide) lucide.createIcons();
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-400 text-xs">Error loading reviews. ' + (e.message || '') + '</td></tr>';
+            }
+        }
+
+        async function toggleReview(id, newStatus) {
+            try {
+                var res = await fetch('/api/admin-data', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                    body: JSON.stringify({ action: 'toggleReview', id: id, is_approved: newStatus })
+                });
+                if (!res.ok) throw new Error('Failed to update review');
+                showToast(newStatus ? 'Review approved!' : 'Review rejected.', true);
+                fetchReviewsData();
+            } catch (e) { showToast(e.message, false); }
+        }
+
+        async function deleteReview(id) {
+            if (!confirm('Delete this review permanently?')) return;
+            try {
+                var res = await fetch('/api/admin-data', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                    body: JSON.stringify({ action: 'deleteReview', id: id })
+                });
+                if (!res.ok) throw new Error('Failed to delete review');
+                showToast('Review deleted.', true);
+                fetchReviewsData();
+            } catch (e) { showToast(e.message, false); }
+        }
+
+        // ── REFERRALS MANAGEMENT ──────────────────────────────────────────
+        var _allReferralRows = [];
+
+        function referralsFilterTable(query) {
+            var q = (query || '').toLowerCase();
+            var tbody = document.getElementById('referrals-tbody');
+            if (!tbody) return;
+            if (!q) { tbody.innerHTML = _allReferralRows.join(''); return; }
+            var filtered = _allReferralRows.filter(function(r) { return r.toLowerCase().includes(q); });
+            tbody.innerHTML = filtered.length ? filtered.join('') : '<tr><td colspan="4" class="p-6 text-center text-gray-500 text-xs">No referrals match your search.</td></tr>';
+        }
+
+        async function fetchReferralsData() {
+            if (!authToken) return;
+            var tbody = document.getElementById('referrals-tbody');
+            tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-500 text-xs">Loading referrals...</td></tr>';
+            try {
+                var res = await fetch('/api/admin-data?action=getReferrals', { headers: { 'Authorization': 'Bearer ' + authToken } });
+                if (!res.ok) throw new Error('Failed to fetch referrals');
+                var data = await res.json();
+                var referrals = data.referrals || [];
+                document.getElementById('referrals-total-count').textContent = referrals.length;
+                if (!referrals.length) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-500 text-xs">No referrals recorded yet.</td></tr>';
+                    return;
+                }
+                _allReferralRows = referrals.map(r => {
+                    return '<tr class="hover:bg-white/5 transition-colors">'
+                        + '<td class="p-4 text-white font-medium">' + esc(r.referrer_email || r.referrer_id || '—') + '</td>'
+                        + '<td class="p-4 text-gray-300">' + esc(r.referred_email || '—') + '</td>'
+                        + '<td class="p-4"><span class="font-mono text-[#ff1a1a] text-xs">' + esc(r.referral_code || '—') + '</span></td>'
+                        + '<td class="p-4 text-gray-400 text-xs">' + new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</td>'
+                        + '</tr>';
+                });
+                tbody.innerHTML = _allReferralRows.join('');
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-400 text-xs">Error loading referrals. ' + (e.message || '') + '</td></tr>';
             }
         }
 
@@ -3088,8 +3333,9 @@
                 }
 
                 if (index < 5) {
+                    // Overview Recent Pipeline: READ-ONLY — no action buttons, status badge only
                     dashHTML += `
-                        <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
+                        <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
                             <td class="p-3">
                                 <div class="flex items-center gap-3">
                                     ${avatar}
@@ -3101,10 +3347,7 @@
                             </td>
                             <td class="p-3 hidden sm:table-cell">${deadlineBadge}</td>
                             <td class="p-3 text-right">
-                                <div class="flex items-center justify-end gap-3">
-                                    <span class="status-badge ${badgeClass}">${statusLabel(order.status)}</span>
-                                    ${actionBtn}
-                                </div>
+                                <span class="status-badge ${badgeClass}">${statusLabel(order.status)}</span>
                             </td>
                         </tr>
                     `;
@@ -4842,15 +5085,15 @@
         let _ecommServices = [], _ecommCoupons = [];
 
         function ecommHeaders() {
-            return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (window.authToken || '') };
+            return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken };
         }
 
         async function fetchEcommData() {
-            if (!window.authToken) return;
+            if (!authToken) return;
             try {
                 const [sRes, cRes] = await Promise.all([
-                    fetch('/api/admin-data?action=getServices', { headers: { 'Authorization': 'Bearer ' + window.authToken } }),
-                    fetch('/api/admin-data?action=getCoupons', { headers: { 'Authorization': 'Bearer ' + window.authToken } })
+                    fetch('/api/admin-data?action=getServices', { headers: { 'Authorization': 'Bearer ' + authToken } }),
+                    fetch('/api/admin-data?action=getCoupons', { headers: { 'Authorization': 'Bearer ' + authToken } })
                 ]);
                 if (sRes.status === 401 || cRes.status === 401) { window.logout && window.logout(); return; }
                 const sData = await sRes.json();

@@ -1498,7 +1498,7 @@
                     </div>
                     <div id="cart-footer" class="nd-footer hidden">
                         <div class="nd-total"><span>Total</span><span id="cart-total">₹0</span></div>
-                        <button onclick="window.openZyroChat&&window.openZyroChat()" class="nd-cta-btn">Checkout via Chat</button>
+                        <button onclick="checkoutCart()" class="nd-cta-btn">Checkout Cart</button>
                         <button onclick="clearCart()" class="nd-ghost-btn">Clear Cart</button>
                     </div>
                 </div>
@@ -1506,27 +1506,9 @@
 
             <!-- Account Icon -->
             <div class="relative" id="account-wrapper">
-                <button id="account-btn" onclick="toggleAccountDropdown()" aria-label="Account" class="nav-icon-btn">
+                <button id="account-btn" onclick="handleAccountIconClick()" aria-label="Account" class="nav-icon-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </button>
-                <!-- Account Dropdown -->
-                <div id="account-dropdown" class="nav-dropdown hidden" style="width:240px;right:0;">
-                    <div class="nd-header" id="acct-header">Account</div>
-                    <!-- Guest state -->
-                    <div id="acct-guest" class="nd-body">
-                        <a href="#" onclick="openLoginModal();return false;" class="nd-link"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>Track Order</a>
-                        <div class="nd-divider"></div>
-                        <p class="nd-hint">Sign in for full account access</p>
-                        <button onclick="openLoginModal()" class="nd-cta-btn" style="margin-top:8px;">Sign In / Register</button>
-                    </div>
-                    <!-- Logged-in state (hidden by default) -->
-                    <div id="acct-loggedin" class="nd-body hidden">
-                        <a href="#" onclick="openClientPortal();switchPortalTab('orders');closeAllDropdowns();return false;" class="nd-link"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>My Orders</a>
-                        <a href="#" onclick="openAccountSettings();return false;" class="nd-link"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
-                        <div class="nd-divider"></div>
-                        <button onclick="acctSignOut()" class="nd-link nd-danger"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out</button>
-                    </div>
-                </div>
             </div>
 
             <!-- Hamburger (mobile) -->
@@ -1551,7 +1533,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                 <span class="text-xs uppercase tracking-widest">Cart</span>
             </button>
-            <button onclick="closeMobileMenu();setTimeout(toggleAccountDropdown,300)" class="flex flex-col items-center gap-1 text-gray-400 hover:text-[#ff1a1a] transition-colors">
+            <button onclick="closeMobileMenu();setTimeout(handleAccountIconClick,300)" class="flex flex-col items-center gap-1 text-gray-400 hover:text-[#ff1a1a] transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span class="text-xs uppercase tracking-widest">Account</span>
             </button>
@@ -1643,22 +1625,7 @@
                     class="px-12 py-5 border border-white/20 text-white font-bold uppercase tracking-widest text-xs hover:border-[#ff1a1a] hover:text-[#ff1a1a] transition-all magnetic-btn block">Services</a>
             </div>
 
-            <div class="flex items-center justify-center gap-8 md:gap-16 mt-32 reveal">
-                <div class="text-center">
-                    <div class="text-3xl md:text-5xl font-bold text-white" data-count="10">0</div>
-                    <div class="text-xs uppercase tracking-widest text-gray-500 mt-2">Projects</div>
-                </div>
-                <div class="w-px h-12 bg-white/10"></div>
-                <div class="text-center">
-                    <div class="text-3xl md:text-5xl font-bold text-white" data-count="1">0</div>
-                    <div class="text-xs uppercase tracking-widest text-gray-500 mt-2">Year</div>
-                </div>
-                <div class="w-px h-12 bg-white/10"></div>
-                <div class="text-center">
-                    <div class="text-3xl md:text-5xl font-bold text-white" data-count="5">0</div>
-                    <div class="text-xs uppercase tracking-widest text-gray-500 mt-2">Clients</div>
-                </div>
-            </div>
+
         </div>
 
         <div id="scrollIndicator"
@@ -1760,7 +1727,7 @@
                         pacing engineered for retention.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Short Form',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Short Form',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Short Form',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1769,7 +1736,7 @@
                         and clean flow across chapters.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Long Form',500)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Long Form',500)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Long Form',500)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1778,7 +1745,7 @@
                         that matches your brand identity.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Coloring',175)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Coloring',175)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Coloring',175)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1787,7 +1754,7 @@
                         graphic packages for a premium finish.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Motion Graphics',400)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Motion Graphics',400)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Motion Graphics',400)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1796,7 +1763,7 @@
                         overpowering the message.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Sound Design',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Sound Design',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Sound Design',200)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
                 <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left reveal flex flex-col">
@@ -1805,7 +1772,7 @@
                         options for fast publishing.</p>
                     <div class="flex gap-2 mt-5">
                         <button onclick="addToCart('Thumbnails',100)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider border border-white/15 text-gray-300 hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 rounded-lg transition-all">+ Cart</button>
-                        <button onclick="window.startSpecificOrder&&window.startSpecificOrder('Thumbnails',100)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
+                        <button onclick="window.buyNow('Thumbnails',100)" class="flex-1 py-2 px-3 text-xs font-bold uppercase tracking-wider bg-[#ff1a1a] text-black hover:bg-white rounded-lg transition-all">Buy Now</button>
                     </div>
                 </div>
             </div>
@@ -1875,7 +1842,8 @@
                     if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return;
                     if (!window.supabase || !window.supabase.createClient) return;
 
-                    const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+                    // Reuse global client to avoid duplicate GoTrueClient warnings
+                    const sb = window._supabaseClient || window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
                     const { data: services, error } = await sb
                         .from('services')
                         .select('name, price')
@@ -1908,8 +1876,7 @@
                         card.addEventListener('click', function () {
                             var svc = this.dataset.service;
                             var price = parseFloat(this.dataset.price);
-                            if (window.startSpecificOrder) window.startSpecificOrder(svc, price);
-                            else if (window.openZyroChat) window.openZyroChat();
+                            window.buyNow(svc, price);
                         });
                     });
                 } catch (e) {
@@ -2105,18 +2072,18 @@
                 <p class="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-12">Real results from brands
                     that trust our cinematic expertise</p>
                 
-                <!-- Dynamic Counters -->
-                <div class="grid grid-cols-3 gap-4 border-t border-b border-white/10 py-8 mb-12 max-w-3xl mx-auto">
+                <!-- Dynamic Stats: pulled live from Supabase -->
+                <div id="live-stats-grid" class="grid grid-cols-3 gap-4 border-t border-b border-white/10 py-8 mb-12 max-w-3xl mx-auto">
                     <div>
-                        <div class="text-4xl font-black text-white" id="counter-years">5+</div>
+                        <div class="text-4xl font-black text-white" id="live-stat-years">—</div>
                         <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-2">Years Experience</div>
                     </div>
                     <div>
-                        <div class="text-4xl font-black text-white" id="counter-clients">120+</div>
+                        <div class="text-4xl font-black text-white" id="live-stat-clients">—</div>
                         <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-2">Global Clients</div>
                     </div>
                     <div>
-                        <div class="text-4xl font-black text-[#ff1a1a]" id="counter-projects">450+</div>
+                        <div class="text-4xl font-black text-[#ff1a1a]" id="live-stat-projects">—</div>
                         <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-2">Projects Delivered</div>
                     </div>
                 </div>
@@ -2126,7 +2093,33 @@
                 <div class="text-center col-span-1 md:col-span-2 text-gray-500 text-sm">Loading client feedback...</div>
             </div>
             <script>
+                // Animated counter effect
+                function animateCount(el, target, suffix) {
+                    suffix = suffix || '';
+                    let current = 0;
+                    const step = Math.max(1, Math.ceil(target / 40));
+                    const timer = setInterval(function() {
+                        current += step;
+                        if (current >= target) { current = target; clearInterval(timer); }
+                        el.textContent = current + suffix;
+                    }, 30);
+                }
+
                 document.addEventListener("DOMContentLoaded", async () => {
+                    // ── Live Stats from API (server-side, bypasses RLS) ──
+                    try {
+                        const statsRes = await fetch('/api/chat?action=getStats');
+                        if (statsRes.ok) {
+                            const stats = await statsRes.json();
+                            if (stats.projects > 0) {
+                                animateCount(document.getElementById('live-stat-years'), stats.years, '+');
+                                animateCount(document.getElementById('live-stat-clients'), stats.clients, '+');
+                                animateCount(document.getElementById('live-stat-projects'), stats.projects, '+');
+                            }
+                        }
+                    } catch(e) { console.warn('[stats] Could not load live stats:', e.message); }
+
+                    // ── Testimonials ──
                     try {
                         const res = await fetch('/api/chat?action=getTestimonials');
                         if (!res.ok) throw new Error();
@@ -3267,17 +3260,8 @@
                 }
 
                 window.startSpecificOrder = function (serviceName, price) {
-                    if (!isOpen) toggleChat();
-                    messages.innerHTML = '';
-                    // Block order flow if studio is Away
-                    if (window.__studioIsOnline === false) {
-                        renderAwayMessage();
-                        return;
-                    }
-                    orderData.service = serviceName;
-                    orderData.price = price;
-                    addBotMessage(`Great choice! Let's get your ${serviceName} project started.`);
-                    renderStep1();
+                    // Redirect to checkout instead of opening chatbot
+                    window.buyNow(serviceName, price);
                 };
 
                 // BUG FIX #8: Guard close button — toggleChat() flips state blindly,
@@ -3867,7 +3851,7 @@
         renderCart();
         // Open cart dropdown briefly
         document.getElementById('cart-dropdown').classList.remove('hidden');
-        document.getElementById('account-dropdown').classList.add('hidden');
+        document.getElementById('account-dropdown')?.classList.add('hidden');
         // Supabase sync — fire-and-forget so the UI badge is never blocked
         _syncCartToSupabase(cart);
     }
@@ -3886,6 +3870,26 @@
         _syncCartToSupabase([]);
     }
     window.clearCart = clearCart;
+
+    function checkoutCart() {
+        var cart = getCart();
+        if (!cart.length) { alert('Your cart is empty.'); return; }
+        var total = cart.reduce(function(s, i) { return s + (i.price * (i.qty || 1)); }, 0);
+        var names = cart.map(function(i) { return i.name + (i.qty > 1 ? ' x' + i.qty : ''); }).join(', ');
+        var serviceName = cart.length === 1 ? cart[0].name : 'Cart Bundle (' + cart.length + ' items)';
+        var destUrl = '/checkout/?service_id=' + encodeURIComponent(serviceName) + '&price=' + total + '&flow=buy_now&cart_items=' + encodeURIComponent(names);
+        var sb = window._supabaseClient;
+        if (!sb) { window.location.href = destUrl; return; }
+        sb.auth.getSession().then(function(res) {
+            var session = res && res.data && res.data.session;
+            if (session) { window.location.href = destUrl; }
+            else {
+                try { sessionStorage.setItem('zyro_post_login_redirect', destUrl); } catch(e) {}
+                if (typeof openLoginModal === 'function') openLoginModal();
+            }
+        }).catch(function() { window.location.href = destUrl; });
+    }
+    window.checkoutCart = checkoutCart;
 
     // ── SUPABASE CART SYNC ─────────────────────────────────────────────────
     // Upserts the full cart JSON to the cart_items table for the current user.
@@ -3991,7 +3995,7 @@
     // ── DROPDOWNS ──────────────────────────────────────────────────────────
     function closeAllDropdowns() {
         document.getElementById('cart-dropdown').classList.add('hidden');
-        document.getElementById('account-dropdown').classList.add('hidden');
+        document.getElementById('account-dropdown')?.classList.add('hidden');
     }
 
     function toggleCartDropdown() {
@@ -4004,6 +4008,7 @@
 
     function toggleAccountDropdown() {
         const dd = document.getElementById('account-dropdown');
+        if (!dd) { handleAccountIconClick(); return; }
         const isHidden = dd.classList.contains('hidden');
         closeAllDropdowns();
         if (isHidden) dd.classList.remove('hidden');
@@ -4095,6 +4100,7 @@
         const guest    = document.getElementById('acct-guest');
         const loggedin = document.getElementById('acct-loggedin');
         const header   = document.getElementById('acct-header');
+        if (!guest || !loggedin || !header) return;
         if (session?.user) {
             guest.classList.add('hidden');
             loggedin.classList.remove('hidden');
@@ -4202,8 +4208,8 @@
             <div class="w-64 border-r border-white/10 bg-white/5 p-6 flex flex-col gap-4">
                 <h2 class="text-xl font-bold text-white mb-4">Client Portal</h2>
                 <button onclick="switchPortalTab('account')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab active" data-tab="account">Account Info</button>
-                <button onclick="switchPortalTab('cart')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="cart">My Cart</button>
                 <button onclick="switchPortalTab('orders')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="orders">Order Tracking</button>
+                <button onclick="switchPortalTab('deliveries')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="deliveries">Deliveries</button>
                 <button onclick="switchPortalTab('referrals')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="referrals">Referrals</button>
             </div>
             <!-- Content Area -->
@@ -4212,8 +4218,7 @@
                 
                 <!-- account tab -->
                 <div id="portal-account" class="portal-view block">
-                    <h3 class="text-2xl font-bold text-white mb-1">Account Settings</h3>
-                    <p class="text-gray-500 text-xs uppercase tracking-widest mb-6">Profile synced with Supabase</p>
+                    <h3 class="text-2xl font-bold text-white mb-6">Account Settings</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Full Name</label>
@@ -4263,19 +4268,6 @@
                     <button onclick="portalChangePassword()" class="px-6 py-3 bg-white/10 border border-white/20 text-white font-bold rounded-lg hover:bg-white/20 transition-all text-sm uppercase tracking-widest">Update Password</button>
                 </div>
 
-                <!-- cart tab -->
-                <div id="portal-cart" class="portal-view hidden">
-                    <h3 class="text-2xl font-bold text-white mb-6">My Cart</h3>
-                    <div id="portal-cart-items"></div>
-                    <div id="portal-cart-footer" class="hidden mt-6 pt-4 border-t border-white/10">
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="text-gray-400 text-sm">Cart Total</span>
-                            <span id="portal-cart-total" class="text-white font-bold text-xl"></span>
-                        </div>
-                        <button onclick="document.getElementById('client-portal-modal').classList.add('hidden')" class="w-full py-3 bg-[#ff1a1a] text-black font-bold rounded-lg hover:bg-white transition-all text-sm uppercase tracking-widest">Go to Checkout</button>
-                        <button onclick="clearCart();portalRefreshCart()" class="w-full mt-2 py-2 text-xs text-gray-600 hover:text-[#ff1a1a] transition-colors">Clear Cart</button>
-                    </div>
-                </div>
 
                 <!-- orders tab -->
                 <div id="portal-orders" class="portal-view hidden">
@@ -4288,13 +4280,20 @@
 
 
 
+                <!-- deliveries tab -->
+                <div id="portal-deliveries" class="portal-view hidden">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-2xl font-bold text-white">Deliveries</h3>
+                        <button onclick="portalLoadDeliveries()" class="text-xs text-gray-500 hover:text-[#ff1a1a] transition-colors uppercase tracking-widest">&#8635; Refresh</button>
+                    </div>
+                    <div id="portal-deliveries-list"><div class="text-center py-12 text-gray-600 text-sm">Sign in to view your deliveries.</div></div>
+                </div>
+
                 <!-- referrals tab -->
                 <div id="portal-referrals" class="portal-view hidden">
                     <h3 class="text-2xl font-bold text-white mb-6">Referral Program</h3>
-                    <div class="p-6 border border-white/10 rounded-xl">
-                        <h4 class="text-white font-bold mb-2">Your Code: <span class="text-[#ff1a1a] tracking-widest ml-2">ZYRO-X79</span></h4>
-                        <p class="text-gray-400 text-sm">Share this code to earn credits on your next order.</p>
-                        <div class="mt-4 text-xl font-bold text-green-400">0 Credits Available</div>
+                    <div id="portal-referrals-content" class="p-6 border border-white/10 rounded-xl">
+                        <div class="text-center py-8 text-gray-600 text-sm">Loading referral data&hellip;</div>
                     </div>
                 </div>
             </div>
@@ -4538,6 +4537,80 @@
     }
     window.portalSubmitReview = portalSubmitReview;
 
+    // ── Hook into tab switching ───────────────────────────────────────────────────────────
+    var _origSwitchPortalTab = window.switchPortalTab;
+    window.switchPortalTab = function(tabId) {
+        if (typeof _origSwitchPortalTab === "function") _origSwitchPortalTab(tabId);
+        if (tabId === "account")    portalLoadProfile();
+        if (tabId === "cart")       portalRefreshCart();
+        if (tabId === "orders")     portalLoadOrders();
+        if (tabId === "deliveries") portalLoadDeliveries();
+        if (tabId === "referrals")  portalLoadReferrals();
+    };
+
+    // ── Load Deliveries tab ─────────────────────────────────────────────────────────────
+    async function portalLoadDeliveries() {
+        var sb = window._supabaseClient;
+        var el = document.getElementById("portal-deliveries-list");
+        if (!el) return;
+        if (!sb) { el.innerHTML = '<div class="text-gray-600 text-sm text-center py-8">Please sign in.</div>'; return; }
+        var res = await sb.auth.getSession();
+        var user = res.data && res.data.session && res.data.session.user;
+        if (!user) { el.innerHTML = '<div class="text-gray-600 text-sm text-center py-8">Please sign in.</div>'; return; }
+        el.innerHTML = '<div class="text-gray-600 text-sm text-center py-8">Loading\u2026</div>';
+        try {
+            var oRes = await sb.from('orders').select('order_id,service').eq('client_email', user.email);
+            if (oRes.error) throw oRes.error;
+            var orders = oRes.data || [];
+            if (!orders.length) { el.innerHTML = '<div class="text-gray-600 text-sm text-center py-8">No deliveries yet.</div>'; return; }
+            var ids = orders.map(function(o){ return o.order_id; });
+            var dRes = await sb.from('deliveries').select('order_id,file_name,b2_key,created_at').in('order_id', ids).order('created_at', {ascending:false});
+            if (dRes.error) throw dRes.error;
+            var deliveries = dRes.data || [];
+            if (!deliveries.length) { el.innerHTML = '<div class="text-gray-600 text-sm text-center py-8">No files delivered yet.</div>'; return; }
+            var oMap = {}; orders.forEach(function(o){ oMap[o.order_id] = o; });
+            var dMap = {}; deliveries.forEach(function(d){ if (!dMap[d.order_id]) dMap[d.order_id] = []; dMap[d.order_id].push(d); });
+            el.innerHTML = Object.keys(dMap).map(function(oid) {
+                var ord = oMap[oid] || {};
+                var fileRows = dMap[oid].map(function(f) {
+                    return '<button onclick="portalDownloadDelivery(\'' + f.b2_key + '\',\'' + f.file_name + '\')" class="flex items-center gap-2 text-[11px] text-green-400 hover:text-green-300 border border-green-500/20 hover:border-green-400/50 px-3 py-1.5 rounded-lg transition-colors">\u2193 ' + f.file_name.substring(0,30) + '</button>';
+                }).join('');
+                return '<div class="border border-white/10 rounded-xl p-4 bg-white/5 mb-3"><div class="text-white font-bold text-sm">' + (ord.service || 'Delivery') + '</div><div class="font-mono text-[10px] text-gray-600 mt-0.5">' + oid + '</div><div class="flex flex-wrap gap-2 mt-3">' + fileRows + '</div></div>';
+            }).join('');
+        } catch(e) {
+            el.innerHTML = '<div class="text-red-400 text-sm text-center py-8">' + (e.message || 'Failed.') + '</div>';
+        }
+    }
+    window.portalLoadDeliveries = portalLoadDeliveries;
+
+    // ── Load Referrals tab ──────────────────────────────────────────────────────────────
+    async function portalLoadReferrals() {
+        var sb = window._supabaseClient;
+        var el = document.getElementById("portal-referrals-content");
+        if (!el) return;
+        if (!sb) { el.innerHTML = '<p class="text-gray-600 text-sm text-center">Please sign in.</p>'; return; }
+        var res = await sb.auth.getSession();
+        var user = res.data && res.data.session && res.data.session.user;
+        if (!user) { el.innerHTML = '<p class="text-gray-600 text-sm text-center">Please sign in.</p>'; return; }
+        try {
+            var m = user.user_metadata || {};
+            var code = m.referral_code || ('ZYRO-' + user.id.substring(0,6).toUpperCase());
+            var rRes = await sb.from('referrals').select('id,referred_email,created_at').eq('referrer_id', user.id).order('created_at', {ascending:false});
+            var refs = (!rRes.error && rRes.data) ? rRes.data : [];
+            var refRows = refs.length
+                ? refs.map(function(r){ return '<div class="flex justify-between text-xs py-2 border-b border-white/5"><span class="text-gray-300">' + r.referred_email + '</span><span class="text-gray-500">' + new Date(r.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + '</span></div>'; }).join('')
+                : '<p class="text-gray-600 text-xs mt-4">No referrals yet.</p>';
+            el.innerHTML = '<div class="mb-5"><p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Your Referral Code</p>'
+                + '<div class="flex items-center gap-3"><span class="text-[#ff1a1a] font-mono text-2xl font-black tracking-widest">' + code + '</span>'
+                + '<button onclick="navigator.clipboard.writeText(\'' + code + '\')" class="text-xs text-gray-500 hover:text-white border border-white/10 hover:border-white/30 px-2 py-1 rounded-lg transition-all">Copy</button></div></div>'
+                + '<div class="flex gap-6 mb-5"><div><p class="text-[10px] text-gray-500 uppercase tracking-widest">Total Referrals</p><p class="text-2xl font-bold text-white">' + refs.length + '</p></div></div>'
+                + '<div class="border-t border-white/10 pt-4"><p class="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Referred Accounts</p>' + refRows + '</div>';
+        } catch(e) {
+            el.innerHTML = '<p class="text-red-400 text-sm">' + (e.message || 'Failed to load referrals.') + '</p>';
+        }
+    }
+    window.portalLoadReferrals = portalLoadReferrals;
+
     // Download delivery file — fetches a fresh presigned URL via get-files using the order ID prefix
     async function portalDownloadDelivery(b2Key, fileName) {
         try {
@@ -4591,14 +4664,6 @@
     }
     window.portalRefreshCart = portalRefreshCart;
 
-    // â”€â”€ Hook into tab switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    var _origSwitchPortalTab = window.switchPortalTab;
-    window.switchPortalTab = function(tabId) {
-        if (typeof _origSwitchPortalTab === "function") _origSwitchPortalTab(tabId);
-        if (tabId === "account") portalLoadProfile();
-        if (tabId === "cart")    portalRefreshCart();
-        if (tabId === "orders")  portalLoadOrders();
-    };
 
     // â”€â”€ Auto-load account tab when portal opens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     var _origOpenClientPortal = window.openClientPortal;
@@ -4606,6 +4671,60 @@
         if (typeof _origOpenClientPortal === "function") _origOpenClientPortal();
         portalLoadProfile();
     };
+
+    // ── BUY NOW: redirect to checkout, require login first if not authed ─────
+    window.buyNow = function(serviceName, price) {
+        var serviceId = encodeURIComponent(serviceName);
+        var destUrl = '/checkout/?service_id=' + serviceId + '&price=' + encodeURIComponent(price) + '&flow=buy_now';
+        var sb = window._supabaseClient;
+        if (!sb) { window.location.href = destUrl; return; }
+        sb.auth.getSession().then(function(res) {
+            var session = res && res.data && res.data.session;
+            if (session) {
+                window.location.href = destUrl;
+            } else {
+                // Store intended destination so we can redirect after login
+                try { sessionStorage.setItem('zyro_post_login_redirect', destUrl); } catch(e) {}
+                if (typeof openLoginModal === 'function') openLoginModal();
+            }
+        }).catch(function() { window.location.href = destUrl; });
+    };
+
+    // ── ACCOUNT ICON: open portal if logged in, login modal if not ───────────
+    window.handleAccountIconClick = function() {
+        var sb = window._supabaseClient;
+        if (!sb) { if (typeof openLoginModal === 'function') openLoginModal(); return; }
+        sb.auth.getSession().then(function(res) {
+            var session = res && res.data && res.data.session;
+            if (session) {
+                closeAllDropdowns();
+                if (typeof openClientPortal === 'function') openClientPortal();
+                if (typeof switchPortalTab === 'function') switchPortalTab('account');
+            } else {
+                if (typeof openLoginModal === 'function') openLoginModal();
+            }
+        }).catch(function() {
+            if (typeof openLoginModal === 'function') openLoginModal();
+        });
+    };
+
+    // ── After login: honour post-login redirect (set by buyNow above) ────────
+    (function() {
+        var _rInt = setInterval(function() {
+            var sb = window._supabaseClient;
+            if (!sb) return;
+            clearInterval(_rInt);
+            sb.auth.onAuthStateChange(function(event) {
+                if (event === 'SIGNED_IN') {
+                    try {
+                        var dest = sessionStorage.getItem('zyro_post_login_redirect');
+                        if (dest) { sessionStorage.removeItem('zyro_post_login_redirect'); window.location.href = dest; }
+                    } catch(e) {}
+                }
+            });
+        }, 500);
+        setTimeout(function() { clearInterval(_rInt); }, 8000);
+    })();
     </script>
 </body>
 

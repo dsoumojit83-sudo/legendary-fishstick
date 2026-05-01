@@ -72,6 +72,49 @@ module.exports = async function (req, res) {
         } catch(e) { return res.status(500).json({ error: 'Failed to fetch testimonials' }); }
     }
 
+    // ── GET /api/chat?action=getStats — public stats for homepage ────────────
+    if (req.method === 'GET' && req.query.action === 'getStats') {
+        try {
+            const { data: orders, error } = await supabase.from('orders')
+                .select('client_email, created_at')
+                .in('status', ['paid','working','completed','delivered']);
+            if (error) throw error;
+            const now = Date.now();
+            let years = 1, clients = 0, projects = 0;
+            if (orders && orders.length) {
+                const earliest = Math.min(...orders.map(o => new Date(o.created_at).getTime()));
+                years = Math.max(1, Math.floor((now - earliest) / (365.25 * 24 * 60 * 60 * 1000)));
+                clients = new Set(orders.map(o => (o.client_email || '').toLowerCase())).size;
+                projects = orders.length;
+            }
+            res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+            return res.status(200).json({ years, clients, projects });
+        } catch(e) { return res.status(500).json({ error: 'Failed to fetch stats' }); }
+    }
+
+    // ── GET /api/chat?action=applyCoupon&code=X&amount=Y — public coupon validation ─
+    if (req.method === 'GET' && req.query.action === 'applyCoupon') {
+        const code = (req.query.code || '').toUpperCase().trim();
+        const orderAmount = parseFloat(req.query.amount) || 0;
+        if (!code) return res.status(400).json({ error: 'Coupon code is required.' });
+        try {
+            const { data: coupon, error } = await supabase.from('coupons')
+                .select('*').eq('code', code).eq('is_active', true).maybeSingle();
+            if (error) throw error;
+            if (!coupon) return res.status(404).json({ error: 'Invalid coupon code.' });
+            if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) return res.status(400).json({ error: 'Coupon has expired.' });
+            if (coupon.max_uses > 0 && coupon.times_used >= coupon.max_uses) return res.status(400).json({ error: 'Coupon usage limit reached.' });
+            if (coupon.min_order_value && orderAmount < coupon.min_order_value) return res.status(400).json({ error: 'Minimum order ₹' + coupon.min_order_value + ' required.' });
+            let discount = 0;
+            if (coupon.discount_type === 'percent') {
+                discount = Math.round(orderAmount * coupon.discount_value / 100);
+            } else {
+                discount = Math.min(coupon.discount_value, orderAmount);
+            }
+            return res.status(200).json({ discount, code: coupon.code, type: coupon.discount_type, value: coupon.discount_value });
+        } catch(e) { return res.status(500).json({ error: 'Failed to validate coupon.' }); }
+    }
+
     // ── GET /api/chat?action=getBill&orderId=X&email=Y ──────────────────────────
     // Client-side invoice download. No JWT — ownership proven by email+orderId pair.
     // Ref: OWASP Broken Object Level Authorization: https://owasp.org/API-Security/

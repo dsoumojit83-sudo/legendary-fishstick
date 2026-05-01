@@ -88,6 +88,20 @@ module.exports = async function (req, res) {
             return res.status(200).json({ admins: data });
         }
 
+        // ── Reviews listing (GET ?action=getReviews) ──────────────────────────────
+        if (req.method === 'GET' && req.query.action === 'getReviews') {
+            const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            return res.status(200).json({ reviews: data });
+        }
+
+        // ── Referrals listing (GET ?action=getReferrals) ──────────────────────────
+        if (req.method === 'GET' && req.query.action === 'getReferrals') {
+            const { data, error } = await supabase.from('referrals').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            return res.status(200).json({ referrals: data });
+        }
+
         // ── Portfolio admin listing (GET ?type=portfolio) ────────────────────────
         if (req.method === 'GET' && req.query.type === 'portfolio') {
             const { data, error } = await supabase
@@ -293,6 +307,23 @@ module.exports = async function (req, res) {
                 const { error: dbError } = await supabase.from('admins').delete().eq('email', email);
                 if (dbError) throw dbError;
                 
+                return res.status(200).json({ ok: true });
+            }
+
+            // ── Reviews: approve/reject toggle ───────────────────────────────────
+            if (action === 'toggleReview') {
+                const { id, is_approved } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const { data, error } = await supabase.from('reviews').update({ is_approved }).eq('id', id).select().single();
+                if (error) throw error;
+                return res.status(200).json({ review: data });
+            }
+
+            if (action === 'deleteReview') {
+                const { id } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const { error } = await supabase.from('reviews').delete().eq('id', id);
+                if (error) throw error;
                 return res.status(200).json({ ok: true });
             }
 
