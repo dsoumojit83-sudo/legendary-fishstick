@@ -864,50 +864,7 @@
             display: inline-block;
         }
 
-        /* Chatbot Custom Styles */
-        #chatbotMessages::-webkit-scrollbar {
-            width: 4px;
-        }
 
-        #chatbotMessages::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        #chatbotMessages::-webkit-scrollbar-thumb {
-            background: rgba(255, 26, 26, 0.3);
-            border-radius: 2px;
-        }
-
-        .chat-bot-msg {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1rem 1rem 1rem 0.25rem;
-            padding: 0.6rem 1rem;
-            color: #d1d5db;
-            font-size: 0.875rem;
-            max-width: 85%;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .chat-user-msg {
-            background: rgba(255, 26, 26, 0.15);
-            border: 1px solid rgba(255, 26, 26, 0.3);
-            border-radius: 1rem 1rem 0.25rem 1rem;
-            padding: 0.6rem 1rem;
-            color: #fff;
-            font-size: 0.875rem;
-            max-width: 85%;
-            margin-left: auto;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        /* FIX: Prevent iOS Safari auto-zoom on input focus — requires font-size 16px minimum */
-        #chatbotWindow input,
-        #chatbotWindow select {
-            font-size: 16px !important;
-        }
 
         /* UPGRADED: Price Card Interactive CSS */
         .price-card {
@@ -1076,7 +1033,6 @@
         @media (max-width: 767px) {
 
             .service-card,
-            #chatbotWindow,
             #mobileMenu {
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
@@ -1123,87 +1079,9 @@
                 justify-content: center;
                 gap: 0.75rem;
             }
-
-            /* ── Chatbot window: safe-area inset for iPhone notch/home bar ─── */
-            #chatbotWindow {
-                bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;
-            }
-
-            /* ── Pricing card labels: allow wrap on 2-col grid ───────────────
-               whitespace-nowrap on the Short Form label clips on small phones. */
-            .price-card .text-\[10px\] {
-                white-space: normal !important;
-            }
-
-            /* ── SCROLL STUTTER FIX: kill heavy fixed compositor layers on mobile ──
-               noise, grid-bg, and the cinematic canvas each create a GPU compositor
-               layer. On mobile this fights the scroll compositor and causes frame drops.
-               Hide them — the background color + vignette still looks great. */
-            .noise,
-            .grid-bg {
-                display: none !important;
-            }
-
-            #cinematicCanvas {
-                display: none !important;
-            }
-
-            /* ── Force momentum (inertia) scrolling on iOS ── */
-            html,
-            body {
-                -webkit-overflow-scrolling: touch;
-            }
-
-            /* ── Prevent orbs from creating compositor layers during scroll ── */
-            .orb {
-                will-change: auto !important;
-                filter: none !important;
-                opacity: 0 !important;
-                pointer-events: none;
-            }
         }
 
-        /* ── Scroll-to-top: always red on mobile ─────────────────────────────
-           Desktop uses hover:bg-white for the color-flip effect.
-           On mobile that hover state can stick after a tap — force red always. */
-        @media (max-width: 767px) {
 
-            #scrollTopBtn,
-            #scrollTopBtn:active,
-            #scrollTopBtn:focus {
-                background-color: #ff1a1a !important;
-            }
-        }
-
-        /* ── Chatbot input shake animation ───────────────────────────────────
-           Fires when user submits an invalid name / email / phone.            */
-        @keyframes wiz-shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            20% {
-                transform: translateX(-6px);
-            }
-
-            40% {
-                transform: translateX(6px);
-            }
-
-            60% {
-                transform: translateX(-4px);
-            }
-
-            80% {
-                transform: translateX(4px);
-            }
-        }
-
-        .wiz-shake {
-            animation: wiz-shake 0.35s ease;
-        }
 
         /* ── Payment redirect overlay ────────────────────────────────────────
            Full-screen dark screen with pulsing ring — shown when Cashfree SDK
@@ -1618,9 +1496,9 @@
             </p>
 
             <div class="flex flex-col md:flex-row items-center justify-center gap-5 mb-16">
-                <button onclick="if(window.openZyroChat) window.openZyroChat()"
-                    class="btn-glow btn-shine px-12 py-5 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn block">Start
-                    Project</button>
+                <a href="#pricing"
+                    class="btn-glow btn-shine px-12 py-5 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn block text-center">Start
+                    Project</a>
                 <a href="#services"
                     class="px-12 py-5 border border-white/20 text-white font-bold uppercase tracking-widest text-xs hover:border-[#ff1a1a] hover:text-[#ff1a1a] transition-all magnetic-btn block">Services</a>
             </div>
@@ -2269,11 +2147,7 @@
                     </a>
                 </div>
 
-                <div class="mt-10">
-                    <button onclick="if(window.openZyroChat) window.openZyroChat()"
-                        class="btn-shine px-10 py-4 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all rounded-lg">Open
-                        Assistant to Book Edit</button>
-                </div>
+
             </div>
         </div>
     </section>
@@ -2371,42 +2245,7 @@
         </div>
     </footer>
 
-    <div id="chatbotWindow"
-        class="fixed bottom-24 left-4 right-4 md:right-auto md:left-8 md:w-80 bg-[#050505] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 opacity-0 translate-y-4 pointer-events-none"
-        style="height: 480px; max-height: calc(100dvh - 120px); box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,26,26,0.1);">
-        <div
-            class="bg-gradient-to-r from-[#ff1a1a]/20 to-transparent p-4 border-b border-white/10 flex justify-between items-center backdrop-blur-md">
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-8 h-8 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 flex items-center justify-center text-[#ff1a1a]">
-                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path
-                            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
-                        </path>
-                        <path d="M9 8h6l-6 8h6"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-white text-sm font-bold">Zyro Assistant</h3>
-                    <p class="text-[10px] uppercase tracking-wider flex items-center gap-1" id="chatbot-status-row">
-                        <span id="chatbot-status-dot"
-                            class="w-1.5 h-1.5 rounded-full bg-[#ff1a1a] animate-pulse transition-colors duration-500"></span>
-                        <span id="chatbot-status-text" class="text-[#ff1a1a]">Online</span>
-                    </p>
-                </div>
-            </div>
-            <button id="chatbotClose" class="text-gray-400 hover:text-white transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
-        </div>
 
-        <div id="chatbotMessages" class="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
-        </div>
-    </div>
 
 
 
@@ -4257,21 +4096,31 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">New Password</label>
-                            <input id="pa-newpass" type="password" placeholder="Min 8 characters" class="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                            <div class="relative">
+                                <input id="pa-newpass" type="password" placeholder="Min 8 characters" class="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#ff1a1a] transition-colors pr-10">
+                                <button type="button" onclick="togglePasswordVisibility('pa-newpass', 'eye-newpass')" class="absolute top-1/2 -translate-y-1/2 right-3 text-gray-500 hover:text-white transition-colors">
+                                    <svg id="eye-newpass" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Confirm Password</label>
-                            <input id="pa-confirmpass" type="password" placeholder="Repeat password" class="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                            <div class="relative">
+                                <input id="pa-confirmpass" type="password" placeholder="Repeat password" class="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#ff1a1a] transition-colors pr-10">
+                                <button type="button" onclick="togglePasswordVisibility('pa-confirmpass', 'eye-confirmpass')" class="absolute top-1/2 -translate-y-1/2 right-3 text-gray-500 hover:text-white transition-colors">
+                                    <svg id="eye-confirmpass" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div id="pa-pass-msg" class="hidden text-xs mb-3 px-3 py-2 rounded-lg"></div>
-                    <button onclick="portalChangePassword()" class="px-6 py-3 bg-white/10 border border-white/20 text-white font-bold rounded-lg hover:bg-white/20 transition-all text-sm uppercase tracking-widest">Update Password</button>
+                    <button id="pa-pass-btn" onclick="portalChangePassword()" class="px-6 py-3 bg-white/10 border border-white/20 text-white font-bold rounded-lg hover:bg-white/20 transition-all text-sm uppercase tracking-widest">Update Password</button>
                 </div>
 
 
                 <!-- orders tab -->
                 <div id="portal-orders" class="portal-view hidden">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center justify-between mb-6 pr-10">
                         <h3 class="text-2xl font-bold text-white">Order History</h3>
                         <button onclick="portalLoadOrders()" class="text-xs text-gray-500 hover:text-[#ff1a1a] transition-colors uppercase tracking-widest">&#8635; Refresh</button>
                     </div>
@@ -4282,7 +4131,7 @@
 
                 <!-- deliveries tab -->
                 <div id="portal-deliveries" class="portal-view hidden">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center justify-between mb-6 pr-10">
                         <h3 class="text-2xl font-bold text-white">Deliveries</h3>
                         <button onclick="portalLoadDeliveries()" class="text-xs text-gray-500 hover:text-[#ff1a1a] transition-colors uppercase tracking-widest">&#8635; Refresh</button>
                     </div>
@@ -4358,17 +4207,39 @@
         try {
             var r = await sb.auth.updateUser({ data: meta });
             if (r.error) throw r.error;
-            _pMsg("pa-msg", "\u2713 Profile saved successfully.", true);
-            // Refresh account dropdown name
+            var msgEl = document.getElementById("pa-msg");
+            if (msgEl) msgEl.classList.add("hidden");
+            if (btn) {
+                btn.textContent = "\u2713 Success";
+                btn.classList.remove("bg-[#ff1a1a]", "text-black", "hover:bg-white");
+                btn.classList.add("bg-green-500", "text-white");
+                setTimeout(function() {
+                    btn.textContent = "Save Changes";
+                    btn.classList.remove("bg-green-500", "text-white");
+                    btn.classList.add("bg-[#ff1a1a]", "text-black", "hover:bg-white");
+                    btn.disabled = false;
+                }, 3000);
+            }
             if (typeof initAccountState === "function") initAccountState();
         } catch(e) {
             _pMsg("pa-msg", e.message || "Save failed.", false);
-        } finally {
-            // Re-enable the save button regardless of success or failure
             if (btn) { btn.textContent = "Save Changes"; btn.disabled = false; }
         }
     }
     window.portalSaveProfile = portalSaveProfile;
+
+    // ── Change password ──────────────────────────────────────────────────────────
+    function togglePasswordVisibility(inputId, iconId) {
+        var input = document.getElementById(inputId);
+        var icon = document.getElementById(iconId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>';
+        } else {
+            input.type = 'password';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
+        }
+    }
 
     // ── Change password ──────────────────────────────────────────────────────────
     async function portalChangePassword() {
@@ -4376,17 +4247,32 @@
         if (!sb) { _pMsg("pa-pass-msg","Not signed in.",false); return; }
         var np = document.getElementById("pa-newpass");
         var cp = document.getElementById("pa-confirmpass");
+        var btn = document.getElementById("pa-pass-btn");
         if (!np || !cp) return;
         var pass = np.value; var conf = cp.value;
         if (pass.length < 8)          { _pMsg("pa-pass-msg","Password must be at least 8 characters.",false); return; }
         if (pass !== conf)            { _pMsg("pa-pass-msg","Passwords do not match.",false); return; }
+        if (btn) { btn.textContent = "Updating\u2026"; btn.disabled = true; }
         try {
             var r = await sb.auth.updateUser({ password: pass });
             if (r.error) throw r.error;
             np.value = ""; cp.value = "";
-            _pMsg("pa-pass-msg", "\u2713 Password updated successfully.", true);
+            var msgEl = document.getElementById("pa-pass-msg");
+            if (msgEl) msgEl.classList.add("hidden");
+            if (btn) {
+                btn.textContent = "\u2713 Success";
+                btn.classList.remove("bg-white/10", "border-white/20", "hover:bg-white/20");
+                btn.classList.add("bg-green-500", "border-transparent", "text-white");
+                setTimeout(function() {
+                    btn.textContent = "Update Password";
+                    btn.classList.remove("bg-green-500", "border-transparent", "text-white");
+                    btn.classList.add("bg-white/10", "border-white/20", "hover:bg-white/20", "text-white");
+                    btn.disabled = false;
+                }, 3000);
+            }
         } catch(e) {
             _pMsg("pa-pass-msg", e.message || "Password update failed.", false);
+            if (btn) { btn.textContent = "Update Password"; btn.disabled = false; }
         }
     }
     window.portalChangePassword = portalChangePassword;
@@ -4519,7 +4405,10 @@
         var msgEl = document.getElementById("review-msg-" + orderId);
         if (rating < 1) { if (msgEl) msgEl.textContent = "Please select a star rating."; return; }
         if (!text) { if (msgEl) msgEl.textContent = "Please write a short review."; return; }
-        if (msgEl) msgEl.textContent = "Submitting\u2026";
+        var form = document.getElementById("review-form-" + orderId);
+        var btn = form ? form.querySelector("button") : null;
+        if (btn) { btn.textContent = "Submitting\u2026"; btn.disabled = true; }
+        if (msgEl) msgEl.textContent = "";
         try {
             var res = await fetch("/api/chat", {
                 method: "POST",
@@ -4528,11 +4417,16 @@
             });
             var data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed");
-            if (msgEl) { msgEl.textContent = "\u2713 Review submitted! Thank you."; msgEl.style.color = "#22c55e"; }
-            var form = document.getElementById("review-form-" + orderId);
+            if (msgEl) { msgEl.textContent = ""; }
+            if (btn) {
+                btn.textContent = "\u2713 Success";
+                btn.classList.remove("bg-[#ff1a1a]", "text-black", "hover:bg-white");
+                btn.classList.add("bg-green-500", "text-white");
+            }
             if (form) setTimeout(function(){ form.classList.add("hidden"); }, 2500);
         } catch(e) {
             if (msgEl) { msgEl.textContent = e.message || "Error."; msgEl.style.color = "#ef4444"; }
+            if (btn) { btn.textContent = "Submit Review"; btn.disabled = false; }
         }
     }
     window.portalSubmitReview = portalSubmitReview;
