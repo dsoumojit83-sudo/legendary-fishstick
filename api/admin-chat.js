@@ -573,9 +573,9 @@ module.exports = async function (req, res) {
         ].join('\n');
         const liveServicesBlock = fetchedServicesBlock || _fallbackServices;
 
-        // BUG FIX D+E: Only count paid/completed orders as real revenue.
-        // Previously summed ALL orders incl. refunded + pending = inflated numbers.
-        const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'completed');
+        // BUG FIX D+E: Only count paid/delivered orders as real revenue.
+        // 'completed' was a stale status — DB uses 'delivered' now.
+        const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'delivered' || o.status === 'completed');
         const totalRev = paidOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0).toFixed(2);
         const currentMonth = new Date().getMonth();
         const monthRev = paidOrders
@@ -583,9 +583,13 @@ module.exports = async function (req, res) {
             .reduce((s, o) => s + (Number(o.amount) || 0), 0)
             .toFixed(2);
 
-        // BUG FIX F: 'canceled' (1 l) was a typo — DB stores 'refunded' from cancel_order action.
-        // Refunded orders were appearing in the active pipeline after cancellation.
-        const activeOrders = orders.filter(o => o.status && !['completed', 'refunded', 'cancelled'].includes(o.status));
+        // Refunded orders — shown separately in AI context
+        const refundedOrders = orders.filter(o => o.status === 'refunded');
+        const totalRefunded = refundedOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0).toFixed(2);
+
+        // BUG FIX F: exclude all terminal statuses from active pipeline
+        // 'canceled' (1-l) and 'cancelled' (2-l) both excluded
+        const activeOrders = orders.filter(o => o.status && !['completed', 'delivered', 'refunded', 'cancelled', 'canceled'].includes(o.status));
         const filesMap = await getFilesMap(activeOrders);
 
         const activePipeline = activeOrders.map(o => {
@@ -643,6 +647,8 @@ BUSINESS SNAPSHOT:
 - Client retention rate: ${retentionRate}%
 - Cleared to bank: Rs.${totalSettled.toFixed(2)} | Locked in gateway: Rs.${Math.max(0, pendingClearance).toFixed(2)}
 - Profit margin after Cashfree fees: ${profitMargin}
+- Total refunded: Rs.${totalRefunded} (${refundedOrders.length} order${refundedOrders.length !== 1 ? 's' : ''})
+- Refunded orders: ${refundedOrders.length > 0 ? refundedOrders.map(o => `${o.client_name || 'Unknown'} - ${o.service || 'N/A'} (Rs.${o.amount}) [${o.order_id}]`).join(', ') : 'None'}
 - High-value clients: ${whaleClients.length > 0 ? whaleClients.join(', ') : 'None yet'}
 - Stale leads (no action 48h+): ${ghostLeads.length > 0 ? ghostLeads.map(o => `${o.client_name} - ${o.service} (${o.order_id})`).join(', ') : 'None'}
 
@@ -667,7 +673,7 @@ STEP 2 — EXECUTE (Only after Soumojit confirms):
 Valid Pending Proposal Formats:
 
 1. Propose Status Update (in_progress, delivered, created, paid, refunded):
-<<<PENDING: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
+<<<PENDING: {"type": "update_status", "orderId": "exact_order_id", "status": "in_progress"} >>>
 
 2. Propose Field Update:
 <<<PENDING: {"type": "update_order", "orderId": "exact_order_id", "updates": {"project_notes": "Urgent"}} >>>
@@ -708,8 +714,8 @@ ADDITIONAL RULES:
    - Keep responses natural — don't make it sound robotic
 
 4. WORKFLOW DISTINCTION:
-   - "Mark as done"/"completed" = status='completed' (creative workflow)
-   - "working" = status='working' (creative workflow in progress)
+   - "Mark as done"/"delivered" = status='delivered' (creative workflow complete)
+   - "in progress"/"working" = status='in_progress' (creative workflow in progress)
    - "Mark as paid" = status='paid' (finance workflow)
    - These are different states — never confuse them
 

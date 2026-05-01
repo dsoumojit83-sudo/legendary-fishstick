@@ -15,13 +15,13 @@
     <link rel="stylesheet" href="/tailwind.css?v=2">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous">
 
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous">
     <link rel="dns-prefetch" href="https://unpkg.com">
     <!-- Preload GSAP so it downloads while body renders -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" as="script" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" as="script" crossorigin="anonymous">
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet">
@@ -1869,39 +1869,7 @@
                 </div>
 
             </div>
-        </main>
-
-        <div id="ai-terminal"
-            class="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[480px] bg-[#050505]/95 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex flex-col z-50 h-[75dvh] sm:h-[600px] max-h-[calc(100vh-100px)] terminal-closed transition-all duration-300 transform translate-y-4 opacity-0 overflow-hidden">
-
-            <div
-                class="h-14 bg-black/90 border-b border-white/10 flex items-center justify-between px-5 shrink-0 rounded-t-2xl">
-                <div class="flex items-center gap-3">
-                    <div
-                        class="relative flex items-center justify-center w-7 h-7 rounded bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 text-[#ff1a1a]">
-                        <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
-                        <span class="absolute -top-1 -right-1 flex h-2 w-2">
-                            <span
-                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
-                        </span>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-sm text-white" style="font-family:'Inter',sans-serif;">ZyroCore<sup
-                                style="font-size:0.5em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>
-                            AI
-                        </h3>
-                        <p class="text-[9px] text-[#ff1a1a] uppercase tracking-widest"
-                            style="font-family:'Inter',sans-serif; letter-spacing:0.12em;">Online · Ready</p>
-                    </div>
-                </div>
-                <button onclick="toggleTerminal()"
-                    class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-gray-400 hover:text-white">
-                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                </button>
-            </div>
-
-            <!-- ========== ADMINS ACCESS VIEW ========== -->
+        <!-- ========== ADMINS ACCESS VIEW ========== -->
             <div id="admins-view" class="view-section space-y-8 hidden">
                 <!-- Search bar -->
                 <div class="flex items-center gap-4">
@@ -2006,6 +1974,39 @@
                         </table>
                     </div>
                 </div>
+            </div>
+
+            
+            </main>
+
+        <div id="ai-terminal"
+            class="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[480px] bg-[#050505]/95 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex flex-col z-50 h-[75dvh] sm:h-[600px] max-h-[calc(100vh-100px)] terminal-closed transition-all duration-300 transform translate-y-4 opacity-0 overflow-hidden">
+
+            <div
+                class="h-14 bg-black/90 border-b border-white/10 flex items-center justify-between px-5 shrink-0 rounded-t-2xl">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="relative flex items-center justify-center w-7 h-7 rounded bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 text-[#ff1a1a]">
+                        <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+                        <span class="absolute -top-1 -right-1 flex h-2 w-2">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
+                        </span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-white" style="font-family:'Inter',sans-serif;">ZyroCore<sup
+                                style="font-size:0.5em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>
+                            AI
+                        </h3>
+                        <p class="text-[9px] text-[#ff1a1a] uppercase tracking-widest"
+                            style="font-family:'Inter',sans-serif; letter-spacing:0.12em;">Online · Ready</p>
+                    </div>
+                </div>
+                <button onclick="toggleTerminal()"
+                    class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-gray-400 hover:text-white">
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
             </div>
 
             <div id="terminal-body" class="flex-1 p-4 overflow-y-auto flex flex-col gap-1 relative">
@@ -5442,7 +5443,7 @@
     document.addEventListener('click', function(e) {
         const wrapper = document.getElementById('notif-wrapper');
         if (wrapper && !wrapper.contains(e.target)) {
-            document.getElementById('notif-dropdown').classList.add('hidden');
+            document.getElementById('notif-dropdown')?.classList.add('hidden');
         }
     });
 

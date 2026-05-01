@@ -48,7 +48,7 @@ module.exports = async function(req, res) {
         if (status === 'completed') normalizedStatus = 'delivered';
         if (status === 'pending') normalizedStatus = 'created';
         
-        const validStatuses = ['created', 'in_progress', 'paid', 'delivered', 'refunded', 'cancelled'];
+        const validStatuses = ['created', 'in_progress', 'paid', 'delivered', 'refunded', 'cancelled', 'canceled'];
         if (!validStatuses.includes(normalizedStatus)) {
             return res.status(400).json({ error: 'Invalid status value.' });
         }

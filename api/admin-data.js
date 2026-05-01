@@ -83,9 +83,24 @@ module.exports = async function (req, res) {
 
         // ── Admins listing (GET ?action=getAdmins) ────────────────────────────────
         if (req.method === 'GET' && req.query.action === 'getAdmins') {
-            const { data, error } = await supabase.from('admins').select('*').order('created_at', { ascending: false });
-            if (error) throw error;
-            return res.status(200).json({ admins: data });
+            const { data: dbAdmins, error: dbErr } = await supabase.from('admins').select('email, role');
+            if (dbErr) throw dbErr;
+            const adminEmails = dbAdmins.map(a => a.email.toLowerCase());
+            
+            const { data: authData, error: authErr } = await supabase.auth.admin.listUsers();
+            if (authErr) throw authErr;
+
+            const adminUsers = authData.users
+                .filter(u => adminEmails.includes(u.email.toLowerCase()) || u.email.toLowerCase() === 'zyroeditz.official@gmail.com')
+                .map(u => ({
+                    email: u.email,
+                    role: u.email.toLowerCase() === 'zyroeditz.official@gmail.com' ? 'superadmin' : 'admin',
+                    created_at: u.created_at,
+                    last_sign_in_at: u.last_sign_in_at,
+                    banned: !!u.banned_until
+                }));
+
+            return res.status(200).json({ admins: adminUsers });
         }
 
         // ── Reviews listing (GET ?action=getReviews) ──────────────────────────────
@@ -292,8 +307,8 @@ module.exports = async function (req, res) {
                 });
                 if (authError && authError.message !== 'User already registered') throw authError;
 
-                // Add to admins table
-                const { error: dbError } = await supabase.from('admins').upsert({ email }).select().single();
+                // Add to admins table with role
+                const { error: dbError } = await supabase.from('admins').upsert({ email, role: 'admin' }, { onConflict: 'email' }).select().single();
                 if (dbError) throw dbError;
 
                 return res.status(200).json({ ok: true });

@@ -110,8 +110,8 @@ module.exports = async function (req, res) {
 
             if (dbErr || !order) return res.status(404).json({ error: 'Order not found.' });
 
-            // If already paid, no retry needed — send them to success
-            if (order.status === 'paid' || order.status === 'delivered') {
+            // If already paid/active, no retry needed — send them to success
+            if (order.status === 'paid' || order.status === 'delivered' || order.status === 'in_progress') {
                 return res.status(200).json({ already_paid: true });
             }
 
@@ -148,7 +148,7 @@ module.exports = async function (req, res) {
                             customer_phone: cleanPhone
                         },
                         order_meta: {
-                            return_url: `https://zyroeditz.xyz/payment-success?order_id=${retryOrderId}`
+                            return_url: `${process.env.SITE_URL || 'https://zyroeditz.xyz'}/checkout/?order_id=${retryOrderId}`
                         }
                     }, {
                         headers: {

@@ -77,7 +77,7 @@ module.exports = async function (req, res) {
         try {
             const { data: orders, error } = await supabase.from('orders')
                 .select('client_email, created_at')
-                .in('status', ['paid','working','completed','delivered']);
+                .in('status', ['paid','in_progress','delivered']);
             if (error) throw error;
             const now = Date.now();
             let years = 1, clients = 0, projects = 0;
@@ -144,8 +144,8 @@ module.exports = async function (req, res) {
             return res.status(403).json({ error: 'Email does not match order records.' });
         }
 
-        // Only allow download after payment confirmed
-        const paidStatuses = ['paid', 'working', 'completed'];
+        // Only allow download after payment confirmed — includes all post-payment active statuses
+        const paidStatuses = ['paid', 'in_progress', 'delivered'];
         if (!paidStatuses.includes(order.status)) {
             return res.status(403).json({ error: 'Invoice not available until payment is confirmed.' });
         }
