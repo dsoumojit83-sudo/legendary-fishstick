@@ -101,7 +101,13 @@ module.exports = async function (req, res) {
             const { data: coupon, error } = await supabase.from('coupons')
                 .select('*').eq('code', code).eq('is_active', true).maybeSingle();
             if (error) throw error;
-            if (!coupon) return res.status(404).json({ error: 'Invalid coupon code.' });
+            if (!coupon) {
+                if (code.startsWith('ZYRO-') && code.length >= 10) {
+                    let discount = Math.round(orderAmount * 10 / 100); // 10% discount for referrals
+                    return res.status(200).json({ discount, code, type: 'referral', value: 10 });
+                }
+                return res.status(404).json({ error: 'Invalid coupon or referral code.' });
+            }
             if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) return res.status(400).json({ error: 'Coupon has expired.' });
             if (coupon.max_uses > 0 && coupon.times_used >= coupon.max_uses) return res.status(400).json({ error: 'Coupon usage limit reached.' });
             if (coupon.min_order_value && orderAmount < coupon.min_order_value) return res.status(400).json({ error: 'Minimum order ₹' + coupon.min_order_value + ' required.' });
@@ -292,7 +298,7 @@ module.exports = async function (req, res) {
             client_phone: safePhone,
             service: selectedService,
             amount: numericAmount || 0,
-            status: 'pending',
+            status: 'created',
             deadline_date: formattedDeadline
         }]);
 

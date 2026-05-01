@@ -101,7 +101,7 @@ module.exports = async function (req, res) {
         if (action === 'retry') {
             log('INFO', order_id, 'Retry payment request received.');
 
-            // 1. Verify this order actually exists in our DB and is still pending
+            // 1. Verify this order actually exists in our DB and is still created
             const { data: order, error: dbErr } = await supabase
                 .from('orders')
                 .select('order_id, status, amount, client_name, client_email, client_phone, service')
@@ -111,7 +111,7 @@ module.exports = async function (req, res) {
             if (dbErr || !order) return res.status(404).json({ error: 'Order not found.' });
 
             // If already paid, no retry needed — send them to success
-            if (order.status === 'paid' || order.status === 'completed') {
+            if (order.status === 'paid' || order.status === 'delivered') {
                 return res.status(200).json({ already_paid: true });
             }
 
@@ -169,7 +169,7 @@ module.exports = async function (req, res) {
                         client_phone: order.client_phone,
                         service: order.service,
                         amount: order.amount,
-                        status: 'pending',
+                        status: 'created',
                         deadline_date: order.deadline_date
                     }]);
                     log('INFO', order_id, `Retry order created: ${retryOrderId} inserted into DB.`);
@@ -226,7 +226,7 @@ module.exports = async function (req, res) {
             // --- CRITICAL FIX: PREVENT DOUBLE EMAILS ---
             // If it's already marked as paid in our DB, the user just refreshed the page. 
             // Return success to the frontend, but DO NOT send another invoice.
-            if (orderData.status === 'paid' || orderData.status === 'completed') {
+            if (orderData.status === 'paid' || orderData.status === 'delivered') {
                 log('INFO', order_id, `Duplicate call detected (DB status='${orderData.status}'). Skipping invoice. Returning 200.`);
                 return res.status(200).json({ success: true, status: 'paid' });
             }
@@ -255,7 +255,7 @@ module.exports = async function (req, res) {
             return res.status(200).json({ success: true, status: 'paid' });
         }
 
-        // If it's still pending or failed, return the status
+        // If it's still created or failed, return the status
         log('INFO', order_id, `Order is not yet PAID. Returning status: ${String(orderStatus).toLowerCase()}`);
         return res.status(200).json({ success: true, status: String(orderStatus).toLowerCase() });
 

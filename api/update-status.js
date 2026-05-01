@@ -42,19 +42,23 @@ module.exports = async function(req, res) {
             return res.status(400).json({ error: 'Missing required fields.' });
         }
 
-        // Normalize 'in_progress' alias → 'working' (single source of truth)
-        const normalizedStatus = status === 'in_progress' ? 'working' : status;
-        const validStatuses = ['pending', 'working', 'paid', 'completed', 'refunded', 'cancelled'];
+        // Normalize status to match new DB constraint: ['created', 'paid', 'in_progress', 'delivered', 'refunded']
+        let normalizedStatus = status;
+        if (status === 'working') normalizedStatus = 'in_progress';
+        if (status === 'completed') normalizedStatus = 'delivered';
+        if (status === 'pending') normalizedStatus = 'created';
+        
+        const validStatuses = ['created', 'in_progress', 'paid', 'delivered', 'refunded', 'cancelled'];
         if (!validStatuses.includes(normalizedStatus)) {
             return res.status(400).json({ error: 'Invalid status value.' });
         }
 
         let updatePayload = { status: normalizedStatus };
-        if (normalizedStatus === 'completed') updatePayload.completed_at = new Date().toISOString();
+        if (normalizedStatus === 'delivered') updatePayload.completed_at = new Date().toISOString();
 
         // Fetch order details BEFORE updating (needed for completion email)
         let orderRecord = null;
-        if (normalizedStatus === 'completed') {
+        if (normalizedStatus === 'delivered') {
             const { data } = await supabase
                 .from('orders')
                 .select('order_id, client_name, client_email, service, amount')
@@ -73,7 +77,7 @@ module.exports = async function(req, res) {
         // ── STORE DELIVERY FILE IN DELIVERIES TABLE (portal access only) ─────
         // No download link is emailed — clients retrieve files via the Orders
         // section of the client portal at zyroeditz.xyz
-        if (normalizedStatus === 'completed' && deliveryKey && deliveryFileName) {
+        if (normalizedStatus === 'delivered' && deliveryKey && deliveryFileName) {
             try {
                 const mime = deliveryMimeType || 'application/octet-stream';
                 let fileType = 'unknown';
@@ -96,7 +100,7 @@ module.exports = async function(req, res) {
 
         // ── SEND COMPLETION NOTIFICATION EMAIL (no download link) ────────────
         // Delivery files are accessed ONLY via the client portal Order Tracking section.
-        if (normalizedStatus === 'completed' && orderRecord?.client_email) {
+        if (normalizedStatus === 'delivered' && orderRecord?.client_email) {
             try {
                 const resend = new Resend(process.env.RESEND_API_KEY);
                 await resend.emails.send({

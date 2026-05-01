@@ -113,10 +113,10 @@ const _handler = async function(req, res) {
 
             if (fetchError || !orderData) {
                 console.error(`[ZYRO][webhook][ERROR] ${new Date().toISOString()} | order=${orderId} | Could not fetch order from DB:`, fetchError?.message);
-            } else if (orderData.status === 'paid' || orderData.status === 'completed') {
+            } else if (orderData.status === 'paid' || orderData.status === 'delivered') {
                 console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | Already '${orderData.status}' in DB. Skipping update + invoice.`);
             } else {
-                // Status is 'pending' — we are first. Update to 'paid'.
+                // Status is 'created' — we are first. Update to 'paid'.
                 const { error: dbError } = await supabase
                     .from('orders')
                     .update({ status: 'paid' })

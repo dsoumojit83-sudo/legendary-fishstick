@@ -213,19 +213,21 @@ module.exports = async function (req, res) {
     }
 
     // ── BUG FIX #1: Verify orderId belongs to a real, non-completed order ────
-    // Prevents anonymous users from uploading arbitrary files to your B2 bucket
-    // by guessing order IDs. Only pending/paid/in_progress orders are uploadable.
+    // 3. SECURE THE UPLOAD ROUTE
+    // To prevent arbitrary uploads, we check if the requested prefix matches an existing order.
+    // by guessing order IDs. Only created/in_progress orders are uploadable.
     const { data: existingOrder, error: authError } = await supabase
         .from('orders')
         .select('order_id, status')
         .eq('order_id', orderId)
+        .in('status', ['created', 'in_progress'])
         .single();
 
     if (authError || !existingOrder) {
         return res.status(403).json({ error: 'Invalid or unknown order ID.' });
     }
     // FIX #13: Block uploads for any non-active order — completed, refunded, or cancelled
-    const blockedStatuses = ['completed', 'refunded', 'cancelled', 'canceled'];
+    const blockedStatuses = ['delivered', 'refunded', 'cancelled', 'canceled'];
     if (blockedStatuses.includes(existingOrder.status)) {
         return res.status(403).json({ error: `Cannot upload files to a ${existingOrder.status} order.` });
     }

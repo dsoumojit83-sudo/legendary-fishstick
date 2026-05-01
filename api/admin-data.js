@@ -363,7 +363,7 @@ module.exports = async function (req, res) {
             const amount = Number(order.amount) || 0;
 
             // Revenue Logistics
-            if (order.status === 'paid' || order.status === 'completed') {
+            if (order.status === 'paid' || order.status === 'delivered') {
                 totalRevenue += amount;
 
                 // Calculate MRR
@@ -378,10 +378,10 @@ module.exports = async function (req, res) {
             }
 
             // Active Pipeline & Urgent Tasks Logistics
-            // FIX #5: Only count genuinely active (paid/working) orders — 'pending' means
-            // payment not received yet, so no real work has started. Excluding 'pending'
+            // FIX #5: Only count genuinely active (paid/in_progress) orders — 'created' means
+            // payment not received yet, so no real work has started. Excluding 'created'
             // from activeProjects gives an accurate count of in-flight projects.
-            if (order.status === 'working' || order.status === 'paid') {
+            if (order.status === 'in_progress' || order.status === 'paid') {
                 activeProjects++;
 
                 // Flag as urgent if deadline is within 2 days
@@ -396,12 +396,12 @@ module.exports = async function (req, res) {
             }
         });
 
-        // Check B2 for ACTIVE orders only (pending/in_progress/paid) — not every historical order.
+        // Check B2 for ACTIVE orders only (created/in_progress/paid) — not every historical order.
         // This prevents a Vercel timeout as the total order count grows over time.
         // Uses the 60s module-level cache to avoid N concurrent B2 calls per dashboard refresh.
-        // FIX #5: Only check B2 for genuinely active (paid/working) orders — not unpaid pending
+        // FIX #5: Only check B2 for genuinely active (paid/in_progress) orders — not unpaid created
         const activeOrders = orders.filter(o =>
-            o.status === 'working' || o.status === 'paid'
+            o.status === 'in_progress' || o.status === 'paid'
         );
 
         // Build a quick lookup map: order_id -> has_files (result from cache or fresh B2 calls)

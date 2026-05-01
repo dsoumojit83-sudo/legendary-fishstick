@@ -175,15 +175,13 @@ async function executeAction(action, sessionId) {
         let { orderId, status } = action;
         if (!orderId || !status) return { success: false, error: 'Missing orderId or status' };
 
-        if (status === 'in_progress') status = 'working';
-
-        // NOTE: emails for 'working' and 'completed' are handled by /api/update-status
+        // NOTE: emails for 'in_progress' and 'delivered' are handled by /api/update-status
         // to avoid duplicate sends. Admin-chat only updates the DB.
-        const validStatuses = ['pending', 'working', 'paid', 'completed', 'refunded'];
+        const validStatuses = ['created', 'in_progress', 'paid', 'delivered', 'refunded'];
         if (!validStatuses.includes(status)) return { success: false, error: `Invalid status: ${status}` };
 
         const updatePayload = { status };
-        if (status === 'completed') updatePayload.completed_at = new Date().toISOString();
+        if (status === 'delivered') updatePayload.completed_at = new Date().toISOString();
 
         const { error } = await supabase
             .from('orders')
@@ -624,7 +622,7 @@ module.exports = async function (req, res) {
         const ghostLeads = activeOrders.filter(o => {
             if (!o.created_at) return false;
             const orderTime = new Date(o.created_at).getTime();
-            return orderTime < twoDaysAgo && o.status === 'pending';
+            return orderTime < twoDaysAgo && o.status === 'created';
         });
 
         // ────────────────────────────────────────────────────────────────────────
@@ -668,7 +666,7 @@ STEP 2 — EXECUTE (Only after Soumojit confirms):
 
 Valid Pending Proposal Formats:
 
-1. Propose Status Update (working, completed, pending, paid, refunded):
+1. Propose Status Update (in_progress, delivered, created, paid, refunded):
 <<<PENDING: {"type": "update_status", "orderId": "exact_order_id", "status": "completed"} >>>
 
 2. Propose Field Update:
