@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZyroEditz&trade; | Checkout</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
+    <meta name="theme-color" content="#ff1a1a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=block">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@700;900&display=block">
+    <link rel="stylesheet" href="/tailwind.css?v=2">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #050505; color: #fff; font-family: 'Outfit', sans-serif; overflow-x: hidden; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .brand-name { font-family: 'Roboto', sans-serif !important; }
+        h1, h2, h3, h4, h5, h6, .font-black, .font-extrabold, .font-bold { font-family: 'Roboto', sans-serif; }
+        .glow { text-shadow: 0 0 20px rgba(255, 26, 26, 0.5); }
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background: rgba(255,26,26,0.3); border-radius: 3px; }
+        textarea, input, select { font-size: 16px !important; }
+
+        @keyframes yt-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .yt-spinner { animation: yt-spin 0.8s linear infinite; border: 3px solid rgba(255, 255, 255, 0.2); border-top-color: #fff; border-radius: 50%; width: 18px; height: 18px; display: inline-block; }
+
+        #uploadProgressWrapper { border: 1px solid rgba(255,26,26,0.18); background: linear-gradient(135deg, rgba(255,26,26,0.06) 0%, rgba(0,0,0,0.4) 100%); border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(12px); position: relative; overflow: hidden; }
+        .progress-track { width: 100%; height: 6px; background: rgba(255,255,255,0.04); border-radius: 99px; overflow: hidden; border: 1px solid rgba(255,26,26,0.12); position: relative; }
+        .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #cc0000, #ff1a1a, #ff5533); box-shadow: 0 0 10px rgba(255,26,26,0.7), 0 0 20px rgba(255,26,26,0.3); transition: width 0.18s ease-out; position: relative; overflow: hidden; }
+        .progress-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; position: relative; z-index: 1; }
+        .progress-label { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.45); font-family: 'Outfit', monospace; }
+        .progress-pct { font-size: 13px; font-weight: 800; color: #ff1a1a; text-shadow: 0 0 10px rgba(255,26,26,0.6); }
+        .progress-filename { font-size: 9px; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
+        .vault-icon-pulse { animation: vault-pulse 1.5s ease-in-out infinite; }
+        @keyframes vault-pulse { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.15); } }
+
+        @keyframes btn-morph-green { 0% { background-color: #ff1a1a; } 100% { background-color: #15803d; box-shadow: 0 0 20px rgba(21, 128, 61, 0.4); } }
+        .success-state { animation: btn-morph-green 0.7s forwards; cursor: default; pointer-events: none; color: #fff !important; }
+
+        @media (max-width: 767px) { .backdrop-blur-\[20px\] { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; } #uploadProgressWrapper { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; } }
+
+        #view-bridge, #view-success, #view-failed { display: none; }
+    </style>
+</head>
+<body class="p-6 relative">
+
+    <div class="fixed inset-0 pointer-events-none opacity-10 z-0" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 50px 50px;"></div>
+    <div class="fixed w-[600px] h-[600px] bg-[#ff1a1a]/5 rounded-full blur-[100px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
+
+    <!-- STATE: Bridge (Securing Portal) -->
+    <div id="view-bridge" class="flex flex-col items-center justify-center gap-5 relative z-10">
+        <div class="w-[52px] h-[52px] border-[3px] border-[#ff1a1a]/20 border-t-[#ff1a1a] rounded-full" style="animation: yt-spin 0.9s linear infinite;"></div>
+        <p id="bridge-status-text" class="text-[12px] tracking-[0.25em] uppercase text-white/35">Securing payment portal&hellip;</p>
+    </div>
+
+    <!-- STATE: Success -->
+    <div id="view-success" class="max-w-2xl w-full text-center relative z-10 pt-10 pb-10">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 mb-6 shadow-[0_0_30px_rgba(255,26,26,0.2)]">
+            <svg class="w-10 h-10 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">Payment <span class="text-[#ff1a1a] glow">Secured</span></h1>
+        <p class="text-gray-400 text-sm md:text-lg uppercase tracking-[0.3em] mb-8">Project Initialized</p>
+        
+        <div class="bg-black/20 backdrop-blur-[20px] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl mb-8 text-left relative overflow-hidden" style="background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);">
+            <div class="bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 rounded-xl p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">Order ID:</span>
+                    <span id="successOrderIdDisplay" class="font-mono font-bold text-[#ff1a1a]">LOADING...</span>
+                </div>
+            </div>
+            
+            <div class="relative mb-6">
+                <textarea id="projectBrief" rows="5" class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-[#ff1a1a] focus:ring-1 focus:ring-[#ff1a1a] transition-all shadow-inner placeholder-gray-600 resize-none" placeholder="e.g., 'Make the intro fast-paced. Use the color grading from my last video. Cut out the dead air at 02:15...'"></textarea>
+                <div id="charCount" class="text-gray-500 text-xs mt-2 text-right">0 chars</div>
+            </div>
+
+            <input type="file" id="fileInput" multiple class="hidden">
+            <label for="fileInput" id="fileDropZone" class="flex flex-col items-center justify-center w-full mb-4 px-4 py-5 rounded-xl border border-dashed border-white/20 bg-black/30 cursor-pointer transition-all duration-200 hover:border-[#ff1a1a] hover:bg-[#ff1a1a]/5 group">
+                <i data-lucide="folder-open" class="w-7 h-7 text-gray-500 group-hover:text-[#ff1a1a] transition-colors mb-2"></i>
+                <span class="text-gray-400 text-sm font-medium group-hover:text-white transition-colors">Click to select raw files</span>
+                <span class="text-gray-600 text-xs mt-1">Multiple files supported &middot; Any format</span>
+                <span id="fileNameDisplay" class="mt-2 text-[#ff1a1a] text-xs font-mono text-center hidden" style="word-break:break-all;overflow-wrap:anywhere;"></span>
+            </label>
+
+            <div id="uploadProgressWrapper" class="hidden mb-4">
+                <div class="progress-meta">
+                    <div class="flex items-center gap-2">
+                        <svg id="vaultLockIcon" class="vault-icon-pulse" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ff1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span id="uploadProgressLabel" class="progress-label">Uploading...</span>
+                    </div>
+                    <span id="uploadProgressPct" class="progress-pct">0%</span>
+                </div>
+                <div class="progress-track"><div id="uploadProgressBar" class="progress-fill" style="width:0%"></div></div>
+                <div id="uploadFileCount" class="progress-filename"></div>
+            </div>
+
+            <button id="submitBriefBtn" class="w-full relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3">
+                <span id="btnText">Submit &amp; Upload</span>
+                <i id="btnIcon" data-lucide="cloud-upload" class="w-5 h-5 transition-transform"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- STATE: Failed -->
+    <div id="view-failed" class="max-w-2xl w-full text-center relative z-10 pt-10 pb-10">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 mb-6 shadow-[0_0_30px_rgba(255,26,26,0.2)]">
+            <svg class="w-10 h-10 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">Payment <span class="text-[#ff1a1a] glow">Failed</span></h1>
+        <p class="text-gray-400 text-sm md:text-lg uppercase tracking-[0.3em] mb-8">Action Required</p>
+        
+        <div class="bg-black/20 backdrop-blur-[20px] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl mb-8 text-left relative overflow-hidden" style="background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);">
+            <div class="bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 rounded-xl p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">Order ID:</span>
+                    <span id="failOrderIdDisplay" class="font-mono font-bold text-[#ff1a1a]">LOADING...</span>
+                </div>
+            </div>
+
+            <div class="mt-5 border-t border-white/5 pt-5">
+                <p class="text-center text-gray-500 text-xs uppercase tracking-widest mb-3">Payment not completed?</p>
+                <button id="retryPaymentBtn" class="w-full relative group border border-[#ff1a1a]/40 text-[#ff1a1a] font-bold uppercase tracking-widest text-xs py-3.5 rounded-xl bg-[#ff1a1a]/5 flex items-center justify-center gap-2 hover:bg-[#ff1a1a] hover:text-black transition-all">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span id="retryBtnText">Retry Payment &mdash; Same Order</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            const params = new URLSearchParams(window.location.search);
+            const sessionId = params.get('session_id');
+            const orderId = params.get('order_id');
+            const viewBridge = document.getElementById('view-bridge');
+            const viewSuccess = document.getElementById('view-success');
+            const viewFailed = document.getElementById('view-failed');
+            const bridgeStatus = document.getElementById('bridge-status-text');
+
+            function showError(msg) {
+                bridgeStatus.innerText = msg;
+                bridgeStatus.style.color = '#ff1a1a';
+                bridgeStatus.style.marginTop = '10px';
+                document.querySelector('.border-t-\\[\\#ff1a1a\\]')?.remove();
+            }
+
+            // ROUTE 1: Session ID present -> Launch Cashfree checkout
+            if (sessionId) {
+                viewBridge.style.display = 'flex';
+                try {
+                    const cashfree = Cashfree({ mode: "production" });
+                    cashfree.checkout({
+                        paymentSessionId: sessionId,
+                        redirectTarget: "_self"
+                    }).then((result) => {
+                        if (result.error) showError(result.error.message);
+                    });
+                } catch (err) {
+                    showError("Connection failed. Please refresh.");
+                }
+                return;
+            }
+
+            // ROUTE 2: Order ID present -> Verify payment and show success/fail
+            if (orderId && orderId !== 'ZYRO_MANUAL') {
+                viewBridge.style.display = 'flex';
+                bridgeStatus.innerText = 'Verifying payment...';
+                try {
+                    const res = await fetch('/api/verify-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId })
+                    });
+                    const data = await res.json();
+                    viewBridge.style.display = 'none';
+
+                    const isPaid = data.success && (data.status === 'paid' || data.status === 'completed');
+                    if (isPaid) {
+                        viewSuccess.style.display = 'block';
+                        document.getElementById('successOrderIdDisplay').textContent = orderId;
+                        initSuccessFlow(orderId);
+                    } else {
+                        viewFailed.style.display = 'block';
+                        document.getElementById('failOrderIdDisplay').textContent = orderId;
+                        initFailFlow(orderId);
+                    }
+                } catch (err) {
+                    viewBridge.style.display = 'none';
+                    viewFailed.style.display = 'block';
+                    document.getElementById('failOrderIdDisplay').textContent = orderId;
+                    initFailFlow(orderId);
+                }
+                return;
+            }
+
+            // ROUTE 3: Invalid navigation
+            window.location.replace('/');
+        });
+
+        function initSuccessFlow(orderId) {
+            triggerCelebration();
+
+            const projectBrief = document.getElementById('projectBrief');
+            const charCount = document.getElementById('charCount');
+            const storageKey = `zyro_brief_${orderId}`;
+            const savedBrief = localStorage.getItem(storageKey);
+            if (savedBrief) { projectBrief.value = savedBrief; updateCharCount(); }
+            
+            projectBrief.addEventListener('input', function() { localStorage.setItem(storageKey, this.value); updateCharCount(); });
+            function updateCharCount() {
+                const length = projectBrief.value.length;
+                charCount.textContent = `${length} chars`;
+                charCount.classList.toggle('text-[#ff1a1a]', length > 0);
+            }
+
+            document.getElementById('fileInput').addEventListener('change', function() {
+                const display = document.getElementById('fileNameDisplay');
+                if (this.files && this.files.length > 0) {
+                    display.textContent = `${this.files.length} file(s) selected: ${Array.from(this.files).map(f => f.name).join(', ')}`;
+                    display.classList.remove('hidden');
+                } else {
+                    display.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('submitBriefBtn').addEventListener('click', async function() {
+                const briefContent = projectBrief.value.trim();
+                const btn = this;
+                const btnText = document.getElementById('btnText');
+                const btnIcon = document.getElementById('btnIcon');
+                const progressWrapper = document.getElementById('uploadProgressWrapper');
+                const progressBar = document.getElementById('uploadProgressBar');
+                const progressPct = document.getElementById('uploadProgressPct');
+                
+                btn.disabled = true;
+                btnText.innerHTML = `<span class="yt-spinner mr-2"></span> SAVING...`;
+                progressWrapper.classList.add('hidden');
+
+                try {
+                    if (briefContent) {
+                        const response = await fetch('/api/save-brief', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orderId, notes: briefContent })
+                        });
+                        if (!response.ok) throw new Error('Failed to save brief.');
+                        localStorage.removeItem(storageKey);
+                    }
+
+                    const fileInput = document.getElementById('fileInput');
+                    let uploadError = null;
+
+                    if (fileInput.files && fileInput.files.length > 0) {
+                        const files = Array.from(fileInput.files);
+                        progressWrapper.classList.remove('hidden');
+                        for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            document.getElementById('uploadProgressLabel').textContent = `Uploading ${i+1}/${files.length}`;
+                            try {
+                                const urlRes = await fetch('/api/upload-files', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ orderId, fileName: file.name, contentType: file.type || 'application/octet-stream' })
+                                });
+                                if (!urlRes.ok) throw new Error('Could not get upload URL.');
+                                const { uploadUrl } = await urlRes.json();
+                                await new Promise((resolve, reject) => {
+                                    const xhr = new XMLHttpRequest();
+                                    xhr.upload.addEventListener('progress', e => {
+                                        if (e.lengthComputable) {
+                                            const pct = Math.round((e.loaded / e.total) * 100);
+                                            progressBar.style.width = pct + '%';
+                                            progressPct.textContent = pct + '%';
+                                        }
+                                    });
+                                    xhr.addEventListener('load', () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject());
+                                    xhr.addEventListener('error', () => reject());
+                                    xhr.open('PUT', uploadUrl);
+                                    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+                                    xhr.send(file);
+                                });
+                            } catch (e) {
+                                uploadError = `Failed to upload ${file.name}`;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!uploadError) {
+                        btn.classList.add('success-state');
+                        btnIcon.classList.add('hidden');
+                        btnText.innerHTML = `Assets Delivered to Studio Vault`;
+                        document.getElementById('fileDropZone').style.pointerEvents = 'none';
+                        projectBrief.disabled = true;
+                    } else {
+                        throw new Error(uploadError);
+                    }
+                } catch (e) {
+                    btn.disabled = false;
+                    btnText.innerHTML = `Submit &amp; Upload`;
+                    document.getElementById('uploadFileCount').textContent = e.message || 'Error occurred';
+                    document.getElementById('uploadFileCount').style.color = '#ff5533';
+                    progressWrapper.classList.remove('hidden');
+                }
+            });
+        }
+
+        function initFailFlow(orderId) {
+            document.getElementById('retryPaymentBtn').addEventListener('click', async function() {
+                const btn = this;
+                btn.disabled = true;
+                document.getElementById('retryBtnText').textContent = 'Connecting...';
+                try {
+                    const res = await fetch('/api/verify-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId, action: 'retry' })
+                    });
+                    const data = await res.json();
+                    if (data.already_paid) {
+                        window.location.replace(`/checkout/?order_id=${encodeURIComponent(orderId)}`);
+                        return;
+                    }
+                    if (!data.paymentSessionId) throw new Error('No session ID');
+                    Cashfree({ mode: 'production' }).checkout({
+                        paymentSessionId: data.paymentSessionId,
+                        redirectTarget: '_self'
+                    });
+                } catch (err) {
+                    document.getElementById('retryBtnText').textContent = 'Retry Failed';
+                    btn.disabled = false;
+                    setTimeout(() => { document.getElementById('retryBtnText').textContent = 'Retry Payment \u2014 Same Order'; }, 3000);
+                }
+            });
+        }
+
+        function triggerCelebration() {
+            const celebColors = ['#ff1a1a', '#ffffff', '#ffcc00'];
+            confetti({ particleCount: 160, spread: 360, colors: celebColors, disableForReducedMotion: true });
+        }
+    </script>
+</body>
+</html>
