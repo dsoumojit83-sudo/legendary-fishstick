@@ -571,14 +571,15 @@
                 const amount = window._originalPrice || 0;
                 const res = await fetch('/api/chat?action=applyCoupon&code=' + encodeURIComponent(code) + '&amount=' + amount);
                 const data = await res.json();
-                if (!res.ok) { msg.textContent = data.error || 'Invalid coupon.'; msg.className = 'text-xs mt-2 text-red-400'; msg.classList.remove('hidden'); document.getElementById('chkDiscountValue').value = '0'; document.getElementById('chkDiscountRow').classList.add('hidden'); document.getElementById('chkFinalRow').classList.add('hidden'); return; }
+                if (!res.ok) { msg.textContent = data.error || 'Invalid code.'; msg.className = 'text-xs mt-2 text-red-400'; msg.classList.remove('hidden'); document.getElementById('chkDiscountValue').value = '0'; document.getElementById('chkDiscountRow').classList.add('hidden'); document.getElementById('chkFinalRow').classList.add('hidden'); return; }
                 document.getElementById('chkDiscountValue').value = data.discount;
                 document.getElementById('chkDiscountAmt').textContent = '-₹' + data.discount;
                 document.getElementById('chkDiscountRow').classList.remove('hidden');
                 var finalPrice = Math.max(1, amount - data.discount);
                 document.getElementById('chkFinalPrice').textContent = '₹' + finalPrice;
                 document.getElementById('chkFinalRow').classList.remove('hidden');
-                msg.textContent = '✓ Coupon "' + data.code + '" applied! You save ₹' + data.discount;
+                var textType = data.type === 'referral' ? 'Referral code' : 'Coupon';
+                msg.textContent = '✓ ' + textType + ' "' + data.code + '" applied! You save ₹' + data.discount;
                 msg.className = 'text-xs mt-2 text-green-400';
                 msg.classList.remove('hidden');
                 codeInput.disabled = true;
