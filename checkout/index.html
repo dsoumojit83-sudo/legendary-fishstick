@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@700;900&display=block">
     <link rel="stylesheet" href="/tailwind.css?v=2">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
     <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
     <style>
@@ -56,6 +57,41 @@
     <div id="view-bridge" class="flex flex-col items-center justify-center gap-5 relative z-10">
         <div class="w-[52px] h-[52px] border-[3px] border-[#ff1a1a]/20 border-t-[#ff1a1a] rounded-full" style="animation: yt-spin 0.9s linear infinite;"></div>
         <p id="bridge-status-text" class="text-[12px] tracking-[0.25em] uppercase text-white/35">Securing payment portal&hellip;</p>
+    </div>
+
+    <!-- STATE: Checkout Form -->
+    <div id="view-checkout" class="max-w-md w-full text-center relative z-10 pt-10 pb-10 hidden">
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">Checkout</h1>
+        <p class="text-gray-400 text-sm md:text-lg uppercase tracking-[0.3em] mb-8">Confirm Details</p>
+        
+        <div class="bg-black/20 backdrop-blur-[20px] border border-white/10 rounded-2xl p-6 shadow-2xl mb-8 text-left relative overflow-hidden" style="background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);">
+            
+            <div class="bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 rounded-xl p-4 mb-6">
+                <div class="flex justify-between text-sm mb-2"><span class="text-gray-400">Service</span><span id="chkService" class="font-bold text-white"></span></div>
+                <div class="flex justify-between text-sm mb-2"><span class="text-gray-400">Delivery Time</span><span id="chkDelivery" class="font-bold text-white">Standard Delivery</span></div>
+                <div class="flex justify-between text-sm pt-2 border-t border-white/10"><span class="text-gray-400">Total</span><span id="chkPrice" class="font-bold text-[#ff1a1a] text-lg"></span></div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wider">Name</label>
+                    <input type="text" id="chkName" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wider">Email</label>
+                    <input type="email" id="chkEmail" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wider">Phone Number (10 digits)</label>
+                    <input type="tel" id="chkPhone" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all" pattern="[0-9]{10}" maxlength="10">
+                </div>
+            </div>
+
+            <button id="payNowBtn" class="w-full mt-8 relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3">
+                <span id="payNowText">Pay Now</span>
+                <i data-lucide="arrow-right" class="w-5 h-5 transition-transform group-hover:translate-x-1"></i>
+            </button>
+        </div>
     </div>
 
     <!-- STATE: Success -->
@@ -150,6 +186,86 @@
                 document.querySelector('.border-t-\\[\\#ff1a1a\\]')?.remove();
             }
 
+            // ROUTE 0: flow=buy_now -> Show Checkout UI
+            const flow = params.get('flow');
+            const serviceId = params.get('service_id');
+            const price = params.get('price');
+            const viewCheckout = document.getElementById('view-checkout');
+
+            if (flow === 'buy_now' && serviceId) {
+                viewCheckout.style.display = 'block';
+                document.getElementById('chkService').textContent = serviceId;
+                document.getElementById('chkPrice').textContent = price ? `₹${price}` : '₹0';
+                
+                // Initialize Supabase to get user profile
+                try {
+                    const sbRes = await fetch('/api/save-brief');
+                    const sbData = await sbRes.json();
+                    if (sbData.supabaseUrl && sbData.supabaseAnonKey) {
+                        const sb = supabase.createClient(sbData.supabaseUrl, sbData.supabaseAnonKey);
+                        const { data: { session } } = await sb.auth.getSession();
+                        if (session && session.user) {
+                            document.getElementById('chkEmail').value = session.user.email || '';
+                            const m = session.user.user_metadata || {};
+                            document.getElementById('chkName').value = m.full_name || m.name || '';
+                            document.getElementById('chkPhone').value = m.phone || '';
+                            window._checkoutUserId = session.user.id;
+                        }
+                    }
+                } catch(e) { console.error('Failed to load profile', e); }
+
+                document.getElementById('payNowBtn').addEventListener('click', async function() {
+                    const btn = this;
+                    const name = document.getElementById('chkName').value.trim();
+                    const email = document.getElementById('chkEmail').value.trim();
+                    const phone = document.getElementById('chkPhone').value.trim();
+                    const btnText = document.getElementById('payNowText');
+
+                    if (!name || !email || !phone) {
+                        alert('Please fill all fields');
+                        return;
+                    }
+                    if (!/^[0-9]{10}$/.test(phone)) {
+                        alert('Please provide a valid 10-digit phone number');
+                        return;
+                    }
+
+                    btn.disabled = true;
+                    btnText.innerHTML = '<span class="yt-spinner mr-2"></span> PROCESSING...';
+
+                    try {
+                        const payload = {
+                            selectedService: serviceId,
+                            amount: price,
+                            phone: phone,
+                            email: email,
+                            name: name,
+                            sessionId: window._checkoutUserId || ("CUST_" + Date.now())
+                        };
+                        const orderRes = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const orderData = await orderRes.json();
+                        
+                        if (!orderRes.ok || !orderData.paymentSessionId) {
+                            throw new Error(orderData.reply || orderData.error || 'Failed to create order');
+                        }
+
+                        Cashfree({ mode: 'production' }).checkout({
+                            paymentSessionId: orderData.paymentSessionId,
+                            redirectTarget: '_self'
+                        });
+                    } catch(err) {
+                        alert(err.message);
+                        btn.disabled = false;
+                        btnText.textContent = 'Pay Now';
+                    }
+                });
+                return;
+            }
+
             // ROUTE 1: Session ID present -> Launch Cashfree checkout
             if (sessionId) {
                 viewBridge.style.display = 'flex';
@@ -169,6 +285,16 @@
 
             // ROUTE 2: Order ID present -> Verify payment and show success/fail
             if (orderId && orderId !== 'ZYRO_MANUAL') {
+                const paymentStatus = params.get('payment_status'); // Cashfree returns SUCCESS|FAILED
+
+                // Fast-path: if Cashfree explicitly says FAILED, skip the verify round-trip
+                if (paymentStatus && paymentStatus.toUpperCase() === 'FAILED') {
+                    viewFailed.style.display = 'block';
+                    document.getElementById('failOrderIdDisplay').textContent = orderId;
+                    initFailFlow(orderId);
+                    return;
+                }
+
                 viewBridge.style.display = 'flex';
                 bridgeStatus.innerText = 'Verifying payment...';
                 try {
