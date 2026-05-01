@@ -45,6 +45,8 @@
 
         @media (max-width: 767px) { .backdrop-blur-\[20px\] { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; } #uploadProgressWrapper { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; } }
 
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
+
         #view-bridge, #view-success, #view-failed { display: none; }
     </style>
 </head>
@@ -60,37 +62,108 @@
     </div>
 
     <!-- STATE: Checkout Form -->
-    <div id="view-checkout" class="max-w-md w-full text-center relative z-10 pt-10 pb-10 hidden">
-        <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">Checkout</h1>
-        <p class="text-gray-400 text-sm md:text-lg uppercase tracking-[0.3em] mb-8">Confirm Details</p>
+    <div id="view-checkout" class="max-w-5xl w-full relative z-10 pt-10 pb-10 hidden mx-auto">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">Secure <span class="text-[#ff1a1a] glow">Checkout</span></h1>
+            <p class="text-gray-400 text-sm md:text-md uppercase tracking-[0.3em]">Finalize Your Project Details</p>
+        </div>
         
-        <div class="bg-black/20 backdrop-blur-[20px] border border-white/10 rounded-2xl p-6 shadow-2xl mb-8 text-left relative overflow-hidden" style="background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);">
-            
-            <div class="bg-[#ff1a1a]/10 border border-[#ff1a1a]/30 rounded-xl p-4 mb-6">
-                <div class="flex justify-between text-sm mb-2"><span class="text-gray-400">Service</span><span id="chkService" class="font-bold text-white"></span></div>
-                <div class="flex justify-between text-sm mb-2"><span class="text-gray-400">Delivery Time</span><span id="chkDelivery" class="font-bold text-white">Standard Delivery</span></div>
-                <div class="flex justify-between text-sm pt-2 border-t border-white/10"><span class="text-gray-400">Total</span><span id="chkPrice" class="font-bold text-[#ff1a1a] text-lg"></span></div>
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+            <!-- Left Column: Order Summary -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-[#ff1a1a]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    
+                    <h3 class="text-xs uppercase tracking-widest text-gray-500 mb-4 font-bold border-b border-white/10 pb-2">Order Summary</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <span class="block text-[10px] text-gray-500 uppercase tracking-widest mb-1">Service Selected</span>
+                            <span id="chkService" class="block font-bold text-white text-lg">Loading...</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 pt-2">
+                            <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+                                <i data-lucide="clock" class="w-4 h-4 text-[#ff1a1a] mb-2"></i>
+                                <span class="block text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">Est. Delivery</span>
+                                <span id="chkDelivery" class="block font-bold text-white text-sm">-- Days</span>
+                            </div>
+                            <div class="bg-[#ff1a1a]/10 border border-[#ff1a1a]/20 rounded-xl p-3">
+                                <i data-lucide="receipt" class="w-4 h-4 text-[#ff1a1a] mb-2"></i>
+                                <span class="block text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">Total Amount</span>
+                                <span id="chkPrice" class="block font-bold text-[#ff1a1a] text-sm">₹0</span>
+                            </div>
+                        </div>
+
+                        <!-- Coupon Code -->
+                        <div class="pt-3 border-t border-white/5 mt-3">
+                            <label class="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">Have a coupon?</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="chkCouponCode" placeholder="Enter code" class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm uppercase tracking-wider focus:outline-none focus:border-[#ff1a1a] transition-all font-mono">
+                                <button id="chkCouponBtn" onclick="applyCouponCode()" class="px-4 py-2 bg-white/10 border border-white/20 text-white text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#ff1a1a] hover:border-[#ff1a1a] hover:text-black transition-all">Apply</button>
+                            </div>
+                            <p id="chkCouponMsg" class="text-xs mt-2 hidden"></p>
+                        </div>
+
+                        <!-- Discount Row (hidden by default) -->
+                        <div id="chkDiscountRow" class="hidden flex justify-between items-center pt-2 text-sm">
+                            <span class="text-green-400">Coupon Discount</span>
+                            <span id="chkDiscountAmt" class="text-green-400 font-bold">-₹0</span>
+                        </div>
+                        <div id="chkFinalRow" class="hidden flex justify-between items-center pt-1 border-t border-white/10 mt-2">
+                            <span class="text-gray-400 text-sm">You Pay</span>
+                            <span id="chkFinalPrice" class="text-[#ff1a1a] font-black text-lg"></span>
+                        </div>
+                        <input type="hidden" id="chkDiscountValue" value="0">
+                    </div>
+                </div>
+
+                <!-- Trust Badges -->
+                <div class="flex items-center justify-center gap-6 py-4 opacity-60 grayscale">
+                    <div class="flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i><span class="text-xs font-mono">SSL Secure</span></div>
+                    <div class="flex items-center gap-2"><i data-lucide="lock" class="w-4 h-4"></i><span class="text-xs font-mono">256-bit Encrypted</span></div>
+                </div>
             </div>
 
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wider">Name</label>
-                    <input type="text" id="chkName" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wider">Email</label>
-                    <input type="email" id="chkEmail" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wider">Phone Number (10 digits)</label>
-                    <input type="tel" id="chkPhone" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all" pattern="[0-9]{10}" maxlength="10">
+            <!-- Right Column: Form -->
+            <div class="lg:col-span-3">
+                <div class="bg-[#050505]/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden" style="box-shadow: 0 0 40px rgba(255,26,26,0.05) inset;">
+                    
+                    <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-[#ff1a1a]/20 flex items-center justify-center text-[#ff1a1a] text-xs">1</span>
+                        Contact Details
+                    </h3>
+
+                    <div class="space-y-5">
+                        <div class="relative group">
+                            <label class="absolute -top-2 left-3 bg-[#050505] px-1 text-[10px] text-[#ff1a1a] uppercase tracking-widest font-bold z-10 transition-all">Full Name</label>
+                            <input type="text" id="chkName" placeholder="Enter your name" class="w-full bg-transparent border border-white/10 group-hover:border-white/20 focus:border-[#ff1a1a] rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#ff1a1a]/50 transition-all">
+                        </div>
+                        
+                        <div class="relative group">
+                            <label class="absolute -top-2 left-3 bg-[#050505] px-1 text-[10px] text-[#ff1a1a] uppercase tracking-widest font-bold z-10 transition-all">Email Address</label>
+                            <input type="email" id="chkEmail" placeholder="you@example.com" class="w-full bg-transparent border border-white/10 group-hover:border-white/20 focus:border-[#ff1a1a] rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#ff1a1a]/50 transition-all">
+                        </div>
+                        
+                        <div class="relative group">
+                            <label class="absolute -top-2 left-3 bg-[#050505] px-1 text-[10px] text-[#ff1a1a] uppercase tracking-widest font-bold z-10 transition-all">Phone Number</label>
+                            <div class="flex">
+                                <span class="bg-white/5 border border-white/10 border-r-0 rounded-l-xl px-4 py-3.5 text-gray-500 text-sm flex items-center">+91</span>
+                                <input type="tel" id="chkPhone" placeholder="10-digit number" class="w-full bg-transparent border border-white/10 group-hover:border-white/20 focus:border-[#ff1a1a] rounded-r-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#ff1a1a]/50 transition-all" pattern="[0-9]{10}" maxlength="10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-white/5">
+                        <button id="payNowBtn" class="w-full relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(255,26,26,0.4)]">
+                            <span class="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
+                            <span id="payNowText" class="relative z-10">Proceed to Payment</span>
+                            <i data-lucide="lock" class="w-4 h-4 relative z-10"></i>
+                        </button>
+                        <p class="text-center text-[10px] text-gray-500 mt-4 uppercase tracking-widest">Payments processed securely via Cashfree</p>
+                    </div>
                 </div>
             </div>
-
-            <button id="payNowBtn" class="w-full mt-8 relative overflow-hidden group bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-3">
-                <span id="payNowText">Pay Now</span>
-                <i data-lucide="arrow-right" class="w-5 h-5 transition-transform group-hover:translate-x-1"></i>
-            </button>
         </div>
     </div>
 
@@ -197,13 +270,17 @@
                 document.getElementById('chkService').textContent = serviceId;
                 document.getElementById('chkPrice').textContent = price ? `₹${price}` : '₹0';
                 
-                // Initialize Supabase to get user profile
+                // Dynamic Delivery Time (Fallback)
+                document.getElementById('chkDelivery').textContent = '2-4 Days';
+                
+                // Initialize Supabase to get user profile and dynamic delivery time
                 try {
                     const sbRes = await fetch('/api/save-brief');
                     const sbData = await sbRes.json();
                     if (sbData.supabaseUrl && sbData.supabaseAnonKey) {
                         const sb = supabase.createClient(sbData.supabaseUrl, sbData.supabaseAnonKey);
-                        const { data: { session } } = await sb.auth.getSession();
+                        const sessionRes = await sb.auth.getSession();
+                        const session = sessionRes && sessionRes.data && sessionRes.data.session;
                         if (session && session.user) {
                             document.getElementById('chkEmail').value = session.user.email || '';
                             const m = session.user.user_metadata || {};
@@ -211,8 +288,17 @@
                             document.getElementById('chkPhone').value = m.phone || '';
                             window._checkoutUserId = session.user.id;
                         }
+                        
+                        // Fetch dynamic delivery time from admin configuration
+                        const { data: svcData } = await sb.from('services').select('delivery_days').eq('name', serviceId).single();
+                        if (svcData && svcData.delivery_days) {
+                            document.getElementById('chkDelivery').textContent = svcData.delivery_days;
+                        }
                     }
                 } catch(e) { console.error('Failed to load profile', e); }
+
+                // Store original price for coupon calculations
+                window._originalPrice = parseFloat(price) || 0;
 
                 document.getElementById('payNowBtn').addEventListener('click', async function() {
                     const btn = this;
@@ -234,12 +320,15 @@
                     btnText.innerHTML = '<span class="yt-spinner mr-2"></span> PROCESSING...';
 
                     try {
+                        const discount = parseFloat(document.getElementById('chkDiscountValue').value) || 0;
+                        const finalAmount = Math.max(1, (parseFloat(price) || 0) - discount);
                         const payload = {
                             selectedService: serviceId,
-                            amount: price,
+                            amount: finalAmount,
                             phone: phone,
                             email: email,
                             name: name,
+                            couponCode: document.getElementById('chkCouponCode').value.trim() || null,
                             sessionId: window._checkoutUserId || ("CUST_" + Date.now())
                         };
                         const orderRes = await fetch('/api/chat', {
@@ -469,6 +558,35 @@
         function triggerCelebration() {
             const celebColors = ['#ff1a1a', '#ffffff', '#ffcc00'];
             confetti({ particleCount: 160, spread: 360, colors: celebColors, disableForReducedMotion: true });
+        }
+
+        async function applyCouponCode() {
+            const codeInput = document.getElementById('chkCouponCode');
+            const msg = document.getElementById('chkCouponMsg');
+            const btn = document.getElementById('chkCouponBtn');
+            const code = codeInput.value.trim();
+            if (!code) { msg.textContent = 'Enter a coupon code.'; msg.className = 'text-xs mt-2 text-red-400'; msg.classList.remove('hidden'); return; }
+            btn.disabled = true; btn.textContent = '...';
+            try {
+                const amount = window._originalPrice || 0;
+                const res = await fetch('/api/chat?action=applyCoupon&code=' + encodeURIComponent(code) + '&amount=' + amount);
+                const data = await res.json();
+                if (!res.ok) { msg.textContent = data.error || 'Invalid coupon.'; msg.className = 'text-xs mt-2 text-red-400'; msg.classList.remove('hidden'); document.getElementById('chkDiscountValue').value = '0'; document.getElementById('chkDiscountRow').classList.add('hidden'); document.getElementById('chkFinalRow').classList.add('hidden'); return; }
+                document.getElementById('chkDiscountValue').value = data.discount;
+                document.getElementById('chkDiscountAmt').textContent = '-₹' + data.discount;
+                document.getElementById('chkDiscountRow').classList.remove('hidden');
+                var finalPrice = Math.max(1, amount - data.discount);
+                document.getElementById('chkFinalPrice').textContent = '₹' + finalPrice;
+                document.getElementById('chkFinalRow').classList.remove('hidden');
+                msg.textContent = '✓ Coupon "' + data.code + '" applied! You save ₹' + data.discount;
+                msg.className = 'text-xs mt-2 text-green-400';
+                msg.classList.remove('hidden');
+                codeInput.disabled = true;
+                btn.textContent = 'Applied';
+                btn.classList.add('opacity-50', 'pointer-events-none');
+            } catch(e) {
+                msg.textContent = 'Failed to validate coupon.'; msg.className = 'text-xs mt-2 text-red-400'; msg.classList.remove('hidden');
+            } finally { btn.disabled = false; }
         }
     </script>
 </body>
