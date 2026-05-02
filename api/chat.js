@@ -306,7 +306,7 @@ module.exports = async function (req, res) {
 
         if (dbError) {
             console.error("Supabase Insert Failed:", dbError);
-            throw new Error("Database insertion failed");
+            throw new Error(`Database Error: ${dbError.message || dbError.details || JSON.stringify(dbError)}`);
         }
 
         const replyText = `Excellent choice. Our studio is ready to deliver premium, cinematic quality for your ${selectedService} project.\n\nPlease note: We require full payment before starting a project. However, we offer a 100% refund if you are not satisfied with the final result.\n\nSecuring your project slot and opening the secure payment portal...`;

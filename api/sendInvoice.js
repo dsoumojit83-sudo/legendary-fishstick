@@ -2,7 +2,7 @@ const { Resend } = require("resend");
 const PDFDocument = require("pdfkit");
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
 
 // Fetch order_items for multi-item invoices; falls back to null (single-item mode)
 async function fetchOrderItems(orderId) {

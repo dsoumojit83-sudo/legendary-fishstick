@@ -220,13 +220,13 @@ module.exports = async function (req, res) {
         .from('orders')
         .select('order_id, status')
         .eq('order_id', orderId)
-        .in('status', ['created', 'in_progress'])
+        .in('status', ['created', 'paid', 'in_progress'])
         .single();
 
     if (authError || !existingOrder) {
         return res.status(403).json({ error: 'Invalid or unknown order ID.' });
     }
-    // FIX #13: Block uploads for any non-active order — completed, refunded, or cancelled
+    // FIX #13: Block uploads for terminal statuses — refunded or cancelled
     const blockedStatuses = ['delivered', 'refunded', 'cancelled', 'canceled'];
     if (blockedStatuses.includes(existingOrder.status)) {
         return res.status(403).json({ error: `Cannot upload files to a ${existingOrder.status} order.` });

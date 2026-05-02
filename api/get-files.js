@@ -3,7 +3,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { createClient } = require('@supabase/supabase-js');
 
 // ── Supabase client — used for JWT auth (same pattern as all other admin APIs) ─
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
 
 // ── Backblaze B2 S3-compatible client ────────────────────────────────────────
 const rawEndpoint = process.env.B2_ENDPOINT || '';

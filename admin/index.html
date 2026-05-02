@@ -21,7 +21,8 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous">
     <link rel="dns-prefetch" href="https://unpkg.com">
     <!-- Preload GSAP so it downloads while body renders -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" as="script" crossorigin="anonymous">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" as="script"
+        crossorigin="anonymous">
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet">
@@ -155,8 +156,26 @@
             border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
-        @keyframes yt-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .yt-spinner { animation: yt-spin 0.8s linear infinite; border: 3px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; width: 16px; height: 16px; display: inline-block; vertical-align: middle; }
+        @keyframes yt-spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .yt-spinner {
+            animation: yt-spin 0.8s linear infinite;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+            vertical-align: middle;
+        }
 
         .noise {
             position: fixed;
@@ -1001,8 +1020,11 @@
                             class="hidden absolute right-0 top-14 w-80 z-50 rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
                             style="background:rgba(8,8,12,0.97);backdrop-filter:blur(20px);">
                             <div class="flex items-center justify-between px-4 py-3 border-b border-white/5">
-                                <span class="text-xs font-bold text-white uppercase tracking-widest">Notifications</span>
-                                <button onclick="clearNotifications()" class="text-[10px] text-gray-500 hover:text-[#ff1a1a] transition-colors uppercase tracking-wider">Mark all read</button>
+                                <span
+                                    class="text-xs font-bold text-white uppercase tracking-widest">Notifications</span>
+                                <button onclick="clearNotifications()"
+                                    class="text-[10px] text-gray-500 hover:text-[#ff1a1a] transition-colors uppercase tracking-wider">Mark
+                                    all read</button>
                             </div>
                             <div id="notif-list" class="max-h-72 overflow-y-auto divide-y divide-white/5">
                                 <div class="px-4 py-6 text-center text-gray-600 text-xs">No new notifications</div>
@@ -1869,115 +1891,131 @@
                 </div>
 
 
-        <!-- ========== ADMINS ACCESS VIEW ========== -->
-            <div id="admins-view" class="view-section space-y-8 hidden">
-                <!-- Search bar -->
-                <div class="flex items-center gap-4">
-                    <input id="admins-search" type="text" placeholder="Search by email or role..." oninput="adminsFilterTable(this.value)"
-                        class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
-                </div>
-                <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
-                    <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
-                        <div>
-                            <h3 class="text-lg font-bold text-white">Access Control</h3>
-                            <p class="text-xs text-gray-400 mt-1">All users with command center access — role & status</p>
+                <!-- ========== ADMINS ACCESS VIEW ========== -->
+                <div id="admins-view" class="view-section space-y-8 hidden">
+                    <!-- Search bar -->
+                    <div class="flex items-center gap-4">
+                        <input id="admins-search" type="text" placeholder="Search by email or role..."
+                            oninput="adminsFilterTable(this.value)"
+                            class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
+                    </div>
+                    <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                        <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Access Control</h3>
+                                <p class="text-xs text-gray-400 mt-1">All users with command center access — role &
+                                    status</p>
+                            </div>
+                            <button onclick="openAddAdminModal()"
+                                class="flex items-center gap-2 px-4 py-2 bg-[#ff1a1a] text-black text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-all shrink-0">
+                                <i data-lucide="user-plus" class="w-4 h-4"></i> Add Admin
+                            </button>
                         </div>
-                        <button onclick="openAddAdminModal()"
-                            class="flex items-center gap-2 px-4 py-2 bg-[#ff1a1a] text-black text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-all shrink-0">
-                            <i data-lucide="user-plus" class="w-4 h-4"></i> Add Admin
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left min-w-[750px]">
-                            <thead class="border-b border-white/5 bg-black/20">
-                                <tr class="text-[10px] uppercase tracking-widest text-gray-500">
-                                    <th class="p-4">Email Address</th>
-                                    <th class="p-4">Role</th>
-                                    <th class="p-4">Added On</th>
-                                    <th class="p-4">Last Login</th>
-                                    <th class="p-4">Status</th>
-                                    <th class="p-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admins-tbody" class="text-sm divide-y divide-white/5">
-                                <tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">Loading admins...</td></tr>
-                            </tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left min-w-[750px]">
+                                <thead class="border-b border-white/5 bg-black/20">
+                                    <tr class="text-[10px] uppercase tracking-widest text-gray-500">
+                                        <th class="p-4">Email Address</th>
+                                        <th class="p-4">Role</th>
+                                        <th class="p-4">Added On</th>
+                                        <th class="p-4">Last Login</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admins-tbody" class="text-sm divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="6" class="p-6 text-center text-gray-500 text-xs">Loading admins...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- ========== REVIEWS MANAGEMENT VIEW ========== -->
-            <div id="reviews-view" class="view-section space-y-8 hidden">
-                <div class="flex items-center gap-4">
-                    <input id="reviews-search" type="text" placeholder="Search by client or review text..." oninput="reviewsFilterTable(this.value)"
-                        class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
-                </div>
-                <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
-                    <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
-                        <div>
-                            <h3 class="text-lg font-bold text-white">Client Reviews</h3>
-                            <p class="text-xs text-gray-400 mt-1">Approve, reject, or delete client testimonials</p>
+                <!-- ========== REVIEWS MANAGEMENT VIEW ========== -->
+                <div id="reviews-view" class="view-section space-y-8 hidden">
+                    <div class="flex items-center gap-4">
+                        <input id="reviews-search" type="text" placeholder="Search by client or review text..."
+                            oninput="reviewsFilterTable(this.value)"
+                            class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
+                    </div>
+                    <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                        <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Client Reviews</h3>
+                                <p class="text-xs text-gray-400 mt-1">Approve, reject, or delete client testimonials</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-gray-500">Pending: <span id="reviews-pending-count"
+                                        class="text-yellow-400 font-bold">0</span></span>
+                                <span class="text-xs text-gray-500">Approved: <span id="reviews-approved-count"
+                                        class="text-green-400 font-bold">0</span></span>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs text-gray-500">Pending: <span id="reviews-pending-count" class="text-yellow-400 font-bold">0</span></span>
-                            <span class="text-xs text-gray-500">Approved: <span id="reviews-approved-count" class="text-green-400 font-bold">0</span></span>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left min-w-[700px]">
+                                <thead class="border-b border-white/5 bg-black/20">
+                                    <tr class="text-[10px] uppercase tracking-widest text-gray-500">
+                                        <th class="p-4">Client</th>
+                                        <th class="p-4">Rating</th>
+                                        <th class="p-4">Review</th>
+                                        <th class="p-4">Date</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reviews-tbody" class="text-sm divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="6" class="p-6 text-center text-gray-500 text-xs">Loading reviews...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left min-w-[700px]">
-                            <thead class="border-b border-white/5 bg-black/20">
-                                <tr class="text-[10px] uppercase tracking-widest text-gray-500">
-                                    <th class="p-4">Client</th>
-                                    <th class="p-4">Rating</th>
-                                    <th class="p-4">Review</th>
-                                    <th class="p-4">Date</th>
-                                    <th class="p-4">Status</th>
-                                    <th class="p-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="reviews-tbody" class="text-sm divide-y divide-white/5">
-                                <tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">Loading reviews...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
-            </div>
 
-            <!-- ========== REFERRALS TRACKER VIEW ========== -->
-            <div id="referrals-view" class="view-section space-y-8 hidden">
-                <div class="flex items-center gap-4">
-                    <input id="referrals-search" type="text" placeholder="Search by email or referral code..." oninput="referralsFilterTable(this.value)"
-                        class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
-                </div>
-                <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
-                    <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
-                        <div>
-                            <h3 class="text-lg font-bold text-white">Referral Records</h3>
-                            <p class="text-xs text-gray-400 mt-1">All referral activity across clients</p>
+                <!-- ========== REFERRALS TRACKER VIEW ========== -->
+                <div id="referrals-view" class="view-section space-y-8 hidden">
+                    <div class="flex items-center gap-4">
+                        <input id="referrals-search" type="text" placeholder="Search by email or referral code..."
+                            oninput="referralsFilterTable(this.value)"
+                            class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-all">
+                    </div>
+                    <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                        <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Referral Records</h3>
+                                <p class="text-xs text-gray-400 mt-1">All referral activity across clients</p>
+                            </div>
+                            <span class="text-xs text-gray-500">Total: <span id="referrals-total-count"
+                                    class="text-[#ff1a1a] font-bold">0</span></span>
                         </div>
-                        <span class="text-xs text-gray-500">Total: <span id="referrals-total-count" class="text-[#ff1a1a] font-bold">0</span></span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left min-w-[600px]">
-                            <thead class="border-b border-white/5 bg-black/20">
-                                <tr class="text-[10px] uppercase tracking-widest text-gray-500">
-                                    <th class="p-4">Referrer</th>
-                                    <th class="p-4">Referred Email</th>
-                                    <th class="p-4">Code</th>
-                                    <th class="p-4">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="referrals-tbody" class="text-sm divide-y divide-white/5">
-                                <tr><td colspan="4" class="p-6 text-center text-gray-500 text-xs">Loading referrals...</td></tr>
-                            </tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left min-w-[600px]">
+                                <thead class="border-b border-white/5 bg-black/20">
+                                    <tr class="text-[10px] uppercase tracking-widest text-gray-500">
+                                        <th class="p-4">Referrer</th>
+                                        <th class="p-4">Referred Email</th>
+                                        <th class="p-4">Code</th>
+                                        <th class="p-4">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="referrals-tbody" class="text-sm divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="4" class="p-6 text-center text-gray-500 text-xs">Loading
+                                            referrals...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
 
             </div>
-            </main>
+        </main>
 
         <div id="ai-terminal"
             class="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[480px] bg-[#050505]/95 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex flex-col z-50 h-[75dvh] sm:h-[600px] max-h-[calc(100vh-100px)] terminal-closed transition-all duration-300 transform translate-y-4 opacity-0 overflow-hidden">
@@ -2482,7 +2520,7 @@
             var tbody = document.getElementById('admins-tbody');
             if (!tbody) return;
             if (!q) { tbody.innerHTML = _allAdminRows.join(''); if (window.lucide) lucide.createIcons(); return; }
-            var filtered = _allAdminRows.filter(function(r) { return r.toLowerCase().includes(q); });
+            var filtered = _allAdminRows.filter(function (r) { return r.toLowerCase().includes(q); });
             tbody.innerHTML = filtered.length
                 ? filtered.join('')
                 : '<tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">No users match your search.</td></tr>';
@@ -2607,7 +2645,7 @@
             var tbody = document.getElementById('reviews-tbody');
             if (!tbody) return;
             if (!q) { tbody.innerHTML = _allReviewRows.join(''); if (window.lucide) lucide.createIcons(); return; }
-            var filtered = _allReviewRows.filter(function(r) { return r.toLowerCase().includes(q); });
+            var filtered = _allReviewRows.filter(function (r) { return r.toLowerCase().includes(q); });
             tbody.innerHTML = filtered.length ? filtered.join('') : '<tr><td colspan="6" class="p-6 text-center text-gray-500 text-xs">No reviews match your search.</td></tr>';
             if (window.lucide) lucide.createIcons();
         }
@@ -2690,7 +2728,7 @@
             var tbody = document.getElementById('referrals-tbody');
             if (!tbody) return;
             if (!q) { tbody.innerHTML = _allReferralRows.join(''); return; }
-            var filtered = _allReferralRows.filter(function(r) { return r.toLowerCase().includes(q); });
+            var filtered = _allReferralRows.filter(function (r) { return r.toLowerCase().includes(q); });
             tbody.innerHTML = filtered.length ? filtered.join('') : '<tr><td colspan="4" class="p-6 text-center text-gray-500 text-xs">No referrals match your search.</td></tr>';
         }
 
@@ -3008,10 +3046,10 @@
             document.getElementById('delivery-file').value = '';
             document.getElementById('delivery-progress-wrapper').classList.add('hidden');
             document.getElementById('delivery-error').classList.add('hidden');
-            
+
             const modal = document.getElementById('delivery-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
-            
+
             // For animation
             setTimeout(() => {
                 modal.classList.add('opacity-100');
@@ -3035,13 +3073,13 @@
             const errEl = document.getElementById('delivery-error');
             const progressWrap = document.getElementById('delivery-progress-wrapper');
             const progressBar = document.getElementById('delivery-progress-bar');
-            
+
             if (!fileInput.files || fileInput.files.length === 0) {
                 errEl.textContent = 'Please select a file to deliver.';
                 errEl.classList.remove('hidden');
                 return;
             }
-            
+
             const file = fileInput.files[0];
             errEl.classList.add('hidden');
             btn.disabled = true;
@@ -3056,7 +3094,7 @@
                     headers: { 'Content-Type': 'application/json' }, // We don't use Auth token here since upload-files is public for clients but secure via orderId
                     body: JSON.stringify({ orderId, fileName: 'delivery-' + file.name, contentType: file.type || 'application/octet-stream' })
                 });
-                
+
                 if (!urlRes.ok) throw new Error('Could not get upload URL.');
                 const { uploadUrl, key } = await urlRes.json();
 
@@ -3077,15 +3115,15 @@
 
                 // 3. Mark as Delivered & Email
                 btn.innerHTML = `<span class="yt-spinner mr-2"></span> Finalizing...`;
-                
+
                 const response = await fetch('/api/update-status', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + authToken
                     },
-                    body: JSON.stringify({ 
-                        orderId: orderId, 
+                    body: JSON.stringify({
+                        orderId: orderId,
                         status: 'delivered',
                         deliveryFileName: file.name,
                         deliveryMimeType: file.type || 'application/octet-stream',
@@ -3126,9 +3164,9 @@
                     showToast('Bill error: ' + (d.error || res.status), false); return;
                 }
                 const blob = await res.blob();
-                const url  = URL.createObjectURL(blob);
-                const a    = document.createElement('a');
-                a.href     = url;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
                 a.download = `ZyroEditz_Invoice_${orderId}.pdf`;
                 document.body.appendChild(a); a.click();
                 setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
@@ -3168,8 +3206,8 @@
         };
 
         // FIX #2: Use 'working' as canonical active status (not 'in_progress')
-        window.markProjectDelivered = async function (orderId, currentStatus) {
-            const nextStatus = (currentStatus === 'in_progress' || currentStatus === 'paid') ? 'delivered' : 'in_progress';
+        window.markProjectStatus = async function (orderId, currentStatus) {
+            const nextStatus = (currentStatus === 'in_progress' || currentStatus === 'paid' || currentStatus === 'created') ? 'delivered' : 'in_progress';
 
             if (nextStatus === 'delivered') {
                 if (!confirm(`Mark project ${orderId} as DELIVERED?`)) return;
@@ -3212,7 +3250,7 @@
                 return `<span class="ml-2 text-[9px] text-gray-600 border border-white/10 rounded px-1.5 py-0.5 uppercase tracking-widest font-mono">No review</span>`;
             }
             const STAR_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
-            const STAR_EMPTY  = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+            const STAR_EMPTY = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
             let starsHTML = '<span class="ml-1 flex items-center gap-0.5" title="Client rated ' + num + '/5">';
             for (let i = 1; i <= 5; i++) {
                 starsHTML += i <= num ? STAR_FILLED : STAR_EMPTY;
@@ -3264,7 +3302,7 @@
                 if (order.status !== 'completed' && order.status !== 'refunded' && order.status !== 'canceled' && order.status !== 'cancelled') {
                     const isWorking = order.status === 'in_progress';
                     completeBtnHTML = `
-                        <button onclick="markProjectCompleted('${order.id}', '${order.status}')"
+                        <button onclick="markProjectStatus('${order.id}', '${order.status}')"
                             class="action-touch-btn p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
                             title="${isWorking ? 'Click to mark as COMPLETED' : 'Click to mark as WORKING'}">
                             <i data-lucide="${isWorking ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
@@ -3665,7 +3703,7 @@
                 let completeBtnHTML = '';
                 if (order.status !== 'completed' && order.status !== 'refunded' && order.status !== 'canceled' && order.status !== 'cancelled') {
                     const isWorking = order.status === 'in_progress';
-                    completeBtnHTML = `<button onclick="markProjectCompleted('${order.id}', '${order.status}')"
+                    completeBtnHTML = `<button onclick="markProjectStatus('${order.id}', '${order.status}')"
                         class="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
                         title="${isWorking ? 'Click to mark as COMPLETED' : 'Click to mark as WORKING'}">
                         <i data-lucide="${isWorking ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
@@ -5312,35 +5350,51 @@
     </script>
 
     <!-- ── Delivery Modal ────────────────────────────────────────────────── -->
-    <div id="delivery-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] hidden items-center justify-center p-4 transition-opacity duration-300 opacity-0">
-        <div id="delivery-modal-content" class="bg-[#0a0a0a] border border-[#ff1a1a]/30 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl scale-95 transition-transform duration-300 relative">
+    <div id="delivery-modal"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] hidden items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+        <div id="delivery-modal-content"
+            class="bg-[#0a0a0a] border border-[#ff1a1a]/30 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl scale-95 transition-transform duration-300 relative">
             <div class="absolute inset-0 bg-gradient-to-br from-[#ff1a1a]/5 to-transparent pointer-events-none"></div>
-            
+
             <div class="p-5 md:p-7 relative z-10">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 id="delivery-modal-title" class="text-xl font-bold text-white tracking-tight">Deliver Project</h3>
-                    <button onclick="closeDeliveryModal()" class="text-gray-500 hover:text-[#ff1a1a] transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    <h3 id="delivery-modal-title" class="text-xl font-bold text-white tracking-tight">Deliver Project
+                    </h3>
+                    <button onclick="closeDeliveryModal()"
+                        class="text-gray-500 hover:text-[#ff1a1a] transition-colors"><i data-lucide="x"
+                            class="w-5 h-5"></i></button>
                 </div>
 
                 <input type="hidden" id="delivery-order-id">
-                
+
                 <div class="space-y-4">
                     <div>
-                        <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Select Final File (Photo, Video, Audio)</label>
-                        <input type="file" id="delivery-file" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors">
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Select Final
+                            File (Photo, Video, Audio)</label>
+                        <input type="file" id="delivery-file"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors">
                     </div>
 
                     <div id="delivery-progress-wrapper" class="hidden">
-                        <div class="flex justify-between text-xs text-gray-400 mb-1"><span id="delivery-progress-text">Uploading...</span></div>
-                        <div class="w-full bg-white/10 rounded-full h-1.5 mb-4 overflow-hidden"><div id="delivery-progress-bar" class="bg-[#ff1a1a] h-1.5 rounded-full" style="width: 0%"></div></div>
+                        <div class="flex justify-between text-xs text-gray-400 mb-1"><span
+                                id="delivery-progress-text">Uploading...</span></div>
+                        <div class="w-full bg-white/10 rounded-full h-1.5 mb-4 overflow-hidden">
+                            <div id="delivery-progress-bar" class="bg-[#ff1a1a] h-1.5 rounded-full" style="width: 0%">
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div id="delivery-error" class="hidden p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-xs text-center font-medium"></div>
+
+                    <div id="delivery-error"
+                        class="hidden p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-xs text-center font-medium">
+                    </div>
                 </div>
 
                 <div class="mt-8 flex gap-3">
-                    <button onclick="closeDeliveryModal()" class="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold text-sm transition-all uppercase tracking-widest">Cancel</button>
-                    <button id="delivery-submit-btn" onclick="submitDelivery()" class="flex-1 py-3 bg-[#ff1a1a] hover:bg-[#ff1a1a]/80 text-black rounded-xl font-bold text-sm shadow-[0_0_20px_rgba(255,26,26,0.2)] transition-all uppercase tracking-widest flex items-center justify-center">Submit Delivery</button>
+                    <button onclick="closeDeliveryModal()"
+                        class="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold text-sm transition-all uppercase tracking-widest">Cancel</button>
+                    <button id="delivery-submit-btn" onclick="submitDelivery()"
+                        class="flex-1 py-3 bg-[#ff1a1a] hover:bg-[#ff1a1a]/80 text-black rounded-xl font-bold text-sm shadow-[0_0_20px_rgba(255,26,26,0.2)] transition-all uppercase tracking-widest flex items-center justify-center">Submit
+                        Delivery</button>
                 </div>
             </div>
         </div>
@@ -5348,53 +5402,53 @@
 
     <!-- ── Admin Notification Bell System ──────────────────────────────────── -->
     <script>
-    // ── Notification state ─────────────────────────────────────────────────────
-    // Stores: array of { id, type, title, body, ts, read }
-    // Persisted in sessionStorage so it survives page refreshes within the same
-    // admin session but clears on tab close (prevents stale order spam).
-    const NOTIF_STORE_KEY = 'zyro_admin_notifs';
-    let _seenOrderIds = new Set(); // track which pending order IDs we already notified
+        // ── Notification state ─────────────────────────────────────────────────────
+        // Stores: array of { id, type, title, body, ts, read }
+        // Persisted in sessionStorage so it survives page refreshes within the same
+        // admin session but clears on tab close (prevents stale order spam).
+        const NOTIF_STORE_KEY = 'zyro_admin_notifs';
+        let _seenOrderIds = new Set(); // track which pending order IDs we already notified
 
-    function _loadNotifs() {
-        try { return JSON.parse(sessionStorage.getItem(NOTIF_STORE_KEY)) || []; } catch { return []; }
-    }
-    function _saveNotifs(arr) {
-        try { sessionStorage.setItem(NOTIF_STORE_KEY, JSON.stringify(arr.slice(0, 50))); } catch {}
-    }
-
-    function _pushNotif(type, title, body) {
-        const arr = _loadNotifs();
-        arr.unshift({ id: Date.now() + Math.random(), type, title, body, ts: new Date().toISOString(), read: false });
-        _saveNotifs(arr.slice(0, 50));
-        _renderNotifDropdown();
-    }
-
-    function _renderNotifDropdown() {
-        const arr = _loadNotifs();
-        const list = document.getElementById('notif-list');
-        const badge = document.getElementById('notif-badge');
-        const unread = arr.filter(n => !n.read).length;
-
-        // Update badge
-        if (unread > 0) {
-            badge.textContent = unread > 9 ? '9+' : unread;
-            badge.classList.remove('hidden');
-            badge.classList.add('flex');
-        } else {
-            badge.classList.add('hidden');
-            badge.classList.remove('flex');
+        function _loadNotifs() {
+            try { return JSON.parse(sessionStorage.getItem(NOTIF_STORE_KEY)) || []; } catch { return []; }
+        }
+        function _saveNotifs(arr) {
+            try { sessionStorage.setItem(NOTIF_STORE_KEY, JSON.stringify(arr.slice(0, 50))); } catch { }
         }
 
-        if (!arr.length) {
-            list.innerHTML = '<div class="px-4 py-6 text-center text-gray-600 text-xs">No new notifications</div>';
-            return;
+        function _pushNotif(type, title, body) {
+            const arr = _loadNotifs();
+            arr.unshift({ id: Date.now() + Math.random(), type, title, body, ts: new Date().toISOString(), read: false });
+            _saveNotifs(arr.slice(0, 50));
+            _renderNotifDropdown();
         }
 
-        list.innerHTML = arr.map(n => {
-            const icon = n.type === 'order' ? '🛒' : n.type === 'error' ? '⚠️' : '🔔';
-            const relTime = _relativeTime(n.ts);
-            const dot = n.read ? '' : '<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#ff1a1a] ml-auto shrink-0 mt-1"></span>';
-            return `<div class="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${ n.read ? 'opacity-50' : '' }">
+        function _renderNotifDropdown() {
+            const arr = _loadNotifs();
+            const list = document.getElementById('notif-list');
+            const badge = document.getElementById('notif-badge');
+            const unread = arr.filter(n => !n.read).length;
+
+            // Update badge
+            if (unread > 0) {
+                badge.textContent = unread > 9 ? '9+' : unread;
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+            }
+
+            if (!arr.length) {
+                list.innerHTML = '<div class="px-4 py-6 text-center text-gray-600 text-xs">No new notifications</div>';
+                return;
+            }
+
+            list.innerHTML = arr.map(n => {
+                const icon = n.type === 'order' ? '🛒' : n.type === 'error' ? '⚠️' : '🔔';
+                const relTime = _relativeTime(n.ts);
+                const dot = n.read ? '' : '<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#ff1a1a] ml-auto shrink-0 mt-1"></span>';
+                return `<div class="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${n.read ? 'opacity-50' : ''}">
                 <span class="text-base mt-0.5 shrink-0">${icon}</span>
                 <div class="flex-1 min-w-0">
                     <div class="text-xs font-semibold text-white truncate">${_eHtml(n.title)}</div>
@@ -5403,76 +5457,76 @@
                 </div>
                 ${dot}
             </div>`;
-        }).join('');
-    }
-
-    function _eHtml(s) {
-        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    function _relativeTime(iso) {
-        const diff = Date.now() - new Date(iso).getTime();
-        if (diff < 60000) return 'Just now';
-        if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
-        if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
-        return Math.floor(diff / 86400000) + 'd ago';
-    }
-
-    // ── Toggle dropdown ────────────────────────────────────────────────────────
-    function toggleNotifDropdown() {
-        const dd = document.getElementById('notif-dropdown');
-        const isHidden = dd.classList.contains('hidden');
-        dd.classList.toggle('hidden', !isHidden);
-        if (!isHidden) return; // closing — no mark-read needed
-        // Mark all as read when dropdown is opened
-        const arr = _loadNotifs().map(n => ({ ...n, read: true }));
-        _saveNotifs(arr);
-        _renderNotifDropdown();
-    }
-    window.toggleNotifDropdown = toggleNotifDropdown;
-
-    function clearNotifications() {
-        _saveNotifs([]);
-        _seenOrderIds.clear();
-        _renderNotifDropdown();
-        document.getElementById('notif-dropdown').classList.add('hidden');
-    }
-    window.clearNotifications = clearNotifications;
-
-    // Close dropdown on outside click
-    document.addEventListener('click', function(e) {
-        const wrapper = document.getElementById('notif-wrapper');
-        if (wrapper && !wrapper.contains(e.target)) {
-            document.getElementById('notif-dropdown')?.classList.add('hidden');
+            }).join('');
         }
-    });
 
-    // ── Poll for new orders ────────────────────────────────────────────────────
-    // Called after every fetchDashboardData() cycle so no extra API calls needed.
-    // We hook into the existing polling by checking recentOrders from the last fetch.
-    function checkOrderNotifications(orders) {
-        if (!Array.isArray(orders)) return;
-        orders.forEach(o => {
-            if (o.status === 'created' && !_seenOrderIds.has(o.id)) {
-                _seenOrderIds.add(o.id);
-                _pushNotif(
-                    'order',
-                    'New Order Received',
-                    `${o.client || 'A client'} placed an order for ${o.service || 'a service'} — ₹${Number(o.amount || 0).toLocaleString('en-IN')} · ID: ${o.id}`
-                );
+        function _eHtml(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function _relativeTime(iso) {
+            const diff = Date.now() - new Date(iso).getTime();
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+            return Math.floor(diff / 86400000) + 'd ago';
+        }
+
+        // ── Toggle dropdown ────────────────────────────────────────────────────────
+        function toggleNotifDropdown() {
+            const dd = document.getElementById('notif-dropdown');
+            const isHidden = dd.classList.contains('hidden');
+            dd.classList.toggle('hidden', !isHidden);
+            if (!isHidden) return; // closing — no mark-read needed
+            // Mark all as read when dropdown is opened
+            const arr = _loadNotifs().map(n => ({ ...n, read: true }));
+            _saveNotifs(arr);
+            _renderNotifDropdown();
+        }
+        window.toggleNotifDropdown = toggleNotifDropdown;
+
+        function clearNotifications() {
+            _saveNotifs([]);
+            _seenOrderIds.clear();
+            _renderNotifDropdown();
+            document.getElementById('notif-dropdown').classList.add('hidden');
+        }
+        window.clearNotifications = clearNotifications;
+
+        // Close dropdown on outside click
+        document.addEventListener('click', function (e) {
+            const wrapper = document.getElementById('notif-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('notif-dropdown')?.classList.add('hidden');
             }
         });
-    }
-    window.checkOrderNotifications = checkOrderNotifications;
 
-    // Push a system error notification from anywhere
-    function pushErrorNotification(message) {
-        _pushNotif('error', 'System Error', message);
-    }
-    window.pushErrorNotification = pushErrorNotification;
+        // ── Poll for new orders ────────────────────────────────────────────────────
+        // Called after every fetchDashboardData() cycle so no extra API calls needed.
+        // We hook into the existing polling by checking recentOrders from the last fetch.
+        function checkOrderNotifications(orders) {
+            if (!Array.isArray(orders)) return;
+            orders.forEach(o => {
+                if (o.status === 'created' && !_seenOrderIds.has(o.id)) {
+                    _seenOrderIds.add(o.id);
+                    _pushNotif(
+                        'order',
+                        'New Order Received',
+                        `${o.client || 'A client'} placed an order for ${o.service || 'a service'} — ₹${Number(o.amount || 0).toLocaleString('en-IN')} · ID: ${o.id}`
+                    );
+                }
+            });
+        }
+        window.checkOrderNotifications = checkOrderNotifications;
 
-    // Initialize dropdown render on load
-    _renderNotifDropdown();
+        // Push a system error notification from anywhere
+        function pushErrorNotification(message) {
+            _pushNotif('error', 'System Error', message);
+        }
+        window.pushErrorNotification = pushErrorNotification;
+
+        // Initialize dropdown render on load
+        _renderNotifDropdown();
     </script>
 
 </body>
