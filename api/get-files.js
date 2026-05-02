@@ -148,6 +148,7 @@ module.exports = async function (req, res) {
                 );
                 return {
                     name,
+                    key: obj.Key,
                     url: signedUrl,
                     size: obj.Size || null,
                     created_at: obj.LastModified ? obj.LastModified.toISOString() : null,

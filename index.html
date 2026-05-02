@@ -4825,7 +4825,9 @@
 
                     var files = deliveriesMap[o.order_id] || [];
                     var deliveryBtns = files.map(function (f) {
-                        return "<button onclick=\"portalDownloadDelivery('" + f.b2_key + "','" + f.file_name + "')\" class=\"text-[10px] uppercase tracking-widest text-green-400 hover:text-green-300 border border-green-500/30 hover:border-green-400/60 px-3 py-1.5 rounded-lg transition-colors\">\u2193 " + f.file_name.substring(0, 26) + "</button>";
+                        var safeKey = f.b2_key.replace(/'/g, "\\'");
+                        var safeName = f.file_name.replace(/'/g, "\\'");
+                        return "<button onclick=\"portalDownloadDelivery('" + safeKey + "','" + safeName + "')\" class=\"text-[10px] uppercase tracking-widest text-green-400 hover:text-green-300 border border-green-500/30 hover:border-green-400/60 px-3 py-1.5 rounded-lg transition-colors\">\u2193 " + f.file_name.substring(0, 26) + "</button>";
                     }).join("");
 
                     var processingNote = (isCompleted && files.length === 0) ? "<span class=\"text-[10px] text-gray-600 italic\">Delivery files processing...</span>" : "";
@@ -4905,6 +4907,11 @@
             var msgEl = document.getElementById("review-msg-" + orderId);
             if (rating < 1) { if (msgEl) msgEl.textContent = "Please select a star rating."; return; }
             if (!text) { if (msgEl) msgEl.textContent = "Please write a short review."; return; }
+            
+            var sb = window._supabaseClient;
+            var session = sb ? (await sb.auth.getSession()).data.session : null;
+            var displayName = (session && session.user && session.user.user_metadata) ? (session.user.user_metadata.full_name || session.user.user_metadata.name) : email;
+
             var form = document.getElementById("review-form-" + orderId);
             var btn = form ? form.querySelector("button") : null;
             if (btn) { btn.textContent = "Submitting\u2026"; btn.disabled = true; }
@@ -4913,10 +4920,10 @@
                 var res = await fetch("/api/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "submitReview", order_id: orderId, name: email, rating: rating, review_text: text })
+                    body: JSON.stringify({ action: "submitReview", order_id: orderId, name: displayName, rating: rating, review_text: text })
                 });
                 var data = await res.json();
-                if (!res.ok) throw new Error(data.error || "Failed");
+                if (!res.ok) throw new Error(data.error || "Failed to submit review.");
                 if (msgEl) { msgEl.textContent = ""; }
                 if (btn) {
                     btn.textContent = "\u2713 Success";
@@ -4967,7 +4974,9 @@
                 el.innerHTML = Object.keys(dMap).map(function (oid) {
                     var ord = oMap[oid] || {};
                     var fileRows = dMap[oid].map(function (f) {
-                        return '<button onclick="portalDownloadDelivery(\'' + f.b2_key + '\',\'' + f.file_name + '\')" class="flex items-center gap-2 text-[11px] text-green-400 hover:text-green-300 border border-green-500/20 hover:border-green-400/50 px-3 py-1.5 rounded-lg transition-colors">\u2193 ' + f.file_name.substring(0, 30) + '</button>';
+                        var safeKey = f.b2_key.replace(/'/g, "\\'");
+                        var safeName = f.file_name.replace(/'/g, "\\'");
+                        return '<button onclick="portalDownloadDelivery(\'' + safeKey + '\',\'' + safeName + '\')" class="flex items-center gap-2 text-[11px] text-green-400 hover:text-green-300 border border-green-500/20 hover:border-green-400/50 px-3 py-1.5 rounded-lg transition-colors">\u2193 ' + f.file_name.substring(0, 30) + '</button>';
                     }).join('');
                     return '<div class="border border-white/10 rounded-xl p-4 bg-white/5 mb-3"><div class="text-white font-bold text-sm">' + (ord.service || 'Delivery') + '</div><div class="font-mono text-[10px] text-gray-600 mt-0.5">' + oid + '</div><div class="flex flex-wrap gap-2 mt-3">' + fileRows + '</div></div>';
                 }).join('');
@@ -5015,7 +5024,11 @@
                 var orderId = b2Key.split("/")[0];
                 var res = await fetch("/api/get-files?orderId=" + encodeURIComponent(orderId), { headers: headers });
                 var data = await res.json();
-                var file = (data.files || []).find(function (f) { return f.key === b2Key || (f.name && b2Key.endsWith(f.name)); });
+                
+                // Prioritize exact key match, fallback to name-based matching
+                var file = (data.files || []).find(function (f) { 
+                    return f.key === b2Key || (f.name && b2Key.endsWith(f.name)); 
+                });
                 var url = file ? file.url : null;
                 if (!url) throw new Error("Could not generate download link. Please try again.");
                 var a = document.createElement("a");

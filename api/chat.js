@@ -177,15 +177,23 @@ module.exports = async function (req, res) {
         const { action, rating, review_text, order_id, sessionId, phone, email, name, selectedService, amount } = req.body;
 
         if (action === 'submitReview') {
-            if (!rating || !review_text) return res.status(400).json({ error: 'Rating and review text are required.' });
-            const { error: dbError } = await supabase.from('reviews').insert([{
+            const starRating = parseInt(rating);
+            if (!starRating || starRating < 1 || !review_text) {
+                return res.status(400).json({ error: 'Please select a star rating and write a review.' });
+            }
+
+            const { error: dbError } = await supabase.from('reviews').upsert([{
                 order_id: order_id || null,
                 client_name: name || 'Anonymous',
-                rating: parseInt(rating),
+                rating: starRating,
                 review_text: review_text,
                 is_approved: false
-            }]);
-            if (dbError) throw dbError;
+            }], { onConflict: 'order_id' });
+
+            if (dbError) {
+                console.error('[submitReview] DB Error:', dbError);
+                return res.status(500).json({ error: dbError.message || 'Review submission failed. Please try again.' });
+            }
             return res.status(200).json({ success: true });
         }
 
@@ -318,7 +326,7 @@ module.exports = async function (req, res) {
 
     } catch (error) {
         console.error("Chat Checkout Error:", error.response?.data || error.message);
-        
+
         // Extract the exact error message from Cashfree or Supabase
         let errorDetail = "Unknown error occurred.";
         if (error.response && error.response.data) {
