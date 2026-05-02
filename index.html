@@ -4794,7 +4794,7 @@
                 var orders = r.data || [];
                 if (!orders.length) { el.innerHTML = "<div class=\"text-gray-600 text-sm text-center py-8\">No orders found.</div>"; return; }
 
-                // Fetch deliveries for all orders in one call
+                // Fetch deliveries and reviews for all orders
                 var orderIds = orders.map(function (o) { return o.order_id; });
                 var dRes = await sb.from("deliveries").select("order_id,file_name,b2_key,file_type").in("order_id", orderIds);
                 var deliveriesMap = {};
@@ -4803,6 +4803,12 @@
                         if (!deliveriesMap[d.order_id]) deliveriesMap[d.order_id] = [];
                         deliveriesMap[d.order_id].push(d);
                     });
+                }
+                
+                var rRes = await sb.from("reviews").select("order_id,rating,review_text").in("order_id", orderIds);
+                var reviewsMap = {};
+                if (!rRes.error && rRes.data) {
+                    rRes.data.forEach(function (rev) { reviewsMap[rev.order_id] = rev; });
                 }
 
                 var statusColor = { created: "text-yellow-400", paid: "text-blue-400", in_progress: "text-blue-400", delivered: "text-green-400", refunded: "text-red-400", cancelled: "text-red-400" };
@@ -4815,8 +4821,9 @@
                     var statusLabel = (o.status || "created").replace("in_progress", "working").replace(/_/g, " ").toUpperCase();
                     var isCompleted = o.status === "delivered";
 
-                    var stars = isCompleted
-                        ? "<div class=\"flex items-center gap-0.5 mt-1\">" + "<svg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='#eab308'><polygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'/></svg>".repeat(5) + "</div>"
+                    var review = reviewsMap[o.order_id];
+                    var stars = (isCompleted && review)
+                        ? "<div class=\"flex items-center gap-0.5 mt-1\">" + "<svg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='#eab308'><polygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'/></svg>".repeat(review.rating) + "</div>"
                         : "";
 
                     var billBtn = paidSt.indexOf(o.status) >= 0
@@ -4834,13 +4841,16 @@
 
                     var reviewSection = isCompleted ? (
                         "<div class=\"mt-3 pt-3 border-t border-white/10\">"
-                        + "<button onclick=\"portalToggleReview('" + o.order_id + "')\" class=\"text-[10px] uppercase tracking-widest text-gray-500 hover:text-[#ff1a1a] transition-colors\">&#9733; Leave a Review</button>"
+                        + "<button onclick=\"portalToggleReview('" + o.order_id + "')\" class=\"text-[10px] uppercase tracking-widest text-gray-500 hover:text-[#ff1a1a] transition-colors\">" + (review ? "\u2713 Edit Review" : "\u2605 Leave a Review") + "</button>"
                         + "<div id=\"review-form-" + o.order_id + "\" class=\"hidden mt-3 space-y-2\">"
-                        + "<div class=\"flex gap-1\" id=\"stars-" + o.order_id + "\" data-rating=\"0\">"
-                        + [1, 2, 3, 4, 5].map(function (n) { return "<button onclick=\"portalSetRating('" + o.order_id + "'," + n + ")\" class=\"star-btn text-gray-600 hover:text-yellow-400 transition-colors text-lg\" data-val=\"" + n + "\">&#9733;</button>"; }).join("")
+                        + "<div class=\"flex gap-1\" id=\"stars-" + o.order_id + "\" data-rating=\"" + (review ? review.rating : "0") + "\">"
+                        + [1, 2, 3, 4, 5].map(function (n) { 
+                            var active = review && n <= review.rating;
+                            return "<button onclick=\"portalSetRating('" + o.order_id + "'," + n + ")\" class=\"star-btn " + (active ? "text-yellow-400" : "text-gray-600") + " hover:text-yellow-400 transition-colors text-lg\" data-val=\"" + n + "\">&#9733;</button>"; 
+                          }).join("")
                         + "</div>"
-                        + "<textarea id=\"review-text-" + o.order_id + "\" rows=\"2\" placeholder=\"Share your experience...\" class=\"w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-[#ff1a1a] resize-none\"></textarea>"
-                        + "<button onclick=\"portalSubmitReview('" + o.order_id + "','" + user.email.replace(/'/g, "\\'") + "')\" class=\"text-[10px] uppercase tracking-widest text-[#ff1a1a] border border-[#ff1a1a]/30 hover:bg-[#ff1a1a] hover:text-black px-3 py-1.5 rounded-lg transition-all\">Submit Review</button>"
+                        + "<textarea id=\"review-text-" + o.order_id + "\" rows=\"2\" placeholder=\"Share your experience...\" class=\"w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-[#ff1a1a] resize-none\">" + (review ? review.review_text : "") + "</textarea>"
+                        + "<button onclick=\"portalSubmitReview('" + o.order_id + "','" + user.email.replace(/'/g, "\\'") + "')\" class=\"text-[10px] uppercase tracking-widest text-[#ff1a1a] border border-[#ff1a1a]/30 hover:bg-[#ff1a1a] hover:text-black px-3 py-1.5 rounded-lg transition-all\">" + (review ? "Update Review" : "Submit Review") + "</button>"
                         + "<div id=\"review-msg-" + o.order_id + "\" class=\"text-[10px] text-gray-500\"></div>"
                         + "</div></div>"
                     ) : "";
@@ -4929,6 +4939,7 @@
                     btn.textContent = "\u2713 Success";
                     btn.classList.remove("bg-[#ff1a1a]", "text-black", "hover:bg-white");
                     btn.classList.add("bg-green-500", "text-white");
+                    setTimeout(function () { portalLoadOrders(); }, 1500);
                 }
                 if (form) setTimeout(function () { form.classList.add("hidden"); }, 2500);
             } catch (e) {
