@@ -4930,7 +4930,7 @@
                 var res = await fetch("/api/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "submitReview", order_id: orderId, name: displayName, rating: rating, review_text: text })
+                    body: JSON.stringify({ action: "submitReview", order_id: orderId, name: displayName, email: email, rating: rating, review_text: text, selectedService: o.service })
                 });
                 var data = await res.json();
                 if (!res.ok) throw new Error(data.error || "Failed to submit review.");

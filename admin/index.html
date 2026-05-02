@@ -2659,8 +2659,8 @@
                 if (!res.ok) throw new Error('Failed to fetch reviews');
                 var data = await res.json();
                 var reviews = data.reviews || [];
-                var pending = reviews.filter(r => !r.is_approved).length;
-                var approved = reviews.filter(r => r.is_approved).length;
+                var pending = reviews.filter(r => !r.approved).length;
+                var approved = reviews.filter(r => r.approved).length;
                 document.getElementById('reviews-pending-count').textContent = pending;
                 document.getElementById('reviews-approved-count').textContent = approved;
                 if (!reviews.length) {
@@ -2670,11 +2670,11 @@
                 _allReviewRows = reviews.map(r => {
                     var stars = '';
                     for (var i = 0; i < (r.rating || 0); i++) stars += '★';
-                    var statusBadge = r.is_approved
+                    var statusBadge = r.approved
                         ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-[10px] uppercase tracking-widest border border-green-500/20"><span class="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>Approved</span>'
                         : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] uppercase tracking-widest border border-yellow-500/20"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block"></span>Pending</span>';
-                    var toggleLabel = r.is_approved ? 'Reject' : 'Approve';
-                    var toggleClass = r.is_approved ? 'text-yellow-400 border-yellow-500/20 hover:border-yellow-500/40' : 'text-green-400 border-green-500/20 hover:border-green-500/40';
+                    var toggleLabel = r.approved ? 'Reject' : 'Approve';
+                    var toggleClass = r.approved ? 'text-yellow-400 border-yellow-500/20 hover:border-yellow-500/40' : 'text-green-400 border-green-500/20 hover:border-green-500/40';
                     var reviewText = (r.review_text || '').length > 80 ? (r.review_text || '').substring(0, 80) + '…' : (r.review_text || '');
                     return '<tr class="hover:bg-white/5 transition-colors group">'
                         + '<td class="p-4 text-white font-medium">' + esc(r.client_name || 'Anonymous') + '</td>'
@@ -2683,7 +2683,7 @@
                         + '<td class="p-4 text-gray-400 text-xs">' + new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</td>'
                         + '<td class="p-4">' + statusBadge + '</td>'
                         + '<td class="p-4 text-right"><div class="flex items-center justify-end gap-2">'
-                        + '<button onclick="toggleReview(\'' + r.id + '\',' + (!r.is_approved) + ')" class="px-3 py-1.5 text-xs border rounded-lg transition-all ' + toggleClass + '">' + toggleLabel + '</button>'
+                        + '<button onclick="toggleReview(\'' + r.id + '\',' + (!r.approved) + ')" class="px-3 py-1.5 text-xs border rounded-lg transition-all ' + toggleClass + '">' + toggleLabel + '</button>'
                         + '<button onclick="deleteReview(\'' + r.id + '\')" class="px-3 py-1.5 text-xs border border-red-900/30 rounded-lg text-red-500/70 hover:border-red-500/40 hover:text-red-400 transition-all">Delete</button>'
                         + '</div></td></tr>';
                 });

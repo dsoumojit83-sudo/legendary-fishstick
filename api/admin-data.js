@@ -336,9 +336,9 @@ module.exports = async function (req, res) {
 
             // ── Reviews: approve/reject toggle ───────────────────────────────────
             if (action === 'toggleReview') {
-                const { id, is_approved } = body;
+                const { id, approved } = body;
                 if (!id) return res.status(400).json({ error: 'id is required.' });
-                const { data, error } = await supabase.from('reviews').update({ is_approved }).eq('id', id).select().single();
+                const { data, error } = await supabase.from('reviews').update({ approved }).eq('id', id).select().single();
                 if (error) throw error;
                 return res.status(200).json({ review: data });
             }

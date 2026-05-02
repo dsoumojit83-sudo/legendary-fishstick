@@ -64,6 +64,7 @@ module.exports = async function (req, res) {
         try {
             const { data, error } = await supabase.from('reviews')
                 .select('client_name, rating, review_text')
+                .eq('approved', true)
                 .order('created_at', { ascending: false })
                 .limit(2);
             if (error) throw error;
@@ -181,12 +182,43 @@ module.exports = async function (req, res) {
                 return res.status(400).json({ error: 'Please select a star rating and write a review.' });
             }
 
-            const { error: dbError } = await supabase.from('reviews').upsert([{
-                order_id: order_id || null,
-                client_name: name || 'Anonymous',
-                rating: starRating,
-                review_text: review_text
-            }], { onConflict: 'order_id' });
+            // Manual Upsert: First check if a review exists for this order_id
+            const { data: existingReview } = await supabase
+                .from('reviews')
+                .select('order_id')
+                .eq('order_id', order_id)
+                .maybeSingle();
+
+            let dbError;
+            if (existingReview) {
+                // UPDATE existing review
+                const { error } = await supabase
+                    .from('reviews')
+                    .update({
+                        client_name: name || 'Anonymous',
+                        client_email: email || null,
+                        rating: starRating,
+                        review_text: review_text,
+                        service: selectedService || null,
+                        approved: false
+                    })
+                    .eq('order_id', order_id);
+                dbError = error;
+            } else {
+                // INSERT new review
+                const { error } = await supabase
+                    .from('reviews')
+                    .insert([{
+                        order_id: order_id || null,
+                        client_name: name || 'Anonymous',
+                        client_email: email || null,
+                        rating: starRating,
+                        review_text: review_text,
+                        service: selectedService || null,
+                        approved: false
+                    }]);
+                dbError = error;
+            }
 
             if (dbError) {
                 console.error('[submitReview] DB Error:', dbError);
