@@ -30,9 +30,18 @@
             font-family: 'Outfit', sans-serif;
             overflow-x: hidden;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            /* Flex centering removed from body to prevent mobile cut-off issues */
+            padding-top: 2rem;
+            padding-bottom: 4rem;
+        }
+
+        @media (min-width: 1024px) {
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+            }
         }
 
         .brand-name {
@@ -215,6 +224,18 @@
             }
         }
 
+        /* Prevent browser autofill from turning inputs white/yellow */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill,
+        textarea:-webkit-autofill:hover,
+        textarea:-webkit-autofill:focus {
+            -webkit-text-fill-color: #fff !important;
+            -webkit-box-shadow: 0 0 0px 1000px #0a0a0a inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
         #view-bridge,
         #view-success,
         #view-failed {
@@ -223,7 +244,7 @@
     </style>
 </head>
 
-<body class="p-6 relative">
+<body class="px-4 md:px-6 relative">
 
     <div class="fixed inset-0 pointer-events-none opacity-10 z-0"
         style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 50px 50px;">
@@ -243,14 +264,14 @@
     <!-- STATE: Checkout Form -->
     <div id="view-checkout" class="max-w-5xl w-full relative z-10 pt-10 pb-10 hidden mx-auto">
         <div class="text-center mb-10">
-            <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">Secure <span
+            <h1 class="text-3xl md:text-5xl font-black tracking-tight mb-2">Secure <span
                     class="text-[#ff1a1a] glow">Checkout</span></h1>
             <p class="text-gray-400 text-sm md:text-md uppercase tracking-[0.3em]">Finalize Your Project Details</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
             <!-- Left Column: Order Summary -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-6 lg:sticky lg:top-8">
                 <div
                     class="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
                     <div
@@ -333,29 +354,29 @@
                     <div class="space-y-5">
                         <div class="relative group">
                             <label
-                                class="absolute -top-2 left-3 bg-[#050505] px-1 text-[10px] text-[#ff1a1a] uppercase tracking-widest font-bold z-10 transition-all">Full
+                                class="absolute -top-2 left-3 bg-[#0a0a0a] px-1 text-[10px] text-[#ff1a1a] uppercase tracking-widest font-bold z-10 transition-all">Full
                                 Name</label>
                             <input type="text" id="chkName" placeholder="Enter your name"
-                                class="w-full bg-transparent border border-white/10 group-hover:border-white/20 focus:border-[#ff1a1a] rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#ff1a1a]/50 transition-all">
+                                class="w-full bg-[#0a0a0a] border border-white/10 group-hover:border-white/20 focus:border-[#ff1a1a] rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#ff1a1a]/50 transition-all">
                         </div>
 
                         <div class="relative group">
                             <label
-                                class="absolute -top-2 left-3 bg-[#050505] px-1 text-[10px] text-[#ff1a1a] uppercase tracking-widest font-bold z-10 transition-all">Email
+                                class="absolute -top-2 left-3 bg-[#0a0a0a] px-1 text-[10px] text-[#ff1a1a] uppercase tracking-widest font-bold z-10 transition-all">Email
                                 Address</label>
                             <input type="email" id="chkEmail" placeholder="you@example.com"
-                                class="w-full bg-transparent border border-white/10 group-hover:border-white/20 focus:border-[#ff1a1a] rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#ff1a1a]/50 transition-all">
+                                class="w-full bg-[#0a0a0a] border border-white/10 group-hover:border-white/20 focus:border-[#ff1a1a] rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#ff1a1a]/50 transition-all">
                         </div>
 
                         <div class="relative group">
                             <label
-                                class="absolute -top-2 left-3 bg-[#050505] px-1 text-[10px] text-[#ff1a1a] uppercase tracking-widest font-bold z-10 transition-all">Phone
+                                class="absolute -top-2 left-3 bg-[#0a0a0a] px-1 text-[10px] text-[#ff1a1a] uppercase tracking-widest font-bold z-10 transition-all">Phone
                                 Number</label>
                             <div class="flex">
                                 <span
                                     class="bg-white/5 border border-white/10 border-r-0 rounded-l-xl px-4 py-3.5 text-gray-500 text-sm flex items-center">+91</span>
                                 <input type="tel" id="chkPhone" placeholder="10-digit number"
-                                    class="w-full bg-transparent border border-white/10 group-hover:border-white/20 focus:border-[#ff1a1a] rounded-r-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#ff1a1a]/50 transition-all"
+                                    class="w-full bg-[#0a0a0a] border border-white/10 group-hover:border-white/20 focus:border-[#ff1a1a] rounded-r-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#ff1a1a]/50 transition-all"
                                     pattern="[0-9]{10}" maxlength="10">
                             </div>
                         </div>

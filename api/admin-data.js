@@ -431,6 +431,17 @@ module.exports = async function (req, res) {
         // Build a quick lookup map: order_id -> has_files (result from cache or fresh B2 calls)
         const filesMap = await getCachedFilesMap(activeOrders);
 
+        // CHECK DELIVERIES TABLE: Determine if any delivery record exists for these orders
+        // This is used to enable/disable the status update button in the UI.
+        const { data: deliveryRecords } = await supabase
+            .from('deliveries')
+            .select('order_id')
+            .in('order_id', activeOrders.map(o => o.order_id));
+        const deliveryMap = {};
+        if (deliveryRecords) {
+            deliveryRecords.forEach(d => { deliveryMap[d.order_id] = true; });
+        }
+
         // Secure Payload Delivery
         return res.status(200).json({
             totalRevenue,
@@ -449,7 +460,8 @@ module.exports = async function (req, res) {
                 completed_at: o.completed_at,
                 deadline: o.deadline_date,
                 notes: o.project_notes,
-                has_files: filesMap[o.order_id] || false  // true = green Files button, false = grey
+                has_files: filesMap[o.order_id] || false, // true = green Files button, false = grey
+                has_delivery: deliveryMap[o.order_id] || false // true = delivery record exists in DB
             })),
             chartData: {
                 labels: Object.keys(chartDataMap),

@@ -3205,16 +3205,9 @@
             }
         };
 
-        // FIX: Toggle status between working/delivery modal
+        // FIX: Toggle status between working/delivered (without modal)
         window.markProjectStatus = async function (orderId, currentStatus) {
-            // If already working, second click opens the delivery modal
-            if (currentStatus === 'in_progress') {
-                if (window.deliverProject) window.deliverProject(orderId);
-                return;
-            }
-
-            // Otherwise, first click sets status to working (in_progress)
-            const nextStatus = 'in_progress';
+            const nextStatus = currentStatus === 'in_progress' ? 'delivered' : 'in_progress';
 
             try {
                 const response = await fetch('/api/update-status', {
@@ -3227,7 +3220,7 @@
                 });
 
                 if (response.ok) {
-                    showToast(`⏳ Project ${orderId} set to WORKING`, true);
+                    showToast(nextStatus === 'delivered' ? `\u2705 Project ${orderId} marked as DELIVERED` : `\u23f3 Project ${orderId} set to WORKING`, true);
                     fetchDashboardData();
                 } else {
                     showToast('Failed to update project status.', false);
@@ -3301,17 +3294,24 @@
                 // Working/paid/created: show status toggle
                 if (order.status !== 'delivered' && order.status !== 'completed' && order.status !== 'refunded' && order.status !== 'canceled' && order.status !== 'cancelled') {
                     const isWorking = order.status === 'in_progress';
+                    // User Request: if status is in_progress, check if has_delivery is true.
+                    // If not, grey out the button. "dont confuse with first click dont greyed out that"
+                    const canDeliver = !isWorking || order.has_delivery;
+                    const disabledAttr = canDeliver ? '' : 'disabled';
+                    const opacityClass = canDeliver ? '' : 'opacity-20 grayscale cursor-not-allowed';
+                    
                     completeBtnHTML = `
                         <button onclick="markProjectStatus('${order.id}', '${order.status}')"
-                            class="action-touch-btn p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
-                            title="${isWorking ? 'Click to DELIVER project' : 'Click to mark as WORKING'}">
+                            ${disabledAttr}
+                            class="action-touch-btn p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all ${opacityClass}"
+                            title="${isWorking ? (canDeliver ? 'Mark as DELIVERED' : 'Upload delivery files first') : 'Mark as WORKING'}">
                             <i data-lucide="${isWorking ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
                         </button>
                     `;
                 }
 
                 // DELIVER button: shown for working/paid orders — marks complete + emails client
-                const deliverBtn = (order.status === 'in_progress' || order.status === 'paid')
+                const deliverBtn = (order.status === 'in_progress' || order.status === 'paid' || order.status === 'delivered' || order.status === 'completed')
                     ? `<button onclick="deliverProject('${order.id}')"
                           class="action-touch-btn p-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center"
                           title="Deliver Project & Notify Client">

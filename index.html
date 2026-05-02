@@ -4490,18 +4490,24 @@
             <!-- Sidebar -->
             <div class="w-64 border-r border-white/10 bg-white/5 p-6 flex flex-col gap-4">
                 <h2 class="text-xl font-bold text-white mb-4">Client Portal</h2>
-                <button onclick="switchPortalTab('account')"
-                    class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab active"
-                    data-tab="account">Account Info</button>
-                <button onclick="switchPortalTab('orders')"
-                    class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab"
-                    data-tab="orders">Order Tracking</button>
-                <button onclick="switchPortalTab('deliveries')"
-                    class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab"
-                    data-tab="deliveries">Deliveries</button>
-                <button onclick="switchPortalTab('referrals')"
-                    class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab"
-                    data-tab="referrals">Referrals</button>
+                <div class="flex flex-col gap-1">
+                    <button onclick="switchPortalTab('account')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab active" data-tab="account">Account Info</button>
+                    <button onclick="switchPortalTab('orders')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="orders">Order Tracking</button>
+                    <button onclick="switchPortalTab('deliveries')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="deliveries">Deliveries</button>
+                    <button onclick="switchPortalTab('referrals')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="referrals">Referrals</button>
+                </div>
+                <!-- Premium Logout Section -->
+                <div class="mt-auto pt-6 border-t border-white/5">
+                    <button onclick="window.acctSignOut && window.acctSignOut()" 
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 transition-all duration-300 group">
+                        <div class="p-2 rounded-lg bg-white/5 group-hover:bg-[#ff1a1a]/10 transition-colors">
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-bold tracking-wide uppercase">Sign Out</span>
+                    </button>
+                </div>
             </div>
             <!-- Content Area -->
             <div class="flex-1 p-8 overflow-y-auto relative">
@@ -4668,6 +4674,16 @@
 
     <!-- Portal Logic: Profile, Password, Orders, Cart -->
     <script>
+        var currentReviewOrderId = null;
+        var currentReviewService = null;
+        window.portalOpenReview = function (orderId, serviceName) {
+            currentReviewOrderId = orderId;
+            currentReviewService = serviceName;
+            document.getElementById("review-order-id").textContent = orderId;
+            document.getElementById("review-modal").classList.remove("hidden");
+            document.getElementById("review-modal").classList.add("flex");
+        };
+
         // â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function _pMsg(elId, msg, ok) {
             var el = document.getElementById(elId);
@@ -4841,18 +4857,8 @@
 
                     var reviewSection = isCompleted ? (
                         "<div class=\"mt-3 pt-3 border-t border-white/10\">"
-                        + "<button onclick=\"portalToggleReview('" + o.order_id + "')\" class=\"text-[10px] uppercase tracking-widest text-gray-500 hover:text-[#ff1a1a] transition-colors\">" + (review ? "\u2713 Edit Review" : "\u2605 Leave a Review") + "</button>"
-                        + "<div id=\"review-form-" + o.order_id + "\" class=\"hidden mt-3 space-y-2\">"
-                        + "<div class=\"flex gap-1\" id=\"stars-" + o.order_id + "\" data-rating=\"" + (review ? review.rating : "0") + "\">"
-                        + [1, 2, 3, 4, 5].map(function (n) { 
-                            var active = review && n <= review.rating;
-                            return "<button onclick=\"portalSetRating('" + o.order_id + "'," + n + ")\" class=\"star-btn " + (active ? "text-yellow-400" : "text-gray-600") + " hover:text-yellow-400 transition-colors text-lg\" data-val=\"" + n + "\">&#9733;</button>"; 
-                          }).join("")
+                        + "<button onclick=\"portalOpenReview('" + o.order_id + "','" + (o.service || "Edit").replace(/'/g, "\\'") + "')\" class=\"text-[10px] uppercase tracking-widest text-gray-500 hover:text-[#ff1a1a] transition-colors\">" + (review ? "\u2713 Edit Review" : "\u2605 Leave a Review") + "</button>"
                         + "</div>"
-                        + "<textarea id=\"review-text-" + o.order_id + "\" rows=\"2\" placeholder=\"Share your experience...\" class=\"w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-[#ff1a1a] resize-none\">" + (review ? review.review_text : "") + "</textarea>"
-                        + "<button onclick=\"portalSubmitReview('" + o.order_id + "','" + user.email.replace(/'/g, "\\'") + "')\" class=\"text-[10px] uppercase tracking-widest text-[#ff1a1a] border border-[#ff1a1a]/30 hover:bg-[#ff1a1a] hover:text-black px-3 py-1.5 rounded-lg transition-all\">" + (review ? "Update Review" : "Submit Review") + "</button>"
-                        + "<div id=\"review-msg-" + o.order_id + "\" class=\"text-[10px] text-gray-500\"></div>"
-                        + "</div></div>"
                     ) : "";
 
                     var actionRow = (billBtn || deliveryBtns || processingNote)
@@ -4892,56 +4898,37 @@
         }
         window.portalDownloadBill = portalDownloadBill;
 
-        // Toggle review form visibility
-        function portalToggleReview(orderId) {
-            var f = document.getElementById("review-form-" + orderId);
-            if (f) f.classList.toggle("hidden");
-        }
-        window.portalToggleReview = portalToggleReview;
-
-        // Set star rating visually
-        function portalSetRating(orderId, val) {
-            var container = document.getElementById("stars-" + orderId);
-            if (!container) return;
-            container.dataset.rating = val;
-            container.querySelectorAll(".star-btn").forEach(function (btn) {
-                btn.style.color = parseInt(btn.dataset.val) <= val ? "#eab308" : "";
-            });
-        }
-        window.portalSetRating = portalSetRating;
-
         // Submit review via /api/chat
-        async function portalSubmitReview(orderId, email) {
-            var rating = parseInt((document.getElementById("stars-" + orderId) || {}).dataset.rating || "0");
-            var text = ((document.getElementById("review-text-" + orderId) || {}).value || "").trim();
-            var msgEl = document.getElementById("review-msg-" + orderId);
+        async function portalSubmitReview() {
+            var orderId = currentReviewOrderId;
+            var service = currentReviewService;
+            var rating = parseInt((document.getElementById("stars-modal") || {}).dataset.rating || "0");
+            var text = ((document.getElementById("review-text-modal") || {}).value || "").trim();
+            var msgEl = document.getElementById("review-msg-modal");
             if (rating < 1) { if (msgEl) msgEl.textContent = "Please select a star rating."; return; }
             if (!text) { if (msgEl) msgEl.textContent = "Please write a short review."; return; }
             
             var sb = window._supabaseClient;
             var session = sb ? (await sb.auth.getSession()).data.session : null;
-            var displayName = (session && session.user && session.user.user_metadata) ? (session.user.user_metadata.full_name || session.user.user_metadata.name) : email;
+            if (!session) { if (msgEl) msgEl.textContent = "Please log in to submit a review."; return; }
+            var email = session.user.email;
 
-            var form = document.getElementById("review-form-" + orderId);
-            var btn = form ? form.querySelector("button") : null;
+            var btn = document.getElementById("review-submit-btn");
             if (btn) { btn.textContent = "Submitting\u2026"; btn.disabled = true; }
             if (msgEl) msgEl.textContent = "";
             try {
                 var res = await fetch("/api/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "submitReview", order_id: orderId, name: displayName, email: email, rating: rating, review_text: text, selectedService: o.service })
+                    body: JSON.stringify({ action: "submitReview", order_id: orderId, email: email, rating: rating, review_text: text, selectedService: service })
                 });
                 var data = await res.json();
                 if (!res.ok) throw new Error(data.error || "Failed to submit review.");
-                if (msgEl) { msgEl.textContent = ""; }
-                if (btn) {
-                    btn.textContent = "\u2713 Success";
-                    btn.classList.remove("bg-[#ff1a1a]", "text-black", "hover:bg-white");
-                    btn.classList.add("bg-green-500", "text-white");
-                    setTimeout(function () { portalLoadOrders(); }, 1500);
-                }
-                if (form) setTimeout(function () { form.classList.add("hidden"); }, 2500);
+                if (btn) { btn.textContent = "\u2713 Success"; btn.classList.replace("bg-[#ff1a1a]", "bg-green-500"); }
+                setTimeout(function () { 
+                    document.getElementById("review-modal").classList.add("hidden"); 
+                    portalLoadOrders(); 
+                }, 1500);
             } catch (e) {
                 if (msgEl) { msgEl.textContent = e.message || "Error."; msgEl.style.color = "#ef4444"; }
                 if (btn) { btn.textContent = "Submit Review"; btn.disabled = false; }
@@ -5025,7 +5012,7 @@
         }
         window.portalLoadReferrals = portalLoadReferrals;
 
-        // Download delivery file — fetches a fresh presigned URL via get-files using the order ID prefix
+        // Download delivery file
         async function portalDownloadDelivery(b2Key, fileName) {
             try {
                 var sb = window._supabaseClient;
@@ -5159,6 +5146,51 @@
             setTimeout(function () { clearInterval(_rInt); }, 8000);
         })();
     </script>
-</body>
+    <!-- ── REVIEW MODAL ────────────────────────────────────────────────── -->
+    <div id="review-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[10000] hidden items-center justify-center p-4">
+        <div class="bg-[#0a0a0a] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+            <button onclick="document.getElementById('review-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div class="p-8">
+                <div class="mb-6 text-center">
+                    <h3 class="text-xl font-bold text-white mb-1">Submit Your Review</h3>
+                    <p class="text-xs text-gray-500 uppercase tracking-widest">Order ID: <span id="review-order-id" class="text-[#ff1a1a]"></span></p>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-3 block text-center">Your Rating</label>
+                    <div id="stars-modal" class="flex justify-center gap-2" data-rating="0">
+                        <button onclick="portalSetRatingModal(1)" class="star-btn text-gray-600 hover:text-yellow-400 transition-colors text-3xl" data-val="1">&#9733;</button>
+                        <button onclick="portalSetRatingModal(2)" class="star-btn text-gray-600 hover:text-yellow-400 transition-colors text-3xl" data-val="2">&#9733;</button>
+                        <button onclick="portalSetRatingModal(3)" class="star-btn text-gray-600 hover:text-yellow-400 transition-colors text-3xl" data-val="3">&#9733;</button>
+                        <button onclick="portalSetRatingModal(4)" class="star-btn text-gray-600 hover:text-yellow-400 transition-colors text-3xl" data-val="4">&#9733;</button>
+                        <button onclick="portalSetRatingModal(5)" class="star-btn text-gray-600 hover:text-yellow-400 transition-colors text-3xl" data-val="5">&#9733;</button>
+                    </div>
+                </div>
 
+                <div class="mb-6">
+                    <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-2 block">Tell us about your experience</label>
+                    <textarea id="review-text-modal" rows="4" placeholder="How did we do? Your feedback helps us improve." class="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors resize-none"></textarea>
+                </div>
+
+                <div id="review-msg-modal" class="text-xs text-center mb-4 min-h-[1rem]"></div>
+
+                <button id="review-submit-btn" onclick="portalSubmitReview()" class="w-full bg-[#ff1a1a] text-black font-bold py-4 rounded-xl hover:bg-white transition-all duration-300 uppercase tracking-widest text-xs">
+                    Submit Review
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function portalSetRatingModal(val) {
+            var container = document.getElementById("stars-modal");
+            container.dataset.rating = val;
+            container.querySelectorAll(".star-btn").forEach(function(btn, i) {
+                btn.style.color = (i < val) ? "#eab308" : "";
+            });
+        }
+    </script>
+</body>
 </html>

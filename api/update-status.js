@@ -1,7 +1,24 @@
 const { createClient } = require('@supabase/supabase-js');
+const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { Resend } = require('resend');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// ── Backblaze B2 Client for auto-delivery file detection ─────────────────────
+const B2_ENDPOINT = process.env.B2_ENDPOINT || '';
+const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-west-004';
+const b2 = new S3Client({
+    region: extractedRegion,
+    endpoint: B2_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.B2_KEY_ID,
+        secretAccessKey: process.env.B2_APPLICATION_KEY,
+    },
+    forcePathStyle: true,
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
+});
+const B2_BUCKET = process.env.B2_BUCKET_NAME;
 
 module.exports = async function(req, res) {
     const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
@@ -75,26 +92,47 @@ module.exports = async function(req, res) {
         if (error) throw error;
 
         // ── STORE DELIVERY FILE IN DELIVERIES TABLE (portal access only) ─────
-        // No download link is emailed — clients retrieve files via the Orders
-        // section of the client portal at zyroeditz.xyz
-        if (normalizedStatus === 'delivered' && deliveryKey && deliveryFileName) {
+        // If deliveryKey is missing (e.g. status update via AI or manual toggle), 
+        // we attempt to find the latest uploaded file for this order in B2.
+        if (normalizedStatus === 'delivered') {
             try {
-                const mime = deliveryMimeType || 'application/octet-stream';
-                let fileType = 'unknown';
-                if (mime.startsWith('image/')) fileType = 'photo';
-                else if (mime.startsWith('video/')) fileType = 'video';
-                else if (mime.startsWith('audio/')) fileType = 'sound';
+                let finalKey = deliveryKey;
+                let finalName = deliveryFileName;
+                let finalMime = deliveryMimeType || 'application/octet-stream';
 
-                await supabase.from('deliveries').insert([{
-                    order_id: orderId,
-                    file_name: deliveryFileName,
-                    mime_type: mime,
-                    file_type: fileType,
-                    b2_key: deliveryKey
-                }]);
+                // AUTO-SYNC: If no specific file was passed, grab the latest one from B2
+                if (!finalKey) {
+                    const listResp = await b2.send(new ListObjectsV2Command({
+                        Bucket: B2_BUCKET,
+                        Prefix: `${orderId}/`,
+                        MaxKeys: 100
+                    }));
+                    const objects = (listResp.Contents || [])
+                        .sort((a, b) => (b.LastModified || 0) - (a.LastModified || 0)); // latest first
+                    
+                    if (objects.length > 0) {
+                        finalKey = objects[0].Key;
+                        finalName = finalKey.split('/').pop().replace(/^\d+-/, ''); // remove timestamp prefix if present
+                    }
+                }
+
+                if (finalKey && finalName) {
+                    let fileType = 'unknown';
+                    if (finalMime.startsWith('image/')) fileType = 'photo';
+                    else if (finalMime.startsWith('video/')) fileType = 'video';
+                    else if (finalMime.startsWith('audio/')) fileType = 'sound';
+
+                    await supabase.from('deliveries').insert([{
+                        order_id: orderId,
+                        file_name: finalName,
+                        mime_type: finalMime,
+                        file_type: fileType,
+                        b2_key: finalKey
+                    }]);
+                    console.log(`[update-status] Delivery record created for ${orderId}: ${finalName}`);
+                }
             } catch (dlErr) {
-                // Non-fatal — log but don't block the status update
-                console.error('[update-status] Deliveries table insert error:', dlErr.message);
+                console.error('[update-status] Deliveries table sync error:', dlErr.message);
             }
         }
 
