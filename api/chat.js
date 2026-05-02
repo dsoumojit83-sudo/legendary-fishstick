@@ -64,7 +64,6 @@ module.exports = async function (req, res) {
         try {
             const { data, error } = await supabase.from('reviews')
                 .select('client_name, rating, review_text')
-                .eq('is_approved', true)
                 .order('created_at', { ascending: false })
                 .limit(2);
             if (error) throw error;
@@ -186,8 +185,7 @@ module.exports = async function (req, res) {
                 order_id: order_id || null,
                 client_name: name || 'Anonymous',
                 rating: starRating,
-                review_text: review_text,
-                is_approved: false
+                review_text: review_text
             }], { onConflict: 'order_id' });
 
             if (dbError) {
