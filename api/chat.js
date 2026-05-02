@@ -51,7 +51,7 @@ async function fetchDeadlineMap() {
 }
 
 module.exports = async function (req, res) {
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
+    const _allowed = ['https://zyroeditz.xyz', 'https://www.zyroeditz.xyz', 'https://admin.zyroeditz.xyz', 'https://zyroeditz.vercel.app'];
     const _origin = req.headers.origin;
     res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -69,7 +69,7 @@ module.exports = async function (req, res) {
                 .limit(2);
             if (error) throw error;
             return res.status(200).json({ testimonials: data });
-        } catch(e) { return res.status(500).json({ error: 'Failed to fetch testimonials' }); }
+        } catch (e) { return res.status(500).json({ error: 'Failed to fetch testimonials' }); }
     }
 
     // ── GET /api/chat?action=getStats — public stats for homepage ────────────
@@ -77,7 +77,7 @@ module.exports = async function (req, res) {
         try {
             const { data: orders, error } = await supabase.from('orders')
                 .select('client_email, created_at')
-                .in('status', ['paid','in_progress','delivered']);
+                .in('status', ['paid', 'in_progress', 'delivered']);
             if (error) throw error;
             const now = Date.now();
             let years = 1, clients = 0, projects = 0;
@@ -89,7 +89,7 @@ module.exports = async function (req, res) {
             }
             res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
             return res.status(200).json({ years, clients, projects });
-        } catch(e) { return res.status(500).json({ error: 'Failed to fetch stats' }); }
+        } catch (e) { return res.status(500).json({ error: 'Failed to fetch stats' }); }
     }
 
     // ── GET /api/chat?action=applyCoupon&code=X&amount=Y — public coupon validation ─
@@ -118,7 +118,7 @@ module.exports = async function (req, res) {
                 discount = Math.min(coupon.discount_value, orderAmount);
             }
             return res.status(200).json({ discount, code: coupon.code, type: coupon.discount_type, value: coupon.discount_value });
-        } catch(e) { return res.status(500).json({ error: 'Failed to validate coupon.' }); }
+        } catch (e) { return res.status(500).json({ error: 'Failed to validate coupon.' }); }
     }
 
     // ── GET /api/chat?action=getBill&orderId=X&email=Y ──────────────────────────
@@ -153,10 +153,10 @@ module.exports = async function (req, res) {
         try {
             const { buildPdfBuffer } = require('./sendInvoice');
             const pdfBuffer = await buildPdfBuffer(order);
-            res.setHeader('Content-Type',        'application/pdf');
+            res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename="ZyroEditz_Invoice_${order.order_id}.pdf"`);
-            res.setHeader('Content-Length',      pdfBuffer.length);
-            res.setHeader('Cache-Control',       'no-store');
+            res.setHeader('Content-Length', pdfBuffer.length);
+            res.setHeader('Cache-Control', 'no-store');
             return res.status(200).end(pdfBuffer);
         } catch (err) {
             console.error('[chat][getBill] PDF error:', err.message);
@@ -225,16 +225,18 @@ module.exports = async function (req, res) {
             return res.status(400).json({ reply: "Name is too long. Please use a shorter name." });
         }
 
-        const safeName  = name  ? String(name).trim().substring(0, 100)  : "Zyro Client";
+        const sanitizedName = name ? String(name).replace(/[^a-zA-Z0-9_ \-]/g, '').trim() : "";
+        const safeName = sanitizedName.length > 0 ? sanitizedName.substring(0, 100) : "Zyro Client";
         const safeEmail = email ? String(email).trim().substring(0, 200) : "zyroeditz.official@gmail.com";
         const safePhone = String(phone).trim(); // always valid — guarded above
+        const safeCustomerId = sessionId ? String(sessionId).replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 100) : null;
 
         const orderId = generateOrderId();
         const numericAmount = parseFloat(amount);
 
         // Guard: reject invalid amounts before hitting Cashfree
-        // Negative, zero, or NaN amounts cause a confusing 422 from Cashfree's API.
-        if (!numericAmount || numericAmount <= 0 || !Number.isFinite(numericAmount)) {
+        // Negative, zero, or NaN amounts cause a confusing 422 from Cashfree's API. Amount must be >= 1.
+        if (!numericAmount || numericAmount < 1 || !Number.isFinite(numericAmount)) {
             return res.status(400).json({ reply: "Invalid payment amount. Please contact support." });
         }
 
@@ -258,7 +260,7 @@ module.exports = async function (req, res) {
                 order_amount: parseFloat(numericAmount.toFixed(2)),
                 order_currency: "INR",
                 customer_details: {
-                    customer_id: sessionId || "CUST_" + Date.now(),
+                    customer_id: safeCustomerId || "CUST_" + Date.now(),
                     customer_name: safeName,
                     customer_email: safeEmail,
                     customer_phone: safePhone
@@ -266,7 +268,7 @@ module.exports = async function (req, res) {
                 order_meta: {
                     // Build return_url from request origin so payment redirects back to
                     // whichever domain the user initiated from (zyroeditz.xyz OR zyroeditz.vercel.app)
-                    return_url: (function() {
+                    return_url: (function () {
                         const allowedReturnOrigins = [
                             'https://zyroeditz.xyz',
                             'https://zyroeditz.vercel.app',
@@ -316,6 +318,15 @@ module.exports = async function (req, res) {
 
     } catch (error) {
         console.error("Chat Checkout Error:", error.response?.data || error.message);
-        return res.status(500).json({ reply: "Our payment gateway is currently handling high volume. Please try again in a moment." });
+        
+        // Extract the exact error message from Cashfree or Supabase
+        let errorDetail = "Unknown error occurred.";
+        if (error.response && error.response.data) {
+            errorDetail = error.response.data.message || JSON.stringify(error.response.data);
+        } else {
+            errorDetail = error.message;
+        }
+
+        return res.status(500).json({ reply: `Payment Gateway Error: ${errorDetail}` });
     }
 };

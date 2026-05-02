@@ -66,6 +66,15 @@ module.exports = async function (req, res) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
+    // 🔒 ENFORCE ADMIN ROLE: Only admins can access this API
+    const isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+    if (!isSuperAdmin) {
+        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();
+        if (adminErr || !adminRecord) {
+            return res.status(403).json({ error: 'Forbidden. Admin access required.' });
+        }
+    }
+
     try {
         // ── Services catalog (GET ?action=getServices) ──────────────────────────
         if (req.method === 'GET' && req.query.action === 'getServices') {

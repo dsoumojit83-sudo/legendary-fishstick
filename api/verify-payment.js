@@ -137,13 +137,16 @@ module.exports = async function (req, res) {
                         ? String(order.client_phone).replace(/\D/g, '').slice(-10)
                         : '9999999999';
 
+                    const sanitizedName = order.client_name ? String(order.client_name).replace(/[^a-zA-Z0-9_ \-]/g, '').trim() : "";
+                    const safeName = sanitizedName.length > 0 ? sanitizedName.substring(0, 100) : 'Zyro Client';
+
                     const freshRes = await axios.post('https://api.cashfree.com/pg/orders', {
                         order_id: retryOrderId,
-                        order_amount: parseFloat(Number(order.amount).toFixed(2)),
+                        order_amount: Math.max(1, parseFloat(Number(order.amount).toFixed(2))),
                         order_currency: 'INR',
                         customer_details: {
                             customer_id: retryOrderId,
-                            customer_name: order.client_name || 'Zyro Client',
+                            customer_name: safeName,
                             customer_email: order.client_email || 'zyroeditz.official@gmail.com',
                             customer_phone: cleanPhone
                         },
@@ -189,6 +192,7 @@ module.exports = async function (req, res) {
 
         // 1. Fetch the authoritative status directly from Cashfree (Server-to-Server)
         let orderStatus;
+
         try {
             const cashfreeResponse = await axios.get(
                 `https://api.cashfree.com/pg/orders/${order_id}`,
