@@ -207,24 +207,51 @@ module.exports = async function (req, res) {
         return res.status(503).json({ error: 'Storage CORS not ready. Please retry in a few seconds.' });
     }
 
+    // ── JWT Auth & Role Check ────────────────────────────────────────────────
+    const authHeader = req.headers['authorization'];
+    if (!authHeader?.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized. Authentication required for uploads.' });
+    }
+    const token = authHeader.slice(7);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+        return res.status(401).json({ error: 'Unauthorized. Session expired.' });
+    }
+
+    // Check if user is an admin
+    const isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+    let isAdmin = isSuperAdmin;
+    if (!isSuperAdmin) {
+        const { data: adminRecord } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();
+        if (adminRecord) isAdmin = true;
+    }
+
     const { orderId, fileName, contentType } = req.body || {};
     if (!orderId || !fileName) {
         return res.status(400).json({ error: 'Missing orderId or fileName' });
     }
 
-    // ── BUG FIX #1: Verify orderId belongs to a real, non-completed order ────
-    // 3. SECURE THE UPLOAD ROUTE
-    // To prevent arbitrary uploads, we check if the requested prefix matches an existing order.
-    // by guessing order IDs. Only created/in_progress orders are uploadable.
-    const { data: existingOrder, error: authError } = await supabase
+    // ── Verify order ownership or admin rights ────────────────────────────────
+    const { data: existingOrder, error: dbError } = await supabase
         .from('orders')
-        .select('order_id, status')
+        .select('order_id, status, client_email')
         .eq('order_id', orderId)
-        .in('status', ['created', 'paid', 'in_progress'])
         .single();
 
-    if (authError || !existingOrder) {
-        return res.status(403).json({ error: 'Invalid or unknown order ID.' });
+    if (dbError || !existingOrder) {
+        return res.status(404).json({ error: 'Order not found.' });
+    }
+
+    // RBAC logic: Only admin OR the client who owns the order can upload
+    const isOwner = user.email.toLowerCase() === existingOrder.client_email.toLowerCase();
+    if (!isAdmin && !isOwner) {
+        return res.status(403).json({ error: 'Forbidden. You do not own this order.' });
+    }
+
+    // Only created/paid/in_progress orders are uploadable (unless admin override)
+    const activeStatuses = ['created', 'paid', 'in_progress'];
+    if (!activeStatuses.includes(existingOrder.status) && !isAdmin) {
+        return res.status(403).json({ error: `Cannot upload files to a ${existingOrder.status} order.` });
     }
     // FIX #13: Block uploads for terminal statuses — refunded or cancelled
     const blockedStatuses = ['delivered', 'refunded', 'cancelled', 'canceled'];

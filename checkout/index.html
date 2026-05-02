@@ -538,6 +538,7 @@
                         const sessionRes = await sb.auth.getSession();
                         const session = sessionRes && sessionRes.data && sessionRes.data.session;
                         if (session && session.user) {
+                            window._checkoutAuthToken = session.access_token;
                             document.getElementById('chkEmail').value = session.user.email || '';
                             const m = session.user.user_metadata || {};
                             document.getElementById('chkName').value = m.full_name || m.name || '';
@@ -724,7 +725,10 @@
                     if (briefContent) {
                         const response = await fetch('/api/save-brief', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + (window._checkoutAuthToken || '')
+                            },
                             body: JSON.stringify({ orderId, notes: briefContent })
                         });
                         if (!response.ok) throw new Error('Failed to save brief.');
@@ -743,7 +747,10 @@
                             try {
                                 const urlRes = await fetch('/api/upload-files', {
                                     method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
+                                    headers: { 
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'Bearer ' + (window._checkoutAuthToken || '')
+                                    },
                                     body: JSON.stringify({ orderId, fileName: file.name, contentType: file.type || 'application/octet-stream' })
                                 });
                                 if (!urlRes.ok) throw new Error('Could not get upload URL.');

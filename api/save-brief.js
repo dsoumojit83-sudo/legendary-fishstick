@@ -49,24 +49,41 @@ module.exports = async function(req, res) {
 
     try {
         const { orderId, notes } = req.body;
+        if (!orderId || !notes) return res.status(400).json({ error: "Missing required data" });
 
-        if (!orderId || !notes) {
-            return res.status(400).json({ error: "Missing required data" });
+        // 🔒 JWT Auth & Role Check
+        const authHeader = req.headers['authorization'];
+        if (!authHeader?.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Unauthorized. Authentication required.' });
         }
+        const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
+        if (authError || !user) return res.status(401).json({ error: 'Unauthorized. Session expired.' });
 
         // Basic input sanitization
         const sanitizedNotes = String(notes).trim().substring(0, 2000);
 
-        // FIX: Verify the order exists before allowing a write.
-        // Prevents anyone from overwriting notes on a random/guessed order_id.
+        // Verify the order exists and check ownership
         const { data: existingOrder, error: fetchError } = await supabase
             .from('orders')
-            .select('order_id, status')
+            .select('order_id, status, client_email')
             .eq('order_id', orderId)
             .single();
 
         if (fetchError || !existingOrder) {
             return res.status(404).json({ error: "Order not found." });
+        }
+
+        // RBAC: Admin OR Owner
+        const isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+        let isAdmin = isSuperAdmin;
+        if (!isSuperAdmin) {
+            const { data: adminRecord } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();
+            if (adminRecord) isAdmin = true;
+        }
+
+        const isOwner = user.email.toLowerCase() === existingOrder.client_email.toLowerCase();
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ error: "Forbidden. You do not own this order." });
         }
 
         // Don't allow editing notes on already-completed projects

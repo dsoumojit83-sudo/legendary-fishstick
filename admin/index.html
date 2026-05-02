@@ -2258,7 +2258,27 @@
                 const { createClient } = window.supabase;
                 supabaseClient = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
                 const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session) { authToken = session.access_token; revealDashboard(session.user); return; }
+                if (session) {
+                    authToken = session.access_token;
+                    // RBAC check: verify user is in admins table
+                    const { data: adminData, error: adminErr } = await supabaseClient
+                        .from('admins')
+                        .select('role')
+                        .eq('email', session.user.email)
+                        .maybeSingle();
+
+                    const isSuper = session.user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+                    
+                    if (isSuper || (adminData && !adminErr)) {
+                        revealDashboard(session.user);
+                    } else {
+                        // Not an admin — force sign out and show error
+                        await supabaseClient.auth.signOut();
+                        showAuthError('🚫 Access Denied. Your account does not have administrative privileges.');
+                        safeCreateIcons();
+                    }
+                    return;
+                }
                 // No session — show the login card
                 safeCreateIcons();
             } catch (err) {
@@ -2295,7 +2315,27 @@
                 return;
             }
             authToken = data.session.access_token;
-            revealDashboard(data.user);
+            
+            // RBAC check: verify user is in admins table
+            const { data: adminData, error: adminErr } = await supabaseClient
+                .from('admins')
+                .select('role')
+                .eq('email', data.user.email)
+                .maybeSingle();
+
+            const isSuper = data.user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+
+            if (isSuper || (adminData && !adminErr)) {
+                revealDashboard(data.user);
+            } else {
+                await supabaseClient.auth.signOut();
+                showAuthError('🚫 Access Denied. Your account does not have administrative privileges.');
+                btn.disabled = false;
+                btnText.textContent = 'INITIALIZE ACCESS';
+                btnIcon.setAttribute('data-lucide', 'shield-check');
+                btnIcon.classList.remove('animate-spin');
+                safeCreateIcons();
+            }
         });
 
         // ── Password show/hide ────────────────────────────────────────────────
@@ -2787,7 +2827,7 @@
                     headers: { 'Authorization': 'Bearer ' + authToken }
                 });
 
-                if (res.status === 401) { logout(); return; }
+                if (res.status === 401 || res.status === 403) { logout(); return; }
                 const data = await res.json();
                 globalOrdersData = data.recentOrders || [];
 
@@ -3091,7 +3131,10 @@
                 // 1. Get Presigned Upload URL
                 const urlRes = await fetch('/api/upload-files', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }, // We don't use Auth token here since upload-files is public for clients but secure via orderId
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken
+                    },
                     body: JSON.stringify({ orderId, fileName: 'delivery-' + file.name, contentType: file.type || 'application/octet-stream' })
                 });
 
