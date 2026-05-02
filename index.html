@@ -4540,7 +4540,9 @@
                         <div>
                             <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Date of
                                 Birth</label>
-                            <input id="pa-dob" type="text" placeholder="DD-MM-YYYY" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'"
+                            <input id="pa-dob" type="text" placeholder="DD-MM-YYYY" 
+                                onfocus="this.type='date'; if(this.value.includes('-') && this.value.split('-')[0].length === 2) { const parts = this.value.split('-'); this.value = parts[2] + '-' + parts[1] + '-' + parts[0]; }" 
+                                onblur="if(!this.value) { this.type='text'; } else { if(this.type === 'date') { const parts = this.value.split('-'); if(parts.length === 3 && parts[0].length === 4) { this.type = 'text'; this.value = parts[2] + '-' + parts[1] + '-' + parts[0]; } } }"
                                 class="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:border-[#ff1a1a] transition-colors">
                         </div>
                         <div>
@@ -4704,7 +4706,14 @@
             if (el("pa-email")) el("pa-email").value = user.email || "";
             if (el("pa-name")) el("pa-name").value = m.full_name || m.name || "";
             if (el("pa-phone")) el("pa-phone").value = m.phone || "";
-            if (el("pa-dob")) el("pa-dob").value = m.dob || "";
+            if (el("pa-dob")) {
+                let dob = m.dob || "";
+                if (dob.includes('-') && dob.split('-')[0].length === 4) {
+                    const parts = dob.split('-');
+                    dob = parts[2] + '-' + parts[1] + '-' + parts[0];
+                }
+                el("pa-dob").value = dob;
+            }
             if (el("pa-gender")) el("pa-gender").value = m.gender || "";
             if (el("pa-address")) el("pa-address").value = m.address || "";
         }
@@ -4716,7 +4725,12 @@
             var btn = document.getElementById("pa-save-btn");
             if (!sb) { _pMsg("pa-msg", "Not signed in.", false); return; }
             var el = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ""; };
-            var meta = { full_name: el("pa-name"), phone: el("pa-phone"), dob: el("pa-dob"), gender: el("pa-gender"), address: el("pa-address") };
+            let dobVal = el("pa-dob");
+            if (dobVal.includes('-') && dobVal.split('-')[0].length === 2) {
+                const parts = dobVal.split('-');
+                dobVal = parts[2] + '-' + parts[1] + '-' + parts[0];
+            }
+            var meta = { full_name: el("pa-name"), phone: el("pa-phone"), dob: dobVal, gender: el("pa-gender"), address: el("pa-address") };
             if (btn) { btn.textContent = "Saving\u2026"; btn.disabled = true; }
             try {
                 var r = await sb.auth.updateUser({ data: meta });

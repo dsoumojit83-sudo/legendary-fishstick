@@ -5095,7 +5095,9 @@
                     <div>
                         <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Expires
                             (optional)</label>
-                        <input id="cpn-expires" type="text" placeholder="DD-MM-YYYY" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'"
+                        <input id="cpn-expires" type="text" placeholder="DD-MM-YYYY" 
+                            onfocus="this.type='date'; if(this.value.includes('-') && this.value.split('-')[0].length === 2) { const parts = this.value.split('-'); this.value = parts[2] + '-' + parts[1] + '-' + parts[0]; }" 
+                            onblur="if(!this.value) { this.type='text'; } else { if(this.type === 'date') { const parts = this.value.split('-'); if(parts.length === 3 && parts[0].length === 4) { this.type = 'text'; this.value = parts[2] + '-' + parts[1] + '-' + parts[0]; } } }"
                             class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
                     </div>
                 </div>
@@ -5282,7 +5284,12 @@
             document.getElementById('cpn-value').value = cpn?.discount_value || '';
             document.getElementById('cpn-min').value = cpn?.min_order_value || '0';
             document.getElementById('cpn-max').value = cpn?.max_uses || '0';
-            document.getElementById('cpn-expires').value = cpn?.expires_at ? cpn.expires_at.split('T')[0] : '';
+            let expVal = cpn?.expires_at ? cpn.expires_at.split('T')[0] : '';
+            if (expVal.includes('-') && expVal.split('-')[0].length === 4) {
+                const parts = expVal.split('-');
+                expVal = parts[2] + '-' + parts[1] + '-' + parts[0];
+            }
+            document.getElementById('cpn-expires').value = expVal;
             document.getElementById('cpn-active').checked = cpn ? cpn.is_active !== false : true;
             document.getElementById('cpn-modal-title').textContent = cpn ? 'Edit Coupon' : 'New Coupon';
             document.getElementById('cpn-error').classList.add('hidden');
@@ -5308,7 +5315,11 @@
             const val = parseFloat(document.getElementById('cpn-value').value);
             const min = parseFloat(document.getElementById('cpn-min').value) || 0;
             const max = parseInt(document.getElementById('cpn-max').value) || 0;
-            const expires = document.getElementById('cpn-expires').value || null;
+            let expires = document.getElementById('cpn-expires').value || null;
+            if (expires && expires.includes('-') && expires.split('-')[0].length === 2) {
+                const parts = expires.split('-');
+                expires = parts[2] + '-' + parts[1] + '-' + parts[0];
+            }
             const active = document.getElementById('cpn-active').checked;
             const errEl = document.getElementById('cpn-error');
             errEl.classList.add('hidden');
