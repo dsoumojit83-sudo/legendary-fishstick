@@ -2291,21 +2291,23 @@
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
                     authToken = session.access_token;
-                    // RBAC check: verify user is in admins table
-                    const { data: adminData, error: adminErr } = await supabaseClient
-                        .from('admins')
-                        .select('role')
-                        .eq('email', session.user.email)
-                        .maybeSingle();
-
-                    const isSuper = session.user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
-                    
-                    if (isSuper || (adminData && !adminErr)) {
-                        revealDashboard(session.user);
-                    } else {
-                        // Not an admin — force sign out and show error
+                    // RBAC check: verify user is an admin via secure backend
+                    try {
+                        const checkRes = await fetch('/api/admin-data?action=checkAdmin', {
+                            headers: { 'Authorization': 'Bearer ' + authToken }
+                        });
+                        
+                        if (checkRes.ok) {
+                            revealDashboard(session.user);
+                        } else {
+                            // Not an admin — force sign out and show error
+                            await supabaseClient.auth.signOut();
+                            showAuthError('🚫 Access Denied. Your account does not have administrative privileges.');
+                            safeCreateIcons();
+                        }
+                    } catch (e) {
                         await supabaseClient.auth.signOut();
-                        showAuthError('🚫 Access Denied. Your account does not have administrative privileges.');
+                        showAuthError('Failed to verify permissions. Try again.');
                         safeCreateIcons();
                     }
                     return;
@@ -2347,20 +2349,26 @@
             }
             authToken = data.session.access_token;
             
-            // RBAC check: verify user is in admins table
-            const { data: adminData, error: adminErr } = await supabaseClient
-                .from('admins')
-                .select('role')
-                .eq('email', data.user.email)
-                .maybeSingle();
-
-            const isSuper = data.user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
-
-            if (isSuper || (adminData && !adminErr)) {
-                revealDashboard(data.user);
-            } else {
+            // RBAC check: verify user is an admin via secure backend
+            try {
+                const checkRes = await fetch('/api/admin-data?action=checkAdmin', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+                
+                if (checkRes.ok) {
+                    revealDashboard(data.user);
+                } else {
+                    await supabaseClient.auth.signOut();
+                    showAuthError('🚫 Access Denied. Your account does not have administrative privileges.');
+                    btn.disabled = false;
+                    btnText.textContent = 'INITIALIZE ACCESS';
+                    btnIcon.setAttribute('data-lucide', 'shield-check');
+                    btnIcon.classList.remove('animate-spin');
+                    safeCreateIcons();
+                }
+            } catch (e) {
                 await supabaseClient.auth.signOut();
-                showAuthError('🚫 Access Denied. Your account does not have administrative privileges.');
+                showAuthError('Failed to verify permissions. Try again.');
                 btn.disabled = false;
                 btnText.textContent = 'INITIALIZE ACCESS';
                 btnIcon.setAttribute('data-lucide', 'shield-check');

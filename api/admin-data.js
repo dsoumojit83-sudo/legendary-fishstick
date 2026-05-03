@@ -77,6 +77,12 @@ module.exports = async function (req, res) {
     }
 
     try {
+        // ── Check Admin Privileges (GET ?action=checkAdmin) ─────────────────────
+        if (req.method === 'GET' && req.query.action === 'checkAdmin') {
+            // If the code reaches here, it means lines 70-77 already verified the admin role
+            return res.status(200).json({ ok: true, isSuperAdmin });
+        }
+
         // ── Services catalog (GET ?action=getServices) ──────────────────────────
         if (req.method === 'GET' && req.query.action === 'getServices') {
             const { data, error } = await supabase.from('services').select('*').order('price');
