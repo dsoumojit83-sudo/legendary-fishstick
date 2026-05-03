@@ -4540,7 +4540,9 @@
                         <div>
                             <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Date of
                                 Birth</label>
-                            <input id="pa-dob" type="date"
+                            <input id="pa-dob" type="text" placeholder="DD-MM-YYYY"
+                                onfocus="this.type='date'; if(this.value.includes('-') && this.value.split('-')[0].length === 2) { const p = this.value.split('-'); this.value = p[2] + '-' + p[1] + '-' + p[0]; }"
+                                onblur="if(!this.value) { this.type='text'; } else { if(this.type === 'date') { const p = this.value.split('-'); if(p.length === 3 && p[0].length === 4) { this.type = 'text'; this.value = p[2] + '-' + p[1] + '-' + p[0]; } } }"
                                 class="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:border-[#ff1a1a] transition-colors">
                         </div>
                         <div>
@@ -4706,8 +4708,8 @@
             if (el("pa-phone")) el("pa-phone").value = m.phone || "";
             if (el("pa-dob")) {
                 let dob = m.dob || "";
-                // If stored as DD-MM-YYYY, convert to YYYY-MM-DD for native date input
-                if (dob.includes('-') && dob.split('-')[0].length === 2) {
+                // Stored as YYYY-MM-DD — convert to DD-MM-YYYY for text display
+                if (dob && dob.includes('-') && dob.split('-')[0].length === 4) {
                     const parts = dob.split('-');
                     dob = parts[2] + '-' + parts[1] + '-' + parts[0];
                 }
@@ -4725,7 +4727,11 @@
             if (!sb) { _pMsg("pa-msg", "Not signed in.", false); return; }
             var el = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ""; };
             let dobVal = el("pa-dob");
-            // Native date input already returns YYYY-MM-DD — store as-is
+            // Text input shows DD-MM-YYYY — convert back to YYYY-MM-DD for storage
+            if (dobVal && dobVal.includes('-') && dobVal.split('-')[0].length === 2) {
+                const dp = dobVal.split('-');
+                dobVal = dp[2] + '-' + dp[1] + '-' + dp[0];
+            }
             var meta = { full_name: el("pa-name"), phone: el("pa-phone"), dob: dobVal, gender: el("pa-gender"), address: el("pa-address") };
             if (btn) { btn.textContent = "Saving\u2026"; btn.disabled = true; }
             try {
