@@ -30,8 +30,9 @@ async function fetchServicesForPrompt() {
     } catch { return null; }
 }
 
-const B2_ENDPOINT = process.env.B2_ENDPOINT || '';
-const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-west-004';
+const rawEndpoint = process.env.B2_ENDPOINT || '';
+const B2_ENDPOINT = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint || 's3.us-east-005.backblazeb2.com'}`;
+const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-east-005';
 
 const b2 = new S3Client({
     region: extractedRegion,
@@ -124,7 +125,7 @@ module.exports = async function (req, res) {
         if (fetchError) throw new Error(`Database error: ${fetchError.message}`);
 
         const orders = allOrders || [];
-        const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
+        const todayStr = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
 
         const fetchedServicesBlock = await fetchServicesForPrompt();
         const _fallbackServices = [
@@ -137,7 +138,7 @@ module.exports = async function (req, res) {
         ].join('\n');
         const liveServicesBlock = fetchedServicesBlock || _fallbackServices;
 
-        const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'delivered' || o.status === 'completed');
+        const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'delivered' || o.status === 'in_progress');
         const totalRev = paidOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0).toFixed(2);
         const currentMonth = new Date().getMonth();
         const monthRev = paidOrders

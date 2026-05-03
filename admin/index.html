@@ -1508,7 +1508,7 @@
                             </div>
                         </div>
                         <div class="overflow-x-auto w-full">
-                            <table class="w-full text-left border-collapse min-w-[800px]">
+                            <table class="w-full text-left border-collapse min-w-[1200px]">
                                 <thead class="bg-black/40 border-b border-white/5">
                                     <tr>
                                         <th
@@ -1516,7 +1516,22 @@
                                             Client</th>
                                         <th
                                             class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-left">
-                                            Total Projects</th>
+                                            Email</th>
+                                        <th
+                                            class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-left">
+                                            Phone</th>
+                                        <th
+                                            class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-left">
+                                            DOB</th>
+                                        <th
+                                            class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-left">
+                                            Gender</th>
+                                        <th
+                                            class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-left">
+                                            Address</th>
+                                        <th
+                                            class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-left">
+                                            Projects</th>
                                         <th
                                             class="p-4 text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-left">
                                             Lifetime Value</th>
@@ -1530,7 +1545,7 @@
                                 </thead>
                                 <tbody id="crm-tbody" class="text-sm">
                                     <tr>
-                                        <td colspan="5" class="p-4">
+                                        <td colspan="10" class="p-4">
                                             <div class="skeleton h-10 w-full"></div>
                                         </td>
                                     </tr>
@@ -2232,6 +2247,7 @@
         let supabaseClient = null;   // Initialized after bootAuth fetches config
         let globalOrdersData = [];
         let globalReviewsMap = {};  // keyed by order_id, value: { rating, review_text }
+        let globalClientsMap = {};  // keyed by lowercase email, value: { name, phone, dob, gender, address }
         const isMobile = window.innerWidth < 768;
 
         // ── Safe Lucide icon renderer ────────────────────────────────────────
@@ -2586,7 +2602,7 @@
                 _allAdminRows = admins.map(a => {
                     const role = a.role || 'admin';
                     const lastLogin = a.last_sign_in_at
-                        ? new Date(a.last_sign_in_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        ? new Date(a.last_sign_in_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                         : '—';
                     const isActive = a.banned === false || a.banned == null;
                     const statusBadge = isActive
@@ -2599,7 +2615,7 @@
                         <tr class="hover:bg-white/5 transition-colors group" data-email="${a.email}">
                             <td class="p-4 text-white font-medium">${a.email}</td>
                             <td class="p-4">${roleBadge}</td>
-                            <td class="p-4 text-gray-400 text-xs">${new Date(a.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                            <td class="p-4 text-gray-400 text-xs">${new Date(a.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                             <td class="p-4 text-gray-400 text-xs">${lastLogin}</td>
                             <td class="p-4">${statusBadge}</td>
                             <td class="p-4 text-right">
@@ -2720,7 +2736,7 @@
                         + '<td class="p-4 text-white font-medium">' + esc(r.client_name || 'Anonymous') + '</td>'
                         + '<td class="p-4 text-[#ff1a1a]">' + stars + '</td>'
                         + '<td class="p-4 text-gray-400 text-xs max-w-[200px] truncate">' + esc(reviewText) + '</td>'
-                        + '<td class="p-4 text-gray-400 text-xs">' + new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</td>'
+                        + '<td class="p-4 text-gray-400 text-xs">' + new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + '</td>'
                         + '<td class="p-4">' + statusBadge + '</td>'
                         + '<td class="p-4 text-right"><div class="flex items-center justify-end gap-2">'
                         + '<button onclick="toggleReview(\'' + r.id + '\',' + (!r.approved) + ')" class="px-3 py-1.5 text-xs border rounded-lg transition-all ' + toggleClass + '">' + toggleLabel + '</button>'
@@ -2739,7 +2755,7 @@
             try {
                 var res = await fetch('/api/admin-data', {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-                    body: JSON.stringify({ action: 'toggleReview', id: id, is_approved: newStatus })
+                    body: JSON.stringify({ action: 'toggleReview', id: id, approved: newStatus })
                 });
                 if (!res.ok) throw new Error('Failed to update review');
                 showToast(newStatus ? 'Review approved!' : 'Review rejected.', true);
@@ -2791,7 +2807,7 @@
                         + '<td class="p-4 text-white font-medium">' + esc(r.referrer_email || r.referrer_id || '—') + '</td>'
                         + '<td class="p-4 text-gray-300">' + esc(r.referred_email || '—') + '</td>'
                         + '<td class="p-4"><span class="font-mono text-[#ff1a1a] text-xs">' + esc(r.referral_code || '—') + '</span></td>'
-                        + '<td class="p-4 text-gray-400 text-xs">' + new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</td>'
+                        + '<td class="p-4 text-gray-400 text-xs">' + new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + '</td>'
                         + '</tr>';
                 });
                 tbody.innerHTML = _allReferralRows.join('');
@@ -2856,6 +2872,22 @@
                         console.warn('[admin] Reviews fetch failed:', revEx.message);
                         globalReviewsMap = {};
                     }
+                }
+
+                // ── Fetch client profiles for CRM (DOB, gender, address) ───────────
+                try {
+                    const clientsRes = await fetch('/api/admin-data?action=getClients', {
+                        headers: { 'Authorization': 'Bearer ' + authToken }
+                    });
+                    if (clientsRes.ok) {
+                        const clientsData = await clientsRes.json();
+                        globalClientsMap = {};
+                        (clientsData.clients || []).forEach(c => {
+                            if (c.email) globalClientsMap[c.email.toLowerCase()] = c;
+                        });
+                    }
+                } catch (cEx) {
+                    console.warn('[admin] Client profiles fetch failed:', cEx.message);
                 }
 
                 // ── Notify admin of any new created orders ──────────────────
@@ -2924,7 +2956,7 @@
 
             } catch (error) {
                 console.error("Dashboard Sync Failed:", error);
-                const errRow = `<tr><td colspan="5" class="p-4 text-center text-[#ff1a1a] text-xs font-mono">Data sync failed. Check backend connection.</td></tr>`;
+                const errRow = `<tr><td colspan="10" class="p-4 text-center text-[#ff1a1a] text-xs font-mono">Data sync failed. Check backend connection.</td></tr>`;
                 document.getElementById('dash-projects-tbody').innerHTML = errRow;
                 document.getElementById('full-projects-tbody').innerHTML = errRow;
                 document.getElementById('crm-tbody').innerHTML = errRow;
@@ -3472,7 +3504,7 @@
             crmTbody.innerHTML = '';
 
             if (globalOrdersData.length === 0) {
-                crmTbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-mono text-xs">No client data available.</td></tr>`;
+                crmTbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-gray-500 font-mono text-xs">No client data available.</td></tr>`;
                 return;
             }
 
@@ -3483,12 +3515,20 @@
                 if (!clientsMap[clientName]) {
                     clientsMap[clientName] = {
                         name: clientName,
-                        email: order.email,
+                        email: order.email || '',
+                        phone: order.phone || '',
+                        dob: '',
+                        gender: '',
+                        address: '',
                         totalSpent: 0,
                         projectCount: 0,
                         lastActive: new Date(order.created_at || Date.now())
                     };
                 }
+
+                // Update email/phone if this order has them (latest wins)
+                if (order.email && !clientsMap[clientName].email) clientsMap[clientName].email = order.email;
+                if (order.phone && !clientsMap[clientName].phone) clientsMap[clientName].phone = order.phone;
 
                 clientsMap[clientName].projectCount += 1;
                 clientsMap[clientName].totalSpent += Number(order.amount) || 0;
@@ -3499,15 +3539,42 @@
                 }
             });
 
+            // Merge Supabase Auth profile data (DOB, gender, address) from globalClientsMap
+            Object.values(clientsMap).forEach(client => {
+                if (client.email) {
+                    const profile = globalClientsMap[client.email.toLowerCase()];
+                    if (profile) {
+                        client.dob = profile.dob || '';
+                        client.gender = profile.gender || '';
+                        client.address = profile.address || '';
+                        // Also fill phone from profile if missing from orders
+                        if (!client.phone && profile.phone) client.phone = profile.phone;
+                    }
+                }
+            });
+
             const sortedClients = Object.values(clientsMap).sort((a, b) => b.totalSpent - a.totalSpent);
 
-            // PERF FIX: Build HTML string first, then set innerHTML once.
-            // Previously: innerHTML += inside forEach — browser re-parsed the full tbody DOM
-            // on every iteration. With 50 clients that's 50 full reparsing cycles per render.
+            // Format DOB for display (YYYY-MM-DD → DD Mon YYYY)
+            function formatDOB(dob) {
+                if (!dob) return '';
+                try {
+                    const d = new Date(dob);
+                    if (isNaN(d.getTime())) return escapeHtml(dob);
+                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                } catch { return escapeHtml(dob); }
+            }
+
             let html = '';
             sortedClients.forEach(client => {
                 const avatar = getAvatarHTML(client.name);
-                const lastActiveStr = client.lastActive.toLocaleDateString('en-GB');
+                const lastActiveStr = client.lastActive.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                const safeEmail = escapeHtml(client.email);
+                const safePhone = escapeHtml(client.phone);
+                const safeDob = formatDOB(client.dob);
+                const safeGender = client.gender ? escapeHtml(client.gender.charAt(0).toUpperCase() + client.gender.slice(1)) : '';
+                const safeAddress = escapeHtml(client.address);
+                const na = '<span class="text-gray-600 italic">—</span>';
 
                 html += `
                     <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
@@ -3515,18 +3582,23 @@
                             <div class="flex items-center gap-3">
                                 ${avatar}
                                 <div>
-                                    <div class="font-bold text-white">${client.name}</div>
+                                    <div class="font-bold text-white">${escapeHtml(client.name)}</div>
                                     <div class="font-mono text-[10px] text-gray-500">Lifetime Client</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="p-4 text-gray-300 text-sm font-bold pl-8">${client.projectCount}</td>
-                        <td class="p-4 font-semibold text-white">₹${client.totalSpent}</td>
+                        <td class="p-4 text-gray-400 text-xs font-mono">${safeEmail || na}</td>
+                        <td class="p-4 text-gray-400 text-xs font-mono">${safePhone || na}</td>
+                        <td class="p-4 text-gray-400 text-xs">${safeDob || na}</td>
+                        <td class="p-4 text-gray-400 text-xs">${safeGender || na}</td>
+                        <td class="p-4 text-gray-400 text-xs max-w-[150px] truncate" title="${safeAddress}">${safeAddress || na}</td>
+                        <td class="p-4 text-gray-300 text-sm font-bold pl-4">${client.projectCount}</td>
+                        <td class="p-4 font-semibold text-white">₹${client.totalSpent.toLocaleString('en-IN')}</td>
                         <td class="p-4 text-gray-400 text-sm">${lastActiveStr}</td>
                         <td class="p-4 text-right">
                             ${client.email
-                        ? `<a href="mailto:${client.email}" class="p-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-all inline-flex items-center justify-center" title="Email Client"><i data-lucide="mail" class="w-4 h-4"></i></a>`
-                        : `<span class="text-xs text-gray-500 italic">No Email</span>`
+                        ? `<a href="mailto:${safeEmail}" class="p-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-all inline-flex items-center justify-center" title="Email Client"><i data-lucide="mail" class="w-4 h-4"></i></a>`
+                        : na
                     }
                         </td>
                     </tr>
@@ -3721,9 +3793,9 @@
 
             let html = '';
             filtered.forEach(order => {
-                let badgeClass = 'status-pending';
+                let badgeClass = 'status-created';
                 if (order.status === 'in_progress') badgeClass = 'status-progress';
-                if (order.status === 'completed' || order.status === 'paid') badgeClass = 'status-completed';
+                if (order.status === 'delivered' || order.status === 'paid') badgeClass = 'status-completed';
                 if (order.status === 'refunded' || order.status === 'canceled' || order.status === 'cancelled') badgeClass = 'status-refunded';
 
                 const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
@@ -3813,23 +3885,51 @@
             }
 
             if (clients.length === 0) {
-                crmTbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-mono text-xs">No clients found for "<span class="text-[#ff1a1a]">${escapeHtml(term)}</span>"</td></tr>`;
+                crmTbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-gray-500 font-mono text-xs">No clients found for "<span class="text-[#ff1a1a]">${escapeHtml(term)}</span>"</td></tr>`;
                 safeCreateIcons(); return;
             }
 
             const hl = (text) => highlight(text, tokens);
 
+            // Format DOB for display
+            function formatDOB(dob) {
+                if (!dob) return '';
+                try {
+                    const d = new Date(dob);
+                    if (isNaN(d.getTime())) return escapeHtml(dob);
+                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                } catch { return escapeHtml(dob); }
+            }
+
             let html = '';
             clients.forEach(client => {
                 const avatar = getAvatarHTML(client.name);
-                const lastActiveStr = client.lastActive.toLocaleDateString('en-GB');
+                const lastActiveStr = client.lastActive.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                // Merge profile data from globalClientsMap
+                let dob = '', gender = '', address = '';
+                if (client.email) {
+                    const profile = globalClientsMap[client.email.toLowerCase()];
+                    if (profile) {
+                        dob = profile.dob || '';
+                        gender = profile.gender || '';
+                        address = profile.address || '';
+                    }
+                }
+                const na = '<span class="text-gray-600 italic">—</span>';
+                const safeEmail = escapeHtml(client.email);
+                const safePhone = escapeHtml(client.phone || '');
                 html += `
                 <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
                     <td class="p-4"><div class="flex items-center gap-3">${avatar}<div><div class="font-bold text-white">${hl(client.name)}</div><div class="font-mono text-[10px] text-gray-500">Lifetime Client</div></div></div></td>
-                    <td class="p-4 text-gray-300 text-sm font-bold pl-8">${client.projectCount}</td>
-                    <td class="p-4 font-semibold text-[#ff1a1a]">₹${client.totalSpent}</td>
+                    <td class="p-4 text-gray-400 text-xs font-mono">${safeEmail ? hl(client.email) : na}</td>
+                    <td class="p-4 text-gray-400 text-xs font-mono">${safePhone || na}</td>
+                    <td class="p-4 text-gray-400 text-xs">${formatDOB(dob) || na}</td>
+                    <td class="p-4 text-gray-400 text-xs">${gender ? escapeHtml(gender.charAt(0).toUpperCase() + gender.slice(1)) : na}</td>
+                    <td class="p-4 text-gray-400 text-xs max-w-[150px] truncate" title="${escapeHtml(address)}">${escapeHtml(address) || na}</td>
+                    <td class="p-4 text-gray-300 text-sm font-bold pl-4">${client.projectCount}</td>
+                    <td class="p-4 font-semibold text-[#ff1a1a]">₹${client.totalSpent.toLocaleString('en-IN')}</td>
                     <td class="p-4 text-gray-400 text-sm">${lastActiveStr}</td>
-                    <td class="p-4 text-right">${client.email ? `<a href="mailto:${client.email}" class="px-4 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-colors inline-block">${hl(client.email)}</a>` : `<span class="text-xs text-gray-500 italic">No Email</span>`}</td>
+                    <td class="p-4 text-right">${client.email ? `<a href="mailto:${safeEmail}" class="p-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-all inline-flex items-center justify-center" title="Email Client"><i data-lucide="mail" class="w-4 h-4"></i></a>` : na}</td>
                 </tr>`;
             });
 
@@ -4573,16 +4673,16 @@
                         bVal = b.cells[0].textContent.trim();
                         break;
                     case 'projects':
-                        aVal = parseInt(a.cells[1].textContent.trim());
-                        bVal = parseInt(b.cells[1].textContent.trim());
+                        aVal = parseInt(a.cells[6].textContent.trim());
+                        bVal = parseInt(b.cells[6].textContent.trim());
                         break;
                     case 'value':
-                        aVal = parseFloat(a.cells[2].textContent.replace('₹', '').replace(',', ''));
-                        bVal = parseFloat(b.cells[2].textContent.replace('₹', '').replace(',', ''));
+                        aVal = parseFloat(a.cells[7].textContent.replace('₹', '').replace(/,/g, ''));
+                        bVal = parseFloat(b.cells[7].textContent.replace('₹', '').replace(/,/g, ''));
                         break;
                     case 'lastActive':
-                        aVal = new Date(a.cells[3].textContent.trim());
-                        bVal = new Date(b.cells[3].textContent.trim());
+                        aVal = new Date(a.cells[8].textContent.trim());
+                        bVal = new Date(b.cells[8].textContent.trim());
                         break;
                 }
 
@@ -4597,10 +4697,10 @@
             sortedRows.forEach(row => tbody.appendChild(row));
         };
 
-        // NEW: Highly Functional CRM CSV Export Engine for Marketing & Retargeting
+        // CRM CSV Export Engine — includes all client profile data
         window.exportCRMToCSV = function () {
             if (!globalOrdersData || globalOrdersData.length === 0) {
-                return showToast('No underlying database available yet.', 'error');
+                return showToast('No underlying database available yet.', false);
             }
 
             const crmMap = {};
@@ -4608,8 +4708,11 @@
                 const name = o.client_name || o.client || "Unknown Client";
                 if (!crmMap[name]) {
                     crmMap[name] = {
-                        email: o.client_email || o.email || "N/A",
-                        phone: o.client_phone || o.phone || "N/A",
+                        email: o.client_email || o.email || "",
+                        phone: o.client_phone || o.phone || "",
+                        dob: "",
+                        gender: "",
+                        address: "",
                         spent: 0,
                         orders: 0
                     };
@@ -4618,12 +4721,26 @@
                 crmMap[name].orders += 1;
             });
 
+            // Merge Supabase Auth profile data
+            Object.keys(crmMap).forEach(name => {
+                const c = crmMap[name];
+                if (c.email) {
+                    const profile = globalClientsMap[c.email.toLowerCase()];
+                    if (profile) {
+                        c.dob = profile.dob || "";
+                        c.gender = profile.gender || "";
+                        c.address = profile.address || "";
+                        if (!c.phone && profile.phone) c.phone = profile.phone;
+                    }
+                }
+            });
+
             // Standard RFC 4180 CSV Compilation
-            let csv = "Client Name,Email Address,Phone Number,Total Spent (INR),Total Orders\n";
+            let csv = "Client Name,Email Address,Phone Number,Date of Birth,Gender,Address,Total Spent (INR),Total Orders\n";
             Object.keys(crmMap).forEach(name => {
                 const c = crmMap[name];
                 // Quote encapsulation prevents inner commas from destroying grid
-                csv += `"${name}","${c.email}","${c.phone}","${c.spent}","${c.orders}"\n`;
+                csv += `"${name}","${c.email || 'N/A'}","${c.phone || 'N/A'}","${c.dob || 'N/A'}","${c.gender || 'N/A'}","${(c.address || 'N/A').replace(/"/g, '""')}","${c.spent}","${c.orders}"\n`;
             });
 
             // Native Browser Buffer Download stream
@@ -4636,13 +4753,13 @@
             a.click();
             document.body.removeChild(a);
 
-            showToast('CRM Marketing Database successfully exported to CSV!', 'success');
+            showToast('CRM Marketing Database successfully exported to CSV!', true);
         };
 
         // NEW: Accounting Ledger CSV Export (MDR/GST Compliant for CA)
         window.exportLedgerToCSV = function () {
             if (!globalLedgerData || globalLedgerData.length === 0) {
-                return showToast('Ledger data stream unavailable.', 'error');
+                return showToast('Ledger data stream unavailable.', false);
             }
 
             // Standard RFC 4180 CSV Compilation
@@ -4674,7 +4791,7 @@
             a.click();
             document.body.removeChild(a);
 
-            showToast('Accounting Ledger successfully exported to CSV!', 'success');
+            showToast('Accounting Ledger successfully exported to CSV!', true);
         };
 
         // ==================== TOAST NOTIFICATION SYSTEM ====================
@@ -4935,11 +5052,15 @@
             }
         };
 
-        // Hook into switchView to auto-load portfolio data
+        // Hook into switchView to auto-load data for all lazy views
         const _origSwitchView = window.switchView;
         window.switchView = function (viewId, btn) {
             if (_origSwitchView) _origSwitchView(viewId, btn);
             if (viewId === 'portfolio-vault-view') loadPortfolioView();
+            if (viewId === 'ecomm-view') fetchEcommData();
+            if (viewId === 'admins-view') fetchAdminsData();
+            if (viewId === 'reviews-view') fetchReviewsData();
+            if (viewId === 'referrals-view') fetchReferralsData();
         };
     </script>
 
@@ -5239,7 +5360,7 @@
                 <td class="p-4 text-green-400 font-bold">${discStr} off</td>
                 <td class="p-4 text-gray-400 text-xs">${c.min_order_value > 0 ? '₹' + Number(c.min_order_value).toLocaleString('en-IN') : 'None'}</td>
                 <td class="p-4 text-gray-400 text-xs">${c.times_used || 0}${c.max_uses > 0 ? ' / ' + c.max_uses : ''}</td>
-                <td class="p-4 text-xs ${expired ? 'text-red-400' : 'text-gray-400'}">${exp ? exp.toLocaleDateString('en-IN') : 'Never'}</td>
+                <td class="p-4 text-xs ${expired ? 'text-red-400' : 'text-gray-400'}">${exp ? exp.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Never'}</td>
                 <td class="p-4 text-center">
                     <span class="status-badge ${c.is_active !== false && !expired ? 'status-completed' : 'status-refunded'}">${c.is_active !== false && !expired ? 'Active' : 'Off'}</span>
                 </td>

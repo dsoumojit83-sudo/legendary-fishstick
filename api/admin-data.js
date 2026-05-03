@@ -5,8 +5,9 @@ const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // ── Backblaze B2 S3-compatible client ────────────────────────────────────────
-const B2_ENDPOINT = process.env.B2_ENDPOINT || '';
-const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-west-004';
+const rawEndpoint = process.env.B2_ENDPOINT || '';
+const B2_ENDPOINT = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint || 's3.us-east-005.backblazeb2.com'}`;
+const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-east-005';
 
 const b2 = new S3Client({
     region: extractedRegion,
@@ -124,6 +125,30 @@ module.exports = async function (req, res) {
             const { data, error } = await supabase.from('referrals').select('*').order('created_at', { ascending: false });
             if (error) throw error;
             return res.status(200).json({ referrals: data });
+        }
+
+        // ── Client profiles (GET ?action=getClients) ─────────────────────────────
+        // Returns user_metadata (DOB, gender, address) from Supabase Auth for admin CRM
+        if (req.method === 'GET' && req.query.action === 'getClients') {
+            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+            const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
+            const { data: authData, error: authErr } = await adminClient.auth.admin.listUsers();
+            if (authErr) throw authErr;
+
+            const clients = (authData.users || []).map(u => {
+                const m = u.user_metadata || {};
+                return {
+                    email: u.email || '',
+                    name: m.full_name || m.name || '',
+                    phone: m.phone || '',
+                    dob: m.dob || '',
+                    gender: m.gender || '',
+                    address: m.address || '',
+                    created_at: u.created_at,
+                    last_sign_in_at: u.last_sign_in_at
+                };
+            });
+            return res.status(200).json({ clients });
         }
 
         // ── Portfolio admin listing (GET ?type=portfolio) ────────────────────────
@@ -306,18 +331,26 @@ module.exports = async function (req, res) {
             if (action === 'addAdmin') {
                 const { email, password } = body;
                 if (!email || !password) return res.status(400).json({ error: 'Email and password required.' });
+                if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
                 
-                // Create or update user in Supabase Auth (requires SERVICE_ROLE_KEY or anon key with right settings)
-                const adminClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
+                // Use service role key (falls back to SUPABASE_KEY which may be the service role key)
+                const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+                const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
+
                 const { error: authError } = await adminClient.auth.admin.createUser({
                     email,
                     password,
                     email_confirm: true
                 });
-                if (authError && authError.message !== 'User already registered') throw authError;
+
+                if (authError) {
+                    // If user already exists in Auth, that's fine — just add them to admins table
+                    const alreadyExists = (authError.message || '').toLowerCase().includes('already');
+                    if (!alreadyExists) throw authError;
+                }
 
                 // Add to admins table with role
-                const { error: dbError } = await supabase.from('admins').upsert({ email, role: 'admin' }, { onConflict: 'email' }).select().single();
+                const { error: dbError } = await supabase.from('admins').upsert({ email: email.toLowerCase(), role: 'admin' }, { onConflict: 'email' }).select().single();
                 if (dbError) throw dbError;
 
                 return res.status(200).json({ ok: true });

@@ -11,7 +11,8 @@
     "api/chat.js":            { "maxDuration": 20 },
     "api/save-brief.js":      { "maxDuration": 15 },
     "api/get-files.js":       { "maxDuration": 20 },
-    "api/update-status.js":   { "maxDuration": 15 }
+    "api/update-status.js":   { "maxDuration": 15 },
+    "api/sendInvoice.js":     { "maxDuration": 20 }
   },
   "headers": [
     {

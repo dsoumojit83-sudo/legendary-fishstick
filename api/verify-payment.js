@@ -104,7 +104,7 @@ module.exports = async function (req, res) {
             // 1. Verify this order actually exists in our DB and is still created
             const { data: order, error: dbErr } = await supabase
                 .from('orders')
-                .select('order_id, status, amount, client_name, client_email, client_phone, service')
+                .select('order_id, status, amount, client_name, client_email, client_phone, service, deadline_date')
                 .eq('order_id', order_id)
                 .single();
 

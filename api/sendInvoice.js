@@ -245,7 +245,7 @@ async function sendInvoice(order) {
             doc.rect(325, 165, 220, 98).fill('#f8f8f8');
             doc.rect(541, 165, 4, 98).fill('#050505');
             doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('PAYABLE TO:', 325, 175, { width: 212, align: 'right' });
-            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz(TM) Studio', 325, 193, { width: 212, align: 'right' });
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz', 325, 193, { width: 212, align: 'right', continued: true }).fontSize(8).text('\u2122', { continued: true }).fontSize(14).text(' Studio', { continued: false });
             doc.fillColor('#555555').fontSize(12).font('Helvetica').text('+91 8900229800', 325, 212, { width: 212, align: 'right' });
             doc.fillColor('#555555').fontSize(12).text('zyroeditz.official@gmail.com', 325, 228, { width: 212, align: 'right' });
             doc.fillColor('#555555').fontSize(12).text('Malda, West Bengal, India', 325, 244, { width: 212, align: 'right' });
@@ -306,7 +306,7 @@ async function sendInvoice(order) {
             doc.fillColor('#888888').fontSize(10).font('Helvetica')
                 .text('This is a computer-generated document. No signature is required.', 50, 766, { align: 'center', width: 495 });
             doc.font('Helvetica-Bold')
-                .text('ZyroEditz(TM) | Cinematic Editing & Motion Graphics', 50, 782, { align: 'center', width: 495 });
+                .text('ZyroEditz\u2122 | Cinematic Editing & Motion Graphics', 50, 782, { align: 'center', width: 495 });
 
             log('INFO', orderId, 'PDF build complete. Waiting for doc.end() to flush buffers...');
             doc.end();
@@ -362,7 +362,7 @@ async function buildPdfBuffer(order) {
             doc.rect(325, 165, 220, 98).fill('#f8f8f8');
             doc.rect(541, 165, 4, 98).fill('#050505');
             doc.fillColor('#888888').fontSize(11).font('Helvetica-Bold').text('PAYABLE TO:', 325, 175, { width: 212, align: 'right' });
-            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz(TM) Studio', 325, 193, { width: 212, align: 'right' });
+            doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold').text('ZyroEditz', 325, 193, { width: 212, align: 'right', continued: true }).fontSize(8).text('\u2122', { continued: true }).fontSize(14).text(' Studio', { continued: false });
             doc.fillColor('#555555').fontSize(12).font('Helvetica').text('+91 8900229800', 325, 212, { width: 212, align: 'right' });
             doc.fillColor('#555555').fontSize(12).text('zyroeditz.official@gmail.com', 325, 228, { width: 212, align: 'right' });
             doc.fillColor('#555555').fontSize(12).text('Malda, West Bengal, India', 325, 244, { width: 212, align: 'right' });
@@ -403,7 +403,7 @@ async function buildPdfBuffer(order) {
             doc.fillColor('#888888').fontSize(10).font('Helvetica')
                .text('This is a computer-generated document. No signature is required.', 50, 766, { align: 'center', width: 495 });
             doc.font('Helvetica-Bold')
-               .text('ZyroEditz(TM) | Cinematic Editing & Motion Graphics', 50, 782, { align: 'center', width: 495 });
+               .text('ZyroEditz\u2122 | Cinematic Editing & Motion Graphics', 50, 782, { align: 'center', width: 495 });
 
             doc.end();
         } catch (err) {

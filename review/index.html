@@ -87,6 +87,11 @@
             </div>
 
             <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Your Email</label>
+                <input type="email" id="clientEmail" placeholder="you@example.com" class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-zyroRed transition" required>
+            </div>
+
+            <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Written Review</label>
                 <textarea id="reviewText" rows="4" placeholder="Tell us what you loved about the final video..." class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-zyroRed transition" required></textarea>
             </div>
@@ -118,8 +123,14 @@
                 document.getElementById('ratingError').classList.add('hidden');
 
                 const rating = ratingObj.value;
-                const name = document.getElementById('clientName').value;
-                const reviewText = document.getElementById('reviewText').value;
+                const name = document.getElementById('clientName').value.trim();
+                const email = document.getElementById('clientEmail').value.trim();
+                const reviewText = document.getElementById('reviewText').value.trim();
+
+                if (!name || !email || !reviewText) {
+                    alert('Please fill in all fields.');
+                    return;
+                }
 
                 const submitBtn = document.getElementById('submitBtn');
                 const loadingSpinner = document.getElementById('loadingSpinner');
@@ -137,6 +148,7 @@
                             order_id: orderId || 'DIRECT_REVIEW',
                             rating: rating,
                             name: name,
+                            email: email,
                             review_text: reviewText
                         })
                     });

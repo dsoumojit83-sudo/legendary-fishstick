@@ -35,7 +35,7 @@ module.exports = async function(req, res) {
         const { data: orders, error } = await supabase
             .from('orders')
             .select('order_id, client_name, amount, created_at')
-            .in('status', ['paid', 'completed'])
+            .in('status', ['paid', 'delivered', 'in_progress'])
             .order('created_at', { ascending: false })
             .limit(30);
 

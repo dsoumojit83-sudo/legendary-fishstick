@@ -515,6 +515,15 @@
                 document.querySelector('.border-t-\\[\\#ff1a1a\\]')?.remove();
             }
 
+            // Initialize Supabase globally for all routes
+            try {
+                const sbRes = await fetch('/api/save-brief');
+                const sbData = await sbRes.json();
+                if (sbData.supabaseUrl && sbData.supabaseAnonKey) {
+                    window._sb = supabase.createClient(sbData.supabaseUrl, sbData.supabaseAnonKey);
+                }
+            } catch (e) { console.error('Supabase init failed', e); }
+
             // ROUTE 0: flow=buy_now -> Show Checkout UI
             const flow = params.get('flow');
             const serviceId = params.get('service_id');
@@ -529,14 +538,9 @@
                 // Dynamic Delivery Time (Fallback)
                 document.getElementById('chkDelivery').textContent = '2-4 Days';
 
-                // Initialize Supabase to get user profile and dynamic delivery time
-                try {
-                    const sbRes = await fetch('/api/save-brief');
-                    const sbData = await sbRes.json();
-                    if (sbData.supabaseUrl && sbData.supabaseAnonKey) {
-                        const sb = supabase.createClient(sbData.supabaseUrl, sbData.supabaseAnonKey);
-                        const sessionRes = await sb.auth.getSession();
-                        const session = sessionRes && sessionRes.data && sessionRes.data.session;
+                if (window._sb) {
+                    try {
+                        const { data: { session } } = await window._sb.auth.getSession();
                         if (session && session.user) {
                             window._checkoutAuthToken = session.access_token;
                             document.getElementById('chkEmail').value = session.user.email || '';
@@ -550,7 +554,7 @@
                         }
 
                         // Fetch dynamic delivery time from admin configuration
-                        const { data: svcData } = await sb.from('services').select('delivery_days').eq('name', serviceId).single();
+                        const { data: svcData } = await window._sb.from('services').select('delivery_days').eq('name', serviceId).single();
                         if (svcData && svcData.delivery_days) {
                             let dText = String(svcData.delivery_days).trim();
                             if (!dText.toLowerCase().includes('day')) {
@@ -558,8 +562,8 @@
                             }
                             document.getElementById('chkDelivery').textContent = dText;
                         }
-                    }
-                } catch (e) { console.error('Failed to load profile', e); }
+                    } catch (e) { console.error('Failed to load profile', e); }
+                }
 
                 // Store original price for coupon calculations
                 window._originalPrice = parseFloat(price) || 0;
@@ -723,15 +727,21 @@
 
                 try {
                     if (briefContent) {
+                        // FIX: Get fresh session for the token
+                        if (!window._sb) throw new Error('Auth system not ready. Please refresh.');
+                        const { data: { session: currentSession } } = await window._sb.auth.getSession();
+                        if (!currentSession) throw new Error('Session expired. Please refresh and sign in.');
+                        const token = currentSession.access_token;
+
                         const response = await fetch('/api/save-brief', {
                             method: 'POST',
                             headers: { 
                                 'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ' + (window._checkoutAuthToken || '')
+                                'Authorization': 'Bearer ' + token
                             },
                             body: JSON.stringify({ orderId, notes: briefContent })
                         });
-                        if (!response.ok) throw new Error('Failed to save brief.');
+                        if (!response.ok) throw new Error('Failed to save brief (HTTP ' + response.status + ')');
                         localStorage.removeItem(storageKey);
                     }
 
@@ -745,11 +755,15 @@
                             const file = files[i];
                             document.getElementById('uploadProgressLabel').textContent = `Uploading ${i + 1}/${files.length}`;
                             try {
+                                // FIX: Get fresh session for the token
+                                const { data: { session: currentSession } } = await window._sb.auth.getSession();
+                                const token = currentSession?.access_token || '';
+
                                 const urlRes = await fetch('/api/upload-files', {
                                     method: 'POST',
                                     headers: { 
                                         'Content-Type': 'application/json',
-                                        'Authorization': 'Bearer ' + (window._checkoutAuthToken || '')
+                                        'Authorization': 'Bearer ' + token
                                     },
                                     body: JSON.stringify({ orderId, fileName: file.name, contentType: file.type || 'application/octet-stream' })
                                 });

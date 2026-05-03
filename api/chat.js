@@ -174,12 +174,31 @@ module.exports = async function (req, res) {
     }
 
     try {
-        const { action, rating, review_text, order_id, sessionId, phone, email, name, selectedService, amount } = req.body;
+        const { action, rating, review_text, order_id, sessionId, phone, email, name, selectedService, amount, couponCode } = req.body;
 
         if (action === 'submitReview') {
             const starRating = parseInt(rating);
             if (!starRating || starRating < 1 || !review_text) {
                 return res.status(400).json({ error: 'Please select a star rating and write a review.' });
+            }
+
+            if (!order_id || !email) {
+                return res.status(400).json({ error: 'Order ID and email are required for reviews.' });
+            }
+
+            // SECURITY: Verify that this email actually owns this order_id
+            const { data: ownershipOrder, error: ownErr } = await supabase
+                .from('orders')
+                .select('client_email, status')
+                .eq('order_id', order_id)
+                .maybeSingle();
+
+            if (ownErr || !ownershipOrder) {
+                return res.status(404).json({ error: 'Order not found.' });
+            }
+
+            if (ownershipOrder.client_email.toLowerCase() !== email.toLowerCase()) {
+                return res.status(403).json({ error: 'You can only review your own orders.' });
             }
 
             // Manual Upsert: First check if a review exists for this order_id
@@ -227,6 +246,7 @@ module.exports = async function (req, res) {
             return res.status(200).json({ success: true });
         }
 
+        // Guard: require service + amount for all non-review POST actions
         if (!selectedService || !amount) {
             return res.status(400).json({ reply: "Please select a valid service and pricing to proceed." });
         }
@@ -269,14 +289,67 @@ module.exports = async function (req, res) {
         const safePhone = String(phone).trim(); // always valid — guarded above
         const safeCustomerId = sessionId ? String(sessionId).replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 100) : null;
 
-        const orderId = generateOrderId();
         const numericAmount = parseFloat(amount);
 
-        // Guard: reject invalid amounts before hitting Cashfree
-        // Negative, zero, or NaN amounts cause a confusing 422 from Cashfree's API. Amount must be >= 1.
-        if (!numericAmount || numericAmount < 1 || !Number.isFinite(numericAmount)) {
-            return res.status(400).json({ reply: "Invalid payment amount. Please contact support." });
+        // ── SECURITY: Validate Amount against Service Price + Coupon ──
+        try {
+            const { data: serviceData, error: svcErr } = await supabase
+                .from('services')
+                .select('price')
+                .eq('name', selectedService)
+                .eq('is_active', true)
+                .maybeSingle();
+
+            if (svcErr || !serviceData) {
+                return res.status(400).json({ reply: "Service not found or currently unavailable." });
+            }
+
+            let expectedPrice = parseFloat(serviceData.price);
+            let discount = 0;
+
+            if (couponCode) {
+                const code = String(couponCode).toUpperCase().trim();
+                const { data: coupon } = await supabase
+                    .from('coupons')
+                    .select('*')
+                    .eq('code', code)
+                    .eq('is_active', true)
+                    .maybeSingle();
+
+                if (coupon) {
+                    const now = new Date();
+                    const notExpired = !coupon.expires_at || new Date(coupon.expires_at) > now;
+                    const usageOk = coupon.max_uses === 0 || coupon.times_used < coupon.max_uses;
+                    const minValOk = !coupon.min_order_value || expectedPrice >= coupon.min_order_value;
+
+                    if (notExpired && usageOk && minValOk) {
+                        if (coupon.discount_type === 'percent') {
+                            discount = Math.round(expectedPrice * coupon.discount_value / 100);
+                        } else {
+                            discount = Math.min(coupon.discount_value, expectedPrice);
+                        }
+                    }
+                } else if (code.startsWith('ZYRO-') && code.length >= 10) {
+                    // Referral code logic
+                    discount = Math.round(expectedPrice * 10 / 100);
+                }
+            }
+
+            const finalExpected = Math.max(1, expectedPrice - discount);
+            // Allow ₹1 difference for rounding
+            if (Math.abs(numericAmount - finalExpected) > 1.01) {
+                console.warn(`[chat] Price mismatch: Received ₹${numericAmount}, Expected ₹${finalExpected} for ${selectedService}`);
+                return res.status(400).json({ reply: "Payment amount mismatch. Please refresh and try again." });
+            }
+        } catch (err) {
+            console.error('[chat] Price validation error:', err.message);
+            // Fallback: if validation fails due to DB error, use a sanity check (amount must be >= 1)
+            if (!numericAmount || numericAmount < 1 || !Number.isFinite(numericAmount)) {
+                return res.status(400).json({ reply: "Invalid payment amount." });
+            }
         }
+
+        const orderId = generateOrderId();
 
         // ── BUG FIX #9: Safer IST deadline — compute using explicit UTC year/month/day ──
         // Avoids setUTCDate() month-rollover edge cases when adding days near month boundaries.

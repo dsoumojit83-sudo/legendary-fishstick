@@ -50,3 +50,19 @@ npm-debug.log*
 .idea/
 *.suo
 *.user
+
+# ========================
+# IDE extensions
+# ========================
+.continue/
+.gemini/
+
+# ========================
+# Package lock (optional)
+# ========================
+package-lock.json
+
+# ========================
+# One-time migration scripts
+# ========================
+patch.js

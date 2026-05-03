@@ -4540,9 +4540,7 @@
                         <div>
                             <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Date of
                                 Birth</label>
-                            <input id="pa-dob" type="text" placeholder="DD-MM-YYYY" 
-                                onfocus="this.type='date'; if(this.value.includes('-') && this.value.split('-')[0].length === 2) { const parts = this.value.split('-'); this.value = parts[2] + '-' + parts[1] + '-' + parts[0]; }" 
-                                onblur="if(!this.value) { this.type='text'; } else { if(this.type === 'date') { const parts = this.value.split('-'); if(parts.length === 3 && parts[0].length === 4) { this.type = 'text'; this.value = parts[2] + '-' + parts[1] + '-' + parts[0]; } } }"
+                            <input id="pa-dob" type="date"
                                 class="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:border-[#ff1a1a] transition-colors">
                         </div>
                         <div>
@@ -4708,7 +4706,8 @@
             if (el("pa-phone")) el("pa-phone").value = m.phone || "";
             if (el("pa-dob")) {
                 let dob = m.dob || "";
-                if (dob.includes('-') && dob.split('-')[0].length === 4) {
+                // If stored as DD-MM-YYYY, convert to YYYY-MM-DD for native date input
+                if (dob.includes('-') && dob.split('-')[0].length === 2) {
                     const parts = dob.split('-');
                     dob = parts[2] + '-' + parts[1] + '-' + parts[0];
                 }
@@ -4726,10 +4725,7 @@
             if (!sb) { _pMsg("pa-msg", "Not signed in.", false); return; }
             var el = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ""; };
             let dobVal = el("pa-dob");
-            if (dobVal.includes('-') && dobVal.split('-')[0].length === 2) {
-                const parts = dobVal.split('-');
-                dobVal = parts[2] + '-' + parts[1] + '-' + parts[0];
-            }
+            // Native date input already returns YYYY-MM-DD — store as-is
             var meta = { full_name: el("pa-name"), phone: el("pa-phone"), dob: dobVal, gender: el("pa-gender"), address: el("pa-address") };
             if (btn) { btn.textContent = "Saving\u2026"; btn.disabled = true; }
             try {
@@ -4844,7 +4840,7 @@
 
                 el.innerHTML = orders.map(function (o) {
                     var sc = statusColor[o.status] || "text-gray-400";
-                    var date = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "\u2014";
+                    var date = o.created_at ? new Date(o.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "\u2014";
                     var amt = o.amount ? "\u20b9" + Number(o.amount).toLocaleString("en-IN") : "\u2014";
                     var statusLabel = (o.status || "created").replace("in_progress", "working").replace(/_/g, " ").toUpperCase();
                     var isCompleted = o.status === "delivered";
@@ -5021,7 +5017,7 @@
                 var rRes = await sb.from('referrals').select('id,referred_email,created_at').eq('referrer_id', user.id).order('created_at', { ascending: false });
                 var refs = (!rRes.error && rRes.data) ? rRes.data : [];
                 var refRows = refs.length
-                    ? refs.map(function (r) { return '<div class="flex justify-between text-xs py-2 border-b border-white/5"><span class="text-gray-300">' + r.referred_email + '</span><span class="text-gray-500">' + new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</span></div>'; }).join('')
+                    ? refs.map(function (r) { return '<div class="flex justify-between text-xs py-2 border-b border-white/5"><span class="text-gray-300">' + r.referred_email + '</span><span class="text-gray-500">' + new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + '</span></div>'; }).join('')
                     : '<p class="text-gray-600 text-xs mt-4">No referrals yet.</p>';
                 el.innerHTML = '<div class="mb-5"><p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Your Referral Code</p>'
                     + '<div class="flex items-center gap-3"><span class="text-[#ff1a1a] font-mono text-2xl font-black tracking-widest">' + code + '</span>'

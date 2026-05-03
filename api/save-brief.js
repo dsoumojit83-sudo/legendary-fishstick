@@ -86,9 +86,10 @@ module.exports = async function(req, res) {
             return res.status(403).json({ error: "Forbidden. You do not own this order." });
         }
 
-        // Don't allow editing notes on already-completed projects
-        if (existingOrder.status === 'completed') {
-            return res.status(403).json({ error: "Cannot edit brief for a completed project." });
+        // Don't allow editing notes on terminal-state projects
+        const terminalStatuses = ['delivered', 'refunded', 'cancelled', 'canceled'];
+        if (terminalStatuses.includes(existingOrder.status)) {
+            return res.status(403).json({ error: "Cannot edit brief for a " + existingOrder.status + " project." });
         }
 
         // Update the order with the client's notes
