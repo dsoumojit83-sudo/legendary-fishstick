@@ -2067,7 +2067,9 @@
 
                     // Reuse global client to avoid duplicate GoTrueClient warnings
                     if (!window._supabaseClient) {
-                        window._supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+                        window._supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+                            auth: { storageKey: 'zyro-client-auth' }
+                        });
                     }
                     const sb = window._supabaseClient;
                     const { data: services, error } = await sb

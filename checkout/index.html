@@ -520,7 +520,9 @@
                 const sbRes = await fetch('/api/save-brief');
                 const sbData = await sbRes.json();
                 if (sbData.supabaseUrl && sbData.supabaseAnonKey) {
-                    window._sb = supabase.createClient(sbData.supabaseUrl, sbData.supabaseAnonKey);
+                    window._sb = supabase.createClient(sbData.supabaseUrl, sbData.supabaseAnonKey, {
+                        auth: { storageKey: 'zyro-client-auth' }
+                    });
                 }
             } catch (e) { console.error('Supabase init failed', e); }
 

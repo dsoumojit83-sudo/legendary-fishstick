@@ -2272,7 +2272,9 @@
                     return;
                 }
                 const { createClient } = window.supabase;
-                supabaseClient = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+                supabaseClient = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+                    auth: { storageKey: 'zyro-admin-auth' }
+                });
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
                     authToken = session.access_token;
