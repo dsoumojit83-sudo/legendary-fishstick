@@ -4917,6 +4917,7 @@
             var session = sb ? (await sb.auth.getSession()).data.session : null;
             if (!session) { if (msgEl) msgEl.textContent = "Please log in to submit a review."; return; }
             var email = session.user.email;
+            var userName = (session.user.user_metadata || {}).full_name || (session.user.user_metadata || {}).name || '';
 
             var btn = document.getElementById("review-submit-btn");
             if (btn) { btn.textContent = "Submitting\u2026"; btn.disabled = true; }
@@ -4925,7 +4926,7 @@
                 var res = await fetch("/api/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "submitReview", order_id: orderId, email: email, rating: rating, review_text: text, selectedService: service })
+                    body: JSON.stringify({ action: "submitReview", order_id: orderId, email: email, name: userName, rating: rating, review_text: text, selectedService: service })
                 });
                 var data = await res.json();
                 if (!res.ok) throw new Error(data.error || "Failed to submit review.");

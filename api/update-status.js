@@ -1,6 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { Resend } = require('resend');
+const axios = require('axios');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -83,9 +84,9 @@ module.exports = async function(req, res) {
         let updatePayload = { status: normalizedStatus };
         if (normalizedStatus === 'delivered') updatePayload.completed_at = new Date().toISOString();
 
-        // Fetch order details BEFORE updating (needed for completion email)
+        // Fetch order details BEFORE updating (needed for completion email & refund amount)
         let orderRecord = null;
-        if (normalizedStatus === 'delivered') {
+        if (normalizedStatus === 'delivered' || normalizedStatus === 'refunded') {
             const { data } = await supabase
                 .from('orders')
                 .select('order_id, client_name, client_email, service, amount')
@@ -100,6 +101,32 @@ module.exports = async function(req, res) {
             .eq('order_id', orderId);
 
         if (error) throw error;
+
+        // ── CASHFREE AUTOMATIC REFUND ──────────────────────────────────────────
+        if (normalizedStatus === 'refunded' && orderRecord && orderRecord.amount) {
+            try {
+                await axios.post(
+                    `https://api.cashfree.com/pg/orders/${orderId}/refunds`,
+                    {
+                        refund_amount: parseFloat(orderRecord.amount),
+                        refund_id: `REF_${Date.now()}_${orderId.slice(-6)}`,
+                        refund_note: "Admin initiated refund via Dashboard"
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-version': '2025-01-01',
+                            'x-client-id': process.env.CASHFREE_APP_ID,
+                            'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                        }
+                    }
+                );
+                console.log(`Cashfree refund initiated for ${orderId} (Amount: ${orderRecord.amount})`);
+            } catch (cfErr) {
+                console.error("Cashfree Refund Failed:", cfErr.response?.data || cfErr.message);
+                // We do not throw here so the DB status remains 'refunded' even if CF fails
+            }
+        }
 
         // ── STORE DELIVERY FILE IN DELIVERIES TABLE (portal access only) ─────
         // If deliveryKey is missing (e.g. status update via AI or manual toggle), 

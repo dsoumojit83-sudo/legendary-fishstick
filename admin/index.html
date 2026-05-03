@@ -3384,30 +3384,26 @@
                 // Working/paid/created: show status toggle
                 if (order.status !== 'delivered' && order.status !== 'completed' && order.status !== 'refunded' && order.status !== 'canceled' && order.status !== 'cancelled') {
                     const isWorking = order.status === 'in_progress';
-                    // User Request: if status is in_progress, check if has_delivery is true.
-                    // If not, grey out the button. "dont confuse with first click dont greyed out that"
-                    const canDeliver = !isWorking || order.has_delivery;
-                    const disabledAttr = canDeliver ? '' : 'disabled';
-                    const opacityClass = canDeliver ? '' : 'opacity-20 grayscale cursor-not-allowed';
-                    
-                    completeBtnHTML = `
-                        <button onclick="markProjectStatus('${order.id}', '${order.status}')"
-                            ${disabledAttr}
-                            class="action-touch-btn p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all ${opacityClass}"
-                            title="${isWorking ? (canDeliver ? 'Mark as DELIVERED' : 'Upload delivery files first') : 'Mark as WORKING'}">
-                            <i data-lucide="${isWorking ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
-                        </button>
-                    `;
+                    if (isWorking) {
+                        // Status is WORKING → show DELIVER button (send icon)
+                        completeBtnHTML = `
+                            <button onclick="deliverProject('${order.id}')"
+                                class="action-touch-btn p-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center"
+                                title="Deliver Project & Notify Client">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                            </button>
+                        `;
+                    } else {
+                        // Status is PAID/CREATED → show CLOCK button (click → mark working)
+                        completeBtnHTML = `
+                            <button onclick="markProjectStatus('${order.id}', '${order.status}')"
+                                class="action-touch-btn p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
+                                title="Mark as WORKING">
+                                <i data-lucide="clock" class="w-4 h-4"></i>
+                            </button>
+                        `;
+                    }
                 }
-
-                // DELIVER button: shown for working/paid orders — marks complete + emails client
-                const deliverBtn = (order.status === 'in_progress' || order.status === 'paid' || order.status === 'delivered' || order.status === 'completed')
-                    ? `<button onclick="deliverProject('${order.id}')"
-                          class="action-touch-btn p-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center"
-                          title="Deliver Project & Notify Client">
-                          <i data-lucide="send" class="w-4 h-4"></i>
-                       </button>`
-                    : '';
 
                 // REFUND button: shown for paid/working/completed orders only
                 const refundBtn = (order.status === 'paid' || order.status === 'in_progress' || order.status === 'delivered')
@@ -3440,7 +3436,6 @@
                 const actionBtn = `
                     <div class="flex items-center gap-2 flex-wrap">
                         ${completeBtnHTML}
-                        ${deliverBtn}
                         ${refundBtn}
                         ${filesBtn}
                         ${billBtn}
@@ -3831,16 +3826,12 @@
                 let completeBtnHTML = '';
                 if (order.status !== 'delivered' && order.status !== 'completed' && order.status !== 'refunded' && order.status !== 'canceled' && order.status !== 'cancelled') {
                     const isWorking = order.status === 'in_progress';
-                    completeBtnHTML = `<button onclick="markProjectStatus('${order.id}', '${order.status}')"
-                        class="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all"
-                        title="${isWorking ? 'Click to DELIVER project' : 'Click to mark as WORKING'}">
-                        <i data-lucide="${isWorking ? 'check-circle' : 'clock'}" class="w-4 h-4"></i>
-                    </button>`;
+                    if (isWorking) {
+                        completeBtnHTML = `<button onclick="deliverProject('${order.id}')" class="p-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center" title="Deliver Project & Notify Client"><i data-lucide="send" class="w-4 h-4"></i></button>`;
+                    } else {
+                        completeBtnHTML = `<button onclick="markProjectStatus('${order.id}', '${order.status}')" class="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-400 hover:text-gray-200 transition-all" title="Mark as WORKING"><i data-lucide="clock" class="w-4 h-4"></i></button>`;
+                    }
                 }
-
-                const deliverBtn = (order.status === 'in_progress' || order.status === 'paid')
-                    ? `<button onclick="deliverProject('${order.id}')" class="p-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center" title="Deliver Project & Notify Client"><i data-lucide="send" class="w-4 h-4"></i></button>`
-                    : '';
 
                 const refundBtn = (order.status === 'paid' || order.status === 'in_progress' || order.status === 'delivered')
                     ? `<button onclick="refundOrder('${order.id}', '${order.amount}')" class="p-1.5 rounded bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/50 text-orange-400 hover:text-orange-300 transition-all flex items-center justify-center" title="Issue Refund"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>`
@@ -3854,7 +3845,7 @@
                     ? `<button onclick="adminDownloadBill('${order.id}')" class="p-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center" title="Download Invoice PDF"><i data-lucide="file-down" class="w-4 h-4"></i></button>`
                     : '';
 
-                const actionBtn = `<div class="flex items-center gap-2 flex-wrap">${completeBtnHTML}${deliverBtn}${refundBtn}${filesBtn}${billBtn2}<button onclick="openNotesModal('${clientName}', '${safeNotes}')" class="p-1.5 rounded bg-white/5 hover:bg-[#ff1a1a]/20 border border-white/10 hover:border-[#ff1a1a]/50 text-gray-400 hover:text-[#ff1a1a] transition-all" title="View Brief"><i data-lucide="file-text" class="w-4 h-4"></i></button></div>`;
+                const actionBtn = `<div class="flex items-center gap-2 flex-wrap">${completeBtnHTML}${refundBtn}${filesBtn}${billBtn2}<button onclick="openNotesModal('${clientName}', '${safeNotes}')" class="p-1.5 rounded bg-white/5 hover:bg-[#ff1a1a]/20 border border-white/10 hover:border-[#ff1a1a]/50 text-gray-400 hover:text-[#ff1a1a] transition-all" title="View Brief"><i data-lucide="file-text" class="w-4 h-4"></i></button></div>`;
 
                 html += `
                 <tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">

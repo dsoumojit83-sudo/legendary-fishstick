@@ -189,7 +189,7 @@ module.exports = async function (req, res) {
             // SECURITY: Verify that this email actually owns this order_id
             const { data: ownershipOrder, error: ownErr } = await supabase
                 .from('orders')
-                .select('client_email, status')
+                .select('client_email, client_name, status')
                 .eq('order_id', order_id)
                 .maybeSingle();
 
@@ -208,13 +208,16 @@ module.exports = async function (req, res) {
                 .eq('order_id', order_id)
                 .maybeSingle();
 
+            // Resolve reviewer name: prefer submitted name, fall back to order's client_name
+            const resolvedName = name || ownershipOrder.client_name || 'Anonymous';
+
             let dbError;
             if (existingReview) {
                 // UPDATE existing review
                 const { error } = await supabase
                     .from('reviews')
                     .update({
-                        client_name: name || 'Anonymous',
+                        client_name: resolvedName,
                         client_email: email || null,
                         rating: starRating,
                         review_text: review_text,
@@ -229,7 +232,7 @@ module.exports = async function (req, res) {
                     .from('reviews')
                     .insert([{
                         order_id: order_id || null,
-                        client_name: name || 'Anonymous',
+                        client_name: resolvedName,
                         client_email: email || null,
                         rating: starRating,
                         review_text: review_text,
