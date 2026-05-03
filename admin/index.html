@@ -5259,9 +5259,8 @@
                     <div>
                         <label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 block">Expires
                             (optional)</label>
-                        <input id="cpn-expires" type="text" placeholder="DD-MM-YYYY" 
-                            onfocus="this.type='date'; if(this.value.includes('-') && this.value.split('-')[0].length === 2) { const parts = this.value.split('-'); this.value = parts[2] + '-' + parts[1] + '-' + parts[0]; }" 
-                            onblur="if(!this.value) { this.type='text'; } else { if(this.type === 'date') { const parts = this.value.split('-'); if(parts.length === 3 && parts[0].length === 4) { this.type = 'text'; this.value = parts[2] + '-' + parts[1] + '-' + parts[0]; } } }"
+                        <input id="cpn-expires" type="text" placeholder="DD-MM-YYYY" maxlength="10"
+                            oninput="let v=this.value.replace(/[^0-9]/g,'');if(v.length>2)v=v.slice(0,2)+'-'+v.slice(2);if(v.length>5)v=v.slice(0,5)+'-'+v.slice(5);this.value=v.slice(0,10);"
                             class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-colors">
                     </div>
                 </div>

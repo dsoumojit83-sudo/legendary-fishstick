@@ -1698,27 +1698,7 @@
             class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] flex items-center">Portfolio</a>
         <a href="#contact"
             class="text-3xl uppercase tracking-widest hover:text-[#ff1a1a] transition-colors nav-link min-h-[44px] flex items-center">Contact</a>
-        <div class="flex items-center gap-6 mt-4">
-            <button onclick="closeMobileMenu();setTimeout(toggleCartDropdown,300)"
-                class="flex flex-col items-center gap-1 text-gray-400 hover:text-[#ff1a1a] transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor"
-                    stroke-width="1.8" viewBox="0 0 24 24">
-                    <circle cx="9" cy="21" r="1" />
-                    <circle cx="20" cy="21" r="1" />
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                </svg>
-                <span class="text-xs uppercase tracking-widest">Cart</span>
-            </button>
-            <button onclick="closeMobileMenu();setTimeout(handleAccountIconClick,300)"
-                class="flex flex-col items-center gap-1 text-gray-400 hover:text-[#ff1a1a] transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor"
-                    stroke-width="1.8" viewBox="0 0 24 24">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                </svg>
-                <span class="text-xs uppercase tracking-widest">Account</span>
-            </button>
-        </div>
+
     </div>
 
     <!-- Login Modal — Google OAuth + Email/Password -->
@@ -4540,9 +4520,8 @@
                         <div>
                             <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Date of
                                 Birth</label>
-                            <input id="pa-dob" type="text" placeholder="DD-MM-YYYY"
-                                onfocus="this.type='date'; if(this.value.includes('-') && this.value.split('-')[0].length === 2) { const p = this.value.split('-'); this.value = p[2] + '-' + p[1] + '-' + p[0]; }"
-                                onblur="if(!this.value) { this.type='text'; } else { if(this.type === 'date') { const p = this.value.split('-'); if(p.length === 3 && p[0].length === 4) { this.type = 'text'; this.value = p[2] + '-' + p[1] + '-' + p[0]; } } }"
+                            <input id="pa-dob" type="text" placeholder="DD-MM-YYYY" maxlength="10"
+                                oninput="let v=this.value.replace(/[^0-9]/g,'');if(v.length>2)v=v.slice(0,2)+'-'+v.slice(2);if(v.length>5)v=v.slice(0,5)+'-'+v.slice(5);this.value=v.slice(0,10);"
                                 class="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:border-[#ff1a1a] transition-colors">
                         </div>
                         <div>
