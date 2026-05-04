@@ -133,6 +133,33 @@ module.exports = async function (req, res) {
             return res.status(200).json({ referrals: data });
         }
 
+        // ── Referral program config (GET ?action=getReferralConfig) ─────────────
+        if (req.method === 'GET' && req.query.action === 'getReferralConfig') {
+            try {
+                const { data, error } = await supabase
+                    .from('referral_config')
+                    .select('referral_discount_percent, referral_min_order, referral_max_uses, referral_enabled')
+                    .eq('id', 1)
+                    .maybeSingle();
+                if (error) throw error;
+                return res.status(200).json({
+                    referral_discount_percent: data?.referral_discount_percent ?? 10,
+                    referral_min_order: data?.referral_min_order ?? 0,
+                    referral_max_uses: data?.referral_max_uses ?? 0,
+                    referral_enabled: data?.referral_enabled ?? true
+                });
+            } catch (e) {
+                // Graceful fallback if table doesn't exist yet
+                console.warn('[admin-data] getReferralConfig fallback:', e.message);
+                return res.status(200).json({
+                    referral_discount_percent: 10,
+                    referral_min_order: 0,
+                    referral_max_uses: 0,
+                    referral_enabled: true
+                });
+            }
+        }
+
         // ── Client profiles (GET ?action=getClients) ─────────────────────────────
         // Returns user_metadata (DOB, gender, address) from Supabase Auth for admin CRM
         if (req.method === 'GET' && req.query.action === 'getClients') {
@@ -407,6 +434,24 @@ module.exports = async function (req, res) {
                 return res.status(200).json({ ok: true });
             }
 
+            // ── Referral program config update ───────────────────────────────
+            if (action === 'updateReferralConfig') {
+                const allowed = ['referral_discount_percent', 'referral_min_order', 'referral_max_uses', 'referral_enabled'];
+                const updates = {};
+                allowed.forEach(k => { if (k in body) updates[k] = body[k]; });
+                if (updates.referral_discount_percent != null) updates.referral_discount_percent = parseFloat(updates.referral_discount_percent);
+                if (updates.referral_min_order != null) updates.referral_min_order = parseFloat(updates.referral_min_order);
+                if (updates.referral_max_uses != null) updates.referral_max_uses = parseInt(updates.referral_max_uses);
+                if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields.' });
+                // Upsert into dedicated referral_config table (row id=1)
+                updates.id = 1;
+                const { error } = await supabase
+                    .from('referral_config')
+                    .upsert(updates, { onConflict: 'id' });
+                if (error) throw error;
+                return res.status(200).json({ ok: true });
+            }
+
             return res.status(400).json({ error: 'Unknown action.' });
         }
 
@@ -414,7 +459,7 @@ module.exports = async function (req, res) {
         // Fetch all orders to compute metrics
         const { data: orders, error } = await supabase
             .from('orders')
-            .select('order_id, client_name, client_email, client_phone, service, amount, status, created_at, deadline_date, completed_at, project_notes')
+            .select('*')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -517,7 +562,8 @@ module.exports = async function (req, res) {
                 deadline: o.deadline_date,
                 notes: o.project_notes,
                 has_files: filesMap[o.order_id] || false, // true = green Files button, false = grey
-                has_delivery: deliveryMap[o.order_id] || false // true = delivery record exists in DB
+                has_delivery: deliveryMap[o.order_id] || false, // true = delivery record exists in DB
+                coupon_code: o.coupon_code || null
             })),
             chartData: {
                 labels: Object.keys(chartDataMap),

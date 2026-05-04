@@ -108,8 +108,33 @@ module.exports = async function (req, res) {
                     if (blockedRef) {
                         return res.status(400).json({ error: 'This referral code has been disabled.' });
                     }
-                    let discount = Math.round(orderAmount * 10 / 100); // 10% discount for referrals
-                    return res.status(200).json({ discount, code, type: 'referral', value: 10 });
+                    // Read referral config from referral_config table (falls back to defaults)
+                    let refDiscount = 10, refMinOrder = 0, refMaxUses = 0, refEnabled = true;
+                    try {
+                        const { data: cfg } = await supabase.from('referral_config')
+                            .select('referral_discount_percent, referral_min_order, referral_max_uses, referral_enabled')
+                            .eq('id', 1).maybeSingle();
+                        if (cfg) {
+                            refDiscount = cfg.referral_discount_percent ?? 10;
+                            refMinOrder = cfg.referral_min_order ?? 0;
+                            refMaxUses = cfg.referral_max_uses ?? 0;
+                            refEnabled = cfg.referral_enabled ?? true;
+                        }
+                    } catch (_) { /* table may not exist yet — use defaults */ }
+                    if (!refEnabled) {
+                        return res.status(400).json({ error: 'Referral program is currently paused.' });
+                    }
+                    if (refMinOrder > 0 && orderAmount < refMinOrder) {
+                        return res.status(400).json({ error: 'Minimum order ₹' + refMinOrder + ' required for referral codes.' });
+                    }
+                    if (refMaxUses > 0) {
+                        const { count } = await supabase.from('referrals').select('id', { count: 'exact', head: true }).eq('referral_code', code).neq('referred_email', '').not('referred_email', 'is', null);
+                        if (count && count >= refMaxUses) {
+                            return res.status(400).json({ error: 'This referral code has reached its usage limit.' });
+                        }
+                    }
+                    let discount = Math.round(orderAmount * refDiscount / 100);
+                    return res.status(200).json({ discount, code, type: 'referral', value: refDiscount });
                 }
                 return res.status(404).json({ error: 'Invalid coupon or referral code.' });
             }
@@ -298,6 +323,7 @@ module.exports = async function (req, res) {
         const safeCustomerId = sessionId ? String(sessionId).replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 100) : null;
 
         const numericAmount = parseFloat(amount);
+        let _usedCouponId = null; // Track coupon ID for times_used increment
 
         // ── SECURITY: Validate Amount against Service Price + Coupon ──
         try {
@@ -336,12 +362,26 @@ module.exports = async function (req, res) {
                         } else {
                             discount = Math.min(coupon.discount_value, expectedPrice);
                         }
+                        _usedCouponId = coupon.id; // Mark for times_used increment
                     }
                 } else if (code.startsWith('ZYRO-') && code.length >= 10) {
-                    // Referral code logic — check if blocked
-                    const { data: blockedRef } = await supabase.from('referrals').select('id').eq('referral_code', code).eq('blocked', true).maybeSingle();
-                    if (!blockedRef) {
-                        discount = Math.round(expectedPrice * 10 / 100);
+                    // Referral code logic — read config from referral_config table
+                    let refDiscount = 10, refMinOrder = 0, refEnabled = true;
+                    try {
+                        const { data: cfg } = await supabase.from('referral_config')
+                            .select('referral_discount_percent, referral_min_order, referral_enabled')
+                            .eq('id', 1).maybeSingle();
+                        if (cfg) {
+                            refDiscount = cfg.referral_discount_percent ?? 10;
+                            refMinOrder = cfg.referral_min_order ?? 0;
+                            refEnabled = cfg.referral_enabled ?? true;
+                        }
+                    } catch (_) { /* use defaults */ }
+                    if (refEnabled) {
+                        const { data: blockedRef } = await supabase.from('referrals').select('id').eq('referral_code', code).eq('blocked', true).maybeSingle();
+                        if (!blockedRef && (!refMinOrder || expectedPrice >= refMinOrder)) {
+                            discount = Math.round(expectedPrice * refDiscount / 100);
+                        }
                     }
                 }
             }
@@ -415,7 +455,7 @@ module.exports = async function (req, res) {
         const paymentSessionId = cashfreeResponse.data.payment_session_id;
 
         // --- SAVE TO SUPABASE ONLY AFTER CASHFREE SUCCEEDS ---
-        const { error: dbError } = await supabase.from('orders').insert([{
+        const orderRow = {
             order_id: orderId,
             client_name: safeName,
             client_email: safeEmail,
@@ -424,11 +464,37 @@ module.exports = async function (req, res) {
             amount: numericAmount || 0,
             status: 'created',
             deadline_date: formattedDeadline
-        }]);
+        };
+        // Try saving coupon_code on the order row. If the column doesn't exist,
+        // retry the insert without it so order creation never breaks.
+        if (couponCode) orderRow.coupon_code = String(couponCode).toUpperCase().trim();
+        let dbError;
+        ({ error: dbError } = await supabase.from('orders').insert([orderRow]));
+        if (dbError && orderRow.coupon_code) {
+            // Column likely doesn't exist — retry without it
+            console.warn('[chat] Order insert with coupon_code failed, retrying without:', dbError.message);
+            delete orderRow.coupon_code;
+            ({ error: dbError } = await supabase.from('orders').insert([orderRow]));
+        }
 
         if (dbError) {
             console.error("Supabase Insert Failed:", dbError);
             throw new Error(`Database Error: ${dbError.message || dbError.details || JSON.stringify(dbError)}`);
+        }
+
+        // ── INCREMENT COUPON times_used if a regular coupon was used ────────────
+        if (_usedCouponId) {
+            try {
+                // Direct manual increment — no RPC dependency
+                const { data: cpn } = await supabase.from('coupons').select('times_used').eq('id', _usedCouponId).single();
+                if (cpn) {
+                    await supabase.from('coupons').update({ times_used: (cpn.times_used || 0) + 1 }).eq('id', _usedCouponId);
+                    console.log(`[chat] Coupon times_used incremented for id=${_usedCouponId}`);
+                }
+            } catch (cupErr) {
+                // Non-fatal: don't block order response if counter fails
+                console.error('[chat] Failed to increment coupon usage:', cupErr.message);
+            }
         }
 
         // ── RECORD REFERRAL if a ZYRO- referral code was used ────────────────

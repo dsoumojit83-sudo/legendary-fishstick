@@ -5166,14 +5166,33 @@
             try {
                 var m = user.user_metadata || {};
                 var code = m.referral_code || ('ZYRO-' + user.id.substring(0, 6).toUpperCase());
+                // Read referral discount from referral_config table (falls back to 10%)
+                var refDiscountPct = 10;
+                try {
+                    var cfgRes = await sb.from('referral_config')
+                        .select('referral_discount_percent, referral_enabled')
+                        .eq('id', 1).maybeSingle();
+                    if (cfgRes.data) {
+                        refDiscountPct = cfgRes.data.referral_discount_percent || 10;
+                        if (cfgRes.data.referral_enabled === false) {
+                            el.innerHTML = '<div class="text-center py-8"><p class="text-gray-500 text-sm">The referral program is currently paused.</p><p class="text-gray-600 text-xs mt-2">Check back later!</p></div>';
+                            return;
+                        }
+                    }
+                } catch (_) { /* columns may not exist yet */ }
                 var rRes = await sb.from('referrals').select('id,referred_email,created_at').eq('referrer_id', user.id).order('created_at', { ascending: false });
-                var refs = (!rRes.error && rRes.data) ? rRes.data : [];
+                var allRefs = (!rRes.error && rRes.data) ? rRes.data : [];
+                // Filter out self-referral seed row (where referred_email === own email)
+                var refs = allRefs.filter(function (r) {
+                    return !r.referred_email || r.referred_email.toLowerCase() !== user.email.toLowerCase();
+                });
                 var refRows = refs.length
                     ? refs.map(function (r) { return '<div class="flex justify-between text-xs py-2 border-b border-white/5"><span class="text-gray-300">' + r.referred_email + '</span><span class="text-gray-500">' + new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + '</span></div>'; }).join('')
-                    : '<p class="text-gray-600 text-xs mt-4">No referrals yet.</p>';
+                    : '<p class="text-gray-600 text-xs mt-4">No referrals yet. Share your code to start earning!</p>';
                 el.innerHTML = '<div class="mb-5"><p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Your Referral Code</p>'
                     + '<div class="flex items-center gap-3"><span class="text-[#ff1a1a] font-mono text-2xl font-black tracking-widest">' + code + '</span>'
-                    + '<button onclick="navigator.clipboard.writeText(\'' + code + '\')" class="text-xs text-gray-500 hover:text-white border border-white/10 hover:border-white/30 px-2 py-1 rounded-lg transition-all">Copy</button></div></div>'
+                    + '<button onclick="navigator.clipboard.writeText(\'' + code + '\').then(function(){this.textContent=\'Copied!\';var b=this;setTimeout(function(){b.textContent=\'Copy\'},2000)}.bind(this))" class="text-xs text-gray-500 hover:text-white border border-white/10 hover:border-white/30 px-2 py-1 rounded-lg transition-all">Copy</button></div></div>'
+                    + '<div class="bg-white/5 border border-white/10 rounded-xl p-4 mb-5"><p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">How it works</p><p class="text-xs text-gray-400 leading-relaxed">Share your referral code with friends. When they use it at checkout, they get <span class="text-green-400 font-bold">' + refDiscountPct + '% off</span> their order!</p></div>'
                     + '<div class="flex gap-6 mb-5"><div><p class="text-[10px] text-gray-500 uppercase tracking-widest">Total Referrals</p><p class="text-2xl font-bold text-white">' + refs.length + '</p></div></div>'
                     + '<div class="border-t border-white/10 pt-4"><p class="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Referred Accounts</p>' + refRows + '</div>';
             } catch (e) {
