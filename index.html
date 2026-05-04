@@ -3809,14 +3809,23 @@
             // ── Real studio online/offline status from Supabase via API ──────
             async function syncStudioStatus() {
                 try {
-                    const res = await fetch('/api/save-brief', { cache: 'default' });
+                    // Use update-status GET (no-cache headers) with cache-buster
+                    // to guarantee fresh reads after admin toggles the studio status
+                    const res = await fetch('/api/update-status?t=' + Date.now(), { cache: 'no-store' });
                     const data = await res.json();
-                    const isOnline = data.is_online !== false;
+                    // Strict boolean: only true when explicitly true
+                    const isOnline = data.is_online === true;
                     window.__studioIsOnline = isOnline;
 
-                    // Store Supabase credentials for client auth init polling
-                    if (data.supabaseUrl) window.__supaUrl = data.supabaseUrl;
-                    if (data.supabaseAnonKey) window.__supaAnonKey = data.supabaseAnonKey;
+                    // Load Supabase credentials once (from save-brief, cached is fine)
+                    if (!window.__supaUrl) {
+                        try {
+                            const cfgRes = await fetch('/api/save-brief');
+                            const cfg = await cfgRes.json();
+                            if (cfg.supabaseUrl) window.__supaUrl = cfg.supabaseUrl;
+                            if (cfg.supabaseAnonKey) window.__supaAnonKey = cfg.supabaseAnonKey;
+                        } catch {}
+                    }
 
                     // ── Chatbot header dot ────────────────────────────────────
                     const dot = document.getElementById('chatbot-status-dot');
