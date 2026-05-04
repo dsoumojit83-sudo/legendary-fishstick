@@ -5836,7 +5836,7 @@
                 const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
                 const uses = usageMap[r.referral_code] || 0;
                 return `
-            <tr class="hover:bg-white/[0.02] transition-colors${isSelfRef ? ' opacity-50' : ''}">
+            <tr class="hover:bg-white/[0.02] transition-colors">
                 <td class="p-4 font-medium text-white">${esc(r.referrer_email || r.referrer_id || '—')}</td>
                 <td class="p-4 text-gray-300">${esc(r.referred_email || '—')}${isSelfRef ? ' <span class="text-[10px] text-gray-600 ml-1">(self)</span>' : ''}</td>
                 <td class="p-4"><span class="font-mono font-bold text-[#ff1a1a] text-xs bg-white/5 px-2 py-1 rounded">${esc(r.referral_code || '—')}</span></td>
