@@ -4478,14 +4478,13 @@
                                 // Merge server cart into localStorage on login
                                 if (typeof _loadCartFromSupabase === 'function') _loadCartFromSupabase();
                             }
-                            // ── Persist referral code to user_metadata on first sign-in ──
-                            // The code is derived from user.id but was never saved, so the
-                            // admin panel and referrals table had no record of it.
-                            if (event === 'SIGNED_IN' && session && session.user) {
+                            // ── Persist referral code on any sign-in or session restore ──
+                            if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
                                 var u = session.user;
                                 var meta = u.user_metadata || {};
+                                var code = meta.referral_code || ('ZYRO-' + u.id.substring(0, 6).toUpperCase());
+                                // 1. Save to user_metadata if not already there
                                 if (!meta.referral_code) {
-                                    var code = 'ZYRO-' + u.id.substring(0, 6).toUpperCase();
                                     window._supabaseClient.auth.updateUser({
                                         data: { referral_code: code }
                                     }).then(function () {
@@ -4494,6 +4493,30 @@
                                         console.warn('[referral] Could not save code:', err.message);
                                     });
                                 }
+                                // 2. Ensure a seed row exists in the referrals table
+                                //    so the admin Referral Manager can see this user's code
+                                window._supabaseClient.from('referrals')
+                                    .select('id')
+                                    .eq('referrer_id', u.id)
+                                    .eq('referred_email', u.email)
+                                    .maybeSingle()
+                                    .then(function (res) {
+                                        if (!res.data) {
+                                            // No self-referral row yet — insert one
+                                            window._supabaseClient.from('referrals').insert([{
+                                                referrer_id: u.id,
+                                                referrer_email: u.email,
+                                                referred_email: u.email,
+                                                referral_code: code
+                                            }]).then(function (ins) {
+                                                if (ins.error) {
+                                                    console.warn('[referral] Table insert failed:', ins.error.message);
+                                                } else {
+                                                    console.log('[referral] Code registered in referrals table:', code);
+                                                }
+                                            });
+                                        }
+                                    });
                             }
                         });
                         initAccountState();
