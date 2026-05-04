@@ -4463,21 +4463,91 @@
         });
     </script>
     <!-- ── CLIENT PORTAL MODAL (Account, Cart, Orders, Referrals) ── -->
+    <!-- Mobile-responsive client portal styles -->
+    <style>
+        @media (max-width: 640px) {
+            #client-portal-modal {
+                padding: 0 !important;
+                align-items: flex-end !important;
+            }
+            #client-portal-inner {
+                border-radius: 20px 20px 0 0 !important;
+                height: 92vh !important;
+                max-height: 92vh !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            #portal-sidebar {
+                width: 100% !important;
+                border-right: none !important;
+                border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+                padding: 12px 12px 0 !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                gap: 0 !important;
+                flex-shrink: 0 !important;
+            }
+            #portal-sidebar h2 { display: none !important; }
+            #portal-sidebar-tabs {
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 4px !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                scrollbar-width: none !important;
+                flex: 1 !important;
+                padding-bottom: 8px !important;
+            }
+            #portal-sidebar-tabs::-webkit-scrollbar { display: none !important; }
+            #portal-sidebar-tabs .portal-tab {
+                white-space: nowrap !important;
+                font-size: 11px !important;
+                padding: 7px 12px !important;
+                border-radius: 8px !important;
+                flex-shrink: 0 !important;
+            }
+            #portal-sidebar-logout {
+                flex-shrink: 0 !important;
+                border-top: none !important;
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+                padding-bottom: 8px !important;
+                margin-left: 6px !important;
+            }
+            #portal-sidebar-logout button {
+                padding: 6px !important;
+                border-radius: 8px !important;
+            }
+            #portal-sidebar-logout span { display: none !important; }
+            #portal-content-area {
+                flex: 1 !important;
+                padding: 16px !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            #portal-content-area > button {
+                top: 12px !important;
+                right: 12px !important;
+            }
+        }
+    </style>
+
     <div id="client-portal-modal"
         class="fixed inset-0 bg-black/90 backdrop-blur-md z-[9999] hidden items-center justify-center p-4">
-        <div
+        <div id="client-portal-inner"
             class="bg-[#050505] border border-white/10 rounded-2xl w-full max-w-4xl h-[80vh] flex overflow-hidden shadow-2xl relative">
             <!-- Sidebar -->
-            <div class="w-64 border-r border-white/10 bg-white/5 p-6 flex flex-col gap-4">
+            <div id="portal-sidebar" class="w-64 border-r border-white/10 bg-white/5 p-6 flex flex-col gap-4">
                 <h2 class="text-xl font-bold text-white mb-4">Client Portal</h2>
-                <div class="flex flex-col gap-1">
+                <div id="portal-sidebar-tabs" class="flex flex-col gap-1">
                     <button onclick="switchPortalTab('account')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab active" data-tab="account">Account Info</button>
-                    <button onclick="switchPortalTab('orders')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="orders">Order Tracking</button>
+                    <button onclick="switchPortalTab('orders')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="orders">Orders</button>
                     <button onclick="switchPortalTab('deliveries')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="deliveries">Deliveries</button>
                     <button onclick="switchPortalTab('referrals')" class="text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-all portal-tab" data-tab="referrals">Referrals</button>
                 </div>
                 <!-- Premium Logout Section -->
-                <div class="mt-auto pt-6 border-t border-white/5">
+                <div id="portal-sidebar-logout" class="mt-auto pt-6 border-t border-white/5">
                     <button onclick="window.acctSignOut && window.acctSignOut()" 
                         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-[#ff1a1a] hover:bg-[#ff1a1a]/5 transition-all duration-300 group">
                         <div class="p-2 rounded-lg bg-white/5 group-hover:bg-[#ff1a1a]/10 transition-colors">
@@ -4490,7 +4560,7 @@
                 </div>
             </div>
             <!-- Content Area -->
-            <div class="flex-1 p-8 overflow-y-auto relative">
+            <div id="portal-content-area" class="flex-1 p-8 overflow-y-auto relative">
                 <button onclick="document.getElementById('client-portal-modal').classList.add('hidden')"
                     class="absolute top-6 right-6 text-gray-500 hover:text-white"><svg class="w-6 h-6" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
