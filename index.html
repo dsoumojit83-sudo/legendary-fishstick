@@ -4478,6 +4478,23 @@
                                 // Merge server cart into localStorage on login
                                 if (typeof _loadCartFromSupabase === 'function') _loadCartFromSupabase();
                             }
+                            // ── Persist referral code to user_metadata on first sign-in ──
+                            // The code is derived from user.id but was never saved, so the
+                            // admin panel and referrals table had no record of it.
+                            if (event === 'SIGNED_IN' && session && session.user) {
+                                var u = session.user;
+                                var meta = u.user_metadata || {};
+                                if (!meta.referral_code) {
+                                    var code = 'ZYRO-' + u.id.substring(0, 6).toUpperCase();
+                                    window._supabaseClient.auth.updateUser({
+                                        data: { referral_code: code }
+                                    }).then(function () {
+                                        console.log('[referral] Saved code to user_metadata:', code);
+                                    }).catch(function (err) {
+                                        console.warn('[referral] Could not save code:', err.message);
+                                    });
+                                }
+                            }
                         });
                         initAccountState();
                         clearInterval(interval);
