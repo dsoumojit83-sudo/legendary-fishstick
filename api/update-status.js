@@ -26,11 +26,29 @@ module.exports = async function(req, res) {
     const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
     const _origin = req.headers.origin;
     res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.status(200).end();
+
+    // ── GET: Read studio online/offline status (no auth, no cache for admin) ──
+    if (req.method === 'GET') {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        try {
+            const { data, error } = await supabase
+                .from('studio_config')
+                .select('is_online')
+                .eq('id', 1)
+                .maybeSingle();
+            if (error) throw error;
+            return res.status(200).json({ is_online: data ? data.is_online : true });
+        } catch (err) {
+            console.error('[update-status] GET studio_config error:', err.message);
+            return res.status(200).json({ is_online: true });
+        }
+    }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 

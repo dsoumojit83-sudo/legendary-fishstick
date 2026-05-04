@@ -1906,7 +1906,7 @@
                 <div id="ecomm-view" class="view-section space-y-8">
 
                     <!-- KPI row -->
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
                         <div class="glass-panel p-5 rounded-2xl bg-black/40 border border-white/5">
                             <div class="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Active Services</div>
                             <div class="text-3xl font-bold text-white" id="ec-kpi-services">—</div>
@@ -1916,12 +1916,16 @@
                             <div class="text-3xl font-bold text-green-400" id="ec-kpi-coupons">—</div>
                         </div>
                         <div class="glass-panel p-5 rounded-2xl bg-black/40 border border-white/5">
-                            <div class="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Lowest Price</div>
-                            <div class="text-3xl font-bold text-[#ff1a1a]" id="ec-kpi-low">—</div>
+                            <div class="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Coupon Uses</div>
+                            <div class="text-3xl font-bold text-yellow-400" id="ec-kpi-coupon-uses">—</div>
                         </div>
                         <div class="glass-panel p-5 rounded-2xl bg-black/40 border border-white/5">
-                            <div class="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Highest Price</div>
-                            <div class="text-3xl font-bold text-blue-400" id="ec-kpi-high">—</div>
+                            <div class="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Total Referrals</div>
+                            <div class="text-3xl font-bold text-purple-400" id="ec-kpi-referrals">—</div>
+                        </div>
+                        <div class="glass-panel p-5 rounded-2xl bg-black/40 border border-white/5 col-span-2 lg:col-span-1">
+                            <div class="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Price Range</div>
+                            <div class="text-xl font-bold text-[#ff1a1a]" id="ec-kpi-price-range">—</div>
                         </div>
                     </div>
 
@@ -1988,6 +1992,41 @@
                                 <tbody id="ec-coupons-tbody" class="text-sm divide-y divide-white/5">
                                     <tr>
                                         <td colspan="7" class="p-6">
+                                            <div class="skeleton h-8 w-full"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Referral Manager Table -->
+                    <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                        <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Referral Manager</h3>
+                                <p class="text-xs text-gray-400 mt-1">Track, block, and manage referral codes</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-gray-500">Active: <span id="ec-ref-active-count" class="text-green-400 font-bold">0</span></span>
+                                <span class="text-xs text-gray-500">Blocked: <span id="ec-ref-blocked-count" class="text-red-400 font-bold">0</span></span>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left min-w-[700px]">
+                                <thead class="border-b border-white/5 bg-black/20">
+                                    <tr class="text-[10px] uppercase tracking-widest text-gray-500">
+                                        <th class="p-4">Referrer</th>
+                                        <th class="p-4">Referred Email</th>
+                                        <th class="p-4">Code</th>
+                                        <th class="p-4">Date</th>
+                                        <th class="p-4 text-center">Status</th>
+                                        <th class="p-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ec-referrals-tbody" class="text-sm divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="6" class="p-6">
                                             <div class="skeleton h-8 w-full"></div>
                                         </td>
                                     </tr>
@@ -2655,7 +2694,7 @@
 
         async function fetchStudioStatus() {
             try {
-                const res = await fetch('/api/save-brief');
+                const res = await fetch('/api/update-status');
                 const data = await res.json();
                 applyStudioUI(data.is_online !== false);
             } catch { /* keep last state */ }
@@ -5390,7 +5429,7 @@
 
     <script>
         // ── eCommerce Store Manager ─────────────────────────────────────────────
-        let _ecommServices = [], _ecommCoupons = [];
+        let _ecommServices = [], _ecommCoupons = [], _ecommReferrals = [];
 
         function ecommHeaders() {
             return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken };
@@ -5399,17 +5438,21 @@
         async function fetchEcommData() {
             if (!authToken) return;
             try {
-                const [sRes, cRes] = await Promise.all([
+                const [sRes, cRes, rRes] = await Promise.all([
                     fetch('/api/admin-data?action=getServices', { headers: { 'Authorization': 'Bearer ' + authToken } }),
-                    fetch('/api/admin-data?action=getCoupons', { headers: { 'Authorization': 'Bearer ' + authToken } })
+                    fetch('/api/admin-data?action=getCoupons', { headers: { 'Authorization': 'Bearer ' + authToken } }),
+                    fetch('/api/admin-data?action=getReferrals', { headers: { 'Authorization': 'Bearer ' + authToken } })
                 ]);
                 if (sRes.status === 401 || cRes.status === 401) { window.logout && window.logout(); return; }
                 const sData = await sRes.json();
                 const cData = await cRes.json();
+                const rData = await rRes.json();
                 _ecommServices = sData.services || [];
                 _ecommCoupons = cData.coupons || [];
+                _ecommReferrals = rData.referrals || [];
                 renderServices();
                 renderCoupons();
+                renderReferrals();
                 updateEcommKPIs();
             } catch (e) { console.error('eComm fetch error', e); }
         }
@@ -5417,10 +5460,12 @@
         function updateEcommKPIs() {
             const active = _ecommServices.filter(s => s.is_active !== false);
             const prices = active.map(s => Number(s.price)).filter(Boolean);
+            const totalCouponUses = _ecommCoupons.reduce((s, c) => s + (c.times_used || 0), 0);
             document.getElementById('ec-kpi-services').textContent = active.length;
             document.getElementById('ec-kpi-coupons').textContent = _ecommCoupons.filter(c => c.is_active !== false).length;
-            document.getElementById('ec-kpi-low').textContent = prices.length ? '₹' + Math.min(...prices).toLocaleString('en-IN') : '—';
-            document.getElementById('ec-kpi-high').textContent = prices.length ? '₹' + Math.max(...prices).toLocaleString('en-IN') : '—';
+            document.getElementById('ec-kpi-coupon-uses').textContent = totalCouponUses;
+            document.getElementById('ec-kpi-referrals').textContent = _ecommReferrals.length;
+            document.getElementById('ec-kpi-price-range').textContent = prices.length ? '₹' + Math.min(...prices).toLocaleString('en-IN') + ' – ₹' + Math.max(...prices).toLocaleString('en-IN') : '—';
         }
 
         function renderServices() {
@@ -5620,6 +5665,68 @@
             fetchEcommData();
         }
         window.deleteCoupon = deleteCoupon;
+
+        // ── Referral Manager ─────────────────────────────────────────────
+        function renderReferrals() {
+            const tbody = document.getElementById('ec-referrals-tbody');
+            if (!_ecommReferrals.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500 text-sm">No referrals recorded yet.</td></tr>';
+                document.getElementById('ec-ref-active-count').textContent = '0';
+                document.getElementById('ec-ref-blocked-count').textContent = '0';
+                return;
+            }
+            const activeCount = _ecommReferrals.filter(r => !r.blocked).length;
+            const blockedCount = _ecommReferrals.filter(r => r.blocked).length;
+            document.getElementById('ec-ref-active-count').textContent = activeCount;
+            document.getElementById('ec-ref-blocked-count').textContent = blockedCount;
+            tbody.innerHTML = _ecommReferrals.map(r => {
+                const isBlocked = r.blocked === true;
+                const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+                return `
+            <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="p-4 font-medium text-white">${esc(r.referrer_email || r.referrer_id || '—')}</td>
+                <td class="p-4 text-gray-300">${esc(r.referred_email || '—')}</td>
+                <td class="p-4"><span class="font-mono font-bold text-[#ff1a1a] text-xs bg-white/5 px-2 py-1 rounded">${esc(r.referral_code || '—')}</span></td>
+                <td class="p-4 text-gray-400 text-xs">${dateStr}</td>
+                <td class="p-4 text-center">
+                    <span class="status-badge ${isBlocked ? 'status-refunded' : 'status-completed'}">${isBlocked ? 'Blocked' : 'Active'}</span>
+                </td>
+                <td class="p-4 text-right">
+                    <div class="flex justify-end gap-2">
+                        <button onclick="toggleReferralBlock('${r.id}',${isBlocked})" class="px-3 py-1.5 text-xs border border-white/10 rounded-lg text-gray-400 hover:border-yellow-500/40 hover:text-yellow-400 transition-all">${isBlocked ? 'Unblock' : 'Block'}</button>
+                        <button onclick="deleteReferral('${r.id}')" class="px-3 py-1.5 text-xs border border-red-900/30 rounded-lg text-red-500/70 hover:border-red-500/40 hover:text-red-400 transition-all">Delete</button>
+                    </div>
+                </td>
+            </tr>`;
+            }).join('');
+        }
+
+        async function toggleReferralBlock(id, currentlyBlocked) {
+            try {
+                const res = await fetch('/api/admin-data', {
+                    method: 'POST', headers: ecommHeaders(),
+                    body: JSON.stringify({ action: 'toggleReferral', id, blocked: !currentlyBlocked })
+                });
+                if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
+                showToast(!currentlyBlocked ? 'Referral blocked' : 'Referral unblocked', true);
+                fetchEcommData();
+            } catch (e) { showToast(e.message, false); }
+        }
+        window.toggleReferralBlock = toggleReferralBlock;
+
+        async function deleteReferral(id) {
+            if (!confirm('Delete this referral record permanently?')) return;
+            try {
+                const res = await fetch('/api/admin-data', {
+                    method: 'POST', headers: ecommHeaders(),
+                    body: JSON.stringify({ action: 'deleteReferral', id })
+                });
+                if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
+                showToast('Referral deleted', true);
+                fetchEcommData();
+            } catch (e) { showToast(e.message, false); }
+        }
+        window.deleteReferral = deleteReferral;
 
         // Close modals on backdrop click
         document.getElementById('svc-modal').addEventListener('click', function (e) { if (e.target === this) closeSvcModal(); });

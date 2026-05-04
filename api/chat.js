@@ -103,6 +103,11 @@ module.exports = async function (req, res) {
             if (error) throw error;
             if (!coupon) {
                 if (code.startsWith('ZYRO-') && code.length >= 10) {
+                    // Check if any referral with this code is blocked
+                    const { data: blockedRef } = await supabase.from('referrals').select('id').eq('referral_code', code).eq('blocked', true).maybeSingle();
+                    if (blockedRef) {
+                        return res.status(400).json({ error: 'This referral code has been disabled.' });
+                    }
                     let discount = Math.round(orderAmount * 10 / 100); // 10% discount for referrals
                     return res.status(200).json({ discount, code, type: 'referral', value: 10 });
                 }
@@ -333,8 +338,11 @@ module.exports = async function (req, res) {
                         }
                     }
                 } else if (code.startsWith('ZYRO-') && code.length >= 10) {
-                    // Referral code logic
-                    discount = Math.round(expectedPrice * 10 / 100);
+                    // Referral code logic — check if blocked
+                    const { data: blockedRef } = await supabase.from('referrals').select('id').eq('referral_code', code).eq('blocked', true).maybeSingle();
+                    if (!blockedRef) {
+                        discount = Math.round(expectedPrice * 10 / 100);
+                    }
                 }
             }
 
@@ -421,6 +429,35 @@ module.exports = async function (req, res) {
         if (dbError) {
             console.error("Supabase Insert Failed:", dbError);
             throw new Error(`Database Error: ${dbError.message || dbError.details || JSON.stringify(dbError)}`);
+        }
+
+        // ── RECORD REFERRAL if a ZYRO- referral code was used ────────────────
+        if (couponCode) {
+            const refCode = String(couponCode).toUpperCase().trim();
+            if (refCode.startsWith('ZYRO-') && refCode.length >= 10) {
+                try {
+                    // The referral code format is ZYRO-{first 6 chars of user.id}
+                    // Look up the referrer by matching their auth user ID prefix
+                    const codePrefix = refCode.replace('ZYRO-', '').toLowerCase();
+                    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+                    const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
+                    const { data: authData } = await adminClient.auth.admin.listUsers();
+                    const referrer = (authData?.users || []).find(u =>
+                        u.id.toLowerCase().startsWith(codePrefix)
+                    );
+
+                    await supabase.from('referrals').insert([{
+                        referrer_id: referrer ? referrer.id : null,
+                        referrer_email: referrer ? referrer.email : null,
+                        referred_email: safeEmail,
+                        referral_code: refCode
+                    }]);
+                    console.log(`[chat] Referral recorded: ${refCode} → ${safeEmail} (referrer: ${referrer?.email || 'unknown'})`);
+                } catch (refErr) {
+                    // Non-fatal: don't block order creation if referral tracking fails
+                    console.error('[chat] Referral insert failed:', refErr.message);
+                }
+            }
         }
 
         const replyText = `Excellent choice. Our studio is ready to deliver premium, cinematic quality for your ${selectedService} project.\n\nPlease note: We require full payment before starting a project. However, we offer a 100% refund if you are not satisfied with the final result.\n\nSecuring your project slot and opening the secure payment portal...`;

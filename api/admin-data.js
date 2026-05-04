@@ -390,6 +390,23 @@ module.exports = async function (req, res) {
                 return res.status(200).json({ ok: true });
             }
 
+            // ── Referral management ───────────────────────────────────────────
+            if (action === 'toggleReferral') {
+                const { id, blocked } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const { error } = await supabase.from('referrals').update({ blocked: !!blocked }).eq('id', id);
+                if (error) throw error;
+                return res.status(200).json({ ok: true });
+            }
+
+            if (action === 'deleteReferral') {
+                const { id } = body;
+                if (!id) return res.status(400).json({ error: 'id is required.' });
+                const { error } = await supabase.from('referrals').delete().eq('id', id);
+                if (error) throw error;
+                return res.status(200).json({ ok: true });
+            }
+
             return res.status(400).json({ error: 'Unknown action.' });
         }
 
