@@ -3137,11 +3137,12 @@
                 let totalRevForCRM = 0;
                 globalOrdersData.forEach(o => {
                     const name = (!o.client || o.client.toLowerCase() === 'unknown') ? 'Zyro Client' : o.client;
+                    const clientKey = o.email ? o.email.toLowerCase() : name;
                     const amt = Number(o.amount) || 0;
                     if (o.status === 'paid' || o.status === 'delivered') totalRevForCRM += amt;
-                    if (!crmMap[name]) crmMap[name] = { spent: 0, count: 0 };
-                    crmMap[name].spent += amt;
-                    crmMap[name].count++;
+                    if (!crmMap[clientKey]) crmMap[clientKey] = { spent: 0, count: 0 };
+                    crmMap[clientKey].spent += amt;
+                    crmMap[clientKey].count++;
                 });
                 const crmClients = Object.values(crmMap);
                 const crmTotal = crmClients.length;
@@ -3717,9 +3718,10 @@
             const clientsMap = {};
             globalOrdersData.forEach(order => {
                 const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
+                const clientKey = order.email ? order.email.toLowerCase() : clientName;
 
-                if (!clientsMap[clientName]) {
-                    clientsMap[clientName] = {
+                if (!clientsMap[clientKey]) {
+                    clientsMap[clientKey] = {
                         name: clientName,
                         email: order.email || '',
                         phone: order.phone || '',
@@ -3732,16 +3734,21 @@
                     };
                 }
 
-                // Update email/phone if this order has them (latest wins)
-                if (order.email && !clientsMap[clientName].email) clientsMap[clientName].email = order.email;
-                if (order.phone && !clientsMap[clientName].phone) clientsMap[clientName].phone = order.phone;
+                // Update name if we have a better one than 'Zyro Client'
+                if (clientName !== 'Zyro Client' && clientsMap[clientKey].name === 'Zyro Client') {
+                    clientsMap[clientKey].name = clientName;
+                }
 
-                clientsMap[clientName].projectCount += 1;
-                clientsMap[clientName].totalSpent += Number(order.amount) || 0;
+                // Update email/phone if this order has them (latest wins)
+                if (order.email && !clientsMap[clientKey].email) clientsMap[clientKey].email = order.email;
+                if (order.phone && !clientsMap[clientKey].phone) clientsMap[clientKey].phone = order.phone;
+
+                clientsMap[clientKey].projectCount += 1;
+                clientsMap[clientKey].totalSpent += Number(order.amount) || 0;
 
                 const orderDate = new Date(order.created_at || Date.now());
-                if (orderDate > clientsMap[clientName].lastActive) {
-                    clientsMap[clientName].lastActive = orderDate;
+                if (orderDate > clientsMap[clientKey].lastActive) {
+                    clientsMap[clientKey].lastActive = orderDate;
                 }
             });
 
@@ -3832,18 +3839,25 @@
 
             globalOrdersData.forEach(order => {
                 const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
+                const clientKey = order.email ? order.email.toLowerCase() : clientName;
                 const amount = Number(order.amount) || 0;
                 totalOrderValue += amount;
                 if (order.status === 'delivered') completedCount++;
                 if (order.status === 'created') createdCount++;
 
-                if (!clientsMap[clientName]) {
-                    clientsMap[clientName] = { name: clientName, email: order.email, totalSpent: 0, projectCount: 0, lastActive: new Date(order.created_at || Date.now()) };
+                if (!clientsMap[clientKey]) {
+                    clientsMap[clientKey] = { name: clientName, email: order.email, totalSpent: 0, projectCount: 0, lastActive: new Date(order.created_at || Date.now()) };
                 }
-                clientsMap[clientName].projectCount += 1;
-                clientsMap[clientName].totalSpent += amount;
+                
+                // Update name if we have a better one than 'Zyro Client'
+                if (clientName !== 'Zyro Client' && clientsMap[clientKey].name === 'Zyro Client') {
+                    clientsMap[clientKey].name = clientName;
+                }
+
+                clientsMap[clientKey].projectCount += 1;
+                clientsMap[clientKey].totalSpent += amount;
                 const orderDate = new Date(order.created_at || Date.now());
-                if (orderDate > clientsMap[clientName].lastActive) clientsMap[clientName].lastActive = orderDate;
+                if (orderDate > clientsMap[clientKey].lastActive) clientsMap[clientKey].lastActive = orderDate;
             });
 
             const sorted = Object.values(clientsMap).sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
