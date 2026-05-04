@@ -116,94 +116,107 @@ module.exports = async function (req, res) {
         if (!memoryStore[sessionId]) memoryStore[sessionId] = [];
         const sessionMemory = memoryStore[sessionId].filter(m => now - m.timestamp < SESSION_TTL);
 
-        // ── Fetch data ─────────────────────────────────────────────────────────
-        const { data: allOrders, error: fetchError } = await supabase
-            .from('orders')
-            .select('order_id, client_name, client_email, client_phone, service, amount, status, created_at, deadline_date, completed_at')
-            .order('created_at', { ascending: false });
+        // ── Fetch all data in parallel for full studio context ─────────────────
+        const [
+            { data: allOrders, error: fetchError },
+            { data: deliveries },
+            { data: reviews },
+            { data: coupons },
+            { data: referrals }
+        ] = await Promise.all([
+            supabase.from('orders').select('order_id,client_name,client_email,service,amount,status,created_at,deadline_date,completed_at').order('created_at', { ascending: false }),
+            supabase.from('deliveries').select('order_id,file_name,created_at').order('created_at', { ascending: false }),
+            supabase.from('reviews').select('order_id,rating,review_text,approved,created_at'),
+            supabase.from('coupons').select('code,discount_type,discount_value,times_used,is_active'),
+            supabase.from('referrals').select('referrer_id,referred_email,created_at')
+        ]);
 
         if (fetchError) throw new Error(`Database error: ${fetchError.message}`);
 
-        const orders = allOrders || [];
-        const todayStr = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
+        const orders      = allOrders  || [];
+        const dlvs        = deliveries || [];
+        const rvws        = reviews    || [];
+        const cpns        = coupons    || [];
+        const refs        = referrals  || [];
+        const todayStr    = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
+        const nowIST      = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 
-        const fetchedServicesBlock = await fetchServicesForPrompt();
-        const _fallbackServices = [
-            '- Short Form: Rs.200 — YouTube Shorts, Reels (Delivery: 2 Days)',
-            '- Long Form: Rs.500 — Full YouTube videos, vlogs (Delivery: 4 Days)',
-            '- Motion Graphics: Rs.400 — Effects, branding (Delivery: 4 Days)',
-            '- Thumbnails: Rs.100 — Standalone designs (Delivery: 1 Day)',
-            '- Sound Design: Rs.200 — Audio editing, SFX, music sync (Delivery: 3 Days)',
-            '- Color Grading & Correction: Rs.175 — Cinematic color work (Delivery: 1 Day)',
+        // ── Revenue metrics ────────────────────────────────────────────────────
+        const paidOrders  = orders.filter(o => ['paid','delivered','in_progress'].includes(o.status));
+        const totalRev    = paidOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+        const monthRev    = paidOrders.filter(o => o.created_at && new Date(o.created_at).getMonth() === nowIST.getMonth() && new Date(o.created_at).getFullYear() === nowIST.getFullYear()).reduce((s, o) => s + (Number(o.amount) || 0), 0);
+        const refundedAmt = orders.filter(o => o.status === 'refunded').reduce((s, o) => s + (Number(o.amount) || 0), 0);
+        const cancelledCt = orders.filter(o => ['cancelled','canceled'].includes(o.status)).length;
+
+        // ── Client metrics ─────────────────────────────────────────────────────
+        const uniqueClients  = [...new Set(orders.map(o => o.client_name).filter(Boolean))];
+        const arpu           = uniqueClients.length ? (totalRev / uniqueClients.length).toFixed(2) : '0';
+        const repeatClients  = uniqueClients.filter(n => orders.filter(o => o.client_name === n).length > 1);
+        const retention      = uniqueClients.length ? ((repeatClients.length / uniqueClients.length) * 100).toFixed(1) : '0';
+        const whales         = uniqueClients.map(n => ({ n, t: orders.filter(o => o.client_name === n).reduce((s, o) => s + (Number(o.amount)||0), 0) })).filter(c => c.t >= 2000).sort((a,b) => b.t - a.t);
+
+        // ── Pipeline ───────────────────────────────────────────────────────────
+        const activeOrders   = orders.filter(o => !['delivered','refunded','cancelled','canceled','completed'].includes(o.status));
+        const filesMap       = await getFilesMap(activeOrders);
+        const ghostLeads     = activeOrders.filter(o => o.status === 'created' && o.created_at && (Date.now() - new Date(o.created_at).getTime()) > 48*3600*1000);
+
+        // ── Overdue check ──────────────────────────────────────────────────────
+        const overdueOrders  = activeOrders.filter(o => {
+            if (!o.deadline_date) return false;
+            const [dy,dm,dd] = o.deadline_date.split('-').map(Number);
+            return new Date(dy, dm-1, dd) < nowIST;
+        });
+
+        // ── Deliveries context ─────────────────────────────────────────────────
+        const deliveredOrderIds = new Set(orders.filter(o => o.status === 'delivered').map(o => o.order_id));
+        const recentDeliveries  = dlvs.slice(0, 10).map(d => `• ${d.file_name} (Order: ${d.order_id}) — ${formatDate(d.created_at)}`);
+
+        // ── Reviews context ────────────────────────────────────────────────────
+        const avgRating    = rvws.length ? (rvws.reduce((s,r) => s + (r.rating||0), 0) / rvws.length).toFixed(1) : 'N/A';
+        const pendingRevs  = rvws.filter(r => !r.approved).length;
+        const recentRevs   = rvws.slice(0,5).map(r => `• ${r.rating}★ — "${(r.review_text||'').slice(0,60)}…" [${r.approved ? 'approved' : 'pending'}]`);
+
+        // ── Coupons context ────────────────────────────────────────────────────
+        const activeCoupons = cpns.filter(c => c.is_active).map(c => `${c.code} (${c.discount_type === 'percent' ? c.discount_value+'%' : 'Rs.'+c.discount_value} off, used ${c.times_used}x)`);
+
+        // ── Referrals context ──────────────────────────────────────────────────
+        const totalRefs     = refs.length;
+        const thisMonthRefs = refs.filter(r => r.created_at && new Date(r.created_at).getMonth() === nowIST.getMonth()).length;
+
+        // ── Services ──────────────────────────────────────────────────────────
+        const liveServicesBlock = (await fetchServicesForPrompt()) || [
+            '- Short Form: Rs.200 — YouTube Shorts, Reels (2 Days)',
+            '- Long Form: Rs.500 — Full YouTube videos, vlogs (4 Days)',
+            '- Motion Graphics: Rs.400 — Effects, branding (4 Days)',
+            '- Thumbnails: Rs.100 — Standalone designs (1 Day)',
+            '- Sound Design: Rs.200 — Audio editing, SFX, music sync (3 Days)',
+            '- Color Grading & Correction: Rs.175 — Cinematic color work (1 Day)',
         ].join('\n');
-        const liveServicesBlock = fetchedServicesBlock || _fallbackServices;
 
-        const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'delivered' || o.status === 'in_progress');
-        const totalRev = paidOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0).toFixed(2);
-        const currentMonth = new Date().getMonth();
-        const monthRev = paidOrders
-            .filter(o => o.created_at && new Date(o.created_at).getMonth() === currentMonth)
-            .reduce((s, o) => s + (Number(o.amount) || 0), 0)
-            .toFixed(2);
+        // ── Active pipeline list ───────────────────────────────────────────────
+        const pipelineLines = activeOrders.map(o =>
+            `• [${(o.status||'').toUpperCase()}] ${o.client_name||'Unknown'} — ${o.service||'N/A'} — Rs.${Number(o.amount)||0}${filesMap[o.order_id] ? ' 📁' : ''} — ID: ${o.order_id}${o.deadline_date ? ' — Due: '+o.deadline_date : ''}`
+        );
 
-        const refundedOrders = orders.filter(o => o.status === 'refunded');
-        const totalRefunded = refundedOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0).toFixed(2);
-        const activeOrders = orders.filter(o => o.status && !['completed', 'delivered', 'refunded', 'cancelled', 'canceled'].includes(o.status));
-        const filesMap = await getFilesMap(activeOrders);
+        const systemPrompt = `You are Zyro, the studio manager AI for ZyroEditz. You know everything about the business — orders, money, clients, deliveries, reviews. You're chill, sharp, and straight to the point. No fluff, no corporate speak. Talk like a smart colleague who knows the numbers cold.
 
-        const activePipeline = activeOrders.map(o => {
-            const amt = Number(o.amount) || 0;
-            const hasFiles = filesMap[o.order_id] ? '📁' : '';
-            return `• ${o.client_name || 'Unknown'} - ${o.service || 'N/A'} (Rs.${amt}) [${o.status}] ${hasFiles} - Order: ${o.order_id}`;
-        });
+Read-only: you can see everything but can't touch the DB. If someone asks you to do something, tell them to use the dashboard. Don't make up data — only use what's below.
 
-        const uniqueClients = [...new Set(orders.map(o => o.client_name).filter(Boolean))];
-        const arpu = uniqueClients.length > 0 ? (Number(totalRev) / uniqueClients.length).toFixed(2) : '0.00';
-        const repeatClients = uniqueClients.filter(name => orders.filter(o => o.client_name === name).length > 1);
-        const retentionRate = uniqueClients.length > 0 ? ((repeatClients.length / uniqueClients.length) * 100).toFixed(1) : '0.0';
-        const totalSettled = Number(totalRev);
-        const profitMargin = totalSettled > 0 ? `97.0% (after 3% Cashfree gateway fee)` : 'N/A';
+${todayStr}
+Revenue: Rs.${totalRev.toFixed(2)} lifetime | Rs.${monthRev.toFixed(2)} this month | Refunded: Rs.${refundedAmt.toFixed(2)} | Cancelled: ${cancelledCt} | ARPU: Rs.${arpu} | Retention: ${retention}% | Margin: ~97%${whales.length ? ` | Top clients: ${whales.map(c=>`${c.n} Rs.${c.t}`).join(', ')}` : ''}
 
-        const whaleClients = uniqueClients
-            .map(name => ({
-                name,
-                total: orders.filter(o => o.client_name === name).reduce((s, o) => s + (Number(o.amount) || 0), 0)
-            }))
-            .filter(c => c.total >= 2000)
-            .sort((a, b) => b.total - a.total)
-            .map(c => c.name);
+Pipeline (${activeOrders.length} active):
+${pipelineLines.length ? pipelineLines.join('\n') : 'Clear.'}${ghostLeads.length ? `\n⚠️ ${ghostLeads.length} stale unpaid lead(s) >48h` : ''}${overdueOrders.length ? `\n🚨 Overdue: ${overdueOrders.map(o=>`${o.order_id} — ${o.client_name}`).join(', ')}` : ''}
 
-        const twoDaysAgo = Date.now() - 48 * 60 * 60 * 1000;
-        const ghostLeads = activeOrders.filter(o => {
-            if (!o.created_at) return false;
-            const orderTime = new Date(o.created_at).getTime();
-            return orderTime < twoDaysAgo && o.status === 'created';
-        });
+Deliveries (last 10): ${recentDeliveries.length ? '\n'+recentDeliveries.join('\n') : 'None yet'}
 
-        const systemPrompt = `You are Zyro, a smart, friendly, READ-ONLY data assistant for ZyroEditz. You cannot change, update, cancel, or delete anything in the database. Your job is only to provide insights and answer questions based on the provided data.
+Reviews: ${rvws.length} total | ${avgRating}★ avg | ${pendingRevs} pending approval${recentRevs.length ? '\n'+recentRevs.join('\n') : ''}
 
-Today: ${todayStr}
+Coupons active: ${activeCoupons.length ? activeCoupons.join(' | ') : 'None'}
+Referrals: ${totalRefs} total | ${thisMonthRefs} this month
+Clients: ${uniqueClients.length} unique | ${repeatClients.length} repeat
 
-SNAPSHOT:
-- Lifetime revenue: Rs.${totalRev}
-- This month: Rs.${monthRev}
-- Avg revenue per client: Rs.${arpu}
-- Retention: ${retentionRate}%
-- Cleared to bank: Rs.${totalSettled.toFixed(2)}
-- Profit margin after fees: ${profitMargin}
-- Refunded: Rs.${totalRefunded}
-- Whales: ${whaleClients.join(', ') || 'None'}
-- Stale leads: ${ghostLeads.length}
-
-ACTIVE PIPELINE:
-${activePipeline.join('\n') || 'None'}
-
-RULES:
-1. READ-ONLY: You are a data-analysis tool. You cannot modify, update, or delete any data.
-2. If asked to perform an action, politely state that you are in read-only mode for security and that the admin must use the dashboard buttons.
-3. Personality: Friendly, direct, helpful assistant. Avoid formalities. Use emojis sparingly.
-
-SERVICES:
+Services:
 ${liveServicesBlock}`;
 
         let finalPrompt = prompt || '';
@@ -234,8 +247,8 @@ ${liveServicesBlock}`;
         let aiResponse = await groq.chat.completions.create({
             model: selectedModel,
             messages: currentMessages,
-            temperature: 0.55,
-            max_tokens: hasImage ? 1024 : 600
+            temperature: 0.45,
+            max_tokens: hasImage ? 1024 : 900
         });
 
         let rawContent = aiResponse.choices[0].message.content;
