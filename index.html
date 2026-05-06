@@ -62,9 +62,6 @@
     <!-- Cashfree SDK: defer safe — only called inside DOMContentLoaded -->
     <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
 
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <!-- DNS + connection hints for all external CDNs (reduces latency for each script fetch) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
@@ -79,8 +76,8 @@
         crossorigin="anonymous">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" as="script"
         crossorigin="anonymous">
-    <!-- Roboto: synchronous/blocking load — headings, bold and brand name never flicker -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@700;900&display=block">
+    <!-- Roboto: font-display swap for LCP improvement -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@700;900&display=swap">
     <!-- Outfit: display=optional — shows text immediately in fallback; uses Outfit if it arrives within ~100ms -->
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=optional">
