@@ -100,7 +100,7 @@ module.exports = async function(req, res) {
         }
 
         let updatePayload = { status: normalizedStatus };
-        if (normalizedStatus === 'delivered') updatePayload.completed_at = new Date().toISOString();
+        if (normalizedStatus === 'delivered' || normalizedStatus === 'refunded') updatePayload.completed_at = new Date().toISOString();
 
         // Fetch order details BEFORE updating (needed for completion email & refund amount)
         let orderRecord = null;
