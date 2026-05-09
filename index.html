@@ -1857,103 +1857,150 @@
         </div>
     </div>
 
-    <section id="home" class="min-h-screen flex items-center justify-center relative z-10 px-6"
-        style="will-change: transform, filter, opacity;">
-        <div class="text-center max-w-4xl">
-            <div
-                class="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 mb-8 mt-24 reveal">
+    <section id="home" class="h-screen w-full p-4 md:p-6 relative z-10 pt-[80px] md:pt-[90px]">
+        <div class="relative w-full h-full rounded-2xl md:rounded-[2rem] overflow-hidden bg-black flex flex-col justify-end border border-white/5 shadow-2xl">
+            <!-- Background Video inside the inset container -->
+            <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
+                <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4" type="video/mp4">
+            </video>
+            <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/80"></div>
+            <div class="noise absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"></div>
+
+            <div class="absolute top-6 left-1/2 -translate-x-1/2 inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/10 bg-black/50 backdrop-blur-md z-20 reveal">
                 <span class="relative flex h-2 w-2">
-                    <span id="avail-ping"
-                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
+                    <span id="avail-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
                     <span id="avail-dot" class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
                 </span>
-                <span id="avail-text" class="text-xs uppercase tracking-widest text-gray-300">Available for
-                    projects</span>
+                <span id="avail-text" class="text-[10px] sm:text-xs uppercase tracking-widest text-gray-300">Available for projects</span>
             </div>
 
-            <h1 class="reveal brand-name"
-                style="font-size: var(--text-9xl); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 1.5rem; background: linear-gradient(to bottom, #fff, #fff, rgba(255,255,255,0.2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                Zyro<span style="color: #ff1a1a; -webkit-text-fill-color: #ff1a1a;">Editz</span><sup
-                    style="font-size:0.3em; vertical-align:super; letter-spacing:normal; -webkit-text-fill-color:#aaaaaa; color:#aaaaaa; font-weight:300; position:relative; top:-0.1em;">&trade;</sup>
-            </h1>
-
-            <p class="reveal text-lg md:text-2xl font-light text-gray-400 uppercase mb-6 text-center"
-                style="margin-bottom: 2rem; letter-spacing: 0.5em;">Speed. Motion. Precision.</p>
-
-            <p class="reveal"
-                style="color: rgba(255,255,255,0.5); font-size: var(--text-base); max-width: 28rem; margin: 0 auto 4rem; line-height: 1.6;">
-                Premium video editing & motion graphics for brands that demand excellence.
-                Transforming raw footage into cinematic experiences.
-            </p>
-
-            <div class="flex flex-col md:flex-row items-center justify-center gap-5 mb-16">
-                <a href="#services"
-                    class="btn-glow btn-shine px-12 py-5 bg-[#ff1a1a] text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all magnetic-btn block text-center">Start
-                    Project</a>
-                <a href="#about"
-                    class="px-12 py-5 border border-white/20 text-white font-bold uppercase tracking-widest text-xs hover:border-[#ff1a1a] hover:text-[#ff1a1a] transition-all magnetic-btn block">About
-                    Us</a>
+            <!-- Hero Content -->
+            <div class="relative z-20 w-full p-6 md:p-12">
+                <div class="grid grid-cols-12 gap-4 items-end">
+                    <div class="col-span-12 md:col-span-8">
+                         <h1 class="text-[22vw] sm:text-[20vw] md:text-[18vw] lg:text-[16vw] font-black leading-[0.85] tracking-tight brand-name">
+                            <div class="overflow-hidden inline-block"><span class="inline-block transform translate-y-[120%] opacity-0 hw-word text-white">Zyro</span></div><div class="overflow-hidden inline-block"><span class="inline-block transform translate-y-[120%] opacity-0 hw-word text-[#ff1a1a] relative">Editz<sup class="absolute top-[0.1em] -right-[0.3em] text-[0.31em] text-white/50 font-normal">&trade;</sup></span></div>
+                         </h1>
+                    </div>
+                    <div class="col-span-12 md:col-span-4 flex flex-col items-start md:items-end text-left md:text-right pb-2 md:pb-6">
+                         <p class="text-white/70 text-sm md:text-base leading-relaxed mb-8 hero-desc opacity-0 translate-y-5">
+                             Premium video editing & motion graphics for brands that demand excellence. Transforming raw footage into cinematic experiences.
+                         </p>
+                         <div class="flex items-center gap-4 hero-cta opacity-0 translate-y-5">
+                             <a href="#about" class="px-6 py-3 border border-white/20 text-white font-bold uppercase tracking-widest text-xs hover:border-[#ff1a1a] hover:text-[#ff1a1a] transition-all rounded-full">About Us</a>
+                             <a href="#services" class="group flex items-center bg-[#ff1a1a] rounded-full pl-6 pr-2 py-2 gap-4 hover:gap-6 transition-all">
+                                 <span class="text-black font-bold text-xs sm:text-sm uppercase tracking-widest">Start Project</span>
+                                 <div class="bg-black rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-transform group-hover:scale-110">
+                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                 </div>
+                             </a>
+                         </div>
+                    </div>
+                </div>
             </div>
-
-
-        </div>
-
-        <div id="scrollIndicator"
-            class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-20 transition-all duration-500">
-            <span class="text-sm uppercase tracking-[0.2em] text-white/60 font-medium animate-pulse">Scroll</span>
-            <div class="w-[2px] h-8 bg-gradient-to-b from-white/60 via-white/30 to-transparent animate-bounce"></div>
         </div>
     </section>
 
-    <section id="about" class="min-h-screen flex items-center justify-center relative z-10 px-6 py-24">
-        <div class="max-w-4xl text-center reveal">
-            <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6">About Us</p>
-            <h2 class="text-4xl md:text-6xl font-bold mb-12 leading-tight">Crafting Visual <span
-                    class="text-[#ff1a1a]">Excellence</span></h2>
-            <p class="reveal"
-                style="color: rgba(255,255,255,0.5); font-size: var(--text-base); max-width: 48rem; margin: 0 auto; line-height: 1.6;">
-                ZyroEditz<sup
-                    style="font-size:0.55em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>
-                is more than an edit studio. We are visual architects, engineering emotion through every
-                frame.<br>
-                Specializing in cinematic editing, color grading, and motion graphics for forward-thinking brands.
-                <br><br>
-                <span class="text-white text-lg">We don't just create videos. We create impact.</span>
+    <section id="about" class="min-h-screen flex flex-col items-center justify-center relative z-10 px-4 md:px-6 py-24">
+        <div class="w-full max-w-6xl mx-auto bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 md:p-16 text-center shadow-2xl relative overflow-hidden">
+            <!-- Subtle noise overlay for About card -->
+            <div class="absolute inset-0 noise opacity-10 pointer-events-none"></div>
+            
+            <p class="text-[10px] sm:text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-8 relative z-10">About Studio</p>
+            
+            <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl max-w-4xl mx-auto leading-[0.95] sm:leading-[0.9] font-bold text-white relative z-10 about-heading">
+                <div class="overflow-hidden inline-block"><span class="inline-block transform translate-y-[120%] opacity-0 ab-word">We</span></div>
+                <div class="overflow-hidden inline-block"><span class="inline-block transform translate-y-[120%] opacity-0 ab-word">are</span></div>
+                <div class="overflow-hidden inline-block"><span class="inline-block transform translate-y-[120%] opacity-0 ab-word text-[#ff1a1a]">ZyroEditz,</span></div>
+                <div class="overflow-hidden inline-block"><span class="inline-block transform translate-y-[120%] opacity-0 ab-word">a</span></div>
+                <div class="overflow-hidden inline-block"><span class="inline-block transform translate-y-[120%] opacity-0 ab-word">premium</span></div>
+                <div class="overflow-hidden inline-block"><span class="inline-block transform translate-y-[120%] opacity-0 ab-word">editing</span></div>
+                <div class="overflow-hidden inline-block"><span class="inline-block transform translate-y-[120%] opacity-0 ab-word">studio.</span></div>
+            </h2>
+            
+            <p class="mt-12 text-gray-400 text-sm md:text-base max-w-2xl mx-auto leading-relaxed relative z-10 about-text" style="color: rgba(255,255,255,0.7);">
+               Over the last several years, we have engineered visual emotion for brands that demand excellence. Together, we create work that turns raw footage into cinematic experiences, earning acclaim across the industry.
             </p>
+        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20">
-                <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left">
-                    <div class="w-14 h-14 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center mb-5">
-                        <svg class="w-7 h-7 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
+        <!-- Replaced the 3 basic cards with the 4-column cinematic features grid from the prompt -->
+        <div class="w-full max-w-7xl mx-auto mt-16 md:mt-24">
+            <div class="text-center mb-12">
+                <h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Studio-grade workflows for visionary brands.</h3>
+                <p class="text-gray-500 mt-2">Built for pure vision. Powered by art.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:h-[480px]">
+                <!-- Card 1: Video -->
+                <div class="feature-card relative rounded-2xl overflow-hidden bg-[#111] opacity-0 scale-95 flex flex-col justify-end p-6 group h-[400px] lg:h-auto">
+                    <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-700">
+                        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4" type="video/mp4">
+                    </video>
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/90"></div>
+                    <div class="relative z-10">
+                        <h4 class="text-white font-bold text-lg mb-1">Your creative canvas.</h4>
+                        <p class="text-gray-400 text-xs">Transforming ideas into reality.</p>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">Video Editing</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Seamless cuts, perfect timing, and compelling
-                        storytelling that captures your audience.</p>
                 </div>
-                <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left">
-                    <div class="w-14 h-14 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center mb-5">
-                        <svg class="w-7 h-7 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">Motion Graphics</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Dynamic titles, transitions, and kinetic visuals
-                        that make your content feel premium.</p>
+
+                <!-- Card 2: Editing -->
+                <div class="feature-card rounded-2xl bg-[#0a0a0a] border border-white/5 p-6 flex flex-col opacity-0 scale-95 h-[400px] lg:h-auto">
+                    <div class="w-10 h-10 rounded-lg bg-[#ff1a1a]/10 flex items-center justify-center mb-6 border border-[#ff1a1a]/20 text-[#ff1a1a] font-bold text-xs">01</div>
+                    <h4 class="text-white font-bold text-lg mb-6">Cinematic Editing.</h4>
+                    <ul class="space-y-4 mb-auto">
+                        <li class="flex items-start gap-3">
+                            <svg class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-gray-400 text-sm">Seamless &amp; dynamic cuts</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-gray-400 text-sm">Industry-standard color grading</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-gray-400 text-sm">Story-driven pacing</span>
+                        </li>
+                    </ul>
                 </div>
-                <div class="service-card p-8 border border-white/5 bg-white/5 backdrop-blur-sm text-left">
-                    <div class="w-14 h-14 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center mb-5">
-                        <svg class="w-7 h-7 text-[#ff1a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-2c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">Sound + Rhythm</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Clean audio, beat-synced cuts, and pacing that
-                        keeps viewers locked in.</p>
+
+                <!-- Card 3: Motion -->
+                <div class="feature-card rounded-2xl bg-[#0a0a0a] border border-white/5 p-6 flex flex-col opacity-0 scale-95 h-[400px] lg:h-auto">
+                    <div class="w-10 h-10 rounded-lg bg-[#ff1a1a]/10 flex items-center justify-center mb-6 border border-[#ff1a1a]/20 text-[#ff1a1a] font-bold text-xs">02</div>
+                    <h4 class="text-white font-bold text-lg mb-6">Motion Graphics.</h4>
+                    <ul class="space-y-4 mb-auto">
+                        <li class="flex items-start gap-3">
+                            <svg class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-gray-400 text-sm">Custom 2D/3D animations</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-gray-400 text-sm">High-end visual effects</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-gray-400 text-sm">Kinetic typography</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Card 4: Sound -->
+                <div class="feature-card rounded-2xl bg-[#0a0a0a] border border-white/5 p-6 flex flex-col opacity-0 scale-95 h-[400px] lg:h-auto">
+                    <div class="w-10 h-10 rounded-lg bg-[#ff1a1a]/10 flex items-center justify-center mb-6 border border-[#ff1a1a]/20 text-[#ff1a1a] font-bold text-xs">03</div>
+                    <h4 class="text-white font-bold text-lg mb-6">Sound + Rhythm.</h4>
+                    <ul class="space-y-4 mb-auto">
+                        <li class="flex items-start gap-3">
+                            <svg class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-gray-400 text-sm">Beat-synced transitions</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-gray-400 text-sm">Immersive SFX layers</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-4 h-4 text-[#ff1a1a] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-gray-400 text-sm">Clean audio processing</span>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -5837,6 +5884,57 @@
                 btn.style.color = (i < val) ? "#eab308" : "";
             });
         }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait slightly for GSAP and any preloader to clear
+            setTimeout(function() {
+                if (typeof window.gsap !== 'undefined') {
+                    gsap.to('.hw-word', {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.8,
+                        stagger: 0.1,
+                        ease: "power3.out"
+                    });
+                    
+                    gsap.to('.hero-desc, .hero-cta', {
+                        y: 0,
+                        opacity: 1,
+                        duration: 1,
+                        stagger: 0.2,
+                        ease: "power3.out",
+                        delay: 0.7
+                    });
+
+                    if(typeof window.ScrollTrigger !== 'undefined') {
+                        gsap.to('.ab-word', {
+                            scrollTrigger: {
+                                trigger: ".about-heading",
+                                start: "top 80%"
+                            },
+                            y: 0,
+                            opacity: 1,
+                            duration: 0.8,
+                            stagger: 0.08,
+                            ease: "power3.out"
+                        });
+
+                        gsap.to('.feature-card', {
+                            scrollTrigger: {
+                                trigger: ".feature-card",
+                                start: "top 85%"
+                            },
+                            scale: 1,
+                            opacity: 1,
+                            duration: 0.6,
+                            stagger: 0.15,
+                            ease: "power2.out"
+                        });
+                    }
+                }
+            }, 3000); // Wait for preloader (~3s)
+        });
     </script>
 </body>
 
