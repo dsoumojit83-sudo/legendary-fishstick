@@ -1701,94 +1701,125 @@
 
     </div>
 
-    <!-- Login Modal — Google OAuth + Email/Password -->
-    <div id="login-modal"
-        style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(5,5,5,0.92);backdrop-filter:blur(20px);align-items:center;justify-content:center;"
-        onclick="if(event.target===this)closeLoginModal()">
-        <div
-            style="background:#0a0a0a;border:1px solid rgba(255,26,26,0.15);border-radius:20px;padding:40px 36px;width:100%;max-width:420px;margin:16px;position:relative;box-shadow:0 0 60px rgba(255,26,26,0.06);">
-            <button onclick="closeLoginModal()"
-                style="position:absolute;top:16px;right:16px;background:none;border:none;color:#555;cursor:pointer;font-size:20px;line-height:1;transition:color .2s;"
-                onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#555'">&times;</button>
-
-            <!-- Brand header -->
-            <div style="text-align:center;margin-bottom:32px;">
-                <h2 style="font-size:24px;font-weight:900;font-family:'Roboto',sans-serif;margin:0;">Zyro<span
-                        style="color:#ff1a1a;">Editz</span><sup
-                        style="font-size:.4em;font-weight:300;color:#777;">™</sup></h2>
-                <p style="font-size:10px;letter-spacing:.4em;color:#444;margin-top:8px;text-transform:uppercase;">Client
-                    Account Access</p>
-            </div>
-
-            <!-- Error box -->
-            <div id="lm-error"
-                style="display:none;background:rgba(255,26,26,.08);border:1px solid rgba(255,26,26,.25);border-radius:10px;padding:10px 14px;color:#f87171;font-size:12px;margin-bottom:20px;text-align:center;">
-            </div>
-
-            <!-- Google Sign-In Button -->
-            <button id="lm-google-btn" onclick="handleGoogleSignIn()"
-                style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#111;border:none;border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;transition:transform .15s,box-shadow .15s;margin-bottom:20px;"
-                onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 8px 24px rgba(255,255,255,0.12)'"
-                onmouseout="this.style.transform='';this.style.boxShadow=''">
-                <!-- Google SVG logo -->
-                <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"
-                        fill="#4285F4" />
-                    <path
-                        d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
-                        fill="#34A853" />
-                    <path
-                        d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
-                        fill="#FBBC05" />
-                    <path
-                        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
-                        fill="#EA4335" />
-                </svg>
-                Continue with Google
-            </button>
-
-            <!-- Divider -->
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-                <div style="flex:1;height:1px;background:rgba(255,255,255,.07);"></div>
-                <span style="color:#444;font-size:11px;letter-spacing:.15em;text-transform:uppercase;">or email</span>
-                <div style="flex:1;height:1px;background:rgba(255,255,255,.07);"></div>
-            </div>
-
-            <!-- Email / Password form -->
-            <form id="lm-form" onsubmit="handleLogin(event)" style="display:flex;flex-direction:column;gap:12px;">
-                <input id="lm-email" type="email" placeholder="Email address" autocomplete="email" required
-                    style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;"
-                    onfocus="this.style.borderColor='rgba(255,26,26,0.4)'"
-                    onblur="this.style.borderColor='rgba(255,255,255,.08)'">
-                <div style="position:relative;">
-                    <input id="lm-pass" type="password" placeholder="Password" autocomplete="current-password" required
-                        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 44px 12px 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;"
-                        onfocus="this.style.borderColor='rgba(255,26,26,0.4)'"
-                        onblur="this.style.borderColor='rgba(255,255,255,.08)'">
-                    <button type="button" onclick="togglePasswordVisibility('lm-pass','lm-eye-icon')"
-                        aria-label="Toggle password visibility" tabindex="-1"
-                        style="position:absolute;top:50%;right:14px;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:2px;color:rgba(255,255,255,0.3);transition:color .2s;"
-                        onmouseover="this.style.color='rgba(255,255,255,0.7)'"
-                        onmouseout="this.style.color='rgba(255,255,255,0.3)'">
-                        <svg id="lm-eye-icon" style="width:18px;height:18px;" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                            </path>
-                        </svg>
-                    </button>
+    <!-- ── Aurora Login/Signup Modal — Premium Two-Column Design ── -->
+    <style>
+        #login-modal{display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.88);backdrop-filter:blur(24px);align-items:center;justify-content:center;padding:8px;}
+        .lm-shell{background:#050505;border:1px solid rgba(255,26,26,.12);border-radius:24px;width:100%;max-width:920px;min-height:540px;display:flex;overflow:hidden;position:relative;box-shadow:0 0 80px rgba(255,26,26,.06),0 32px 64px rgba(0,0,0,.5);}
+        .lm-hero{display:none;width:52%;position:relative;overflow:hidden;flex-shrink:0;}
+        .lm-hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+        .lm-hero-content{position:relative;z-index:10;display:flex;flex-direction:column;justify-content:flex-end;height:100%;padding:0 32px 40px;}
+        .lm-hero-brand{display:flex;align-items:center;gap:8px;margin-bottom:28px;}
+        .lm-hero-brand svg{flex-shrink:0;}
+        .lm-hero-title{font-family:'Roboto',sans-serif;font-size:28px;font-weight:900;color:#fff;margin:0 0 6px;}
+        .lm-hero-sub{color:rgba(255,255,255,.55);font-size:13px;line-height:1.5;margin:0 0 24px;}
+        .lm-step{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:6px;transition:all .3s;}
+        .lm-step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+        .lm-step.active{background:rgba(255,255,255,.95);border:1px solid #fff;}
+        .lm-step.active .lm-step-num{background:#050505;color:#fff;}
+        .lm-step.active .lm-step-text{color:#050505;font-weight:600;}
+        .lm-step.inactive{background:#1a1a1a;}
+        .lm-step.inactive .lm-step-num{background:rgba(255,255,255,.08);color:rgba(255,255,255,.35);}
+        .lm-step.inactive .lm-step-text{color:rgba(255,255,255,.4);}
+        .lm-step-text{font-size:13px;}
+        .lm-form-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 28px;overflow-y:auto;}
+        .lm-form-inner{width:100%;max-width:380px;}
+        .lm-form-title{font-family:'Roboto',sans-serif;font-size:24px;font-weight:900;color:#fff;margin:0 0 4px;}
+        .lm-form-sub{color:rgba(255,255,255,.35);font-size:12px;margin:0 0 24px;}
+        .lm-social-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+        .lm-social-btn{display:flex;align-items:center;justify-content:center;gap:10px;background:#050505;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;}
+        .lm-social-btn:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.15);}
+        .lm-divider{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+        .lm-divider span{color:rgba(255,255,255,.3);font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;}
+        .lm-divider::before,.lm-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07);}
+        .lm-input-group{margin-bottom:14px;}
+        .lm-input-group label{display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.7);margin-bottom:6px;}
+        .lm-input{width:100%;box-sizing:border-box;background:#1a1a1a;border:none;border-radius:12px;height:44px;padding:0 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:box-shadow .2s;}
+        .lm-input::placeholder{color:rgba(255,255,255,.18);}
+        .lm-input:focus{box-shadow:0 0 0 2px rgba(255,26,26,.3);}
+        .lm-submit{width:100%;height:50px;background:#fff;color:#000;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;margin-top:6px;}
+        .lm-submit:hover{background:rgba(255,255,255,.88);}
+        .lm-submit:active{transform:scale(.98);}
+        .lm-footer{text-align:center;margin-top:20px;font-size:12px;color:rgba(255,255,255,.3);}
+        .lm-footer a{color:rgba(255,255,255,.6);cursor:pointer;text-decoration:none;font-weight:600;}
+        .lm-footer a:hover{color:#ff1a1a;}
+        .lm-close{position:absolute;top:16px;right:16px;z-index:20;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.4);transition:all .2s;font-size:18px;line-height:1;}
+        .lm-close:hover{background:rgba(255,26,26,.1);color:#ff1a1a;border-color:rgba(255,26,26,.2);}
+        .lm-helper{font-size:11px;color:rgba(255,255,255,.25);margin-top:4px;}
+        .lm-name-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        #lm-signup-fields{display:none;}
+        @media(min-width:1024px){.lm-hero{display:flex;}}
+        @keyframes lmFadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+        .lm-animate{animation:lmFadeUp .5s ease-out both;}
+        .lm-animate-d1{animation-delay:.1s;}.lm-animate-d2{animation-delay:.2s;}.lm-animate-d3{animation-delay:.3s;}.lm-animate-d4{animation-delay:.4s;}.lm-animate-d5{animation-delay:.5s;}
+    </style>
+    <div id="login-modal" onclick="if(event.target===this)closeLoginModal()">
+        <div class="lm-shell">
+            <button class="lm-close" onclick="closeLoginModal()">&times;</button>
+            <!-- Left: Hero with Video -->
+            <div class="lm-hero">
+                <video autoplay muted loop playsinline>
+                    <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_081238_406ed0e3-5d83-436e-a512-0bbff7ec5b95.mp4" type="video/mp4">
+                </video>
+                <div class="lm-hero-content">
+                    <div class="lm-hero-brand lm-animate">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="#ff1a1a" stroke="none"><circle cx="12" cy="12" r="10"/></svg>
+                        <span style="font-family:'Roboto',sans-serif;font-size:18px;font-weight:900;color:#fff;">Zyro<span style="color:#ff1a1a;">Editz</span><sup style="font-size:.4em;color:#777;">™</sup></span>
+                    </div>
+                    <h3 class="lm-hero-title lm-animate lm-animate-d1">Join the Studio</h3>
+                    <p class="lm-hero-sub lm-animate lm-animate-d2">3 quick steps to access your creative workspace.</p>
+                    <div class="lm-animate lm-animate-d3">
+                        <div class="lm-step active"><div class="lm-step-num">1</div><span class="lm-step-text">Verify your identity</span></div>
+                        <div class="lm-step inactive"><div class="lm-step-num">2</div><span class="lm-step-text">Configure your profile</span></div>
+                        <div class="lm-step inactive"><div class="lm-step-num">3</div><span class="lm-step-text">Start your project</span></div>
+                    </div>
                 </div>
-                <button type="submit" id="lm-btn"
-                    style="background:#ff1a1a;color:#000;border:none;border-radius:10px;padding:13px;font-weight:900;font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Roboto',sans-serif;transition:opacity .2s;">Sign
-                    In</button>
-            </form>
-
-            <p style="text-align:center;color:#3a3a3a;font-size:11px;margin-top:20px;line-height:1.7;">By signing in you
-                agree
-                to our <span style="color:#555;">Terms</span></p>
+            </div>
+            <!-- Right: Form -->
+            <div class="lm-form-col">
+                <div class="lm-form-inner">
+                    <h2 class="lm-form-title lm-animate" id="lm-form-heading">Welcome Back</h2>
+                    <p class="lm-form-sub lm-animate lm-animate-d1" id="lm-form-subheading">Sign in to access your projects.</p>
+                    <!-- Error -->
+                    <div id="lm-error" style="display:none;background:rgba(255,26,26,.08);border:1px solid rgba(255,26,26,.25);border-radius:10px;padding:10px 14px;color:#f87171;font-size:12px;margin-bottom:16px;text-align:center;"></div>
+                    <!-- Social -->
+                    <div class="lm-social-grid lm-animate lm-animate-d2">
+                        <button class="lm-social-btn" id="lm-google-btn" onclick="handleGoogleSignIn()">
+                            <svg width="16" height="16" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+                            Google
+                        </button>
+                        <button class="lm-social-btn" onclick="handleGoogleSignIn()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                            GitHub
+                        </button>
+                    </div>
+                    <div class="lm-divider lm-animate lm-animate-d2"><span>Or</span></div>
+                    <!-- Form -->
+                    <form id="lm-form" onsubmit="handleLogin(event)">
+                        <!-- Sign-up only: name fields -->
+                        <div id="lm-signup-fields">
+                            <div class="lm-name-grid">
+                                <div class="lm-input-group"><label>First Name</label><input type="text" id="lm-fname" class="lm-input" placeholder="John"></div>
+                                <div class="lm-input-group"><label>Last Name</label><input type="text" id="lm-lname" class="lm-input" placeholder="Doe"></div>
+                            </div>
+                        </div>
+                        <div class="lm-input-group lm-animate lm-animate-d3"><label>Email</label><input id="lm-email" type="email" class="lm-input" placeholder="you@example.com" autocomplete="email" required></div>
+                        <div class="lm-input-group lm-animate lm-animate-d4"><label>Password</label>
+                            <div style="position:relative;">
+                                <input id="lm-pass" type="password" class="lm-input" placeholder="••••••••" autocomplete="current-password" required style="padding-right:44px;">
+                                <button type="button" onclick="togglePasswordVisibility('lm-pass','lm-eye-icon')" aria-label="Toggle password" tabindex="-1" style="position:absolute;top:50%;right:14px;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:2px;color:rgba(255,255,255,0.25);transition:color .2s;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.25)'">
+                                    <svg id="lm-eye-icon" style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </button>
+                            </div>
+                            <p class="lm-helper" id="lm-pass-helper" style="display:none;">Requires at least 8 characters.</p>
+                        </div>
+                        <button type="submit" id="lm-btn" class="lm-submit lm-animate lm-animate-d5">Sign In</button>
+                    </form>
+                    <div class="lm-footer lm-animate lm-animate-d5">
+                        <span id="lm-toggle-text">New to the studio?</span> <a onclick="toggleAuthMode()" id="lm-toggle-link">Create Account</a>
+                    </div>
+                    <p style="text-align:center;color:rgba(255,255,255,.15);font-size:10px;margin-top:14px;">By continuing you agree to our Terms.</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2131,6 +2162,165 @@
         });
     </script>
 
+    <!-- ── PROJECT ESTIMATION CALCULATOR ───────────────────────────────── -->
+    <style>
+        .calc-radio{display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 0;font-size:14px;color:rgba(255,255,255,.7);transition:color .2s;}
+        .calc-radio:hover{color:#fff;}
+        .calc-radio-dot{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .2s;}
+        .calc-radio.active .calc-radio-dot{border-color:#ff1a1a;}
+        .calc-radio.active .calc-radio-dot::after{content:'';width:8px;height:8px;border-radius:50%;background:#ff1a1a;}
+        .calc-check{display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 0;font-size:14px;color:rgba(255,255,255,.7);transition:color .2s;}
+        .calc-check:hover{color:#fff;}
+        .calc-check-box{width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+        .calc-check.active .calc-check-box{border-color:#ff1a1a;background:#ff1a1a;}
+        .calc-slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:rgba(255,255,255,.08);outline:none;transition:background .2s;}
+        .calc-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#ff1a1a;cursor:pointer;box-shadow:0 0 10px rgba(255,26,26,.4);}
+        .calc-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#ff1a1a;cursor:pointer;border:none;}
+        .calc-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px 24px;}
+        .calc-card-highlight{background:linear-gradient(135deg,#ff1a1a,#cc0000);border:none;color:#fff;}
+        .calc-section{padding:24px 0;}
+        .calc-section h4{font-family:'Roboto',sans-serif;font-size:15px;font-weight:700;color:#fff;margin:0 0 16px;}
+        .calc-price-tag{color:#ff1a1a;font-weight:600;font-size:13px;margin-left:auto;white-space:nowrap;}
+    </style>
+    <section id="calculator-section" class="relative z-10 px-4 md:px-16 py-16 md:py-28">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16 reveal">
+                <p class="text-xs uppercase tracking-[0.5em] text-[#ff1a1a] mb-6 font-mono">Project Estimation Calculator</p>
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">Get premium edits within <span class="text-[#ff1a1a]">your budget</span></h2>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden border border-white/10 reveal">
+                <!-- LEFT: Calculator Form -->
+                <div style="background:#0D0D0D;" class="p-8 lg:p-12">
+                    <!-- Service Type -->
+                    <div class="calc-section" style="padding-top:0;">
+                        <h4>What type of edit do you need?</h4>
+                        <div class="calc-radio active" onclick="calcSetService('short')"><div class="calc-radio-dot"></div><span>Short Form (Reels / Shorts)</span></div>
+                        <div class="calc-radio" onclick="calcSetService('long')"><div class="calc-radio-dot"></div><span>Long Form (YouTube / Vlogs)</span></div>
+                        <div class="calc-radio" onclick="calcSetService('both')"><div class="calc-radio-dot"></div><span>Full Package (Short + Long)</span></div>
+                    </div>
+                    <div style="height:1px;background:#1E1E1E;"></div>
+                    <!-- Number of Videos -->
+                    <div class="calc-section">
+                        <h4>Number of videos: <span id="calc-vid-count" style="color:#ff1a1a;">3</span></h4>
+                        <input type="range" class="calc-slider" id="calc-slider" min="1" max="20" value="3" step="1" oninput="calcUpdateVids(this.value)">
+                        <div class="flex justify-between mt-2" style="font-size:11px;color:rgba(255,255,255,.25);"><span>1</span><span>20</span></div>
+                    </div>
+                    <div style="height:1px;background:#1E1E1E;"></div>
+                    <!-- Add-ons -->
+                    <div class="calc-section">
+                        <h4>Add-ons</h4>
+                        <div class="calc-check" onclick="calcToggle(this,'needThumbnails')">
+                            <div class="calc-check-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" style="display:none;"><path d="M20 6L9 17l-5-5"/></svg></div>
+                            <span>Custom thumbnails for each video</span>
+                            <span class="calc-price-tag">+₹100/vid</span>
+                        </div>
+                        <div class="calc-check" onclick="calcToggle(this,'needSound')">
+                            <div class="calc-check-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" style="display:none;"><path d="M20 6L9 17l-5-5"/></svg></div>
+                            <span>Sound design &amp; SFX</span>
+                            <span class="calc-price-tag">+₹150/vid</span>
+                        </div>
+                        <div class="calc-check" onclick="calcToggle(this,'needColor')">
+                            <div class="calc-check-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" style="display:none;"><path d="M20 6L9 17l-5-5"/></svg></div>
+                            <span>Cinematic color grading</span>
+                            <span class="calc-price-tag">+₹175/vid</span>
+                        </div>
+                    </div>
+                    <div style="height:1px;background:#1E1E1E;"></div>
+                    <!-- Timeline -->
+                    <div class="calc-section" style="padding-bottom:0;">
+                        <h4>How fast do you need this?</h4>
+                        <div class="calc-radio" onclick="calcSetTimeline('rush')"><div class="calc-radio-dot"></div><span>Rush (2-3 days)</span><span class="calc-price-tag">+₹200/vid</span></div>
+                        <div class="calc-radio" onclick="calcSetTimeline('fast')"><div class="calc-radio-dot"></div><span>Priority (4-5 days)</span><span class="calc-price-tag">+₹75/vid</span></div>
+                        <div class="calc-radio active" onclick="calcSetTimeline('regular')"><div class="calc-radio-dot"></div><span>Standard (Based on discussion)</span><span class="calc-price-tag" style="color:rgba(255,255,255,.3);">No extra cost</span></div>
+                    </div>
+                </div>
+                <!-- RIGHT: Cost Estimation -->
+                <div class="p-8 lg:p-12 border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col justify-center" style="min-height:717px;">
+                    <h3 style="font-family:'Roboto',sans-serif;font-size:20px;font-weight:900;color:#fff;margin:0 0 8px;">Estimated Cost</h3>
+                    <p style="font-size:13px;color:rgba(255,255,255,.35);margin:0 0 28px;line-height:1.6;">See how ZyroEditz compares to agencies and freelancers for the same scope.</p>
+                    <div class="space-y-4">
+                        <div class="calc-card">
+                            <p style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.15em;margin:0 0 8px;">Typical Agency charges minimum</p>
+                            <p style="font-size:32px;font-weight:900;font-family:'Roboto',sans-serif;color:#fff;margin:0;" id="calc-agency-price">₹12,000</p>
+                            <p style="font-size:12px;color:rgba(255,255,255,.3);margin:6px 0 0;">+ Too much extra time &amp; additional cost</p>
+                        </div>
+                        <div class="calc-card">
+                            <p style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.15em;margin:0 0 8px;">Regular Freelancer charges minimum</p>
+                            <p style="font-size:32px;font-weight:900;font-family:'Roboto',sans-serif;color:#fff;margin:0;" id="calc-freelancer-price">₹6,000</p>
+                            <p style="font-size:12px;color:rgba(255,255,255,.3);margin:6px 0 0;">+ Too much headache &amp; back-and-forth</p>
+                        </div>
+                        <div class="calc-card-highlight" style="border-radius:16px;padding:24px 28px;">
+                            <p style="font-size:11px;text-transform:uppercase;letter-spacing:.15em;margin:0 0 8px;opacity:.85;">With ZyroEditz™ Studio</p>
+                            <p style="font-size:40px;font-weight:900;font-family:'Roboto',sans-serif;margin:0;" id="calc-zyro-price">₹1,500</p>
+                            <p style="font-size:13px;margin:8px 0 0;opacity:.8;">Save your money, time &amp; headache</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        (function(){
+            var _cs = 'short', _cv = 3, _ct = 'regular';
+            var _addons = {needThumbnails:false, needSound:false, needColor:false};
+            function calcPrice(){
+                var base, perVid;
+                if(_cs==='short'){base=200;perVid=200;}
+                else if(_cs==='long'){base=500;perVid=500;}
+                else{base=600;perVid=650;}
+                var total=Math.max(base, base+(_cv-1)*perVid);
+                if(_addons.needThumbnails) total+=_cv*100;
+                if(_addons.needSound) total+=_cv*150;
+                if(_addons.needColor) total+=_cv*175;
+                if(_ct==='rush') total+=_cv*200;
+                else if(_ct==='fast') total+=_cv*75;
+                return total;
+            }
+            function agencyPrice(){
+                var pp=(_cs==='both'?2000:1000);
+                return 5000+(_cv-1)*pp;
+            }
+            function freelancerPrice(){
+                var pp=(_cs==='both'?1000:500);
+                return 2000+(_cv-1)*pp;
+            }
+            function render(){
+                document.getElementById('calc-zyro-price').textContent='₹'+calcPrice().toLocaleString('en-IN');
+                document.getElementById('calc-agency-price').textContent='₹'+agencyPrice().toLocaleString('en-IN');
+                document.getElementById('calc-freelancer-price').textContent='₹'+freelancerPrice().toLocaleString('en-IN');
+            }
+            window.calcSetService=function(s){
+                _cs=s;
+                var radios=document.querySelectorAll('#calculator-section .calc-section:first-child .calc-radio');
+                radios.forEach(function(r){r.classList.remove('active');});
+                var idx=s==='short'?0:s==='long'?1:2;
+                radios[idx].classList.add('active');
+                render();
+            };
+            window.calcUpdateVids=function(v){
+                _cv=parseInt(v);
+                document.getElementById('calc-vid-count').textContent=v;
+                render();
+            };
+            window.calcToggle=function(el,key){
+                _addons[key]=!_addons[key];
+                el.classList.toggle('active');
+                var svg=el.querySelector('svg');
+                if(svg) svg.style.display=_addons[key]?'block':'none';
+                render();
+            };
+            window.calcSetTimeline=function(t){
+                _ct=t;
+                var sec=document.querySelector('#calculator-section .calc-section:last-child');
+                if(!sec) return;
+                sec.querySelectorAll('.calc-radio').forEach(function(r){r.classList.remove('active');});
+                var idx=t==='rush'?0:t==='fast'?1:2;
+                sec.querySelectorAll('.calc-radio')[idx].classList.add('active');
+                render();
+            };
+            render();
+        })();
+    </script>
 
     <section class="relative z-10 px-6 py-24">
         <div class="max-w-6xl mx-auto">
@@ -4348,11 +4538,42 @@
             } catch (err) {
                 errEl.textContent = err.message || 'Google sign-in failed.';
                 errEl.style.display = 'block';
-                btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg> Continue with Google';
-                btn.disabled = false;
+                btn.textContent = 'Google'; btn.disabled = false;
             }
         }
         window.handleGoogleSignIn = handleGoogleSignIn;
+
+        // ── AUTH MODE TOGGLE (Sign In ↔ Sign Up) ──────────────────────────────
+        let _isSignUpMode = false;
+        function toggleAuthMode() {
+            _isSignUpMode = !_isSignUpMode;
+            const heading = document.getElementById('lm-form-heading');
+            const sub = document.getElementById('lm-form-subheading');
+            const btn = document.getElementById('lm-btn');
+            const toggleText = document.getElementById('lm-toggle-text');
+            const toggleLink = document.getElementById('lm-toggle-link');
+            const signupFields = document.getElementById('lm-signup-fields');
+            const passHelper = document.getElementById('lm-pass-helper');
+            document.getElementById('lm-error').style.display = 'none';
+            if (_isSignUpMode) {
+                heading.textContent = 'Create Account';
+                sub.textContent = 'Enter your details to get started.';
+                btn.textContent = 'Create Account';
+                toggleText.textContent = 'Already a member?';
+                toggleLink.textContent = 'Sign In';
+                signupFields.style.display = 'block';
+                passHelper.style.display = 'block';
+            } else {
+                heading.textContent = 'Welcome Back';
+                sub.textContent = 'Sign in to access your projects.';
+                btn.textContent = 'Sign In';
+                toggleText.textContent = 'New to the studio?';
+                toggleLink.textContent = 'Create Account';
+                signupFields.style.display = 'none';
+                passHelper.style.display = 'none';
+            }
+        }
+        window.toggleAuthMode = toggleAuthMode;
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -4361,20 +4582,41 @@
             const email = document.getElementById('lm-email').value.trim();
             const pass = document.getElementById('lm-pass').value;
             errEl.style.display = 'none';
-            btn.textContent = 'Signing in…'; btn.disabled = true;
+            btn.disabled = true;
             try {
-                if (window._supabaseClient) {
+                if (!window._supabaseClient) throw new Error('Auth service not ready. Try refreshing.');
+                if (_isSignUpMode) {
+                    btn.textContent = 'Creating…';
+                    if (pass.length < 8) throw new Error('Password must be at least 8 characters.');
+                    const fname = (document.getElementById('lm-fname')?.value || '').trim();
+                    const lname = (document.getElementById('lm-lname')?.value || '').trim();
+                    const fullName = [fname, lname].filter(Boolean).join(' ') || 'Zyro Client';
+                    const { error } = await window._supabaseClient.auth.signUp({
+                        email, password: pass,
+                        options: { data: { full_name: fullName, name: fullName } }
+                    });
+                    if (error) throw error;
+                    errEl.style.color = '#4ade80';
+                    errEl.style.background = 'rgba(74,222,128,.08)';
+                    errEl.style.borderColor = 'rgba(74,222,128,.25)';
+                    errEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+                    errEl.style.display = 'block';
+                    _isSignUpMode = false;
+                    toggleAuthMode(); // Switch back to sign-in
+                } else {
+                    btn.textContent = 'Signing in…';
                     const { error } = await window._supabaseClient.auth.signInWithPassword({ email, password: pass });
                     if (error) throw error;
                     closeLoginModal();
                     initAccountState();
-                } else {
-                    throw new Error('Auth service not ready. Try refreshing.');
                 }
             } catch (err) {
-                errEl.textContent = err.message || 'Sign in failed.';
+                errEl.style.color = '#f87171';
+                errEl.style.background = 'rgba(255,26,26,.08)';
+                errEl.style.borderColor = 'rgba(255,26,26,.25)';
+                errEl.textContent = err.message || 'Authentication failed.';
                 errEl.style.display = 'block';
-            } finally { btn.textContent = 'Sign In'; btn.disabled = false; }
+            } finally { btn.textContent = _isSignUpMode ? 'Create Account' : 'Sign In'; btn.disabled = false; }
         }
 
         // ── ACCOUNT STATE — shows Google avatar + full name if available ────────
