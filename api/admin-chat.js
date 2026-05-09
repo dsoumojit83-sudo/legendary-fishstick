@@ -122,13 +122,15 @@ module.exports = async function (req, res) {
             { data: deliveries },
             { data: reviews },
             { data: coupons },
-            { data: referrals }
+            { data: referrals },
+            { data: calcCfgRow }
         ] = await Promise.all([
             supabase.from('orders').select('order_id,client_name,client_email,service,amount,status,created_at,deadline_date,completed_at').order('created_at', { ascending: false }),
             supabase.from('deliveries').select('order_id,file_name,created_at').order('created_at', { ascending: false }),
             supabase.from('reviews').select('order_id,rating,review_text,approved,created_at'),
             supabase.from('coupons').select('code,discount_type,discount_value,times_used,is_active'),
-            supabase.from('referrals').select('referrer_id,referred_email,created_at')
+            supabase.from('referrals').select('referrer_id,referred_email,created_at'),
+            supabase.from('calculator_config').select('*').eq('id', 1).maybeSingle()
         ]);
 
         if (fetchError) throw new Error(`Database error: ${fetchError.message}`);
@@ -251,7 +253,14 @@ Total: ${totalRefs} | This month: ${thisMonthRefs}
 ${uniqueClients.length} unique clients | ${repeatClients.length} returning/repeat clients
 
 ═══ SERVICES CATALOG ═══
-${liveServicesBlock}`;
+${liveServicesBlock}
+
+═══ CALCULATOR (Project Estimation Tool on main site) ═══
+${calcCfgRow ? `Status: ${calcCfgRow.is_active ? 'ACTIVE (visible on site)' : 'HIDDEN'}
+Service types: ${(calcCfgRow.service_types||[]).map(s => s.label + ' — Base ₹' + s.base + ', ₹' + s.perVid + '/vid').join(' | ')}
+Add-ons: ${(calcCfgRow.addons||[]).map(a => a.label + ' ₹' + a.price + '/vid').join(' | ')}
+Timelines: ${(calcCfgRow.timelines||[]).map(t => t.label + (t.price ? ' +₹' + t.price + '/vid' : ' (free)')).join(' | ')}
+Comparison: Agency base ₹${calcCfgRow.agency_base||5000} | Freelancer base ₹${calcCfgRow.freelancer_base||2000}` : 'Calculator config not loaded (table may not exist yet)'}`;
 
         let finalPrompt = prompt || '';
         let hasImage = false;

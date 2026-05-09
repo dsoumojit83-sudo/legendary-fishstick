@@ -2049,6 +2049,87 @@
                         </div>
                     </div>
 
+                    <!-- Calculator Config -->
+                    <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden mb-6">
+                        <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Calculator Config</h3>
+                                <p class="text-xs text-gray-400 mt-1">Manage pricing shown in the Project Estimation Calculator</p>
+                            </div>
+                            <div id="calc-cfg-status" class="flex items-center gap-2">
+                                <span class="status-badge status-completed text-[10px]">Active</span>
+                            </div>
+                        </div>
+                        <div class="p-5 space-y-5">
+                            <!-- Service Type Pricing -->
+                            <div>
+                                <h4 class="text-xs uppercase tracking-widest text-gray-500 mb-3">Service Type Base Pricing (₹)</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="calc-cfg-svc-grid">
+                                    <div class="bg-black/40 border border-white/5 rounded-xl p-4">
+                                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Short Form</p>
+                                        <div class="flex gap-2">
+                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Base</label><input id="calc-cfg-short-base" type="number" value="200" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Per Video</label><input id="calc-cfg-short-pv" type="number" value="200" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-black/40 border border-white/5 rounded-xl p-4">
+                                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Long Form</p>
+                                        <div class="flex gap-2">
+                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Base</label><input id="calc-cfg-long-base" type="number" value="500" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Per Video</label><input id="calc-cfg-long-pv" type="number" value="500" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-black/40 border border-white/5 rounded-xl p-4">
+                                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Full Package</p>
+                                        <div class="flex gap-2">
+                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Base</label><input id="calc-cfg-both-base" type="number" value="600" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Per Video</label><input id="calc-cfg-both-pv" type="number" value="650" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Add-on Pricing -->
+                            <div>
+                                <h4 class="text-xs uppercase tracking-widest text-gray-500 mb-3">Add-on Pricing (₹ per video)</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div><label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Thumbnails</label><input id="calc-cfg-addon-thumb" type="number" value="100" class="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                    <div><label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Sound Design</label><input id="calc-cfg-addon-sound" type="number" value="150" class="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                    <div><label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Color Grading</label><input id="calc-cfg-addon-color" type="number" value="175" class="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                </div>
+                            </div>
+                            <!-- Timeline Surcharges -->
+                            <div>
+                                <h4 class="text-xs uppercase tracking-widest text-gray-500 mb-3">Timeline Surcharges (₹ per video)</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div><label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Rush (2-3 days)</label><input id="calc-cfg-tl-rush" type="number" value="200" class="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                    <div><label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Priority (4-5 days)</label><input id="calc-cfg-tl-fast" type="number" value="75" class="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                </div>
+                            </div>
+                            <!-- Comparison Base Costs -->
+                            <div>
+                                <h4 class="text-xs uppercase tracking-widest text-gray-500 mb-3">Competitor Comparison (₹ base cost)</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div><label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Agency Base</label><input id="calc-cfg-agency-base" type="number" value="5000" class="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                    <div><label class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Freelancer Base</label><input id="calc-cfg-free-base" type="number" value="2000" class="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors"></div>
+                                </div>
+                            </div>
+                            <!-- Toggle + Save -->
+                            <div class="flex items-center justify-between border-t border-white/5 pt-4">
+                                <div class="flex items-center gap-3">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input id="calc-cfg-enabled" type="checkbox" checked class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                    </label>
+                                    <span id="calc-cfg-enabled-label" class="text-sm text-green-400 font-medium">Visible on Site</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span id="calc-cfg-msg" class="text-xs text-gray-500 hidden"></span>
+                                    <button id="calc-cfg-save-btn" onclick="saveCalculatorConfig()" class="px-5 py-2.5 bg-[#ff1a1a] text-black font-bold rounded-lg hover:bg-white transition-all text-xs uppercase tracking-widest">Save Config</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Referral Manager Table -->
                     <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
                         <div class="p-5 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-black/20">
@@ -5533,6 +5614,7 @@
                 updateEcommKPIs();
                 // Load referral config settings (non-blocking)
                 fetchReferralConfig();
+                fetchCalculatorConfig();
             } catch (e) { console.error('eComm fetch error', e); }
         }
 
@@ -5613,6 +5695,111 @@
             }
         }
         window.saveReferralConfig = saveReferralConfig;
+
+        // ── Calculator Config Settings ─────────────────────────────────────────
+        async function fetchCalculatorConfig() {
+            try {
+                const res = await fetch('/api/admin-data?action=getCalculatorConfig', { headers: { 'Authorization': 'Bearer ' + authToken } });
+                if (!res.ok) return;
+                const cfg = await res.json();
+                // Service types
+                if (cfg.service_types) {
+                    cfg.service_types.forEach(function(s) {
+                        var bEl = document.getElementById('calc-cfg-' + s.key + '-base');
+                        var pEl = document.getElementById('calc-cfg-' + s.key + '-pv');
+                        if (bEl) bEl.value = s.base;
+                        if (pEl) pEl.value = s.perVid;
+                    });
+                }
+                // Addons
+                if (cfg.addons) {
+                    var addonMap = { needThumbnails: 'thumb', needSound: 'sound', needColor: 'color' };
+                    cfg.addons.forEach(function(a) {
+                        var el = document.getElementById('calc-cfg-addon-' + (addonMap[a.key] || a.key));
+                        if (el) el.value = a.price;
+                    });
+                }
+                // Timelines
+                if (cfg.timelines) {
+                    cfg.timelines.forEach(function(t) {
+                        var el = document.getElementById('calc-cfg-tl-' + t.key);
+                        if (el) el.value = t.price;
+                    });
+                }
+                // Comparisons
+                if (cfg.agency_base) { var el = document.getElementById('calc-cfg-agency-base'); if (el) el.value = cfg.agency_base; }
+                if (cfg.freelancer_base) { var el = document.getElementById('calc-cfg-free-base'); if (el) el.value = cfg.freelancer_base; }
+                // Active toggle
+                var enabled = cfg.is_active !== false;
+                var chk = document.getElementById('calc-cfg-enabled');
+                if (chk) chk.checked = enabled;
+                _updateCalcCfgLabels(enabled);
+            } catch (e) { console.warn('[eComm] Calculator config load failed:', e.message); }
+        }
+
+        function _updateCalcCfgLabels(enabled) {
+            var label = document.getElementById('calc-cfg-enabled-label');
+            var badge = document.getElementById('calc-cfg-status');
+            if (label) {
+                label.textContent = enabled ? 'Visible on Site' : 'Hidden';
+                label.className = 'text-sm font-medium ' + (enabled ? 'text-green-400' : 'text-red-400');
+            }
+            if (badge) {
+                badge.innerHTML = enabled
+                    ? '<span class="status-badge status-completed text-[10px]">Active</span>'
+                    : '<span class="status-badge status-refunded text-[10px]">Hidden</span>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var chk = document.getElementById('calc-cfg-enabled');
+            if (chk) chk.addEventListener('change', function () { _updateCalcCfgLabels(this.checked); });
+        });
+
+        async function saveCalculatorConfig() {
+            var btn = document.getElementById('calc-cfg-save-btn');
+            var msg = document.getElementById('calc-cfg-msg');
+            btn.disabled = true; btn.textContent = 'Saving…';
+            msg.classList.add('hidden');
+            try {
+                var payload = {
+                    action: 'updateCalculatorConfig',
+                    service_types: [
+                        { key: 'short', label: 'Short Form (Reels / Shorts)', base: parseInt(document.getElementById('calc-cfg-short-base').value) || 200, perVid: parseInt(document.getElementById('calc-cfg-short-pv').value) || 200 },
+                        { key: 'long', label: 'Long Form (YouTube / Vlogs)', base: parseInt(document.getElementById('calc-cfg-long-base').value) || 500, perVid: parseInt(document.getElementById('calc-cfg-long-pv').value) || 500 },
+                        { key: 'both', label: 'Full Package (Short + Long)', base: parseInt(document.getElementById('calc-cfg-both-base').value) || 600, perVid: parseInt(document.getElementById('calc-cfg-both-pv').value) || 650 }
+                    ],
+                    addons: [
+                        { key: 'needThumbnails', label: 'Custom thumbnails for each video', price: parseInt(document.getElementById('calc-cfg-addon-thumb').value) || 100 },
+                        { key: 'needSound', label: 'Sound design & SFX', price: parseInt(document.getElementById('calc-cfg-addon-sound').value) || 150 },
+                        { key: 'needColor', label: 'Cinematic color grading', price: parseInt(document.getElementById('calc-cfg-addon-color').value) || 175 }
+                    ],
+                    timelines: [
+                        { key: 'rush', label: 'Rush (2-3 days)', price: parseInt(document.getElementById('calc-cfg-tl-rush').value) || 200 },
+                        { key: 'fast', label: 'Priority (4-5 days)', price: parseInt(document.getElementById('calc-cfg-tl-fast').value) || 75 },
+                        { key: 'regular', label: 'Standard (Based on discussion)', price: 0 }
+                    ],
+                    agency_base: parseInt(document.getElementById('calc-cfg-agency-base').value) || 5000,
+                    agency_per_vid: { short: 1000, long: 1000, both: 2000 },
+                    freelancer_base: parseInt(document.getElementById('calc-cfg-free-base').value) || 2000,
+                    freelancer_per_vid: { short: 500, long: 500, both: 1000 },
+                    is_active: document.getElementById('calc-cfg-enabled').checked
+                };
+                var res = await fetch('/api/admin-data', { method: 'POST', headers: ecommHeaders(), body: JSON.stringify(payload) });
+                var data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Save failed');
+                showToast('Calculator config saved!', true);
+                _updateCalcCfgLabels(payload.is_active);
+            } catch (e) {
+                msg.textContent = e.message;
+                msg.className = 'text-xs text-red-400';
+                msg.classList.remove('hidden');
+                showToast(e.message, false);
+            } finally {
+                btn.disabled = false; btn.textContent = 'Save Config';
+            }
+        }
+        window.saveCalculatorConfig = saveCalculatorConfig;
 
         function updateEcommKPIs() {
             const active = _ecommServices.filter(s => s.is_active !== false);

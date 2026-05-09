@@ -1714,19 +1714,23 @@
         .lm-hero-sub{color:rgba(255,255,255,.55);font-size:13px;line-height:1.5;margin:0 0 24px;}
         .lm-step{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:6px;transition:all .3s;}
         .lm-step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
-        .lm-step.active{background:rgba(255,255,255,.95);border:1px solid #fff;}
-        .lm-step.active .lm-step-num{background:#050505;color:#fff;}
-        .lm-step.active .lm-step-text{color:#050505;font-weight:600;}
+        .lm-step.active{background:rgba(255,26,26,.12);border:1px solid rgba(255,26,26,.35);}
+        .lm-step.active .lm-step-num{background:#ff1a1a;color:#fff;}
+        .lm-step.active .lm-step-text{color:#fff;font-weight:600;}
         .lm-step.inactive{background:#1a1a1a;}
         .lm-step.inactive .lm-step-num{background:rgba(255,255,255,.08);color:rgba(255,255,255,.35);}
         .lm-step.inactive .lm-step-text{color:rgba(255,255,255,.4);}
+        .lm-step.completed{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);}
+        .lm-step.completed .lm-step-num{background:#22c55e;color:#fff;font-size:0;}
+        .lm-step.completed .lm-step-num::after{content:'✓';font-size:12px;}
+        .lm-step.completed .lm-step-text{color:rgba(34,197,94,.8);font-weight:500;text-decoration:line-through;}
         .lm-step-text{font-size:13px;}
         .lm-form-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 28px;overflow-y:auto;}
         .lm-form-inner{width:100%;max-width:380px;}
         .lm-form-title{font-family:'Roboto',sans-serif;font-size:24px;font-weight:900;color:#fff;margin:0 0 4px;}
         .lm-form-sub{color:rgba(255,255,255,.35);font-size:12px;margin:0 0 24px;}
-        .lm-social-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
-        .lm-social-btn{display:flex;align-items:center;justify-content:center;gap:10px;background:#050505;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;}
+        .lm-social-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+        .lm-social-btn{display:flex;align-items:center;justify-content:center;gap:10px;background:#050505;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;width:100%;}
         .lm-social-btn:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.15);}
         .lm-divider{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
         .lm-divider span{color:rgba(255,255,255,.3);font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;}
@@ -1736,17 +1740,20 @@
         .lm-input{width:100%;box-sizing:border-box;background:#1a1a1a;border:none;border-radius:12px;height:44px;padding:0 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:box-shadow .2s;}
         .lm-input::placeholder{color:rgba(255,255,255,.18);}
         .lm-input:focus{box-shadow:0 0 0 2px rgba(255,26,26,.3);}
-        .lm-submit{width:100%;height:50px;background:#fff;color:#000;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;margin-top:6px;}
-        .lm-submit:hover{background:rgba(255,255,255,.88);}
+        .lm-submit{width:100%;height:50px;background:#ff1a1a;color:#000;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Roboto',sans-serif;transition:all .15s;margin-top:6px;letter-spacing:.02em;}
+        .lm-submit:hover{background:#fff;box-shadow:0 0 30px rgba(255,26,26,.3);}
         .lm-submit:active{transform:scale(.98);}
         .lm-footer{text-align:center;margin-top:20px;font-size:12px;color:rgba(255,255,255,.3);}
-        .lm-footer a{color:rgba(255,255,255,.6);cursor:pointer;text-decoration:none;font-weight:600;}
-        .lm-footer a:hover{color:#ff1a1a;}
+        .lm-footer a{color:#ff1a1a;cursor:pointer;text-decoration:none;font-weight:600;}
+        .lm-footer a:hover{color:#fff;}
         .lm-close{position:absolute;top:16px;right:16px;z-index:20;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.4);transition:all .2s;font-size:18px;line-height:1;}
         .lm-close:hover{background:rgba(255,26,26,.1);color:#ff1a1a;border-color:rgba(255,26,26,.2);}
         .lm-helper{font-size:11px;color:rgba(255,255,255,.25);margin-top:4px;}
         .lm-name-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
         #lm-signup-fields{display:none;}
+        .lm-gender-btn{flex:1;background:#1a1a1a;border:1px solid transparent;color:rgba(255,255,255,.6);border-radius:12px;height:44px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;}
+        .lm-gender-btn:hover{background:rgba(255,255,255,.04);color:#fff;}
+        .lm-gender-btn.active{background:rgba(255,26,26,.1);border-color:rgba(255,26,26,.3);color:#ff1a1a;font-weight:600;}
         @media(min-width:1024px){.lm-hero{display:flex;}}
         @keyframes lmFadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
         .lm-animate{animation:lmFadeUp .5s ease-out both;}
@@ -1760,17 +1767,18 @@
                 <video autoplay muted loop playsinline>
                     <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_081238_406ed0e3-5d83-436e-a512-0bbff7ec5b95.mp4" type="video/mp4">
                 </video>
+                <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(5,5,5,.95) 0%,rgba(5,5,5,.6) 40%,rgba(5,5,5,.3) 100%);z-index:5;"></div>
                 <div class="lm-hero-content">
                     <div class="lm-hero-brand lm-animate">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="#ff1a1a" stroke="none"><circle cx="12" cy="12" r="10"/></svg>
                         <span style="font-family:'Roboto',sans-serif;font-size:18px;font-weight:900;color:#fff;">Zyro<span style="color:#ff1a1a;">Editz</span><sup style="font-size:.4em;color:#777;">™</sup></span>
                     </div>
-                    <h3 class="lm-hero-title lm-animate lm-animate-d1">Join the Studio</h3>
-                    <p class="lm-hero-sub lm-animate lm-animate-d2">3 quick steps to access your creative workspace.</p>
-                    <div class="lm-animate lm-animate-d3">
-                        <div class="lm-step active"><div class="lm-step-num">1</div><span class="lm-step-text">Verify your identity</span></div>
-                        <div class="lm-step inactive"><div class="lm-step-num">2</div><span class="lm-step-text">Configure your profile</span></div>
-                        <div class="lm-step inactive"><div class="lm-step-num">3</div><span class="lm-step-text">Start your project</span></div>
+                    <h3 class="lm-hero-title lm-animate lm-animate-d1" id="lm-hero-title">Join the Studio</h3>
+                    <p class="lm-hero-sub lm-animate lm-animate-d2" id="lm-hero-sub">3 quick steps to access your creative workspace.</p>
+                    <div class="lm-animate lm-animate-d3" id="lm-steps-wrapper">
+                        <div class="lm-step active" id="lm-step-1"><div class="lm-step-num">1</div><span class="lm-step-text">Verify your identity</span></div>
+                        <div class="lm-step inactive" id="lm-step-2"><div class="lm-step-num">2</div><span class="lm-step-text">Configure your profile</span></div>
+                        <div class="lm-step inactive" id="lm-step-3"><div class="lm-step-num">3</div><span class="lm-step-text">Start your project</span></div>
                     </div>
                 </div>
             </div>
@@ -1784,12 +1792,8 @@
                     <!-- Social -->
                     <div class="lm-social-grid lm-animate lm-animate-d2">
                         <button class="lm-social-btn" id="lm-google-btn" onclick="handleGoogleSignIn()">
-                            <svg width="16" height="16" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
-                            Google
-                        </button>
-                        <button class="lm-social-btn" onclick="handleGoogleSignIn()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-                            GitHub
+                            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+                            Continue with Google
                         </button>
                     </div>
                     <div class="lm-divider lm-animate lm-animate-d2"><span>Or</span></div>
@@ -1814,10 +1818,38 @@
                         </div>
                         <button type="submit" id="lm-btn" class="lm-submit lm-animate lm-animate-d5">Sign In</button>
                     </form>
-                    <div class="lm-footer lm-animate lm-animate-d5">
+                    <div class="lm-footer lm-animate lm-animate-d5" id="lm-auth-footer">
                         <span id="lm-toggle-text">New to the studio?</span> <a onclick="toggleAuthMode()" id="lm-toggle-link">Create Account</a>
                     </div>
-                    <p style="text-align:center;color:rgba(255,255,255,.15);font-size:10px;margin-top:14px;">By continuing you agree to our Terms.</p>
+                    <p style="text-align:center;color:rgba(255,255,255,.15);font-size:10px;margin-top:14px;" id="lm-terms-text">By continuing you agree to our Terms.</p>
+
+                    <!-- Step 2: Profile Configuration (hidden by default) -->
+                    <div id="lm-profile-step" style="display:none;">
+                        <h2 class="lm-form-title">Complete Your Profile</h2>
+                        <p class="lm-form-sub" style="margin-bottom:20px;">Help us personalize your experience. You can always update this later.</p>
+                        <div class="lm-input-group">
+                            <label>Date of Birth</label>
+                            <input id="lm-dob" type="date" class="lm-input" style="color-scheme:dark;">
+                        </div>
+                        <div class="lm-input-group">
+                            <label>Gender</label>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button type="button" class="lm-gender-btn" data-val="male" onclick="selectGender(this)">Male</button>
+                                <button type="button" class="lm-gender-btn" data-val="female" onclick="selectGender(this)">Female</button>
+                                <button type="button" class="lm-gender-btn" data-val="other" onclick="selectGender(this)">Other</button>
+                            </div>
+                        </div>
+                        <div class="lm-input-group">
+                            <label>Phone <span style="color:rgba(255,255,255,.2);font-weight:400;">(optional)</span></label>
+                            <input id="lm-phone" type="tel" class="lm-input" placeholder="+91 98765 43210" autocomplete="tel">
+                        </div>
+                        <div class="lm-input-group">
+                            <label>City / Address <span style="color:rgba(255,255,255,.2);font-weight:400;">(optional)</span></label>
+                            <input id="lm-address" type="text" class="lm-input" placeholder="Mumbai, India" autocomplete="street-address">
+                        </div>
+                        <button type="button" onclick="saveProfileStep()" class="lm-submit" id="lm-profile-btn">Save & Continue</button>
+                        <button type="button" onclick="skipProfileStep()" style="width:100%;height:42px;background:transparent;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);border-radius:12px;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;margin-top:8px;" onmouseover="this.style.borderColor='rgba(255,26,26,.3)';this.style.color='rgba(255,255,255,.7)'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.color='rgba(255,255,255,.4)'">Skip for now</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2261,45 +2293,52 @@
     </section>
     <script>
         (function(){
-            var _cs = 'short', _cv = 3, _ct = 'regular';
-            var _addons = {needThumbnails:false, needSound:false, needColor:false};
+            // Defaults (used if API is unavailable)
+            var _svcTypes=[{key:'short',label:'Short Form (Reels / Shorts)',base:200,perVid:200},{key:'long',label:'Long Form (YouTube / Vlogs)',base:500,perVid:500},{key:'both',label:'Full Package (Short + Long)',base:600,perVid:650}];
+            var _addonDefs=[{key:'needThumbnails',label:'Custom thumbnails for each video',price:100},{key:'needSound',label:'Sound design & SFX',price:150},{key:'needColor',label:'Cinematic color grading',price:175}];
+            var _timelineDefs=[{key:'rush',label:'Rush (2-3 days)',price:200},{key:'fast',label:'Priority (4-5 days)',price:75},{key:'regular',label:'Standard (Based on discussion)',price:0}];
+            var _agencyBase=5000,_agencyPV={short:1000,long:1000,both:2000};
+            var _freelancerBase=2000,_freelancerPV={short:500,long:500,both:1000};
+            var _cs='short',_cv=3,_ct='regular';
+            var _addons={};
+            _addonDefs.forEach(function(a){_addons[a.key]=false;});
+
             function calcPrice(){
-                var base, perVid;
-                if(_cs==='short'){base=200;perVid=200;}
-                else if(_cs==='long'){base=500;perVid=500;}
-                else{base=600;perVid=650;}
-                var total=Math.max(base, base+(_cv-1)*perVid);
-                if(_addons.needThumbnails) total+=_cv*100;
-                if(_addons.needSound) total+=_cv*150;
-                if(_addons.needColor) total+=_cv*175;
-                if(_ct==='rush') total+=_cv*200;
-                else if(_ct==='fast') total+=_cv*75;
+                var svc=_svcTypes.find(function(s){return s.key===_cs;})||_svcTypes[0];
+                var total=Math.max(svc.base, svc.base+(_cv-1)*svc.perVid);
+                _addonDefs.forEach(function(a){if(_addons[a.key]) total+=_cv*a.price;});
+                var tl=_timelineDefs.find(function(t){return t.key===_ct;});
+                if(tl&&tl.price) total+=_cv*tl.price;
                 return total;
             }
             function agencyPrice(){
-                var pp=(_cs==='both'?2000:1000);
-                return 5000+(_cv-1)*pp;
+                var pp=_agencyPV[_cs]||_agencyPV.short;
+                return _agencyBase+(_cv-1)*pp;
             }
             function freelancerPrice(){
-                var pp=(_cs==='both'?1000:500);
-                return 2000+(_cv-1)*pp;
+                var pp=_freelancerPV[_cs]||_freelancerPV.short;
+                return _freelancerBase+(_cv-1)*pp;
             }
             function render(){
-                document.getElementById('calc-zyro-price').textContent='₹'+calcPrice().toLocaleString('en-IN');
-                document.getElementById('calc-agency-price').textContent='₹'+agencyPrice().toLocaleString('en-IN');
-                document.getElementById('calc-freelancer-price').textContent='₹'+freelancerPrice().toLocaleString('en-IN');
+                var z=document.getElementById('calc-zyro-price');
+                var a=document.getElementById('calc-agency-price');
+                var f=document.getElementById('calc-freelancer-price');
+                if(z) z.textContent='₹'+calcPrice().toLocaleString('en-IN');
+                if(a) a.textContent='₹'+agencyPrice().toLocaleString('en-IN');
+                if(f) f.textContent='₹'+freelancerPrice().toLocaleString('en-IN');
             }
             window.calcSetService=function(s){
                 _cs=s;
                 var radios=document.querySelectorAll('#calculator-section .calc-section:first-child .calc-radio');
                 radios.forEach(function(r){r.classList.remove('active');});
-                var idx=s==='short'?0:s==='long'?1:2;
-                radios[idx].classList.add('active');
+                var idx=_svcTypes.findIndex(function(t){return t.key===s;});
+                if(idx>=0&&radios[idx]) radios[idx].classList.add('active');
                 render();
             };
             window.calcUpdateVids=function(v){
                 _cv=parseInt(v);
-                document.getElementById('calc-vid-count').textContent=v;
+                var el=document.getElementById('calc-vid-count');
+                if(el) el.textContent=v;
                 render();
             };
             window.calcToggle=function(el,key){
@@ -2314,11 +2353,25 @@
                 var sec=document.querySelector('#calculator-section .calc-section:last-child');
                 if(!sec) return;
                 sec.querySelectorAll('.calc-radio').forEach(function(r){r.classList.remove('active');});
-                var idx=t==='rush'?0:t==='fast'?1:2;
-                sec.querySelectorAll('.calc-radio')[idx].classList.add('active');
+                var idx=_timelineDefs.findIndex(function(d){return d.key===t;});
+                if(idx>=0) sec.querySelectorAll('.calc-radio')[idx].classList.add('active');
                 render();
             };
             render();
+            // Fetch dynamic config (non-blocking — UI works immediately with defaults)
+            fetch('/api/admin-data?action=getCalculatorConfig').then(function(r){return r.json();}).then(function(cfg){
+                if(!cfg) return;
+                if(cfg.is_active===false){var sec=document.getElementById('calculator-section');if(sec)sec.style.display='none';return;}
+                if(cfg.service_types&&cfg.service_types.length) _svcTypes=cfg.service_types;
+                if(cfg.addons&&cfg.addons.length) _addonDefs=cfg.addons;
+                if(cfg.timelines&&cfg.timelines.length) _timelineDefs=cfg.timelines;
+                if(cfg.agency_base) _agencyBase=cfg.agency_base;
+                if(cfg.agency_per_vid) _agencyPV=cfg.agency_per_vid;
+                if(cfg.freelancer_base) _freelancerBase=cfg.freelancer_base;
+                if(cfg.freelancer_per_vid) _freelancerPV=cfg.freelancer_per_vid;
+                _addons={};_addonDefs.forEach(function(a){_addons[a.key]=false;});
+                render();
+            }).catch(function(e){console.warn('[calc] Config fetch failed, using defaults:',e.message);});
         })();
     </script>
 
@@ -4502,12 +4555,43 @@
             closeAllDropdowns();
             const m = document.getElementById('login-modal');
             m.style.display = 'flex';
+            // Reset steps to step 1 on fresh open
+            if (typeof _updateHeroSteps === 'function') _updateHeroSteps(1);
         }
         window.openLoginModal = openLoginModal;
 
         function closeLoginModal() {
             document.getElementById('login-modal').style.display = 'none';
             document.getElementById('lm-error').style.display = 'none';
+            // Reset to sign-in mode if user was in sign-up
+            if (typeof _isSignUpMode !== 'undefined' && _isSignUpMode) {
+                _isSignUpMode = false;
+                toggleAuthMode();
+            }
+            // Reset profile step visibility
+            document.getElementById('lm-form').style.display = 'block';
+            document.getElementById('lm-auth-footer').style.display = 'block';
+            document.getElementById('lm-terms-text').style.display = 'block';
+            if(document.getElementById('lm-social-grid')) document.getElementById('lm-social-grid').style.display = 'flex';
+            const dividers = document.getElementsByClassName('lm-divider');
+            if (dividers.length) dividers[0].style.display = 'flex';
+            document.getElementById('lm-form-heading').style.display = 'block';
+            document.getElementById('lm-form-subheading').style.display = 'block';
+            document.getElementById('lm-email').parentElement.style.display = 'block';
+            document.getElementById('lm-pass').parentElement.style.display = 'block';
+            document.getElementById('lm-btn').style.display = 'block';
+            document.getElementById('lm-profile-step').style.display = 'none';
+            
+            // Clear inputs
+            document.querySelectorAll('.lm-gender-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('lm-dob').value = '';
+            document.getElementById('lm-phone').value = '';
+            document.getElementById('lm-address').value = '';
+            
+            // Clear form fields + reset hero steps
+            var f = document.getElementById('lm-form');
+            if (f) f.reset();
+            if (typeof _updateHeroSteps === 'function') _updateHeroSteps(1);
         }
         window.closeLoginModal = closeLoginModal;
 
@@ -4545,6 +4629,25 @@
 
         // ── AUTH MODE TOGGLE (Sign In ↔ Sign Up) ──────────────────────────────
         let _isSignUpMode = false;
+
+        // Hero step indicator — updates the 3-step visual on the left column
+        function _updateHeroSteps(activeStep) {
+            for (var i = 1; i <= 3; i++) {
+                var el = document.getElementById('lm-step-' + i);
+                if (!el) continue;
+                el.className = 'lm-step ' + (i < activeStep ? 'completed' : i === activeStep ? 'active' : 'inactive');
+            }
+            // Update hero title/subtitle based on step
+            var title = document.getElementById('lm-hero-title');
+            var sub = document.getElementById('lm-hero-sub');
+            if (activeStep === 1 && title) { title.textContent = _isSignUpMode ? 'Join the Studio' : 'Welcome Back'; }
+            if (activeStep === 1 && sub) { sub.textContent = _isSignUpMode ? '3 quick steps to access your creative workspace.' : 'Sign in to continue where you left off.'; }
+            if (activeStep === 2 && title) { title.textContent = 'Almost There'; }
+            if (activeStep === 2 && sub) { sub.textContent = 'Verify your email to activate your account.'; }
+            if (activeStep === 3 && title) { title.textContent = 'You\'re In!'; }
+            if (activeStep === 3 && sub) { sub.textContent = 'Opening your creative workspace...'; }
+        }
+
         function toggleAuthMode() {
             _isSignUpMode = !_isSignUpMode;
             const heading = document.getElementById('lm-form-heading');
@@ -4572,6 +4675,7 @@
                 signupFields.style.display = 'none';
                 passHelper.style.display = 'none';
             }
+            _updateHeroSteps(1);
         }
         window.toggleAuthMode = toggleAuthMode;
 
@@ -4596,17 +4700,29 @@
                         options: { data: { full_name: fullName, name: fullName } }
                     });
                     if (error) throw error;
-                    errEl.style.color = '#4ade80';
-                    errEl.style.background = 'rgba(74,222,128,.08)';
-                    errEl.style.borderColor = 'rgba(74,222,128,.25)';
-                    errEl.textContent = 'Account created! Check your email to confirm, then sign in.';
-                    errEl.style.display = 'block';
-                    _isSignUpMode = false;
-                    toggleAuthMode(); // Switch back to sign-in
+                    
+                    // Hide auth form, show profile step
+                    document.getElementById('lm-form').style.display = 'none';
+                    document.getElementById('lm-auth-footer').style.display = 'none';
+                    document.getElementById('lm-terms-text').style.display = 'none';
+                    document.getElementById('lm-social-grid') && (document.getElementById('lm-social-grid').style.display = 'none');
+                    const dividers = document.getElementsByClassName('lm-divider');
+                    if (dividers.length) dividers[0].style.display = 'none';
+                    document.getElementById('lm-form-heading').style.display = 'none';
+                    document.getElementById('lm-form-subheading').style.display = 'none';
+                    
+                    document.getElementById('lm-profile-step').style.display = 'block';
+                    
+                    // Step 2: Configure profile
+                    _updateHeroSteps(2);
                 } else {
                     btn.textContent = 'Signing in…';
                     const { error } = await window._supabaseClient.auth.signInWithPassword({ email, password: pass });
                     if (error) throw error;
+                    // Step 3: sign-in success — show completion briefly
+                    _updateHeroSteps(3);
+                    btn.textContent = 'Welcome!';
+                    await new Promise(function(r){ setTimeout(r, 800); });
                     closeLoginModal();
                     initAccountState();
                 }
@@ -4616,7 +4732,61 @@
                 errEl.style.borderColor = 'rgba(255,26,26,.25)';
                 errEl.textContent = err.message || 'Authentication failed.';
                 errEl.style.display = 'block';
-            } finally { btn.textContent = _isSignUpMode ? 'Create Account' : 'Sign In'; btn.disabled = false; }
+            } finally { 
+                if (document.getElementById('lm-form').style.display !== 'none') {
+                    btn.textContent = _isSignUpMode ? 'Create Account' : 'Sign In'; 
+                }
+                btn.disabled = false; 
+            }
+        }
+
+        // ── PROFILE STEP LOGIC (STEP 2) ─────────────────────────────────────────
+        function selectGender(btn) {
+            document.querySelectorAll('.lm-gender-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function _finishProfileStepAndShowSuccess() {
+            // Hide the profile step
+            document.getElementById('lm-profile-step').style.display = 'none';
+            
+            // Re-show the form but we'll hide the inputs and just show the success message
+            document.getElementById('lm-form').style.display = 'block';
+            document.getElementById('lm-signup-fields').style.display = 'none';
+            document.getElementById('lm-email').parentElement.style.display = 'none';
+            document.getElementById('lm-pass').parentElement.style.display = 'none';
+            document.getElementById('lm-btn').style.display = 'none';
+            
+            const errEl = document.getElementById('lm-error');
+            errEl.style.color = '#22c55e';
+            errEl.style.background = 'rgba(34,197,94,.08)';
+            errEl.style.borderColor = 'rgba(34,197,94,.25)';
+            errEl.textContent = 'Profile saved! Check your email to confirm your account, then sign in.';
+            errEl.style.display = 'block';
+            errEl.style.marginBottom = '0';
+            
+            _isSignUpMode = false;
+            // The form is now just a success message. 
+            // It will be fully reset when closeLoginModal is called.
+        }
+
+        function saveProfileStep() {
+            const dob = document.getElementById('lm-dob').value;
+            const genderBtn = document.querySelector('.lm-gender-btn.active');
+            const gender = genderBtn ? genderBtn.dataset.val : null;
+            const phone = document.getElementById('lm-phone').value.trim();
+            const address = document.getElementById('lm-address').value.trim();
+            
+            // Save to local storage temporarily.
+            // On first actual login, we will push this to Supabase user_metadata.
+            const pendingProfile = { dob, gender, phone, address };
+            localStorage.setItem('zyro_pending_profile', JSON.stringify(pendingProfile));
+            
+            _finishProfileStepAndShowSuccess();
+        }
+
+        function skipProfileStep() {
+            _finishProfileStepAndShowSuccess();
         }
 
         // ── ACCOUNT STATE — shows Google avatar + full name if available ────────
@@ -4632,6 +4802,26 @@
                 loggedin.classList.remove('hidden');
 
                 const user = session.user;
+                
+                // --- SYNC PENDING PROFILE (from sign-up Step 2) ---
+                try {
+                    const pendingStr = localStorage.getItem('zyro_pending_profile');
+                    if (pendingStr) {
+                        const pendingProfile = JSON.parse(pendingStr);
+                        if (Object.keys(pendingProfile).length > 0) {
+                            // Merge into user_metadata
+                            const { data, error } = await window._supabaseClient.auth.updateUser({
+                                data: pendingProfile
+                            });
+                            if (!error) {
+                                localStorage.removeItem('zyro_pending_profile');
+                            }
+                        } else {
+                            localStorage.removeItem('zyro_pending_profile');
+                        }
+                    }
+                } catch(e) {}
+                // ---------------------------------------------------
                 // Google OAuth provides full_name + avatar_url in user_metadata
                 const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Account';
                 const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;

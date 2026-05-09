@@ -160,6 +160,72 @@ module.exports = async function (req, res) {
             }
         }
 
+        // ── Calculator config (GET ?action=getCalculatorConfig) ───────────────
+        if (req.method === 'GET' && req.query.action === 'getCalculatorConfig') {
+            try {
+                const { data, error } = await supabase
+                    .from('calculator_config')
+                    .select('*')
+                    .eq('id', 1)
+                    .maybeSingle();
+                if (error) throw error;
+                const defaults = {
+                    service_types: [
+                        { key: 'short', label: 'Short Form (Reels / Shorts)', base: 200, perVid: 200 },
+                        { key: 'long', label: 'Long Form (YouTube / Vlogs)', base: 500, perVid: 500 },
+                        { key: 'both', label: 'Full Package (Short + Long)', base: 600, perVid: 650 }
+                    ],
+                    addons: [
+                        { key: 'needThumbnails', label: 'Custom thumbnails for each video', price: 100 },
+                        { key: 'needSound', label: 'Sound design & SFX', price: 150 },
+                        { key: 'needColor', label: 'Cinematic color grading', price: 175 }
+                    ],
+                    timelines: [
+                        { key: 'rush', label: 'Rush (2-3 days)', price: 200 },
+                        { key: 'fast', label: 'Priority (4-5 days)', price: 75 },
+                        { key: 'regular', label: 'Standard (Based on discussion)', price: 0 }
+                    ],
+                    agency_base: 5000,
+                    agency_per_vid: { short: 1000, long: 1000, both: 2000 },
+                    freelancer_base: 2000,
+                    freelancer_per_vid: { short: 500, long: 500, both: 1000 },
+                    is_active: true
+                };
+                return res.status(200).json({
+                    service_types: data?.service_types ?? defaults.service_types,
+                    addons: data?.addons ?? defaults.addons,
+                    timelines: data?.timelines ?? defaults.timelines,
+                    agency_base: data?.agency_base ?? defaults.agency_base,
+                    agency_per_vid: data?.agency_per_vid ?? defaults.agency_per_vid,
+                    freelancer_base: data?.freelancer_base ?? defaults.freelancer_base,
+                    freelancer_per_vid: data?.freelancer_per_vid ?? defaults.freelancer_per_vid,
+                    is_active: data?.is_active ?? defaults.is_active
+                });
+            } catch (e) {
+                console.warn('[admin-data] getCalculatorConfig fallback:', e.message);
+                return res.status(200).json({
+                    service_types: [
+                        { key: 'short', label: 'Short Form (Reels / Shorts)', base: 200, perVid: 200 },
+                        { key: 'long', label: 'Long Form (YouTube / Vlogs)', base: 500, perVid: 500 },
+                        { key: 'both', label: 'Full Package (Short + Long)', base: 600, perVid: 650 }
+                    ],
+                    addons: [
+                        { key: 'needThumbnails', label: 'Custom thumbnails for each video', price: 100 },
+                        { key: 'needSound', label: 'Sound design & SFX', price: 150 },
+                        { key: 'needColor', label: 'Cinematic color grading', price: 175 }
+                    ],
+                    timelines: [
+                        { key: 'rush', label: 'Rush (2-3 days)', price: 200 },
+                        { key: 'fast', label: 'Priority (4-5 days)', price: 75 },
+                        { key: 'regular', label: 'Standard (Based on discussion)', price: 0 }
+                    ],
+                    agency_base: 5000, agency_per_vid: { short: 1000, long: 1000, both: 2000 },
+                    freelancer_base: 2000, freelancer_per_vid: { short: 500, long: 500, both: 1000 },
+                    is_active: true
+                });
+            }
+        }
+
         // ── Client profiles (GET ?action=getClients) ─────────────────────────────
         // Returns user_metadata (DOB, gender, address) from Supabase Auth for admin CRM
         if (req.method === 'GET' && req.query.action === 'getClients') {
@@ -447,6 +513,23 @@ module.exports = async function (req, res) {
                 updates.id = 1;
                 const { error } = await supabase
                     .from('referral_config')
+                    .upsert(updates, { onConflict: 'id' });
+                if (error) throw error;
+                return res.status(200).json({ ok: true });
+            }
+
+            // ── Calculator config update ──────────────────────────────────────
+            if (action === 'updateCalculatorConfig') {
+                const allowed = ['service_types', 'addons', 'timelines', 'agency_base', 'agency_per_vid', 'freelancer_base', 'freelancer_per_vid', 'is_active'];
+                const updates = {};
+                allowed.forEach(k => { if (k in body) updates[k] = body[k]; });
+                if (updates.agency_base != null) updates.agency_base = parseInt(updates.agency_base);
+                if (updates.freelancer_base != null) updates.freelancer_base = parseInt(updates.freelancer_base);
+                if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields.' });
+                updates.id = 1;
+                updates.updated_at = new Date().toISOString();
+                const { error } = await supabase
+                    .from('calculator_config')
                     .upsert(updates, { onConflict: 'id' });
                 if (error) throw error;
                 return res.status(200).json({ ok: true });
