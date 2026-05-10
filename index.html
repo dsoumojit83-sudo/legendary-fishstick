@@ -1528,7 +1528,7 @@
             <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/80"></div>
             <div class="noise absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"></div>
 
-            <div class="absolute top-6 left-1/2 -translate-x-1/2 inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/10 bg-black/50 backdrop-blur-md z-20 reveal">
+            <div class="absolute top-6 left-1/2 -translate-x-1/2 inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/10 bg-black/50 backdrop-blur-md z-20">
                 <span class="relative flex h-2 w-2">
                     <span id="avail-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff1a1a] opacity-75"></span>
                     <span id="avail-dot" class="relative inline-flex rounded-full h-2 w-2 bg-[#ff1a1a]"></span>
@@ -3002,6 +3002,38 @@
                         ScrollTrigger.create({ trigger: el, start: 'top 85%', once: true, onEnter: () => { gsap.to(obj, { val: target, duration: 2.5, ease: 'power3.out', onUpdate: update }); } });
                     }
                 });
+
+                // ScrollTrigger-based about-heading and feature-card reveals
+                // (moved here from the old preloader-gated script)
+                if (window.ScrollTrigger) {
+                    if (document.querySelector('.ab-word')) {
+                        gsap.to('.ab-word', {
+                            scrollTrigger: {
+                                trigger: ".about-heading",
+                                start: "top 80%"
+                            },
+                            y: 0,
+                            opacity: 1,
+                            duration: 0.8,
+                            stagger: 0.08,
+                            ease: "power3.out"
+                        });
+                    }
+
+                    if (document.querySelector('.feature-card')) {
+                        gsap.to('.feature-card', {
+                            scrollTrigger: {
+                                trigger: ".feature-card",
+                                start: "top 85%"
+                            },
+                            scale: 1,
+                            opacity: 1,
+                            duration: 0.6,
+                            stagger: 0.15,
+                            ease: "power2.out"
+                        });
+                    }
+                }
             }
 
             // ==================== PERFORMANCE & FALLBACKS ====================
@@ -3036,6 +3068,27 @@
                 gsap.to('nav', {
                     y: 0, opacity: 1,
                     duration: 0.7, ease: 'power3.out', delay: 0.3
+                });
+
+                // Hero text reveal — previously gated behind a 3s setTimeout
+                // for a preloader that no longer exists. Now fires immediately
+                // after the hero container rack-in animation.
+                gsap.to('.hw-word', {
+                    y: 0,
+                    opacity: 1,
+                    duration: 0.8,
+                    stagger: 0.1,
+                    ease: "power3.out",
+                    delay: 0.2
+                });
+
+                gsap.to('.hero-desc, .hero-cta', {
+                    y: 0,
+                    opacity: 1,
+                    duration: 1,
+                    stagger: 0.2,
+                    ease: "power3.out",
+                    delay: 0.6
                 });
             }
 
@@ -5014,57 +5067,7 @@
             });
         }
     </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Wait slightly for GSAP and any preloader to clear
-            setTimeout(function() {
-                if (typeof window.gsap !== 'undefined') {
-                    gsap.to('.hw-word', {
-                        y: 0,
-                        opacity: 1,
-                        duration: 0.8,
-                        stagger: 0.1,
-                        ease: "power3.out"
-                    });
-                    
-                    gsap.to('.hero-desc, .hero-cta', {
-                        y: 0,
-                        opacity: 1,
-                        duration: 1,
-                        stagger: 0.2,
-                        ease: "power3.out",
-                        delay: 0.7
-                    });
 
-                    if(typeof window.ScrollTrigger !== 'undefined') {
-                        gsap.to('.ab-word', {
-                            scrollTrigger: {
-                                trigger: ".about-heading",
-                                start: "top 80%"
-                            },
-                            y: 0,
-                            opacity: 1,
-                            duration: 0.8,
-                            stagger: 0.08,
-                            ease: "power3.out"
-                        });
-
-                        gsap.to('.feature-card', {
-                            scrollTrigger: {
-                                trigger: ".feature-card",
-                                start: "top 85%"
-                            },
-                            scale: 1,
-                            opacity: 1,
-                            duration: 0.6,
-                            stagger: 0.15,
-                            ease: "power2.out"
-                        });
-                    }
-                }
-            }, 3000); // Wait for preloader (~3s)
-        });
-    </script>
 </body>
 
 </html>
