@@ -61,18 +61,26 @@ module.exports = async function (req, res) {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
 
-    // 🔒 JWT Auth: validate Supabase session token
-    const authHeader = req.headers['authorization'];
-    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
-    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+    // 🔓 Allow public access to specific read-only actions (like calculator config)
+    const publicActions = ['getCalculatorConfig'];
+    const isPublicAction = req.method === 'GET' && publicActions.includes(req.query.action);
 
-    // 🔒 ENFORCE ADMIN ROLE: Only admins can access this API
-    const isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
-    if (!isSuperAdmin) {
-        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();
-        if (adminErr || !adminRecord) {
-            return res.status(403).json({ error: 'Forbidden. Admin access required.' });
+    let isSuperAdmin = false;
+
+    if (!isPublicAction) {
+        // 🔒 JWT Auth: validate Supabase session token
+        const authHeader = req.headers['authorization'];
+        if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+        const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
+        if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+        // 🔒 ENFORCE ADMIN ROLE: Only admins can access this API
+        isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+        if (!isSuperAdmin) {
+            const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();
+            if (adminErr || !adminRecord) {
+                return res.status(403).json({ error: 'Forbidden. Admin access required.' });
+            }
         }
     }
 

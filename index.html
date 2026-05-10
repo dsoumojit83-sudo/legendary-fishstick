@@ -2412,7 +2412,7 @@
                 render();
             };
             render();
-            // Fetch dynamic config (non-blocking — UI works immediately with defaults)
+            // Fetch dynamic config (non-blocking - UI works immediately with defaults)
             fetch('/api/admin-data?action=getCalculatorConfig').then(function(r){return r.json();}).then(function(cfg){
                 if(!cfg) return;
                 if(cfg.is_active===false){var sec=document.getElementById('calculator-section');if(sec)sec.style.display='none';return;}
@@ -3801,7 +3801,9 @@
 
                 // BUG FIX #8: Guard close button — toggleChat() flips state blindly,
                 // so calling it when already closed would re-open the chat.
-                closeBtn.addEventListener('click', function () { if (isOpen) toggleChat(); });
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function () { if (isOpen) toggleChat(); });
+                }
 
                 // Add click listeners to price cards
                 document.querySelectorAll('.price-card').forEach(card => {
