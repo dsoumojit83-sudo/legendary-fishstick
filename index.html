@@ -4775,7 +4775,8 @@
                     document.getElementById('lm-form').style.display = 'none';
                     document.getElementById('lm-auth-footer').style.display = 'none';
                     document.getElementById('lm-terms-text').style.display = 'none';
-                    document.getElementById('lm-social-grid') && (document.getElementById('lm-social-grid').style.display = 'none');
+                    const sGrid = document.querySelector('.lm-social-grid');
+                    if (sGrid) sGrid.style.display = 'none';
                     const dividers = document.getElementsByClassName('lm-divider');
                     if (dividers.length) dividers[0].style.display = 'none';
                     document.getElementById('lm-form-heading').style.display = 'none';
@@ -5024,6 +5025,14 @@
                                     if(subEl) subEl.style.display = 'none';
                                     const footerEl = document.getElementById('lm-auth-footer');
                                     if(footerEl) footerEl.style.display = 'none';
+                                    
+                                    // Hide social buttons and terms for pure Step 3 aesthetic
+                                    const termsEl = document.getElementById('lm-terms-text');
+                                    if(termsEl) termsEl.style.display = 'none';
+                                    const socialGrid = document.querySelector('.lm-social-grid');
+                                    if(socialGrid) socialGrid.style.display = 'none';
+                                    const dividers = document.getElementsByClassName('lm-divider');
+                                    if(dividers.length) dividers[0].style.display = 'none';
                                     
                                     const profileStep = document.getElementById('lm-profile-step');
                                     if(profileStep) profileStep.style.display = 'block';
