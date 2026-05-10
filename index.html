@@ -4752,16 +4752,14 @@
             try {
                 if (!window._supabaseClient) throw new Error('Auth service not ready. Try refreshing.');
                 if (_isSignUpMode) {
-                    btn.textContent = 'Creating…';
+                    btn.textContent = 'Continuing…';
                     if (pass.length < 8) throw new Error('Password must be at least 8 characters.');
                     const fname = (document.getElementById('lm-fname')?.value || '').trim();
                     const lname = (document.getElementById('lm-lname')?.value || '').trim();
                     const fullName = [fname, lname].filter(Boolean).join(' ') || 'Zyro Client';
-                    const { error } = await window._supabaseClient.auth.signUp({
-                        email, password: pass,
-                        options: { data: { full_name: fullName, name: fullName } }
-                    });
-                    if (error) throw error;
+                    
+                    // Cache credentials and delay signUp to capture all metadata in Step 2
+                    window._pendingSignUpAuth = { email, pass, fullName };
                     
                     // Hide auth form, show profile step
                     document.getElementById('lm-form').style.display = 'none';
@@ -4833,44 +4831,32 @@
         }
 
         async function saveProfileStep() {
+            const errEl = document.getElementById('lm-error');
+            errEl.style.display = 'none';
             const btn = document.getElementById('lm-profile-btn');
             if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
-            const dob = document.getElementById('lm-dob').value;
-            const genderBtn = document.querySelector('.lm-gender-btn.active');
-            const gender = genderBtn ? genderBtn.dataset.val : null;
-            const phone = document.getElementById('lm-phone').value.trim();
-            const address = document.getElementById('lm-address').value.trim();
-            
-            const pendingProfile = { dob, gender, phone, address };
-            
             try {
-                // If the user is already logged in (Email Confirmation OFF), update immediately
-                const { data } = await window._supabaseClient.auth.getSession();
-                if (data && data.session && data.session.user) {
-                    await window._supabaseClient.auth.updateUser({ data: pendingProfile });
-                    // Session is fully active and metadata is updated
-                    _updateHeroSteps(3);
-                    await new Promise(r => setTimeout(r, 600));
-                    closeLoginModal();
-                    if (typeof initAccountState === 'function') initAccountState();
-                    return; // Skip the email confirmation message
-                } else {
-                    // Fallback: Save to localStorage for Email Confirmation ON
-                    localStorage.setItem('zyro_pending_profile', JSON.stringify(pendingProfile));
-                }
-            } catch(e) {
-                console.error("Error saving profile:", e);
-                localStorage.setItem('zyro_pending_profile', JSON.stringify(pendingProfile));
-            }
-            
-            if (btn) { btn.disabled = false; btn.textContent = 'Save & Continue'; }
-            _finishProfileStepAndShowSuccess();
-        }
+                const dob = document.getElementById('lm-dob').value;
+                const genderBtn = document.querySelector('.lm-gender-btn.active');
+                const gender = genderBtn ? genderBtn.dataset.val : null;
+                const phone = document.getElementById('lm-phone').value.trim();
+                const address = document.getElementById('lm-address').value.trim();
+                
+                const auth = window._pendingSignUpAuth;
+                if (!auth) throw new Error('Signup session lost. Please try again.');
 
-        async function skipProfileStep() {
-            try {
-                const { data } = await window._supabaseClient.auth.getSession();
+                // Execute the actual signUp request NOW with all metadata included
+                const { data, error } = await window._supabaseClient.auth.signUp({
+                    email: auth.email,
+                    password: auth.pass,
+                    options: { data: { full_name: auth.fullName, name: auth.fullName, dob, gender, phone, address } }
+                });
+                
+                if (error) throw error;
+                window._pendingSignUpAuth = null;
+                
+                // If email confirmation is OFF, data.session exists
                 if (data && data.session && data.session.user) {
                     _updateHeroSteps(3);
                     await new Promise(r => setTimeout(r, 600));
@@ -4878,8 +4864,74 @@
                     if (typeof initAccountState === 'function') initAccountState();
                     return;
                 }
-            } catch(e) {}
-            _finishProfileStepAndShowSuccess();
+                
+                _finishProfileStepAndShowSuccess();
+            } catch(e) {
+                console.error("Signup error:", e);
+                errEl.style.color = '#f87171';
+                errEl.style.background = 'rgba(255,26,26,.08)';
+                errEl.style.borderColor = 'rgba(255,26,26,.25)';
+                errEl.textContent = e.message || 'Signup failed.';
+                errEl.style.display = 'block';
+                
+                // Revert UI to Step 1 if signup fails (e.g. email already taken)
+                document.getElementById('lm-profile-step').style.display = 'none';
+                document.getElementById('lm-form').style.display = 'block';
+                document.getElementById('lm-form-heading').style.display = 'block';
+                document.getElementById('lm-form-subheading').style.display = 'block';
+                document.getElementById('lm-auth-footer').style.display = 'block';
+                const dividers = document.getElementsByClassName('lm-divider');
+                if (dividers.length) dividers[0].style.display = 'flex';
+                document.getElementById('lm-social-grid') && (document.getElementById('lm-social-grid').style.display = 'flex');
+                _updateHeroSteps(1);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Save & Continue'; }
+            }
+        }
+
+        async function skipProfileStep() {
+            const errEl = document.getElementById('lm-error');
+            errEl.style.display = 'none';
+            try {
+                const auth = window._pendingSignUpAuth;
+                if (!auth) throw new Error('Signup session lost. Please try again.');
+
+                const { data, error } = await window._supabaseClient.auth.signUp({
+                    email: auth.email,
+                    password: auth.pass,
+                    options: { data: { full_name: auth.fullName, name: auth.fullName } }
+                });
+                
+                if (error) throw error;
+                window._pendingSignUpAuth = null;
+
+                if (data && data.session && data.session.user) {
+                    _updateHeroSteps(3);
+                    await new Promise(r => setTimeout(r, 600));
+                    closeLoginModal();
+                    if (typeof initAccountState === 'function') initAccountState();
+                    return;
+                }
+                
+                _finishProfileStepAndShowSuccess();
+            } catch(e) {
+                console.error("Signup error:", e);
+                errEl.style.color = '#f87171';
+                errEl.style.background = 'rgba(255,26,26,.08)';
+                errEl.style.borderColor = 'rgba(255,26,26,.25)';
+                errEl.textContent = e.message || 'Signup failed.';
+                errEl.style.display = 'block';
+                
+                document.getElementById('lm-profile-step').style.display = 'none';
+                document.getElementById('lm-form').style.display = 'block';
+                document.getElementById('lm-form-heading').style.display = 'block';
+                document.getElementById('lm-form-subheading').style.display = 'block';
+                document.getElementById('lm-auth-footer').style.display = 'block';
+                const dividers = document.getElementsByClassName('lm-divider');
+                if (dividers.length) dividers[0].style.display = 'flex';
+                document.getElementById('lm-social-grid') && (document.getElementById('lm-social-grid').style.display = 'flex');
+                _updateHeroSteps(1);
+            }
         }
 
         // ── ACCOUNT STATE — shows Google avatar + full name if available ────────
