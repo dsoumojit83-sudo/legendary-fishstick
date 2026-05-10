@@ -2093,23 +2093,7 @@
                             </div>
                             <!-- Comparison Base Costs -->
                             <div>
-                                <h4 class="text-xs uppercase tracking-widest text-gray-500 mb-3">Competitor Comparison</h4>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div class="bg-black/40 border border-white/5 rounded-xl p-4">
-                                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Agency Comparison</p>
-                                        <div class="flex gap-2">
-                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Base Price</label><input id="calc-cfg-agency-base" type="number" value="5000" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a]"></div>
-                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Per Video Avg.</label><input id="calc-cfg-agency-pv" type="number" value="1000" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a]"></div>
-                                        </div>
-                                    </div>
-                                    <div class="bg-black/40 border border-white/5 rounded-xl p-4">
-                                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Freelancer Comparison</p>
-                                        <div class="flex gap-2">
-                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Base Price</label><input id="calc-cfg-free-base" type="number" value="2000" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a]"></div>
-                                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1">Per Video Avg.</label><input id="calc-cfg-free-pv" type="number" value="500" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a]"></div>
-                                        </div>
-                                    </div>
-                                </div>
+
                             </div>
                             <!-- Toggle + Save -->
                             <div class="flex items-center justify-between border-t border-white/5 pt-4">
@@ -5772,14 +5756,7 @@
                 
                 renderAdminCalcLists();
 
-                // Comparisons
-                if (cfg.agency_base) { var el = document.getElementById('calc-cfg-agency-base'); if (el) el.value = cfg.agency_base; }
-                if (cfg.freelancer_base) { var el = document.getElementById('calc-cfg-free-base'); if (el) el.value = cfg.freelancer_base; }
-                if (cfg.agency_per_vid && typeof cfg.agency_per_vid === 'number') { document.getElementById('calc-cfg-agency-pv').value = cfg.agency_per_vid; }
-                else if (cfg.agency_per_vid && cfg.agency_per_vid.short) { document.getElementById('calc-cfg-agency-pv').value = cfg.agency_per_vid.short; }
-                if (cfg.freelancer_per_vid && typeof cfg.freelancer_per_vid === 'number') { document.getElementById('calc-cfg-free-pv').value = cfg.freelancer_per_vid; }
-                else if (cfg.freelancer_per_vid && cfg.freelancer_per_vid.short) { document.getElementById('calc-cfg-free-pv').value = cfg.freelancer_per_vid.short; }
-                
+                // Comparisons removed for dynamic scaling
                 // Active toggle
                 var enabled = cfg.is_active !== false;
                 var chk = document.getElementById('calc-cfg-enabled');
@@ -5819,10 +5796,7 @@
                     service_types: _adminCalcConfig.service_types,
                     addons: _adminCalcConfig.addons,
                     timelines: _adminCalcConfig.timelines,
-                    agency_base: parseInt(document.getElementById('calc-cfg-agency-base').value) || 5000,
-                    agency_per_vid: parseInt(document.getElementById('calc-cfg-agency-pv').value) || 1000,
-                    freelancer_base: parseInt(document.getElementById('calc-cfg-free-base').value) || 2000,
-                    freelancer_per_vid: parseInt(document.getElementById('calc-cfg-free-pv').value) || 500,
+
                     is_active: document.getElementById('calc-cfg-enabled').checked
                 };
                 var res = await fetch('/api/admin-data', { method: 'POST', headers: ecommHeaders(), body: JSON.stringify(payload) });

@@ -1977,7 +1977,7 @@
                         <div class="calc-card-highlight" style="border-radius:16px;padding:24px 28px;">
                             <p style="font-size:11px;text-transform:uppercase;letter-spacing:.15em;margin:0 0 8px;color:#ff1a1a;font-weight:700;">With ZyroEditz™ Studio</p>
                             <p style="font-size:40px;font-weight:900;font-family:'Roboto',sans-serif;margin:0;" id="calc-zyro-price">₹1,500</p>
-                            <p style="font-size:13px;margin:8px 0 20px;opacity:.8;">Save your money, time &amp; headache</p>
+                            <p id="calc-save-text" style="font-size:13px;margin:8px 0 20px;opacity:.8;">Save your money, time &amp; headache</p>
                             <div class="flex flex-col sm:flex-row gap-3 w-full">
                                 <button onclick="calcAddToCart()" class="flex-1 border border-white/20 text-white font-bold py-3.5 rounded-lg hover:bg-white/10 transition-colors uppercase tracking-widest text-xs flex items-center justify-center gap-2"><i data-lucide="shopping-cart" class="w-4 h-4"></i> Add to Cart</button>
                                 <button onclick="calcBuyNow()" class="flex-1 bg-[#ff1a1a] text-black font-bold py-3.5 rounded-lg hover:bg-white transition-colors uppercase tracking-widest text-xs flex items-center justify-center gap-2"><i data-lucide="zap" class="w-4 h-4"></i> Buy Now</button>
@@ -1994,8 +1994,19 @@
             var _svcTypes=[{key:'short',label:'Short Form (Reels / Shorts)',base:200,perVid:200},{key:'long',label:'Long Form (YouTube / Vlogs)',base:500,perVid:500},{key:'both',label:'Full Package (Short + Long)',base:600,perVid:650}];
             var _addonDefs=[{key:'needThumbnails',label:'Custom thumbnails for each video',price:100},{key:'needSound',label:'Sound design & SFX',price:150},{key:'needColor',label:'Cinematic color grading',price:175}];
             var _timelineDefs=[{key:'rush',label:'Rush (2-3 days)',price:200},{key:'fast',label:'Priority (4-5 days)',price:75},{key:'regular',label:'Standard (Based on discussion)',price:0}];
-            var _agencyBase=5000,_agencyPV=1000;
-            var _freelancerBase=2000,_freelancerPV=500;
+            
+            // Dynamic market multipliers
+            var _liveAgencyMultiplier = 1.45;
+            var _liveFreelancerMultiplier = 1.25;
+            
+            // Jitter the multipliers every 4 seconds to simulate live market rates
+            setInterval(function() {
+                // Agency: 40% to 50%
+                _liveAgencyMultiplier = 1.40 + (Math.random() * 0.10);
+                // Freelancer: 20% to 30%
+                _liveFreelancerMultiplier = 1.20 + (Math.random() * 0.10);
+                render();
+            }, 4000);
             var _cs='short',_cv=3,_ct='regular';
             var _addons={};
             _addonDefs.forEach(function(a){_addons[a.key]=false;});
@@ -2039,20 +2050,31 @@
                 return total;
             }
             function agencyPrice(){
-                var pp = typeof _agencyPV === 'number' ? _agencyPV : (_agencyPV.short || 1000);
-                return _agencyBase+(_cv-1)*pp;
+                return Math.round(calcPrice() * _liveAgencyMultiplier);
             }
             function freelancerPrice(){
-                var pp = typeof _freelancerPV === 'number' ? _freelancerPV : (_freelancerPV.short || 500);
-                return _freelancerBase+(_cv-1)*pp;
+                return Math.round(calcPrice() * _liveFreelancerMultiplier);
             }
             function render(){
                 var z=document.getElementById('calc-zyro-price');
                 var a=document.getElementById('calc-agency-price');
                 var f=document.getElementById('calc-freelancer-price');
-                if(z) z.textContent='₹'+calcPrice().toLocaleString('en-IN');
-                if(a) a.textContent='₹'+agencyPrice().toLocaleString('en-IN');
-                if(f) f.textContent='₹'+freelancerPrice().toLocaleString('en-IN');
+                var total = calcPrice();
+                var agencyP = agencyPrice();
+                var freeP = freelancerPrice();
+                
+                if(z) z.textContent='₹'+total.toLocaleString('en-IN');
+                if(a) a.textContent='₹'+agencyP.toLocaleString('en-IN');
+                if(f) f.textContent='₹'+freeP.toLocaleString('en-IN');
+                
+                var saveText = document.getElementById('calc-save-text');
+                if(saveText) {
+                    if (total >= agencyP || total >= freeP) {
+                        saveText.style.display = 'none';
+                    } else {
+                        saveText.style.display = 'block';
+                    }
+                }
             }
             window.calcSetService=function(s){
                 _cs=s;
@@ -2114,10 +2136,6 @@
                 if(cfg.service_types&&cfg.service_types.length) _svcTypes=cfg.service_types;
                 if(cfg.addons&&cfg.addons.length) _addonDefs=cfg.addons;
                 if(cfg.timelines&&cfg.timelines.length) _timelineDefs=cfg.timelines;
-                if(cfg.agency_base) _agencyBase=cfg.agency_base;
-                if(cfg.agency_per_vid) _agencyPV=cfg.agency_per_vid;
-                if(cfg.freelancer_base) _freelancerBase=cfg.freelancer_base;
-                if(cfg.freelancer_per_vid) _freelancerPV=cfg.freelancer_per_vid;
                 
                 // Initialize addons
                 _addonDefs.forEach(function(a){ if(_addons[a.key]===undefined) _addons[a.key]=false; });

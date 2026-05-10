@@ -193,20 +193,12 @@ module.exports = async function (req, res) {
                         { key: 'fast', label: 'Priority (4-5 days)', price: 75 },
                         { key: 'regular', label: 'Standard (Based on discussion)', price: 0 }
                     ],
-                    agency_base: 5000,
-                    agency_per_vid: 1000,
-                    freelancer_base: 2000,
-                    freelancer_per_vid: 500,
                     is_active: true
                 };
                 return res.status(200).json({
                     service_types: data?.service_types ?? defaults.service_types,
                     addons: data?.addons ?? defaults.addons,
                     timelines: data?.timelines ?? defaults.timelines,
-                    agency_base: data?.agency_base ?? defaults.agency_base,
-                    agency_per_vid: data?.agency_per_vid ?? defaults.agency_per_vid,
-                    freelancer_base: data?.freelancer_base ?? defaults.freelancer_base,
-                    freelancer_per_vid: data?.freelancer_per_vid ?? defaults.freelancer_per_vid,
                     is_active: data?.is_active ?? defaults.is_active
                 });
             } catch (e) {
@@ -528,13 +520,9 @@ module.exports = async function (req, res) {
 
             // ── Calculator config update ──────────────────────────────────────
             if (action === 'updateCalculatorConfig') {
-                const allowed = ['service_types', 'addons', 'timelines', 'agency_base', 'agency_per_vid', 'freelancer_base', 'freelancer_per_vid', 'is_active'];
+                const allowed = ['service_types', 'addons', 'timelines', 'is_active'];
                 const updates = {};
                 allowed.forEach(k => { if (k in body) updates[k] = body[k]; });
-                if (updates.agency_base != null) updates.agency_base = parseInt(updates.agency_base);
-                if (updates.freelancer_base != null) updates.freelancer_base = parseInt(updates.freelancer_base);
-                if (updates.agency_per_vid != null && typeof updates.agency_per_vid !== 'object') updates.agency_per_vid = parseInt(updates.agency_per_vid);
-                if (updates.freelancer_per_vid != null && typeof updates.freelancer_per_vid !== 'object') updates.freelancer_per_vid = parseInt(updates.freelancer_per_vid);
                 if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields.' });
                 updates.id = 1;
                 updates.updated_at = new Date().toISOString();
