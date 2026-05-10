@@ -1401,6 +1401,11 @@
         .lm-close:hover{background:rgba(255,26,26,.1);color:#ff1a1a;border-color:rgba(255,26,26,.2);}
         .lm-helper{font-size:11px;color:rgba(255,255,255,.25);margin-top:4px;}
         .lm-name-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        .lm-profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+        @media(max-width:480px){.lm-profile-grid{grid-template-columns:1fr;}}
+        .lm-profile-divider{height:1px;background:rgba(255,255,255,.06);margin:8px 0 20px;}
+        .lm-skip-btn{width:100%;height:42px;background:transparent;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);border-radius:12px;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;margin-top:8px;}
+        .lm-skip-btn:hover{border-color:rgba(255,26,26,.3);color:rgba(255,255,255,.7);}
         #lm-signup-fields{display:none;}
         .lm-gender-btn{flex:1;background:#1a1a1a;border:1px solid transparent;color:rgba(255,255,255,.6);border-radius:12px;height:44px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;}
         .lm-gender-btn:hover{background:rgba(255,255,255,.04);color:#fff;}
@@ -1474,16 +1479,25 @@
                     </div>
                     <p style="text-align:center;color:rgba(255,255,255,.15);font-size:10px;margin-top:14px;" id="lm-terms-text">By continuing you agree to our Terms.</p>
 
-                    <!-- Step 2: Profile Configuration (hidden by default) -->
+                    <!-- Step 3: Profile Configuration (hidden by default) -->
                     <div id="lm-profile-step" style="display:none;">
                         <h2 class="lm-form-title">Complete Your Profile</h2>
-                        <p class="lm-form-sub" style="margin-bottom:20px;">Help us personalize your experience. You can always update this later.</p>
-                        <div class="lm-input-group">
-                            <label>Date of Birth</label>
+                        <p class="lm-form-sub" style="margin-bottom:6px;">Help us personalize your experience. You can always update this later.</p>
+                        <div class="lm-profile-divider"></div>
+                        <!-- Row 1: DOB + Phone (2-col grid) -->
+                        <div class="lm-profile-grid">
+                            <div class="lm-input-group">
+                                <label>Date of Birth</label>
                             <input id="lm-dob" type="text" placeholder="DD-MM-YYYY" maxlength="10"
                                 oninput="var v=this.value.replace(/[^0-9]/g,'');if(v.length>2)v=v.slice(0,2)+'-'+v.slice(2);if(v.length>5)v=v.slice(0,5)+'-'+v.slice(5);this.value=v.slice(0,10);"
                                 class="lm-input" style="color-scheme:dark;">
+                            </div>
+                            <div class="lm-input-group">
+                                <label>Phone <span style="color:rgba(255,255,255,.2);font-weight:400;">(optional)</span></label>
+                                <input id="lm-phone" type="tel" class="lm-input" placeholder="+91 98765 43210" autocomplete="tel">
+                            </div>
                         </div>
+                        <!-- Row 2: Gender (full width) -->
                         <div class="lm-input-group">
                             <label>Gender</label>
                             <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -1492,16 +1506,13 @@
                                 <button type="button" class="lm-gender-btn" data-val="other" onclick="selectGender(this)">Other</button>
                             </div>
                         </div>
-                        <div class="lm-input-group">
-                            <label>Phone <span style="color:rgba(255,255,255,.2);font-weight:400;">(optional)</span></label>
-                            <input id="lm-phone" type="tel" class="lm-input" placeholder="+91 98765 43210" autocomplete="tel">
-                        </div>
+                        <!-- Row 3: City / Address (full width) -->
                         <div class="lm-input-group">
                             <label>City / Address <span style="color:rgba(255,255,255,.2);font-weight:400;">(optional)</span></label>
                             <input id="lm-address" type="text" class="lm-input" placeholder="Mumbai, India" autocomplete="street-address">
                         </div>
                         <button type="button" onclick="saveProfileStep()" class="lm-submit" id="lm-profile-btn">Save & Continue</button>
-                        <button type="button" onclick="skipProfileStep()" style="width:100%;height:42px;background:transparent;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);border-radius:12px;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;margin-top:8px;" onmouseover="this.style.borderColor='rgba(255,26,26,.3)';this.style.color='rgba(255,255,255,.7)'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.color='rgba(255,255,255,.4)'">Skip for now</button>
+                        <button type="button" onclick="skipProfileStep()" class="lm-skip-btn">Skip for now</button>
                     </div>
                 </div>
             </div>
