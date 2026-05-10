@@ -412,6 +412,19 @@ async function buildPdfBuffer(order) {
     });
 }
 
-module.exports = sendInvoice;
-module.exports.buildPdfBuffer = buildPdfBuffer;
+// ── HTTP guard + internal function export ─────────────────────────────────────
+// Vercel auto-exposes /api/sendInvoice as a public URL.
+// If called as an HTTP handler (req has .method), reject it.
+// If called internally (e.g. sendInvoice(orderObj)), run the real function.
+async function _exportedHandler(reqOrOrder, res) {
+    // Direct HTTP request — block it
+    if (res && typeof res.status === 'function' && reqOrOrder && reqOrOrder.method) {
+        return res.status(405).json({ error: 'This endpoint is internal only.' });
+    }
+    // Internal call: reqOrOrder is the order object
+    return sendInvoice(reqOrOrder);
+}
+_exportedHandler.buildPdfBuffer = buildPdfBuffer;
+
+module.exports = _exportedHandler;
 

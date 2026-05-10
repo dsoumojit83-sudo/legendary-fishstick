@@ -22,6 +22,19 @@ function isChatRateLimited(ip) {
     return false;
 }
 
+// S13 FIX: Rate limiter for review submissions — prevents spam flooding the reviews table.
+const _reviewRateMap = {};
+const REVIEW_RATE_MAX = 5;
+const REVIEW_RATE_WINDOW_MS = 300 * 1000;
+function isReviewRateLimited(ip) {
+    const now = Date.now();
+    const recent = (_reviewRateMap[ip] || []).filter(t => now - t < REVIEW_RATE_WINDOW_MS);
+    if (recent.length >= REVIEW_RATE_MAX) { _reviewRateMap[ip] = recent; return true; }
+    recent.push(now);
+    _reviewRateMap[ip] = recent;
+    return false;
+}
+
 // --- DEADLINE TIMETABLE (fallback if DB unreachable) ---
 const _defaultDeadlineMap = {
     "Short Form": 2,
@@ -45,7 +58,7 @@ async function fetchDeadlineMap() {
             const raw = String(s.delivery_days || '').toLowerCase();
             const numMatch = raw.match(/\d+/);
             let val = parseInt(numMatch?.[0] || '3', 10);
-            
+
             // If the string contains 'hr' or 'hour', treat it as hours. Otherwise, days.
             if (!raw.includes('hr') && !raw.includes('hour')) {
                 val *= 24; // convert days to hours
@@ -53,7 +66,7 @@ async function fetchDeadlineMap() {
             map[s.name] = val;
         });
         return map;
-    } catch { 
+    } catch {
         // Convert defaults to hours
         const hrMap = {};
         for (const [k, v] of Object.entries(_defaultDeadlineMap)) hrMap[k] = v * 24;
@@ -217,7 +230,57 @@ module.exports = async function (req, res) {
     try {
         const { action, rating, review_text, order_id, sessionId, phone, email, name, selectedService, amount, couponCode } = req.body;
 
+        // B6 FIX: Resume payment for existing unpaid orders instead of creating duplicates.
+        // Retrieves the Cashfree payment session for an order the user already owns.
+        if (action === 'resumePayment') {
+            if (!order_id || !email) {
+                return res.status(400).json({ error: 'Order ID and email are required.' });
+            }
+            // Verify ownership
+            const { data: existingOrder, error: orderErr } = await supabase
+                .from('orders')
+                .select('order_id, client_email, amount, status')
+                .eq('order_id', order_id)
+                .maybeSingle();
+            if (orderErr || !existingOrder) {
+                return res.status(404).json({ error: 'Order not found.' });
+            }
+            if (existingOrder.client_email.toLowerCase() !== email.toLowerCase()) {
+                return res.status(403).json({ error: 'You do not own this order.' });
+            }
+            if (existingOrder.status !== 'created') {
+                return res.status(400).json({ error: 'This order has already been paid or processed.' });
+            }
+            // Fetch existing payment session from Cashfree
+            try {
+                const cfRes = await axios.get(
+                    `https://api.cashfree.com/pg/orders/${order_id}`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-version': '2025-01-01',
+                            'x-client-id': process.env.CASHFREE_APP_ID,
+                            'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                        }
+                    }
+                );
+                const sessionId = cfRes.data?.payment_session_id;
+                if (!sessionId) {
+                    return res.status(410).json({ error: 'Payment session expired. Please contact support.' });
+                }
+                return res.status(200).json({ paymentSessionId: sessionId, order_id: order_id });
+            } catch (cfErr) {
+                console.error('[chat] resumePayment Cashfree error:', cfErr.response?.data || cfErr.message);
+                return res.status(500).json({ error: 'Unable to resume payment. Please contact support.' });
+            }
+        }
+
         if (action === 'submitReview') {
+            // S13 FIX: Rate limit review submissions
+            const reviewIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+            if (isReviewRateLimited(reviewIp)) {
+                return res.status(429).json({ error: 'Too many review submissions. Please wait a few minutes.' });
+            }
             const starRating = parseInt(rating);
             if (!starRating || starRating < 1 || !review_text) {
                 return res.status(400).json({ error: 'Please select a star rating and write a review.' });
@@ -451,31 +514,45 @@ module.exports = async function (req, res) {
                     }
                 } else if (code.startsWith('ZYRO-') && code.length >= 10) {
                     // Referral code logic — read config from referral_config table
-                    let refDiscount = 10, refMinOrder = 0, refEnabled = true;
+                    let refDiscount = 10, refMinOrder = 0, refMaxUses = 0, refEnabled = true;
                     try {
                         const { data: cfg } = await supabase.from('referral_config')
-                            .select('referral_discount_percent, referral_min_order, referral_enabled')
+                            .select('referral_discount_percent, referral_min_order, referral_max_uses, referral_enabled')
                             .eq('id', 1).maybeSingle();
                         if (cfg) {
                             refDiscount = cfg.referral_discount_percent ?? 10;
                             refMinOrder = cfg.referral_min_order ?? 0;
+                            refMaxUses = cfg.referral_max_uses ?? 0;
                             refEnabled = cfg.referral_enabled ?? true;
                         }
                     } catch (_) { /* use defaults */ }
                     if (refEnabled) {
                         const { data: blockedRef } = await supabase.from('referrals').select('id').eq('referral_code', code).eq('blocked', true).maybeSingle();
-                        if (!blockedRef && (!refMinOrder || expectedPrice >= refMinOrder)) {
+                        // Check max usage limit (mirrors applyCoupon validation)
+                        let usageOk = true;
+                        if (refMaxUses > 0) {
+                            const { count } = await supabase.from('referrals').select('id', { count: 'exact', head: true })
+                                .eq('referral_code', code).neq('referred_email', '').not('referred_email', 'is', null);
+                            if (count && count >= refMaxUses) usageOk = false;
+                        }
+                        if (!blockedRef && usageOk && (!refMinOrder || expectedPrice >= refMinOrder)) {
                             discount = Math.round(expectedPrice * refDiscount / 100);
                         }
                     }
                 }
             }
 
-            const finalExpected = Math.max(1, expectedPrice - discount);
-            // Allow ₹1 difference for rounding
-            if (Math.abs(numericAmount - finalExpected) > 1.01) {
-                console.warn(`[chat] Price mismatch: Received ₹${numericAmount}, Expected ₹${finalExpected} for ${selectedService}`);
-                return res.status(400).json({ reply: "Payment amount mismatch. Please refresh and try again." });
+            // S4 FIX: If a 100% coupon/referral makes the order free, skip Cashfree entirely.
+            // Auto-complete the order as 'paid' directly in the DB.
+            const isFreeOrder = discount >= expectedPrice;
+
+            if (!isFreeOrder) {
+                const finalExpected = Math.max(1, expectedPrice - discount);
+                // Allow ₹1 difference for rounding
+                if (Math.abs(numericAmount - finalExpected) > 1.01) {
+                    console.warn(`[chat] Price mismatch: Received ₹${numericAmount}, Expected ₹${finalExpected} for ${selectedService}`);
+                    return res.status(400).json({ reply: "Payment amount mismatch. Please refresh and try again." });
+                }
             }
         } catch (err) {
             console.error('[chat] Price validation error:', err.message);
@@ -491,7 +568,7 @@ module.exports = async function (req, res) {
         let hoursToAdd = 72; // Default 3 days
         try {
             const deadlineMap = await fetchDeadlineMap();
-            
+
             // Attempt to dynamically resolve custom timelines from calculator config
             let timelineHoursMap = {};
             if (calcConfig && calcConfig.timelines) {
@@ -541,6 +618,68 @@ module.exports = async function (req, res) {
         // Add the required hours directly to the current IST timestamp
         const deadlineIST = new Date(nowIST.getTime() + (hoursToAdd * 60 * 60 * 1000));
         const formattedDeadline = deadlineIST.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        // S4 FIX: Free order path — skip Cashfree entirely for 100% coupons/referrals.
+        // The user pays ₹0; the order is auto-completed as 'paid' in the DB.
+        if (typeof isFreeOrder !== 'undefined' && isFreeOrder) {
+            const orderRow = {
+                order_id: orderId,
+                client_name: safeName,
+                client_email: safeEmail,
+                client_phone: safePhone,
+                service: selectedService,
+                amount: 0,
+                status: 'paid',
+                deadline_date: formattedDeadline
+            };
+            if (couponCode) orderRow.coupon_code = String(couponCode).toUpperCase().trim();
+            let dbError;
+            ({ error: dbError } = await supabase.from('orders').insert([orderRow]));
+            if (dbError && orderRow.coupon_code) {
+                delete orderRow.coupon_code;
+                ({ error: dbError } = await supabase.from('orders').insert([orderRow]));
+            }
+            if (dbError) {
+                console.error('Supabase Insert Failed (free order):', dbError);
+                throw new Error('Database Error: Failed to create free order.');
+            }
+
+            // Increment coupon usage
+            if (_usedCouponId) {
+                try {
+                    const { data: cpn } = await supabase.from('coupons').select('times_used').eq('id', _usedCouponId).single();
+                    if (cpn) await supabase.from('coupons').update({ times_used: (cpn.times_used || 0) + 1 }).eq('id', _usedCouponId);
+                } catch (_) { }
+            }
+
+            // Record referral if applicable
+            if (couponCode) {
+                const refCode = String(couponCode).toUpperCase().trim();
+                if (refCode.startsWith('ZYRO-') && refCode.length >= 10) {
+                    try {
+                        const { data: refData } = await supabase.from('referrals')
+                            .select('referrer_id, referrer_email').eq('referral_code', refCode)
+                            .not('referrer_id', 'is', null).limit(1).maybeSingle();
+                        if (refData) {
+                            await supabase.from('referrals').insert([{ referrer_id: refData.referrer_id, referrer_email: refData.referrer_email, referred_email: safeEmail, referral_code: refCode }]);
+                        }
+                    } catch (_) { }
+                }
+            }
+
+            // Send invoice for the free order
+            try {
+                const { sendInvoice } = require('./sendInvoice');
+                await sendInvoice({ ...orderRow });
+            } catch (_) { }
+
+            console.log(`[chat] Free order completed: ${orderId} for ${safeEmail} (coupon: ${couponCode})`);
+            return res.json({
+                reply: `Your ${selectedService} project has been booked for free with your coupon! No payment required. Our team will start working on it right away.`,
+                freeOrder: true,
+                orderId: orderId
+            });
+        }
 
         // --- FIX: CREATE CASHFREE SESSION FIRST ---
         // Only save to DB after Cashfree confirms a valid session.
@@ -628,12 +767,12 @@ module.exports = async function (req, res) {
         }
 
         // ── RECORD REFERRAL if a ZYRO- referral code was used ────────────────
+        // S18 FIX: Only insert a referral record if a valid referrer was found.
+        // Previously, orphan rows with referrer_id=null polluted the referrals table.
         if (couponCode) {
             const refCode = String(couponCode).toUpperCase().trim();
             if (refCode.startsWith('ZYRO-') && refCode.length >= 10) {
                 try {
-                    // FIX: Avoid using listUsers() which has a hard 50-user pagination limit.
-                    // Instead, look up the referrer via the seed row created in the referrals table.
                     const { data: refData } = await supabase
                         .from('referrals')
                         .select('referrer_id, referrer_email')
@@ -642,13 +781,17 @@ module.exports = async function (req, res) {
                         .limit(1)
                         .maybeSingle();
 
-                    await supabase.from('referrals').insert([{
-                        referrer_id: refData ? refData.referrer_id : null,
-                        referrer_email: refData ? refData.referrer_email : null,
-                        referred_email: safeEmail,
-                        referral_code: refCode
-                    }]);
-                    console.log(`[chat] Referral recorded: ${refCode} → ${safeEmail} (referrer: ${refData?.referrer_email || 'unknown'})`);
+                    if (refData) {
+                        await supabase.from('referrals').insert([{
+                            referrer_id: refData.referrer_id,
+                            referrer_email: refData.referrer_email,
+                            referred_email: safeEmail,
+                            referral_code: refCode
+                        }]);
+                        console.log(`[chat] Referral recorded: ${refCode} → ${safeEmail} (referrer: ${refData.referrer_email})`);
+                    } else {
+                        console.warn(`[chat] Referral code ${refCode} used but no valid referrer found. Skipping insert.`);
+                    }
                 } catch (refErr) {
                     // Non-fatal: don't block order creation if referral tracking fails
                     console.error('[chat] Referral insert failed:', refErr.message);
@@ -664,16 +807,10 @@ module.exports = async function (req, res) {
         });
 
     } catch (error) {
+        // S10 FIX: Log the full error server-side but return a sanitized message to the client.
+        // Raw Cashfree/Supabase errors can leak internal account details, API keys in URLs, etc.
         console.error("Chat Checkout Error:", error.response?.data || error.message);
 
-        // Extract the exact error message from Cashfree or Supabase
-        let errorDetail = "Unknown error occurred.";
-        if (error.response && error.response.data) {
-            errorDetail = error.response.data.message || JSON.stringify(error.response.data);
-        } else {
-            errorDetail = error.message;
-        }
-
-        return res.status(500).json({ reply: `Payment Gateway Error: ${errorDetail}` });
+        return res.status(500).json({ reply: 'Payment could not be processed. Please try again or contact support.' });
     }
 };

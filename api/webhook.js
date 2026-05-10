@@ -116,14 +116,20 @@ const _handler = async function(req, res) {
             } else if (orderData.status === 'paid' || orderData.status === 'delivered') {
                 console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | Already '${orderData.status}' in DB. Skipping update + invoice.`);
             } else {
-                // Status is 'created' — we are first. Update to 'paid'.
-                const { error: dbError } = await supabase
+                // S7 FIX: Atomic status transition — add `.eq('status', 'created')` so that
+                // if two duplicate webhooks race, only the first one matches and updates.
+                // The second webhook's UPDATE affects 0 rows and we skip invoice sending.
+                const { data: updatedRows, error: dbError } = await supabase
                     .from('orders')
                     .update({ status: 'paid' })
-                    .eq('order_id', orderId);
+                    .eq('order_id', orderId)
+                    .eq('status', 'created')
+                    .select('order_id');
 
                 if (dbError) {
                     console.error(`[ZYRO][webhook][ERROR] ${new Date().toISOString()} | order=${orderId} | DB update to 'paid' FAILED:`, dbError.message);
+                } else if (!updatedRows || updatedRows.length === 0) {
+                    console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | Concurrent webhook already processed. Skipping invoice.`);
                 } else {
                     console.log(`[ZYRO][webhook][INFO] ${new Date().toISOString()} | order=${orderId} | DB updated to 'paid'. Firing sendInvoice() with retry...`);
                     try {

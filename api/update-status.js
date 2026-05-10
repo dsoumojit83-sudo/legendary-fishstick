@@ -99,6 +99,26 @@ module.exports = async function(req, res) {
             return res.status(400).json({ error: 'Invalid status value.' });
         }
 
+        // S24 FIX: State-machine enforcement — prevent nonsensical status transitions
+        // that would cause accounting chaos (e.g. delivered→created, refunded→paid).
+        const allowedTransitions = {
+            'created':     ['paid', 'cancelled', 'canceled'],
+            'paid':        ['in_progress', 'delivered', 'refunded', 'cancelled', 'canceled'],
+            'in_progress': ['delivered', 'refunded', 'cancelled', 'canceled'],
+            'delivered':   ['refunded'],
+            'refunded':    [],
+            'cancelled':   [],
+            'canceled':    [],
+        };
+        const { data: currentOrder } = await supabase.from('orders').select('status').eq('order_id', orderId).single();
+        if (currentOrder) {
+            const currentStatus = currentOrder.status || 'created';
+            const allowed = allowedTransitions[currentStatus] || [];
+            if (!allowed.includes(normalizedStatus) && normalizedStatus !== currentStatus) {
+                return res.status(400).json({ error: `Cannot change status from '${currentStatus}' to '${normalizedStatus}'.` });
+            }
+        }
+
         let updatePayload = { status: normalizedStatus };
         if (normalizedStatus === 'delivered' || normalizedStatus === 'refunded') updatePayload.completed_at = new Date().toISOString();
 
@@ -121,13 +141,15 @@ module.exports = async function(req, res) {
         if (error) throw error;
 
         // ── CASHFREE AUTOMATIC REFUND ──────────────────────────────────────────
+        // S5/S6 FIX: Use a deterministic refund_id based on orderId (not Date.now())
+        // to prevent double-refunds if admin double-clicks or Vercel retries.
         if (normalizedStatus === 'refunded' && orderRecord && orderRecord.amount) {
             try {
                 await axios.post(
                     `https://api.cashfree.com/pg/orders/${orderId}/refunds`,
                     {
                         refund_amount: parseFloat(orderRecord.amount),
-                        refund_id: `REF_${Date.now()}_${orderId.slice(-6)}`,
+                        refund_id: `REF_${orderId}`,
                         refund_note: "Admin initiated refund via Dashboard"
                     },
                     {
@@ -141,7 +163,13 @@ module.exports = async function(req, res) {
                 );
                 console.log(`Cashfree refund initiated for ${orderId} (Amount: ${orderRecord.amount})`);
             } catch (cfErr) {
-                console.error("Cashfree Refund Failed:", cfErr.response?.data || cfErr.message);
+                // Cashfree returns 409 if refund_id already exists — safe to ignore (idempotent)
+                const cfStatus = cfErr.response?.status;
+                if (cfStatus === 409) {
+                    console.log(`[update-status] Refund already processed for ${orderId} (idempotent 409). Skipping.`);
+                } else {
+                    console.error("Cashfree Refund Failed:", cfErr.response?.data || cfErr.message);
+                }
                 // We do not throw here so the DB status remains 'refunded' even if CF fails
             }
         }
@@ -149,42 +177,61 @@ module.exports = async function(req, res) {
         // ── STORE DELIVERY FILE IN DELIVERIES TABLE (portal access only) ─────
         // If deliveryKey is missing (e.g. status update via AI or manual toggle), 
         // we attempt to find the latest uploaded file for this order in B2.
+        // S15 FIX: Sync ALL files from B2 to the deliveries table, not just the latest one.
+        // Previously only objects[0] was synced, meaning clients missed 4 out of 5 deliverables.
         if (normalizedStatus === 'delivered') {
             try {
-                let finalKey = deliveryKey;
-                let finalName = deliveryFileName;
-                let finalMime = deliveryMimeType || 'application/octet-stream';
+                if (deliveryKey && deliveryFileName) {
+                    // Explicit file passed — insert just that one
+                    let fileType = 'unknown';
+                    const mime = deliveryMimeType || 'application/octet-stream';
+                    if (mime.startsWith('image/')) fileType = 'photo';
+                    else if (mime.startsWith('video/')) fileType = 'video';
+                    else if (mime.startsWith('audio/')) fileType = 'sound';
 
-                // AUTO-SYNC: If no specific file was passed, grab the latest one from B2
-                if (!finalKey) {
+                    await supabase.from('deliveries').insert([{
+                        order_id: orderId,
+                        file_name: deliveryFileName,
+                        mime_type: mime,
+                        file_type: fileType,
+                        b2_key: deliveryKey
+                    }]);
+                    console.log(`[update-status] Delivery record created for ${orderId}: ${deliveryFileName}`);
+                } else {
+                    // AUTO-SYNC: Grab ALL files from B2 for this order
                     const listResp = await b2.send(new ListObjectsV2Command({
                         Bucket: B2_BUCKET,
                         Prefix: `${orderId}/`,
                         MaxKeys: 100
                     }));
-                    const objects = (listResp.Contents || [])
-                        .sort((a, b) => (b.LastModified || 0) - (a.LastModified || 0)); // latest first
-                    
+                    const objects = listResp.Contents || [];
+
                     if (objects.length > 0) {
-                        finalKey = objects[0].Key;
-                        finalName = finalKey.split('/').pop().replace(/^\d+-/, ''); // remove timestamp prefix if present
+                        // Check which keys are already in the deliveries table to avoid duplicates
+                        const { data: existingDeliveries } = await supabase
+                            .from('deliveries')
+                            .select('b2_key')
+                            .eq('order_id', orderId);
+                        const existingKeys = new Set((existingDeliveries || []).map(d => d.b2_key));
+
+                        const newRecords = objects
+                            .filter(obj => !existingKeys.has(obj.Key))
+                            .map(obj => {
+                                const fileName = obj.Key.split('/').pop().replace(/^\d+-/, '');
+                                return {
+                                    order_id: orderId,
+                                    file_name: fileName,
+                                    mime_type: 'application/octet-stream',
+                                    file_type: 'unknown',
+                                    b2_key: obj.Key
+                                };
+                            });
+
+                        if (newRecords.length > 0) {
+                            await supabase.from('deliveries').insert(newRecords);
+                            console.log(`[update-status] ${newRecords.length} delivery record(s) created for ${orderId}`);
+                        }
                     }
-                }
-
-                if (finalKey && finalName) {
-                    let fileType = 'unknown';
-                    if (finalMime.startsWith('image/')) fileType = 'photo';
-                    else if (finalMime.startsWith('video/')) fileType = 'video';
-                    else if (finalMime.startsWith('audio/')) fileType = 'sound';
-
-                    await supabase.from('deliveries').insert([{
-                        order_id: orderId,
-                        file_name: finalName,
-                        mime_type: finalMime,
-                        file_type: fileType,
-                        b2_key: finalKey
-                    }]);
-                    console.log(`[update-status] Delivery record created for ${orderId}: ${finalName}`);
                 }
             } catch (dlErr) {
                 console.error('[update-status] Deliveries table sync error:', dlErr.message);

@@ -107,9 +107,11 @@ module.exports = async function (req, res) {
 
         // ── Admins listing (GET ?action=getAdmins) ────────────────────────────────
         if (req.method === 'GET' && req.query.action === 'getAdmins') {
-            const { data: dbAdmins, error: dbErr } = await supabase.from('admins').select('email, role');
+            const { data: dbAdmins, error: dbErr } = await supabase.from('admins').select('email, role, full_name');
             if (dbErr) throw dbErr;
-            const adminEmails = dbAdmins.map(a => a.email.toLowerCase());
+            const adminMap = {};
+            (dbAdmins || []).forEach(a => { adminMap[a.email.toLowerCase()] = a; });
+            const adminEmails = Object.keys(adminMap);
             
             const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
             const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
@@ -131,13 +133,17 @@ module.exports = async function (req, res) {
 
             const adminUsers = allUsers
                 .filter(u => adminEmails.includes(u.email.toLowerCase()) || u.email.toLowerCase() === 'zyroeditz.official@gmail.com')
-                .map(u => ({
-                    email: u.email,
-                    role: u.email.toLowerCase() === 'zyroeditz.official@gmail.com' ? 'superadmin' : 'admin',
-                    created_at: u.created_at,
-                    last_sign_in_at: u.last_sign_in_at,
-                    banned: !!u.banned_until
-                }));
+                .map(u => {
+                    const dbRecord = adminMap[u.email.toLowerCase()];
+                    return {
+                        email: u.email,
+                        role: u.email.toLowerCase() === 'zyroeditz.official@gmail.com' ? 'superadmin' : (dbRecord?.role || 'admin'),
+                        full_name: u.email.toLowerCase() === 'zyroeditz.official@gmail.com' ? 'Soumojit Das' : (dbRecord?.full_name || ''),
+                        created_at: u.created_at,
+                        last_sign_in_at: u.last_sign_in_at,
+                        banned: !!u.banned_until
+                    };
+                });
 
             return res.status(200).json({ admins: adminUsers });
         }
@@ -456,7 +462,7 @@ module.exports = async function (req, res) {
             }
 
             if (action === 'addAdmin') {
-                const { email, password } = body;
+                const { email, password, full_name } = body;
                 if (!email || !password) return res.status(400).json({ error: 'Email and password required.' });
                 if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
                 
@@ -476,8 +482,10 @@ module.exports = async function (req, res) {
                     if (!alreadyExists) throw authError;
                 }
 
-                // Add to admins table with role
-                const { error: dbError } = await supabase.from('admins').upsert({ email: email.toLowerCase(), role: 'admin' }, { onConflict: 'email' }).select().single();
+                // Add to admins table with role and optional full_name
+                const upsertData = { email: email.toLowerCase(), role: 'admin' };
+                if (full_name && full_name.trim()) upsertData.full_name = full_name.trim();
+                const { error: dbError } = await supabase.from('admins').upsert(upsertData, { onConflict: 'email' }).select().single();
                 if (dbError) throw dbError;
 
                 return res.status(200).json({ ok: true });
@@ -486,6 +494,11 @@ module.exports = async function (req, res) {
             if (action === 'deleteAdmin') {
                 const { email } = body;
                 if (!email) return res.status(400).json({ error: 'Email required.' });
+
+                // 🔒 Protect super admin from deletion
+                if (email.toLowerCase() === 'zyroeditz.official@gmail.com') {
+                    return res.status(403).json({ error: 'Cannot remove super admin.' });
+                }
                 
                 // Remove from admins table (we don't delete from auth to preserve their normal account)
                 const { error: dbError } = await supabase.from('admins').delete().eq('email', email);

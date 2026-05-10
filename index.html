@@ -1477,7 +1477,7 @@
                     <div class="lm-footer lm-animate lm-animate-d5" id="lm-auth-footer">
                         <span id="lm-toggle-text">New to the studio?</span> <a onclick="toggleAuthMode()" id="lm-toggle-link">Create Account</a>
                     </div>
-                    <p style="text-align:center;color:rgba(255,255,255,.15);font-size:10px;margin-top:14px;" id="lm-terms-text">By continuing you agree to our Terms.</p>
+                    <p style="text-align:center;color:rgba(255,255,255,.15);font-size:10px;margin-top:14px;" id="lm-terms-text">By continuing you agree to our <a href="#legal" onclick="document.getElementById('loginModal')?.classList.add('hidden')" style="color:rgba(255,26,26,.4);text-decoration:underline;cursor:pointer;">Terms & Policies</a>.</p>
 
                     <!-- Step 3: Profile Configuration (hidden by default) -->
                     <div id="lm-profile-step" style="display:none;">
@@ -1995,18 +1995,11 @@
             var _addonDefs=[{key:'needThumbnails',label:'Custom thumbnails for each video',price:100},{key:'needSound',label:'Sound design & SFX',price:150},{key:'needColor',label:'Cinematic color grading',price:175}];
             var _timelineDefs=[{key:'rush',label:'Rush (2-3 days)',price:200},{key:'fast',label:'Priority (4-5 days)',price:75},{key:'regular',label:'Standard (Based on discussion)',price:0}];
             
-            // Dynamic market multipliers
+            // B5 FIX: Static multipliers instead of deceptive jitter.
+            // Previously the multipliers randomly fluctuated every 1s, simulating fake "live market rates".
             var _liveAgencyMultiplier = 1.45;
             var _liveFreelancerMultiplier = 1.25;
             
-            // Jitter the multipliers every 1 second to simulate live market rates rapidly
-            setInterval(function() {
-                // Agency: 40% to 50%
-                _liveAgencyMultiplier = 1.40 + (Math.random() * 0.10);
-                // Freelancer: 20% to 30%
-                _liveFreelancerMultiplier = 1.20 + (Math.random() * 0.10);
-                render();
-            }, 1000);
             var _cs='short',_cv=3,_ct='regular';
             var _addons={};
             _addonDefs.forEach(function(a){_addons[a.key]=false;});
@@ -2666,6 +2659,8 @@
         style="position:fixed;inset:0;z-index:99999;background:#050505;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
         <div class="pay-redirect-ring"></div>
         <p class="pay-redirect-label">Securing payment portal…</p>
+        <!-- B8 FIX: Dismiss link so users aren't trapped if SDK fails -->
+        <p onclick="this.parentElement.style.display='none'" style="color:rgba(255,255,255,0.3);font-size:11px;cursor:pointer;margin-top:12px;text-decoration:underline;">Taking too long? Click to dismiss</p>
     </div>
 
 
@@ -4709,7 +4704,7 @@
             el.innerHTML = "<div class=\"text-gray-600 text-sm text-center py-8\">Loading\u2026</div>";
             try {
                 // Fetch orders
-                var r = await sb.from("orders").select("order_id,service,amount,status,created_at,deadline_date").eq("client_email", user.email).order("created_at", { ascending: false });
+                var r = await sb.from("orders").select("order_id,service,amount,status,created_at,deadline_date").eq("client_email", user.email).order("created_at", { ascending: false }).limit(50);
                 if (r.error) throw r.error;
                 var orders = r.data || [];
                 if (!orders.length) { el.innerHTML = "<div class=\"text-gray-600 text-sm text-center py-8\">No orders found.</div>"; return; }
@@ -4742,6 +4737,9 @@
                     var isCompleted = o.status === "delivered";
 
                     var review = reviewsMap[o.order_id];
+                    var payNowBtn = o.status === 'created'
+                        ? "<button onclick=\"portalResumePayment('" + o.order_id + "')\" class=\"text-[10px] uppercase tracking-widest text-black bg-[#ff1a1a] hover:bg-white font-bold px-4 py-1.5 rounded-lg transition-colors\">Pay Now &rarr;</button>"
+                        : "";
                     var billBtn = paidSt.indexOf(o.status) >= 0
                         ? "<button onclick=\"portalDownloadBill('" + o.order_id + "','" + user.email + "')\" class=\"text-[10px] uppercase tracking-widest text-blue-400 hover:text-blue-300 border border-blue-500/30 hover:border-blue-400/60 px-3 py-1.5 rounded-lg transition-colors\">&#8659; Invoice PDF</button>"
                         : "";
@@ -4776,8 +4774,8 @@
                         }
                     }
 
-                    var actionRow = (billBtn || deliveryBtns || processingNote)
-                        ? "<div class=\"mt-3 pt-3 border-t border-white/10 flex flex-wrap gap-2 items-center\">" + billBtn + deliveryBtns + processingNote + "</div>"
+                    var actionRow = (payNowBtn || billBtn || deliveryBtns || processingNote)
+                        ? "<div class=\"mt-3 pt-3 border-t border-white/10 flex flex-wrap gap-2 items-center\">" + payNowBtn + billBtn + deliveryBtns + processingNote + "</div>"
                         : "";
 
                     return "<div class=\"border border-white/10 rounded-xl p-4 bg-white/5 mb-3\">"
@@ -4811,6 +4809,53 @@
             setTimeout(function () { document.body.removeChild(a); }, 2000);
         }
         window.portalDownloadBill = portalDownloadBill;
+
+        // B6 FIX: Resume payment for existing unpaid orders instead of creating duplicates.
+        // Calls the new resumePayment backend action which retrieves the existing Cashfree session.
+        async function portalResumePayment(orderId) {
+            var sb = window._supabaseClient;
+            if (!sb) { alert('Please sign in first.'); return; }
+            var sess = (await sb.auth.getSession()).data.session;
+            if (!sess) { alert('Session expired. Please sign in again.'); return; }
+            var email = sess.user.email;
+
+            // Show overlay
+            var overlay = document.getElementById('payRedirectOverlay');
+            if (overlay) { overlay.style.display = 'flex'; }
+            // B8 FIX: Auto-dismiss overlay after 12 seconds
+            var overlayTimer = setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 12000);
+
+            try {
+                var res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'resumePayment', order_id: orderId, email: email })
+                });
+                var data = await res.json();
+                if (!res.ok) {
+                    clearTimeout(overlayTimer);
+                    if (overlay) overlay.style.display = 'none';
+                    alert(data.error || 'Unable to resume payment.');
+                    return;
+                }
+                // Open Cashfree checkout
+                var cf = await getCashfree();
+                if (!cf) {
+                    clearTimeout(overlayTimer);
+                    if (overlay) overlay.style.display = 'none';
+                    alert('Payment SDK failed to load. Please refresh the page.');
+                    return;
+                }
+                clearTimeout(overlayTimer);
+                if (overlay) overlay.style.display = 'none';
+                cf.checkout({ paymentSessionId: data.paymentSessionId, redirectTarget: '_self' });
+            } catch (e) {
+                clearTimeout(overlayTimer);
+                if (overlay) overlay.style.display = 'none';
+                alert('Payment error: ' + (e.message || 'Unknown error'));
+            }
+        }
+        window.portalResumePayment = portalResumePayment;
 
         // Submit review via /api/chat
         async function portalSubmitReview() {
@@ -5124,7 +5169,7 @@
                 <div class="mb-6">
                     <label class="text-[10px] text-gray-500 uppercase tracking-widest mb-2 block">Tell us about your
                         experience</label>
-                    <textarea id="review-text-modal" rows="4"
+                    <textarea id="review-text-modal" rows="4" maxlength="500"
                         placeholder="How did we do? Your feedback helps us improve."
                         class="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ff1a1a] transition-colors resize-none"></textarea>
                 </div>

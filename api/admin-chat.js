@@ -109,6 +109,13 @@ module.exports = async function (req, res) {
         const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
         if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
+        // 🔒 RBAC: Only admins can access the AI Terminal
+        const isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+        if (!isSuperAdmin) {
+            const { data: adminRecord } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();
+            if (!adminRecord) return res.status(403).json({ error: 'Forbidden. Admin access required.' });
+        }
+
         const now = Date.now();
         const SESSION_TTL = 30 * 60 * 1000;
 
@@ -123,14 +130,16 @@ module.exports = async function (req, res) {
             { data: reviews },
             { data: coupons },
             { data: referrals },
-            { data: calcCfgRow }
+            { data: calcCfgRow },
+            { data: teamAdmins }
         ] = await Promise.all([
             supabase.from('orders').select('order_id,client_name,client_email,service,amount,status,created_at,deadline_date,completed_at').order('created_at', { ascending: false }),
             supabase.from('deliveries').select('order_id,file_name,created_at').order('created_at', { ascending: false }),
             supabase.from('reviews').select('order_id,rating,review_text,approved,created_at'),
             supabase.from('coupons').select('code,discount_type,discount_value,times_used,is_active'),
             supabase.from('referrals').select('referrer_id,referred_email,created_at'),
-            supabase.from('calculator_config').select('*').eq('id', 1).maybeSingle()
+            supabase.from('calculator_config').select('*').eq('id', 1).maybeSingle(),
+            supabase.from('admins').select('email, role, full_name')
         ]);
 
         if (fetchError) throw new Error(`Database error: ${fetchError.message}`);
@@ -260,7 +269,12 @@ ${calcCfgRow ? `Status: ${calcCfgRow.is_active ? 'ACTIVE (visible on site)' : 'H
 Service types: ${(calcCfgRow.service_types||[]).map(s => s.label + ' — Base ₹' + s.base + ', ₹' + s.perVid + '/vid').join(' | ')}
 Add-ons: ${(calcCfgRow.addons||[]).map(a => a.label + ' ₹' + a.price + '/vid').join(' | ')}
 Timelines: ${(calcCfgRow.timelines||[]).map(t => t.label + (t.price ? ' +₹' + t.price + '/vid' : ' (free)')).join(' | ')}
-Comparison: Agency base ₹${calcCfgRow.agency_base||5000} | Freelancer base ₹${calcCfgRow.freelancer_base||2000}` : 'Calculator config not loaded (table may not exist yet)'}`;
+Comparison: Agency base ₹${calcCfgRow.agency_base||5000} | Freelancer base ₹${calcCfgRow.freelancer_base||2000}` : 'Calculator config not loaded (table may not exist yet)'}
+
+═══ TEAM (Admins with Command Center access) ═══
+- Soumojit Das (zyroeditz.official@gmail.com) — Super Admin / Founder
+${(teamAdmins || []).filter(a => a.email.toLowerCase() !== 'zyroeditz.official@gmail.com').map(a => `- ${a.full_name || a.email} (${a.email}) — ${a.role || 'admin'}`).join('\n') || 'No additional admins.'}
+You are currently talking to: ${user.email}`;
 
         let finalPrompt = prompt || '';
         let hasImage = false;

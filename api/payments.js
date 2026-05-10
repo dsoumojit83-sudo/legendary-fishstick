@@ -46,7 +46,7 @@ module.exports = async function(req, res) {
             .select('order_id, client_name, amount, created_at')
             .in('status', ['paid', 'delivered', 'in_progress'])
             .order('created_at', { ascending: false })
-            .limit(30);
+            .limit(200);
 
         if (error) throw error;
 
