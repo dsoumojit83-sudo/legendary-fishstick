@@ -302,15 +302,15 @@
         <!-- ====== JACK 3D CREATOR LAYOUT (ZYROEDITZ BRANDED) ====== -->
         <section id="jack-hero" class="w-full h-screen relative flex flex-col justify-between overflow-x-clip px-6 md:px-10 pt-32 pb-10 z-10 bg-[#06060b]">
             <div class="relative w-full h-full flex flex-col justify-center">
-                <div class="w-full overflow-hidden flex justify-center pb-4 -mb-4 -mt-10">
-                    <h1 class="text-[13vw] sm:text-[14vw] md:text-[15vw] lg:text-[16.5vw] font-black uppercase tracking-tight leading-none whitespace-nowrap" id="jack-heading">
-                        <span class="text-white">ZYRO</span><span class="text-[#ff1a1a]">EDITZ</span><sup style="font-size: 0.3em; vertical-align: super; color: rgba(255,255,255,0.6);">&trade;</sup>
+                <div class="w-full overflow-visible flex justify-center pb-8 pt-8 -my-4">
+                    <h1 class="text-[13vw] sm:text-[14vw] md:text-[15vw] lg:text-[16.5vw] font-black tracking-tight leading-none whitespace-nowrap flex items-start justify-center" id="jack-heading">
+                        <span class="text-white">Zyro</span><span class="text-[#ff1a1a]">Editz</span><sup style="font-size: 0.3em; vertical-align: super; color: rgba(255,255,255,0.6); margin-top: 0.2em;">&trade;</sup>
                     </h1>
                 </div>
 
-                <div class="absolute left-1/2 -translate-x-1/2 top-1/2 sm:top-auto -translate-y-1/2 sm:translate-y-0 sm:bottom-0 z-10 w-[280px] sm:w-[360px] md:w-[440px] lg:w-[520px] opacity-0 translate-y-10" id="jack-portrait">
-                    <div class="magnet-wrapper cursor-pointer w-full h-full">
-                        <img src="https://shrug-person-78902957.figma.site/_components/v2/d24c01ad3a56fc65e942a1f501eb73db42d7cf9a/Rectangle_40443.81459862.png" alt="Portrait" class="w-full h-auto object-contain drop-shadow-2xl pointer-events-none">
+                <div class="absolute left-1/2 -translate-x-1/2 top-1/2 sm:top-auto -translate-y-1/2 sm:translate-y-0 sm:bottom-0 z-10 w-[280px] sm:w-[360px] md:w-[440px] lg:w-[520px] opacity-0 translate-y-10 flex justify-center" id="jack-portrait">
+                    <div class="magnet-wrapper cursor-pointer w-full h-full flex justify-center">
+                        <img src="https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=400&q=60" alt="Portrait" class="w-full h-auto object-contain drop-shadow-2xl pointer-events-none rounded-[2rem]">
                     </div>
                 </div>
             </div>
@@ -412,7 +412,23 @@
             </div>
         </section>
 
+        <!-- Ready for the Final Cut? — Return to Main CTA -->
+        <section class="w-full bg-[#06060b] px-5 sm:px-8 md:px-10 py-28 sm:py-36 relative z-10 flex justify-center">
+            <a href="/" class="interactive-element w-full max-w-4xl group relative px-8 py-20 md:px-16 md:py-28 rounded-[2.5rem] bg-[#0a0a12] border border-white/5 overflow-hidden flex flex-col items-center justify-center transition-all duration-700 hover:-translate-y-2 hover:border-[#ff1a1a]/30 hover:shadow-[0_0_80px_rgba(255,26,26,0.15)]" data-hover-color="rgba(255,26,26,0.3)">
+                <!-- Warm red radial glow on hover -->
+                <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none z-0" style="background: radial-gradient(circle at center, rgba(255,26,26,0.08) 0%, transparent 70%);"></div>
+                
+                <p class="text-[#ff1a1a] text-xs tracking-[0.3em] uppercase font-bold mb-6 z-10 opacity-60 group-hover:opacity-100 transition-opacity">Selected Work</p>
 
+                <h2 class="text-[clamp(2.5rem,8vw,6rem)] font-black uppercase tracking-tight z-10 text-center leading-none mb-10" style="background: linear-gradient(180deg, #ffffff 0%, #aaaaaa 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Ready for the<br class="sm:hidden"> <span style="-webkit-text-fill-color: #ff1a1a;">Final Cut?</span>
+                </h2>
+                
+                <div class="rounded-full px-10 py-4 text-xs sm:text-sm font-bold uppercase tracking-widest text-black bg-[#ff1a1a] group-hover:bg-white transition-colors duration-300 shadow-[0_4px_12px_rgba(255,26,26,0.5)] z-10 flex items-center gap-3">
+                    Return to Main <i data-lucide="arrow-right" class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"></i>
+                </div>
+            </a>
+        </section>
 
         <footer class="mt-24 py-12 border-t border-white/5 text-center flex flex-col items-center relative z-10 bg-midnight">
             <div class="text-2xl font-brand font-black tracking-widest mb-4 opacity-80">Zyro<span class="text-zyrored">Editz</span><sup style="font-size:0.4em; vertical-align:super; font-weight:400;">&trade;</sup></div>
