@@ -1557,6 +1557,26 @@
         class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[#ff1a1a] text-white px-4 py-2 rounded-md z-50 focus:outline-none focus:ring-2 focus:ring-white">Skip
         to Content</a>
 
+    <!-- AUTHENTICATING OVERLAY FOR EMAIL CONFIRMATION -->
+    <style>@keyframes supaSpin { 100% { transform: rotate(360deg); } }</style>
+    <div id="auth-overlay" class="fixed inset-0 z-[9999] bg-[#050505] flex-col items-center justify-center transition-opacity duration-500 hidden" style="display:none;">
+        <div style="width:40px;height:40px;border:3px solid rgba(255,26,26,0.2);border-top-color:#ff1a1a;border-radius:50%;animation:supaSpin 0.8s linear infinite;margin-bottom:16px;"></div>
+        <div class="text-white text-sm uppercase tracking-widest font-bold">Authenticating...</div>
+    </div>
+    <script>
+        if (window.location.hash.includes('access_token') || window.location.hash.includes('type=signup') || window.location.hash.includes('type=recovery') || window.location.search.includes('code=')) {
+            var overlay = document.getElementById('auth-overlay');
+            if(overlay) {
+                overlay.style.display = 'flex';
+                overlay.classList.remove('hidden');
+                setTimeout(function() {
+                    overlay.classList.add('opacity-0');
+                    setTimeout(function() { overlay.style.display = 'none'; }, 500);
+                }, 6000); // Failsafe timeout
+            }
+        }
+    </script>
+
     <div class="custom-cursor" id="customCursor"></div>
     <div class="custom-cursor-dot" id="customCursorDot"></div>
 
@@ -1864,7 +1884,7 @@
                 <div class="grid grid-cols-12 gap-4 items-end">
                     <div class="col-span-12 md:col-span-8">
                          <h1 class="text-[22vw] sm:text-[20vw] md:text-[18vw] lg:text-[14vw] font-black leading-[0.9] tracking-tight brand-name">
-                            <div class="overflow-hidden inline-block pb-[0.2em] -mb-[0.2em]"><span class="inline-block transform translate-y-[120%] opacity-0 hw-word text-white">Zyro</span></div><div class="overflow-hidden inline-block pb-[0.2em] -mb-[0.2em]"><span class="inline-block transform translate-y-[120%] opacity-0 hw-word text-[#ff1a1a] relative">Editz<sup class="absolute top-[0.1em] -right-[0.3em] text-[0.31em] text-white/50 font-normal">&trade;</sup></span></div>
+                            <div class="overflow-hidden inline-block pb-[0.2em] -mb-[0.2em]"><span class="inline-block transform translate-y-[120%] opacity-0 hw-word text-white">Zyro</span></div><div class="overflow-hidden inline-block pb-[0.2em] -mb-[0.2em]"><span class="inline-block transform translate-y-[120%] opacity-0 hw-word text-[#ff1a1a]">Editz<sup style="font-size:0.31em; vertical-align:super; letter-spacing:normal; font-weight:400;" class="text-white/50 ml-1">&trade;</sup></span></div>
                          </h1>
                     </div>
                     <div class="col-span-12 md:col-span-4 flex flex-col items-start md:items-end text-left md:text-right pb-2 md:pb-6">
@@ -2933,8 +2953,8 @@
 
 
     <!-- GSAP: deferred so preload hint (in head) starts download during body render -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer crossorigin="anonymous"></script>
 
     <script>
         // Configure ScrollTrigger — runs after deferred GSAP executes
@@ -3266,12 +3286,19 @@
                 });
 
                 if (!prefersReducedMotion && window.ScrollTrigger) {
-                    gsap.to('#orb1', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: 600, x: 200, ease: 'none' });
-                    gsap.to('#orb2', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -500, x: -300, ease: 'none' });
-                    gsap.to('#orb3', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 }, y: -550, x: -200, ease: 'none' });
-                    gsap.to('#shape1', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.8 }, y: -350, rotation: 200, ease: 'none' });
-                    gsap.to('#shape2', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.8 }, y: -250, rotation: 280, ease: 'none' });
-                    gsap.to('#shape3', { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.8 }, y: -400, rotation: -120, ease: 'none' });
+                    // Guard: only animate orbs/shapes if they exist in the DOM
+                    ['#orb1','#orb2','#orb3','#shape1','#shape2','#shape3'].forEach(id => {
+                        if (!document.querySelector(id)) return;
+                        const isShape = id.startsWith('#shape');
+                        const cfg = { scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: isShape ? 1.8 : 1.5 }, ease: 'none' };
+                        if (id === '#orb1')   Object.assign(cfg, { y: 600, x: 200 });
+                        if (id === '#orb2')   Object.assign(cfg, { y: -500, x: -300 });
+                        if (id === '#orb3')   Object.assign(cfg, { y: -550, x: -200 });
+                        if (id === '#shape1') Object.assign(cfg, { y: -350, rotation: 200 });
+                        if (id === '#shape2') Object.assign(cfg, { y: -250, rotation: 280 });
+                        if (id === '#shape3') Object.assign(cfg, { y: -400, rotation: -120 });
+                        gsap.to(id, cfg);
+                    });
 
                     document.querySelectorAll('.group img').forEach((img, index) => {
                         gsap.to(img, { scrollTrigger: { trigger: img, start: 'top bottom', end: 'bottom top', scrub: 2 }, y: -50 * (index + 1), scale: 1.05, ease: 'none' });
@@ -3279,9 +3306,10 @@
                 }
 
                 if (!prefersReducedMotion) {
-                    gsap.to('#orb1', { duration: 12, x: '+=100', y: '+=50', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
-                    gsap.to('#orb2', { duration: 15, x: '-=80', y: '-=60', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
-                    gsap.to('#orb3', { duration: 10, x: '+=60', y: '-=70', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
+                    // Guard: only run infinite orb floats if elements exist
+                    if (document.querySelector('#orb1')) gsap.to('#orb1', { duration: 12, x: '+=100', y: '+=50', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
+                    if (document.querySelector('#orb2')) gsap.to('#orb2', { duration: 15, x: '-=80', y: '-=60', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
+                    if (document.querySelector('#orb3')) gsap.to('#orb3', { duration: 10, x: '+=60', y: '-=70', repeat: -1, yoyo: true, ease: 'sine.inOut', willChange: 'transform' });
                 }
 
                 const gridContainers = document.querySelectorAll('.grid');
@@ -4804,22 +4832,53 @@
             // It will be fully reset when closeLoginModal is called.
         }
 
-        function saveProfileStep() {
+        async function saveProfileStep() {
+            const btn = document.getElementById('lm-profile-btn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
             const dob = document.getElementById('lm-dob').value;
             const genderBtn = document.querySelector('.lm-gender-btn.active');
             const gender = genderBtn ? genderBtn.dataset.val : null;
             const phone = document.getElementById('lm-phone').value.trim();
             const address = document.getElementById('lm-address').value.trim();
             
-            // Save to local storage temporarily.
-            // On first actual login, we will push this to Supabase user_metadata.
             const pendingProfile = { dob, gender, phone, address };
-            localStorage.setItem('zyro_pending_profile', JSON.stringify(pendingProfile));
             
+            try {
+                // If the user is already logged in (Email Confirmation OFF), update immediately
+                const { data } = await window._supabaseClient.auth.getSession();
+                if (data && data.session && data.session.user) {
+                    await window._supabaseClient.auth.updateUser({ data: pendingProfile });
+                    // Session is fully active and metadata is updated
+                    _updateHeroSteps(3);
+                    await new Promise(r => setTimeout(r, 600));
+                    closeLoginModal();
+                    if (typeof initAccountState === 'function') initAccountState();
+                    return; // Skip the email confirmation message
+                } else {
+                    // Fallback: Save to localStorage for Email Confirmation ON
+                    localStorage.setItem('zyro_pending_profile', JSON.stringify(pendingProfile));
+                }
+            } catch(e) {
+                console.error("Error saving profile:", e);
+                localStorage.setItem('zyro_pending_profile', JSON.stringify(pendingProfile));
+            }
+            
+            if (btn) { btn.disabled = false; btn.textContent = 'Save & Continue'; }
             _finishProfileStepAndShowSuccess();
         }
 
-        function skipProfileStep() {
+        async function skipProfileStep() {
+            try {
+                const { data } = await window._supabaseClient.auth.getSession();
+                if (data && data.session && data.session.user) {
+                    _updateHeroSteps(3);
+                    await new Promise(r => setTimeout(r, 600));
+                    closeLoginModal();
+                    if (typeof initAccountState === 'function') initAccountState();
+                    return;
+                }
+            } catch(e) {}
             _finishProfileStepAndShowSuccess();
         }
 
@@ -4941,6 +5000,23 @@
                             // Auto-close login modal on successful OAuth return
                             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                                 closeLoginModal();
+                                
+                                // Hide the authenticating overlay gracefully
+                                const authOverlay = document.getElementById('auth-overlay');
+                                if (authOverlay && authOverlay.style.display !== 'none') {
+                                    authOverlay.classList.add('opacity-0');
+                                    setTimeout(() => authOverlay.style.display = 'none', 500);
+                                    
+                                    // Show a welcome toast
+                                    const toast = document.createElement('div');
+                                    toast.textContent = 'Email confirmed! Welcome to the studio.';
+                                    toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#050505] border border-[#22c55e]/30 text-[#22c55e] px-6 py-3 rounded-full text-xs md:text-sm font-bold tracking-widest uppercase z-[9999] shadow-2xl transition-opacity duration-500';
+                                    document.body.appendChild(toast);
+                                    setTimeout(() => { 
+                                        toast.classList.add('opacity-0'); 
+                                        setTimeout(() => toast.remove(), 500); 
+                                    }, 4000);
+                                }
                                 // Merge server cart into localStorage on login
                                 if (typeof _loadCartFromSupabase === 'function') _loadCartFromSupabase();
                             }
