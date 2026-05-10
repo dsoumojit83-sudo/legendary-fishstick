@@ -1742,7 +1742,7 @@
         .lm-divider::before,.lm-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07);}
         .lm-input-group{margin-bottom:14px;}
         .lm-input-group label{display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.7);margin-bottom:6px;}
-        .lm-input{width:100%;box-sizing:border-box;background:#1a1a1a;border:none;border-radius:12px;height:44px;padding:0 16px;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:box-shadow .2s;}
+        .lm-input{width:100%;box-sizing:border-box;background:#1a1a1a;border:none;border-radius:12px;height:44px;padding:0 16px;color:#fff;font-size:16px;font-family:'Outfit',sans-serif;outline:none;transition:box-shadow .2s;}
         .lm-input::placeholder{color:rgba(255,255,255,.18);}
         .lm-input:focus{box-shadow:0 0 0 2px rgba(255,26,26,.3);}
         .lm-submit{width:100%;height:50px;background:#ff1a1a;color:#000;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Roboto',sans-serif;transition:all .15s;margin-top:6px;letter-spacing:.02em;}
@@ -1782,8 +1782,8 @@
                     <p class="lm-hero-sub lm-animate lm-animate-d2" id="lm-hero-sub">3 quick steps to access your creative workspace.</p>
                     <div class="lm-animate lm-animate-d3" id="lm-steps-wrapper">
                         <div class="lm-step active" id="lm-step-1"><div class="lm-step-num">1</div><span class="lm-step-text">Verify your identity</span></div>
-                        <div class="lm-step inactive" id="lm-step-2"><div class="lm-step-num">2</div><span class="lm-step-text">Configure your profile</span></div>
-                        <div class="lm-step inactive" id="lm-step-3"><div class="lm-step-num">3</div><span class="lm-step-text">Start your project</span></div>
+                        <div class="lm-step inactive" id="lm-step-2"><div class="lm-step-num">2</div><span class="lm-step-text">Authenticate Email</span></div>
+                        <div class="lm-step inactive" id="lm-step-3"><div class="lm-step-num">3</div><span class="lm-step-text">Configure your profile</span></div>
                     </div>
                 </div>
             </div>
@@ -3102,6 +3102,7 @@
                     lastFocusedElement = document.activeElement;
                     focusableElements = getFocusableElements();
                     animateHamburgerOpen(); // ADDED
+                    document.body.style.overflow = 'hidden';
 
                     if (window.gsap) {
                         gsap.killTweensOf(mobileMenu); // ADDED: prevent overlapping animations
@@ -3146,12 +3147,14 @@
                                 ease: 'power2.in',
                                 onComplete: () => {
                                     mobileMenu.classList.add('hidden'); // UPDATED: add hidden only after GSAP finishes
+                                    document.body.style.overflow = '';
                                     mobileMenu.removeEventListener('keydown', trapFocus);
                                     if (lastFocusedElement) lastFocusedElement.focus();
                                 }
                             }, "-=0.1");
                     } else {
                         mobileMenu.classList.add('hidden');
+                        document.body.style.overflow = '';
                         mobileMenu.removeEventListener('keydown', trapFocus);
                         if (lastFocusedElement) lastFocusedElement.focus();
                     }
@@ -4617,6 +4620,7 @@
             closeAllDropdowns();
             const m = document.getElementById('login-modal');
             m.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
             // Reset steps to step 1 on fresh open
             if (typeof _updateHeroSteps === 'function') _updateHeroSteps(1);
         }
@@ -4624,6 +4628,7 @@
 
         function closeLoginModal() {
             document.getElementById('login-modal').style.display = 'none';
+            document.body.style.overflow = '';
             document.getElementById('lm-error').style.display = 'none';
             // Reset to sign-in mode if user was in sign-up
             if (typeof _isSignUpMode !== 'undefined' && _isSignUpMode) {
@@ -4706,8 +4711,8 @@
             if (activeStep === 1 && sub) { sub.textContent = _isSignUpMode ? '3 quick steps to access your creative workspace.' : 'Sign in to continue where you left off.'; }
             if (activeStep === 2 && title) { title.textContent = 'Almost There'; }
             if (activeStep === 2 && sub) { sub.textContent = 'Verify your email to activate your account.'; }
-            if (activeStep === 3 && title) { title.textContent = 'You\'re In!'; }
-            if (activeStep === 3 && sub) { sub.textContent = 'Opening your creative workspace...'; }
+            if (activeStep === 3 && title) { title.textContent = 'Final Step'; }
+            if (activeStep === 3 && sub) { sub.textContent = 'Configure your profile details to finish setup.'; }
         }
 
         function toggleAuthMode() {
@@ -4752,16 +4757,19 @@
             try {
                 if (!window._supabaseClient) throw new Error('Auth service not ready. Try refreshing.');
                 if (_isSignUpMode) {
-                    btn.textContent = 'Continuing…';
+                    btn.textContent = 'Creating…';
                     if (pass.length < 8) throw new Error('Password must be at least 8 characters.');
                     const fname = (document.getElementById('lm-fname')?.value || '').trim();
                     const lname = (document.getElementById('lm-lname')?.value || '').trim();
                     const fullName = [fname, lname].filter(Boolean).join(' ') || 'Zyro Client';
                     
-                    // Cache credentials and delay signUp to capture all metadata in Step 2
-                    window._pendingSignUpAuth = { email, pass, fullName };
+                    const { error } = await window._supabaseClient.auth.signUp({
+                        email, password: pass,
+                        options: { data: { full_name: fullName, name: fullName } }
+                    });
+                    if (error) throw error;
                     
-                    // Hide auth form, show profile step
+                    // Hide auth form, show "Check Email" message (Step 2)
                     document.getElementById('lm-form').style.display = 'none';
                     document.getElementById('lm-auth-footer').style.display = 'none';
                     document.getElementById('lm-terms-text').style.display = 'none';
@@ -4771,9 +4779,16 @@
                     document.getElementById('lm-form-heading').style.display = 'none';
                     document.getElementById('lm-form-subheading').style.display = 'none';
                     
-                    document.getElementById('lm-profile-step').style.display = 'block';
+                    // Show a green success message where the form was
+                    errEl.style.color = '#22c55e';
+                    errEl.style.background = 'rgba(34,197,94,.08)';
+                    errEl.style.borderColor = 'rgba(34,197,94,.25)';
+                    errEl.textContent = 'Account created! Please check your email and click the confirmation link to authenticate.';
+                    errEl.style.display = 'block';
+                    errEl.style.marginTop = '20px';
+                    errEl.style.fontSize = '14px';
                     
-                    // Step 2: Configure profile
+                    // Step 2: Authenticate Email
                     _updateHeroSteps(2);
                 } else {
                     btn.textContent = 'Signing in…';
@@ -4806,30 +4821,6 @@
             btn.classList.add('active');
         }
 
-        function _finishProfileStepAndShowSuccess() {
-            // Hide the profile step
-            document.getElementById('lm-profile-step').style.display = 'none';
-            
-            // Re-show the form but we'll hide the inputs and just show the success message
-            document.getElementById('lm-form').style.display = 'block';
-            document.getElementById('lm-signup-fields').style.display = 'none';
-            document.getElementById('lm-email').parentElement.style.display = 'none';
-            document.getElementById('lm-pass').parentElement.style.display = 'none';
-            document.getElementById('lm-btn').style.display = 'none';
-            
-            const errEl = document.getElementById('lm-error');
-            errEl.style.color = '#22c55e';
-            errEl.style.background = 'rgba(34,197,94,.08)';
-            errEl.style.borderColor = 'rgba(34,197,94,.25)';
-            errEl.textContent = 'Profile saved! Check your email to confirm your account, then sign in.';
-            errEl.style.display = 'block';
-            errEl.style.marginBottom = '0';
-            
-            _isSignUpMode = false;
-            // The form is now just a success message. 
-            // It will be fully reset when closeLoginModal is called.
-        }
-
         async function saveProfileStep() {
             const errEl = document.getElementById('lm-error');
             errEl.style.display = 'none';
@@ -4843,95 +4834,50 @@
                 const phone = document.getElementById('lm-phone').value.trim();
                 const address = document.getElementById('lm-address').value.trim();
                 
-                const auth = window._pendingSignUpAuth;
-                if (!auth) throw new Error('Signup session lost. Please try again.');
-
-                // Execute the actual signUp request NOW with all metadata included
-                const { data, error } = await window._supabaseClient.auth.signUp({
-                    email: auth.email,
-                    password: auth.pass,
-                    options: { data: { full_name: auth.fullName, name: auth.fullName, dob, gender, phone, address } }
+                // We are already authenticated (since this runs after email confirm)
+                const { error } = await window._supabaseClient.auth.updateUser({
+                    data: { dob, gender, phone, address }
                 });
                 
                 if (error) throw error;
-                window._pendingSignUpAuth = null;
                 
-                // If email confirmation is OFF, data.session exists
-                if (data && data.session && data.session.user) {
-                    _updateHeroSteps(3);
-                    await new Promise(r => setTimeout(r, 600));
-                    closeLoginModal();
-                    if (typeof initAccountState === 'function') initAccountState();
-                    return;
-                }
+                closeLoginModal();
+                if (typeof initAccountState === 'function') initAccountState();
                 
-                _finishProfileStepAndShowSuccess();
+                // Show a welcome toast
+                const toast = document.createElement('div');
+                toast.textContent = 'Profile saved! Welcome to the studio.';
+                toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#050505] border border-[#22c55e]/30 text-[#22c55e] px-6 py-3 rounded-full text-xs md:text-sm font-bold tracking-widest uppercase z-[9999] shadow-2xl transition-opacity duration-500';
+                document.body.appendChild(toast);
+                setTimeout(() => { 
+                    toast.classList.add('opacity-0'); 
+                    setTimeout(() => toast.remove(), 500); 
+                }, 4000);
+                
             } catch(e) {
-                console.error("Signup error:", e);
+                console.error("Profile update error:", e);
                 errEl.style.color = '#f87171';
                 errEl.style.background = 'rgba(255,26,26,.08)';
                 errEl.style.borderColor = 'rgba(255,26,26,.25)';
-                errEl.textContent = e.message || 'Signup failed.';
+                errEl.textContent = e.message || 'Failed to save profile.';
                 errEl.style.display = 'block';
-                
-                // Revert UI to Step 1 if signup fails (e.g. email already taken)
-                document.getElementById('lm-profile-step').style.display = 'none';
-                document.getElementById('lm-form').style.display = 'block';
-                document.getElementById('lm-form-heading').style.display = 'block';
-                document.getElementById('lm-form-subheading').style.display = 'block';
-                document.getElementById('lm-auth-footer').style.display = 'block';
-                const dividers = document.getElementsByClassName('lm-divider');
-                if (dividers.length) dividers[0].style.display = 'flex';
-                document.getElementById('lm-social-grid') && (document.getElementById('lm-social-grid').style.display = 'flex');
-                _updateHeroSteps(1);
             } finally {
                 if (btn) { btn.disabled = false; btn.textContent = 'Save & Continue'; }
             }
         }
 
         async function skipProfileStep() {
-            const errEl = document.getElementById('lm-error');
-            errEl.style.display = 'none';
-            try {
-                const auth = window._pendingSignUpAuth;
-                if (!auth) throw new Error('Signup session lost. Please try again.');
-
-                const { data, error } = await window._supabaseClient.auth.signUp({
-                    email: auth.email,
-                    password: auth.pass,
-                    options: { data: { full_name: auth.fullName, name: auth.fullName } }
-                });
-                
-                if (error) throw error;
-                window._pendingSignUpAuth = null;
-
-                if (data && data.session && data.session.user) {
-                    _updateHeroSteps(3);
-                    await new Promise(r => setTimeout(r, 600));
-                    closeLoginModal();
-                    if (typeof initAccountState === 'function') initAccountState();
-                    return;
-                }
-                
-                _finishProfileStepAndShowSuccess();
-            } catch(e) {
-                console.error("Signup error:", e);
-                errEl.style.color = '#f87171';
-                errEl.style.background = 'rgba(255,26,26,.08)';
-                errEl.style.borderColor = 'rgba(255,26,26,.25)';
-                errEl.textContent = e.message || 'Signup failed.';
-                errEl.style.display = 'block';
-                
-                document.getElementById('lm-profile-step').style.display = 'none';
-                document.getElementById('lm-form').style.display = 'block';
-                document.getElementById('lm-form-heading').style.display = 'block';
-                document.getElementById('lm-form-subheading').style.display = 'block';
-                document.getElementById('lm-auth-footer').style.display = 'block';
-                const dividers = document.getElementsByClassName('lm-divider');
-                if (dividers.length) dividers[0].style.display = 'flex';
-                document.getElementById('lm-social-grid') && (document.getElementById('lm-social-grid').style.display = 'flex');
-                _updateHeroSteps(1);
-            }
+            closeLoginModal();
+            if (typeof initAccountState === 'function') initAccountState();
+            
+            const toast = document.createElement('div');
+            toast.textContent = 'Welcome to the studio.';
+            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#050505] border border-[#22c55e]/30 text-[#22c55e] px-6 py-3 rounded-full text-xs md:text-sm font-bold tracking-widest uppercase z-[9999] shadow-2xl transition-opacity duration-500';
+            document.body.appendChild(toast);
+            setTimeout(() => { 
+                toast.classList.add('opacity-0'); 
+                setTimeout(() => toast.remove(), 500); 
+            }, 4000);
         }
 
         // ── ACCOUNT STATE — shows Google avatar + full name if available ────────
@@ -5010,7 +4956,11 @@
         async function acctSignOut() {
             if (window._supabaseClient) await window._supabaseClient.auth.signOut();
             closeAllDropdowns();
-            document.getElementById('client-portal-modal').classList.add('hidden');
+            if (typeof closeClientPortal === 'function') closeClientPortal();
+            else {
+                document.getElementById('client-portal-modal').classList.add('hidden');
+                document.body.style.overflow = '';
+            }
             initAccountState();
         }
         window.acctSignOut = acctSignOut;
@@ -5051,23 +5001,46 @@
                             initAccountState();
                             // Auto-close login modal on successful OAuth return
                             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                                closeLoginModal();
                                 
                                 // Hide the authenticating overlay gracefully
                                 const authOverlay = document.getElementById('auth-overlay');
-                                if (authOverlay && authOverlay.style.display !== 'none') {
+                                const wasOverlayVisible = authOverlay && authOverlay.style.display !== 'none';
+                                if (wasOverlayVisible) {
                                     authOverlay.classList.add('opacity-0');
                                     setTimeout(() => authOverlay.style.display = 'none', 500);
+                                }
+                                
+                                // Check if user has DOB. If not, pop the modal to Step 3 (Metadata)
+                                const m = session && session.user && session.user.user_metadata ? session.user.user_metadata : {};
+                                if (!m.dob) {
+                                    if (typeof openLoginModal === 'function') openLoginModal();
+                                    const formEl = document.getElementById('lm-form');
+                                    if(formEl) formEl.style.display = 'none';
+                                    const headingEl = document.getElementById('lm-form-heading');
+                                    if(headingEl) headingEl.style.display = 'none';
+                                    const subEl = document.getElementById('lm-form-subheading');
+                                    if(subEl) subEl.style.display = 'none';
+                                    const footerEl = document.getElementById('lm-auth-footer');
+                                    if(footerEl) footerEl.style.display = 'none';
                                     
-                                    // Show a welcome toast
-                                    const toast = document.createElement('div');
-                                    toast.textContent = 'Email confirmed! Welcome to the studio.';
-                                    toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#050505] border border-[#22c55e]/30 text-[#22c55e] px-6 py-3 rounded-full text-xs md:text-sm font-bold tracking-widest uppercase z-[9999] shadow-2xl transition-opacity duration-500';
-                                    document.body.appendChild(toast);
-                                    setTimeout(() => { 
-                                        toast.classList.add('opacity-0'); 
-                                        setTimeout(() => toast.remove(), 500); 
-                                    }, 4000);
+                                    const profileStep = document.getElementById('lm-profile-step');
+                                    if(profileStep) profileStep.style.display = 'block';
+                                    
+                                    _updateHeroSteps(3);
+                                } else {
+                                    closeLoginModal();
+                                    
+                                    // Show a welcome toast ONLY if they came from an overlay (email link)
+                                    if (wasOverlayVisible) {
+                                        const toast = document.createElement('div');
+                                        toast.textContent = 'Email confirmed! Welcome to the studio.';
+                                        toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#050505] border border-[#22c55e]/30 text-[#22c55e] px-6 py-3 rounded-full text-xs md:text-sm font-bold tracking-widest uppercase z-[9999] shadow-2xl transition-opacity duration-500';
+                                        document.body.appendChild(toast);
+                                        setTimeout(() => { 
+                                            toast.classList.add('opacity-0'); 
+                                            setTimeout(() => toast.remove(), 500); 
+                                        }, 4000);
+                                    }
                                 }
                                 // Merge server cart into localStorage on login
                                 if (typeof _loadCartFromSupabase === 'function') _loadCartFromSupabase();
@@ -5249,7 +5222,7 @@
             </div>
             <!-- Content Area -->
             <div id="portal-content-area" class="flex-1 p-8 overflow-y-auto relative">
-                <button onclick="document.getElementById('client-portal-modal').classList.add('hidden')"
+                <button onclick="closeClientPortal()"
                     class="absolute top-6 right-6 text-gray-500 hover:text-white"><svg class="w-6 h-6" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -5395,7 +5368,18 @@
     </div>
 
     <script>
-        function openClientPortal() { document.getElementById('client-portal-modal').classList.remove('hidden'); document.getElementById('client-portal-modal').classList.add('flex'); }
+        function openClientPortal() { 
+            document.getElementById('client-portal-modal').classList.remove('hidden'); 
+            document.getElementById('client-portal-modal').classList.add('flex'); 
+            document.body.style.overflow = 'hidden';
+        }
+        function closeClientPortal() { 
+            document.getElementById('client-portal-modal').classList.add('hidden'); 
+            document.getElementById('client-portal-modal').classList.remove('flex'); 
+            document.body.style.overflow = ''; 
+        }
+        window.openClientPortal = openClientPortal;
+        window.closeClientPortal = closeClientPortal;
         function switchPortalTab(tabId) {
             document.querySelectorAll('.portal-tab').forEach(t => { t.classList.remove('active', 'text-[#ff1a1a]', 'bg-[#ff1a1a]/10', 'font-medium', 'text-white', 'bg-white/5'); t.classList.add('text-gray-400'); });
             document.querySelector(`[data-tab="${tabId}"]`).classList.add('active', 'text-[#ff1a1a]', 'bg-[#ff1a1a]/10', 'font-medium');
