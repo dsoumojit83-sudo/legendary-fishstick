@@ -3625,7 +3625,8 @@
             var total = cart.reduce(function (s, i) { return s + (i.price * (i.qty || 1)); }, 0);
             var names = cart.map(function (i) { return i.name + (i.qty > 1 ? ' x' + i.qty : ''); }).join(', ');
             var serviceName = cart.length === 1 ? cart[0].name : 'Cart Bundle (' + cart.length + ' items)';
-            var destUrl = '/checkout/?service_id=' + encodeURIComponent(serviceName) + '&price=' + total + '&flow=buy_now&cart_items=' + encodeURIComponent(names);
+            var cartJson = encodeURIComponent(JSON.stringify(cart));
+            var destUrl = '/checkout/?service_id=' + encodeURIComponent(serviceName) + '&price=' + total + '&flow=buy_now&cart_items=' + encodeURIComponent(names) + '&cart_json=' + cartJson;
             var sb = window._supabaseClient;
             if (!sb) { window.location.href = destUrl; return; }
             sb.auth.getSession().then(function (res) {

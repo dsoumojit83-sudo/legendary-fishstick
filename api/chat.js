@@ -325,20 +325,94 @@ module.exports = async function (req, res) {
         const numericAmount = parseFloat(amount);
         let _usedCouponId = null; // Track coupon ID for times_used increment
 
+        // ── Helper Function for Dynamic Price Validation ──
+        function getSingleItemPrice(itemName, servicesList, calcConfig) {
+            const svc = servicesList.find(s => s.name === itemName && s.is_active);
+            if (svc) return parseFloat(svc.price);
+
+            if (calcConfig && calcConfig.is_active) {
+                const calcBase = calcConfig.service_types.find(s => itemName.startsWith(s.label));
+                if (calcBase) {
+                    const vidsMatch = itemName.match(/- (\d+) Videos/);
+                    const cv = vidsMatch ? parseInt(vidsMatch[1]) : 1;
+
+                    const tl = calcConfig.timelines.find(t => itemName.includes(`(${t.label})`));
+                    const addons = calcConfig.addons.filter(a => itemName.includes(a.label));
+
+                    let total = Math.max(calcBase.base, calcBase.base + (cv - 1) * calcBase.perVid);
+                    addons.forEach(a => { total += cv * a.price; });
+                    if (tl && tl.price) { total += cv * tl.price; }
+
+                    return total;
+                }
+            }
+            return null;
+        }
+
         // ── SECURITY: Validate Amount against Service Price + Coupon ──
         try {
-            const { data: serviceData, error: svcErr } = await supabase
+            const { data: servicesList, error: svcsErr } = await supabase
                 .from('services')
-                .select('price')
-                .eq('name', selectedService)
-                .eq('is_active', true)
+                .select('name, price, is_active')
+                .eq('is_active', true);
+
+            if (svcsErr || !servicesList) throw new Error("Failed to load services list");
+
+            const { data: calcData } = await supabase
+                .from('calculator_config')
+                .select('*')
+                .eq('id', 1)
                 .maybeSingle();
 
-            if (svcErr || !serviceData) {
+            const defaultCalcConfig = {
+                service_types: [
+                    { key: 'short', label: 'Short Form (Reels / Shorts)', base: 200, perVid: 200 },
+                    { key: 'long', label: 'Long Form (YouTube / Vlogs)', base: 500, perVid: 500 },
+                    { key: 'both', label: 'Full Package (Short + Long)', base: 600, perVid: 650 }
+                ],
+                addons: [
+                    { key: 'needThumbnails', label: 'Custom thumbnails for each video', price: 100 },
+                    { key: 'needSound', label: 'Sound design & SFX', price: 150 },
+                    { key: 'needColor', label: 'Cinematic color grading', price: 175 }
+                ],
+                timelines: [
+                    { key: 'rush', label: 'Rush (2-3 days)', price: 200 },
+                    { key: 'fast', label: 'Priority (4-5 days)', price: 75 },
+                    { key: 'regular', label: 'Standard (Based on discussion)', price: 0 }
+                ],
+                is_active: true
+            };
+            const calcConfig = calcData || defaultCalcConfig;
+
+            let expectedPrice = 0;
+            let isValid = false;
+
+            if (selectedService.startsWith('Cart Bundle') && req.body.cart_json) {
+                try {
+                    const items = typeof req.body.cart_json === 'string' ? JSON.parse(req.body.cart_json) : req.body.cart_json;
+                    for (const item of items) {
+                        let itemValidPrice = getSingleItemPrice(item.name, servicesList, calcConfig);
+                        if (itemValidPrice === null || Math.abs(itemValidPrice - parseFloat(item.price)) > 1.01) {
+                            return res.status(400).json({ reply: `Price validation failed for item: ${item.name}` });
+                        }
+                        expectedPrice += itemValidPrice * (parseInt(item.qty) || 1);
+                    }
+                    isValid = true;
+                } catch (e) {
+                    return res.status(400).json({ reply: "Invalid cart JSON payload." });
+                }
+            } else {
+                let itemValidPrice = getSingleItemPrice(selectedService, servicesList, calcConfig);
+                if (itemValidPrice !== null) {
+                    expectedPrice = itemValidPrice;
+                    isValid = true;
+                }
+            }
+
+            if (!isValid) {
                 return res.status(400).json({ reply: "Service not found or currently unavailable." });
             }
 
-            let expectedPrice = parseFloat(serviceData.price);
             let discount = 0;
 
             if (couponCode) {

@@ -592,6 +592,7 @@
                     try {
                         const discount = parseFloat(document.getElementById('chkDiscountValue').value) || 0;
                         const finalAmount = Math.max(1, (parseFloat(price) || 0) - discount);
+                        const cartJson = params.get('cart_json');
                         const payload = {
                             selectedService: serviceId,
                             amount: finalAmount,
@@ -599,7 +600,8 @@
                             email: email,
                             name: name,
                             couponCode: document.getElementById('chkCouponCode').value.trim() || null,
-                            sessionId: window._checkoutUserId || ("CUST_" + Date.now())
+                            sessionId: window._checkoutUserId || ("CUST_" + Date.now()),
+                            cart_json: cartJson
                         };
                         const orderRes = await fetch('/api/chat', {
                             method: 'POST',
