@@ -194,9 +194,9 @@ module.exports = async function (req, res) {
                         { key: 'regular', label: 'Standard (Based on discussion)', price: 0 }
                     ],
                     agency_base: 5000,
-                    agency_per_vid: { short: 1000, long: 1000, both: 2000 },
+                    agency_per_vid: 1000,
                     freelancer_base: 2000,
-                    freelancer_per_vid: { short: 500, long: 500, both: 1000 },
+                    freelancer_per_vid: 500,
                     is_active: true
                 };
                 return res.status(200).json({
@@ -227,8 +227,8 @@ module.exports = async function (req, res) {
                         { key: 'fast', label: 'Priority (4-5 days)', price: 75 },
                         { key: 'regular', label: 'Standard (Based on discussion)', price: 0 }
                     ],
-                    agency_base: 5000, agency_per_vid: { short: 1000, long: 1000, both: 2000 },
-                    freelancer_base: 2000, freelancer_per_vid: { short: 500, long: 500, both: 1000 },
+                    agency_base: 5000, agency_per_vid: 1000,
+                    freelancer_base: 2000, freelancer_per_vid: 500,
                     is_active: true
                 });
             }
@@ -533,6 +533,8 @@ module.exports = async function (req, res) {
                 allowed.forEach(k => { if (k in body) updates[k] = body[k]; });
                 if (updates.agency_base != null) updates.agency_base = parseInt(updates.agency_base);
                 if (updates.freelancer_base != null) updates.freelancer_base = parseInt(updates.freelancer_base);
+                if (updates.agency_per_vid != null && typeof updates.agency_per_vid !== 'object') updates.agency_per_vid = parseInt(updates.agency_per_vid);
+                if (updates.freelancer_per_vid != null && typeof updates.freelancer_per_vid !== 'object') updates.freelancer_per_vid = parseInt(updates.freelancer_per_vid);
                 if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields.' });
                 updates.id = 1;
                 updates.updated_at = new Date().toISOString();

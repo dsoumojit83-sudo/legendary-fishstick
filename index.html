@@ -1937,9 +1937,7 @@
                     <!-- Service Type -->
                     <div class="calc-section" style="padding-top:0;">
                         <h4>What type of edit do you need?</h4>
-                        <div class="calc-radio active" onclick="calcSetService('short')"><div class="calc-radio-dot"></div><span>Short Form (Reels / Shorts)</span></div>
-                        <div class="calc-radio" onclick="calcSetService('long')"><div class="calc-radio-dot"></div><span>Long Form (YouTube / Vlogs)</span></div>
-                        <div class="calc-radio" onclick="calcSetService('both')"><div class="calc-radio-dot"></div><span>Full Package (Short + Long)</span></div>
+                        <div id="calc-svc-container"></div>
                     </div>
                     <div style="height:1px;background:#1E1E1E;"></div>
                     <!-- Number of Videos -->
@@ -1952,29 +1950,13 @@
                     <!-- Add-ons -->
                     <div class="calc-section">
                         <h4>Add-ons</h4>
-                        <div class="calc-check" onclick="calcToggle(this,'needThumbnails')">
-                            <div class="calc-check-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" style="display:none;"><path d="M20 6L9 17l-5-5"/></svg></div>
-                            <span>Custom thumbnails for each video</span>
-                            <span class="calc-price-tag">+₹100/vid</span>
-                        </div>
-                        <div class="calc-check" onclick="calcToggle(this,'needSound')">
-                            <div class="calc-check-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" style="display:none;"><path d="M20 6L9 17l-5-5"/></svg></div>
-                            <span>Sound design &amp; SFX</span>
-                            <span class="calc-price-tag">+₹150/vid</span>
-                        </div>
-                        <div class="calc-check" onclick="calcToggle(this,'needColor')">
-                            <div class="calc-check-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" style="display:none;"><path d="M20 6L9 17l-5-5"/></svg></div>
-                            <span>Cinematic color grading</span>
-                            <span class="calc-price-tag">+₹175/vid</span>
-                        </div>
+                        <div id="calc-addon-container"></div>
                     </div>
                     <div style="height:1px;background:#1E1E1E;"></div>
                     <!-- Timeline -->
                     <div class="calc-section" style="padding-bottom:0;">
                         <h4>How fast do you need this?</h4>
-                        <div class="calc-radio" onclick="calcSetTimeline('rush')"><div class="calc-radio-dot"></div><span>Rush (2-3 days)</span><span class="calc-price-tag">+₹200/vid</span></div>
-                        <div class="calc-radio" onclick="calcSetTimeline('fast')"><div class="calc-radio-dot"></div><span>Priority (4-5 days)</span><span class="calc-price-tag">+₹75/vid</span></div>
-                        <div class="calc-radio active" onclick="calcSetTimeline('regular')"><div class="calc-radio-dot"></div><span>Standard (Based on discussion)</span><span class="calc-price-tag" style="color:rgba(255,255,255,.3);">No extra cost</span></div>
+                        <div id="calc-tl-container"></div>
                     </div>
                 </div>
                 <!-- RIGHT: Cost Estimation -->
@@ -1995,7 +1977,11 @@
                         <div class="calc-card-highlight" style="border-radius:16px;padding:24px 28px;">
                             <p style="font-size:11px;text-transform:uppercase;letter-spacing:.15em;margin:0 0 8px;opacity:.85;">With ZyroEditz™ Studio</p>
                             <p style="font-size:40px;font-weight:900;font-family:'Roboto',sans-serif;margin:0;" id="calc-zyro-price">₹1,500</p>
-                            <p style="font-size:13px;margin:8px 0 0;opacity:.8;">Save your money, time &amp; headache</p>
+                            <p style="font-size:13px;margin:8px 0 20px;opacity:.8;">Save your money, time &amp; headache</p>
+                            <div class="flex gap-2 w-full">
+                                <button onclick="calcBuyNow()" class="flex-1 bg-[#ff1a1a] text-black font-bold py-3.5 rounded-lg hover:bg-white transition-colors uppercase tracking-widest text-xs flex items-center justify-center gap-2"><i data-lucide="zap" class="w-4 h-4"></i> Buy Now</button>
+                                <button onclick="calcAddToCart()" class="px-5 border border-white/20 text-white rounded-lg hover:bg-white/10 transition-colors flex items-center justify-center" title="Add to Cart"><i data-lucide="shopping-cart" class="w-5 h-5"></i></button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2008,26 +1994,56 @@
             var _svcTypes=[{key:'short',label:'Short Form (Reels / Shorts)',base:200,perVid:200},{key:'long',label:'Long Form (YouTube / Vlogs)',base:500,perVid:500},{key:'both',label:'Full Package (Short + Long)',base:600,perVid:650}];
             var _addonDefs=[{key:'needThumbnails',label:'Custom thumbnails for each video',price:100},{key:'needSound',label:'Sound design & SFX',price:150},{key:'needColor',label:'Cinematic color grading',price:175}];
             var _timelineDefs=[{key:'rush',label:'Rush (2-3 days)',price:200},{key:'fast',label:'Priority (4-5 days)',price:75},{key:'regular',label:'Standard (Based on discussion)',price:0}];
-            var _agencyBase=5000,_agencyPV={short:1000,long:1000,both:2000};
-            var _freelancerBase=2000,_freelancerPV={short:500,long:500,both:1000};
+            var _agencyBase=5000,_agencyPV=1000;
+            var _freelancerBase=2000,_freelancerPV=500;
             var _cs='short',_cv=3,_ct='regular';
             var _addons={};
             _addonDefs.forEach(function(a){_addons[a.key]=false;});
 
+            function buildUI() {
+                if(!_svcTypes.find(s=>s.key===_cs) && _svcTypes.length>0) _cs=_svcTypes[0].key;
+                if(!_timelineDefs.find(t=>t.key===_ct) && _timelineDefs.length>0) _ct=_timelineDefs[0].key;
+                
+                var svcHtml = _svcTypes.map(function(s) {
+                    return '<div class="calc-radio ' + (s.key===_cs?'active':'') + '" onclick="calcSetService(\''+s.key+'\')"><div class="calc-radio-dot"></div><span>'+s.label+'</span></div>';
+                }).join('');
+                document.getElementById('calc-svc-container').innerHTML = svcHtml;
+
+                var addonHtml = _addonDefs.map(function(a) {
+                    var act = _addons[a.key] ? 'active' : '';
+                    var svgd = _addons[a.key] ? 'block' : 'none';
+                    return '<div class="calc-check '+act+'" onclick="calcToggle(this,\''+a.key+'\')">' +
+                           '<div class="calc-check-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" style="display:'+svgd+';"><path d="M20 6L9 17l-5-5"/></svg></div>' +
+                           '<span>'+a.label+'</span>' +
+                           '<span class="calc-price-tag">+₹'+a.price+'/vid</span></div>';
+                }).join('');
+                document.getElementById('calc-addon-container').innerHTML = addonHtml;
+
+                var tlHtml = _timelineDefs.map(function(t) {
+                    var tag = t.price>0 ? ('+₹'+t.price+'/vid') : '<span style="color:rgba(255,255,255,.3);">No extra cost</span>';
+                    if(t.price>0) tag = '<span class="calc-price-tag">' + tag + '</span>';
+                    return '<div class="calc-radio ' + (t.key===_ct?'active':'') + '" onclick="calcSetTimeline(\''+t.key+'\')"><div class="calc-radio-dot"></div><span>'+t.label+'</span>'+tag+'</div>';
+                }).join('');
+                document.getElementById('calc-tl-container').innerHTML = tlHtml;
+            }
+
             function calcPrice(){
-                var svc=_svcTypes.find(function(s){return s.key===_cs;})||_svcTypes[0];
-                var total=Math.max(svc.base, svc.base+(_cv-1)*svc.perVid);
+                var svc=_svcTypes.find(function(s){return s.key===_cs;});
+                if(!svc && _svcTypes.length>0) svc=_svcTypes[0];
+                var base = svc ? svc.base : 0;
+                var perVid = svc ? svc.perVid : 0;
+                var total=Math.max(base, base+(_cv-1)*perVid);
                 _addonDefs.forEach(function(a){if(_addons[a.key]) total+=_cv*a.price;});
                 var tl=_timelineDefs.find(function(t){return t.key===_ct;});
                 if(tl&&tl.price) total+=_cv*tl.price;
                 return total;
             }
             function agencyPrice(){
-                var pp=_agencyPV[_cs]||_agencyPV.short;
+                var pp = typeof _agencyPV === 'number' ? _agencyPV : (_agencyPV.short || 1000);
                 return _agencyBase+(_cv-1)*pp;
             }
             function freelancerPrice(){
-                var pp=_freelancerPV[_cs]||_freelancerPV.short;
+                var pp = typeof _freelancerPV === 'number' ? _freelancerPV : (_freelancerPV.short || 500);
                 return _freelancerBase+(_cv-1)*pp;
             }
             function render(){
@@ -2040,10 +2056,7 @@
             }
             window.calcSetService=function(s){
                 _cs=s;
-                var radios=document.querySelectorAll('#calculator-section .calc-section:first-child .calc-radio');
-                radios.forEach(function(r){r.classList.remove('active');});
-                var idx=_svcTypes.findIndex(function(t){return t.key===s;});
-                if(idx>=0&&radios[idx]) radios[idx].classList.add('active');
+                buildUI();
                 render();
             };
             window.calcUpdateVids=function(v){
@@ -2054,22 +2067,47 @@
             };
             window.calcToggle=function(el,key){
                 _addons[key]=!_addons[key];
-                el.classList.toggle('active');
-                var svg=el.querySelector('svg');
-                if(svg) svg.style.display=_addons[key]?'block':'none';
+                buildUI();
                 render();
             };
             window.calcSetTimeline=function(t){
                 _ct=t;
-                var sec=document.querySelector('#calculator-section .calc-section:last-child');
-                if(!sec) return;
-                sec.querySelectorAll('.calc-radio').forEach(function(r){r.classList.remove('active');});
-                var idx=_timelineDefs.findIndex(function(d){return d.key===t;});
-                if(idx>=0) sec.querySelectorAll('.calc-radio')[idx].classList.add('active');
+                buildUI();
                 render();
             };
+
+            function getCalcItemName() {
+                var svc = _svcTypes.find(s=>s.key===_cs);
+                if(!svc && _svcTypes.length>0) svc=_svcTypes[0];
+                var svcName = svc ? svc.label : 'Custom Package';
+                var activeAddons = _addonDefs.filter(a=>_addons[a.key]).map(a=>a.label);
+                var tl = _timelineDefs.find(t=>t.key===_ct);
+                var tlName = (tl && tl.price>0) ? ` (${tl.label})` : '';
+                
+                var name = `${svcName} - ${_cv} Videos${tlName}`;
+                if(activeAddons.length>0) name += ` + ${activeAddons.join(', ')}`;
+                return name;
+            }
+            window.calcAddToCart = function() {
+                var total = calcPrice();
+                var name = getCalcItemName();
+                if(window.addToCart) {
+                    window.addToCart(name, total, null, 'Custom Package');
+                    if(window.lucide) window.lucide.createIcons();
+                } else {
+                    console.warn('Cart system not found');
+                }
+            };
+            window.calcBuyNow = function() {
+                var total = calcPrice();
+                var name = getCalcItemName();
+                if(window.buyNow) window.buyNow(name, total, null, 'Custom Package');
+            };
+
+            buildUI();
             render();
-            // Fetch dynamic config (non-blocking - UI works immediately with defaults)
+            
+            // Fetch dynamic config
             fetch('/api/admin-data?action=getCalculatorConfig').then(function(r){return r.json();}).then(function(cfg){
                 if(!cfg) return;
                 if(cfg.is_active===false){var sec=document.getElementById('calculator-section');if(sec)sec.style.display='none';return;}
@@ -2080,7 +2118,11 @@
                 if(cfg.agency_per_vid) _agencyPV=cfg.agency_per_vid;
                 if(cfg.freelancer_base) _freelancerBase=cfg.freelancer_base;
                 if(cfg.freelancer_per_vid) _freelancerPV=cfg.freelancer_per_vid;
-                _addons={};_addonDefs.forEach(function(a){_addons[a.key]=false;});
+                
+                // Initialize addons
+                _addonDefs.forEach(function(a){ if(_addons[a.key]===undefined) _addons[a.key]=false; });
+                
+                buildUI();
                 render();
             }).catch(function(e){console.warn('[calc] Config fetch failed, using defaults:',e.message);});
         })();
