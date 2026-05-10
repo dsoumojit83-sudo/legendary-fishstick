@@ -5720,7 +5720,7 @@
                 sGrid.innerHTML = _adminCalcConfig.service_types.map((s, i) => `
                     <div class="bg-black/40 border border-white/5 rounded-xl p-4 relative group">
                         <button onclick="calcAdminRemoveSvc(${i})" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="x" class="w-4 h-4"></i></button>
-                        <input type="text" value="${s.label}" oninput="_adminCalcConfig.service_types[${i}].label=this.value" class="w-full bg-transparent border-b border-white/10 mb-3 text-sm text-white font-bold focus:outline-none focus:border-[#ff1a1a]" placeholder="Package Name">
+                        <input type="text" value="${s.label}" oninput="_adminCalcConfig.service_types[${i}].label=this.value" class="w-full bg-transparent border-b border-transparent mb-3 text-sm text-white font-bold focus:outline-none focus:border-[#ff1a1a]" placeholder="Package Name">
                         <div class="flex gap-2">
                             <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1 uppercase tracking-widest">Base</label><input type="number" value="${s.base}" oninput="_adminCalcConfig.service_types[${i}].base=Number(this.value)" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a]"></div>
                             <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1 uppercase tracking-widest">Per Vid</label><input type="number" value="${s.perVid}" oninput="_adminCalcConfig.service_types[${i}].perVid=Number(this.value)" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a]"></div>
@@ -5733,7 +5733,7 @@
             if(aGrid) {
                 aGrid.innerHTML = _adminCalcConfig.addons.map((a, i) => `
                     <div class="bg-black/40 border border-white/5 rounded-xl p-3 relative group flex items-center gap-3">
-                        <input type="text" value="${a.label}" oninput="_adminCalcConfig.addons[${i}].label=this.value" class="flex-1 bg-transparent border-b border-white/10 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Add-on Name">
+                        <input type="text" value="${a.label}" oninput="_adminCalcConfig.addons[${i}].label=this.value" class="flex-1 bg-transparent border-b border-transparent text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Add-on Name">
                         <input type="number" value="${a.price}" oninput="_adminCalcConfig.addons[${i}].price=Number(this.value)" class="w-20 bg-black border border-white/10 rounded-lg px-2 py-1.5 text-white text-sm text-center focus:outline-none focus:border-[#ff1a1a]">
                         <button onclick="calcAdminRemoveAddon(${i})" class="text-gray-500 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
                     </div>
@@ -5744,7 +5744,7 @@
             if(tGrid) {
                 tGrid.innerHTML = _adminCalcConfig.timelines.map((t, i) => `
                     <div class="bg-black/40 border border-white/5 rounded-xl p-3 relative group flex items-center gap-3">
-                        <input type="text" value="${t.label}" oninput="_adminCalcConfig.timelines[${i}].label=this.value" class="flex-1 bg-transparent border-b border-white/10 text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Timeline Name">
+                        <input type="text" value="${t.label}" oninput="_adminCalcConfig.timelines[${i}].label=this.value" class="flex-1 bg-transparent border-b border-transparent text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Timeline Name">
                         <input type="number" value="${t.price}" oninput="_adminCalcConfig.timelines[${i}].price=Number(this.value)" class="w-20 bg-black border border-white/10 rounded-lg px-2 py-1.5 text-white text-sm text-center focus:outline-none focus:border-[#ff1a1a]">
                         <button onclick="calcAdminRemoveTimeline(${i})" class="text-gray-500 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
                     </div>
