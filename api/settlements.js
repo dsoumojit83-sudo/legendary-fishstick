@@ -23,6 +23,15 @@ module.exports = async function (req, res) {
     const { data: { user: u }, error: uErr } = await supabase.auth.getUser(authH.slice(7));
     if (uErr || !u) return res.status(401).json({ error: 'Unauthorized' });
 
+    // 🔒 ENFORCE ADMIN ROLE
+    const isSuperAdmin = u.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+    if (!isSuperAdmin) {
+        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('role').eq('email', u.email).maybeSingle();
+        if (adminErr || !adminRecord) {
+            return res.status(403).json({ error: 'Forbidden. Admin access required.' });
+        }
+    }
+
     try {
         const { startDate, endDate, cursor = null } = req.body;
 

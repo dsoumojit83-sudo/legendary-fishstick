@@ -111,10 +111,25 @@ module.exports = async function (req, res) {
             if (dbErr) throw dbErr;
             const adminEmails = dbAdmins.map(a => a.email.toLowerCase());
             
-            const { data: authData, error: authErr } = await supabase.auth.admin.listUsers();
-            if (authErr) throw authErr;
+            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+            const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
 
-            const adminUsers = authData.users
+            // FIX: Pagination to bypass 50-user limit
+            let allUsers = [];
+            let page = 1;
+            let hasMore = true;
+            while (hasMore) {
+                const { data: authData, error: authErr } = await adminClient.auth.admin.listUsers({ page: page, perPage: 1000 });
+                if (authErr) throw authErr;
+                if (!authData.users || authData.users.length === 0) {
+                    hasMore = false;
+                } else {
+                    allUsers = allUsers.concat(authData.users);
+                    page++;
+                }
+            }
+
+            const adminUsers = allUsers
                 .filter(u => adminEmails.includes(u.email.toLowerCase()) || u.email.toLowerCase() === 'zyroeditz.official@gmail.com')
                 .map(u => ({
                     email: u.email,
@@ -231,10 +246,23 @@ module.exports = async function (req, res) {
         if (req.method === 'GET' && req.query.action === 'getClients') {
             const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
             const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
-            const { data: authData, error: authErr } = await adminClient.auth.admin.listUsers();
-            if (authErr) throw authErr;
+            
+            // FIX: Pagination to bypass 50-user limit
+            let allUsers = [];
+            let page = 1;
+            let hasMore = true;
+            while (hasMore) {
+                const { data: authData, error: authErr } = await adminClient.auth.admin.listUsers({ page: page, perPage: 1000 });
+                if (authErr) throw authErr;
+                if (!authData.users || authData.users.length === 0) {
+                    hasMore = false;
+                } else {
+                    allUsers = allUsers.concat(authData.users);
+                    page++;
+                }
+            }
 
-            const clients = (authData.users || []).map(u => {
+            const clients = allUsers.map(u => {
                 const m = u.user_metadata || {};
                 return {
                     email: u.email || '',

@@ -124,6 +124,33 @@ module.exports = async function (req, res) {
     }
 
     try {
+        // 🔒 SECURITY FIX: Prevent IDOR (Insecure Direct Object Reference)
+        // Ensure the authenticated user actually owns the orderId they are requesting,
+        // or ensure they have Admin privileges.
+        const isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+        let isAdmin = isSuperAdmin;
+        
+        if (!isSuperAdmin) {
+            const { data: adminRecord } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();
+            if (adminRecord) isAdmin = true;
+        }
+
+        const { data: orderData, error: orderErr } = await supabase
+            .from('orders')
+            .select('client_email')
+            .eq('order_id', orderId)
+            .maybeSingle();
+
+        if (orderErr || !orderData) {
+            return res.status(404).json({ error: 'Order not found.' });
+        }
+
+        const isOwner = user.email.toLowerCase() === (orderData.client_email || '').toLowerCase();
+
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ error: 'Forbidden. You do not have permission to view files for this order.' });
+        }
+
         // List all files inside orders1/<orderId>/ folder in B2
         const listResp = await b2.send(new ListObjectsV2Command({
             Bucket: B2_BUCKET,

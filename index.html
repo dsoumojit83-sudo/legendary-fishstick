@@ -1999,14 +1999,14 @@
             var _liveAgencyMultiplier = 1.45;
             var _liveFreelancerMultiplier = 1.25;
             
-            // Jitter the multipliers every 4 seconds to simulate live market rates
+            // Jitter the multipliers every 1 second to simulate live market rates rapidly
             setInterval(function() {
                 // Agency: 40% to 50%
                 _liveAgencyMultiplier = 1.40 + (Math.random() * 0.10);
                 // Freelancer: 20% to 30%
                 _liveFreelancerMultiplier = 1.20 + (Math.random() * 0.10);
                 render();
-            }, 4000);
+            }, 1000);
             var _cs='short',_cv=3,_ct='regular';
             var _addons={};
             _addonDefs.forEach(function(a){_addons[a.key]=false;});

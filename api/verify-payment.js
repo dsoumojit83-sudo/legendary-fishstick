@@ -188,9 +188,29 @@ module.exports = async function (req, res) {
             return res.status(200).json({ paymentSessionId, order_id: retryOrderId });
         }
 
-        log('INFO', order_id, 'Verification request received. Calling Cashfree API...');
+        log('INFO', order_id, 'Verification request received. Checking DB first...');
 
-        // 1. Fetch the authoritative status directly from Cashfree (Server-to-Server)
+        // 1. Fetch current order details from your database FIRST
+        const { data: orderData, error: fetchError } = await supabase
+            .from('orders')
+            .select('order_id, client_name, client_email, client_phone, service, amount, status, deadline_date, created_at')
+            .eq('order_id', order_id)
+            .single();
+
+        if (fetchError || !orderData) {
+            log('ERROR', order_id, 'Supabase fetch failed — cannot retrieve order data.', fetchError);
+            throw new Error("Could not fetch order data.");
+        }
+
+        // --- CRITICAL FIX: PREVENT REDUNDANT API CALLS ---
+        // If it's already marked as paid in our DB, the user just refreshed the page. 
+        // Return success to the frontend immediately. DO NOT ping Cashfree or send another invoice.
+        if (orderData.status === 'paid' || orderData.status === 'delivered') {
+            log('INFO', order_id, `Duplicate call detected (DB status='${orderData.status}'). Skipping Cashfree & invoice. Returning 200.`);
+            return res.status(200).json({ success: true, status: 'paid' });
+        }
+
+        // 2. Fetch the authoritative status directly from Cashfree (Server-to-Server)
         let orderStatus;
 
         try {
@@ -210,30 +230,9 @@ module.exports = async function (req, res) {
             throw cfErr; // re-throw for any error (auth, network, 404, etc.)
         }
 
-        // 2. Only proceed if the payment actually cleared on Cashfree
+        // 3. Only proceed if the payment actually cleared on Cashfree
         if (orderStatus === 'PAID') {
-
-            // Fetch current order details from your database
-            const { data: orderData, error: fetchError } = await supabase
-                .from('orders')
-                .select('order_id, client_name, client_email, client_phone, service, amount, status, deadline_date, created_at')
-                .eq('order_id', order_id)
-                .single();
-
-            if (fetchError) {
-                log('ERROR', order_id, 'Supabase fetch failed — cannot retrieve order data for invoice.', fetchError);
-                throw new Error("Could not fetch order data for invoice.");
-            }
-
-            log('INFO', order_id, `DB record fetched. Current status in DB: '${orderData.status}'`);
-
-            // --- CRITICAL FIX: PREVENT DOUBLE EMAILS ---
-            // If it's already marked as paid in our DB, the user just refreshed the page. 
-            // Return success to the frontend, but DO NOT send another invoice.
-            if (orderData.status === 'paid' || orderData.status === 'delivered') {
-                log('INFO', order_id, `Duplicate call detected (DB status='${orderData.status}'). Skipping invoice. Returning 200.`);
-                return res.status(200).json({ success: true, status: 'paid' });
-            }
+            log('INFO', order_id, `Cashfree confirmed PAID. Triggering DB update and invoice...`);
 
             // If it hasn't been marked as paid yet, update the Database now
             const { error: dbError } = await supabase

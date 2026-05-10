@@ -32,7 +32,7 @@ const _defaultDeadlineMap = {
     "Coloring": 1
 };
 
-// Fetch live services from DB — returns { name → delivery_days_int }
+// Fetch live services from DB — returns { name → delivery_hours_int }
 async function fetchDeadlineMap() {
     try {
         const { data, error } = await supabase
@@ -42,12 +42,23 @@ async function fetchDeadlineMap() {
         if (error || !data || !data.length) return _defaultDeadlineMap;
         const map = {};
         data.forEach(s => {
-            // delivery_days may be "3-5 Days" or "3" — extract first integer
-            const days = parseInt(String(s.delivery_days || '').match(/\d+/)?.[0] || '3');
-            map[s.name] = days;
+            const raw = String(s.delivery_days || '').toLowerCase();
+            const numMatch = raw.match(/\d+/);
+            let val = parseInt(numMatch?.[0] || '3', 10);
+            
+            // If the string contains 'hr' or 'hour', treat it as hours. Otherwise, days.
+            if (!raw.includes('hr') && !raw.includes('hour')) {
+                val *= 24; // convert days to hours
+            }
+            map[s.name] = val;
         });
         return map;
-    } catch { return _defaultDeadlineMap; }
+    } catch { 
+        // Convert defaults to hours
+        const hrMap = {};
+        for (const [k, v] of Object.entries(_defaultDeadlineMap)) hrMap[k] = v * 24;
+        return hrMap;
+    }
 }
 
 module.exports = async function (req, res) {
@@ -476,14 +487,59 @@ module.exports = async function (req, res) {
 
         const orderId = generateOrderId();
 
-        // ── BUG FIX #9: Safer IST deadline — compute using explicit UTC year/month/day ──
-        // Avoids setUTCDate() month-rollover edge cases when adding days near month boundaries.
-        const daysToAdd = deadlineMap[selectedService] || 3;
+        // ── BUG FIX #9: Safer IST deadline & Dynamic Timelines (Days & Hours) ──
+        let hoursToAdd = 72; // Default 3 days
+        try {
+            const deadlineMap = await fetchDeadlineMap();
+            
+            // Attempt to dynamically resolve custom timelines from calculator config
+            let timelineHoursMap = {};
+            if (calcConfig && calcConfig.timelines) {
+                calcConfig.timelines.forEach(t => {
+                    const firstWord = t.label.split(' ')[0].toLowerCase(); // e.g. "rush", "priority"
+                    // Extract the first number from the label (e.g. "Rush (2-3 days)" -> 2)
+                    const numMatch = t.label.match(/\d+/);
+                    if (numMatch) {
+                        let amount = parseInt(numMatch[0], 10);
+                        const labelLower = t.label.toLowerCase();
+                        // If the label contains "hr" or "hour", treat it as hours. Otherwise, days.
+                        if (!labelLower.includes('hr') && !labelLower.includes('hour')) {
+                            amount *= 24;
+                        }
+                        timelineHoursMap[firstWord] = amount;
+                    }
+                });
+            }
+
+            if (selectedService.startsWith('Cart Bundle') && req.body.cart_json) {
+                const items = typeof req.body.cart_json === 'string' ? JSON.parse(req.body.cart_json) : req.body.cart_json;
+                let maxHours = 0;
+                for (const item of items) {
+                    let h = deadlineMap[item.name] || 72;
+                    const nm = item.name.toLowerCase();
+                    // Match against dynamic config
+                    Object.keys(timelineHoursMap).forEach(key => {
+                        if (nm.includes(key)) h = timelineHoursMap[key];
+                    });
+                    maxHours = Math.max(maxHours, h);
+                }
+                if (maxHours > 0) hoursToAdd = maxHours;
+            } else {
+                let h = deadlineMap[selectedService] || 72;
+                const nm = selectedService.toLowerCase();
+                Object.keys(timelineHoursMap).forEach(key => {
+                    if (nm.includes(key)) h = timelineHoursMap[key];
+                });
+                hoursToAdd = h;
+            }
+        } catch (e) {
+            console.error('[chat] Deadline calculation error:', e.message);
+        }
+
         const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
         const nowIST = new Date(Date.now() + IST_OFFSET_MS);
-        // Extract IST calendar date components, then add daysToAdd cleanly via a new Date constructor
-        const [istYear, istMonth, istDay] = nowIST.toISOString().split('T')[0].split('-').map(Number);
-        const deadlineIST = new Date(Date.UTC(istYear, istMonth - 1, istDay + daysToAdd));
+        // Add the required hours directly to the current IST timestamp
+        const deadlineIST = new Date(nowIST.getTime() + (hoursToAdd * 60 * 60 * 1000));
         const formattedDeadline = deadlineIST.toISOString().split('T')[0]; // YYYY-MM-DD
 
         // --- FIX: CREATE CASHFREE SESSION FIRST ---
@@ -576,23 +632,23 @@ module.exports = async function (req, res) {
             const refCode = String(couponCode).toUpperCase().trim();
             if (refCode.startsWith('ZYRO-') && refCode.length >= 10) {
                 try {
-                    // The referral code format is ZYRO-{first 6 chars of user.id}
-                    // Look up the referrer by matching their auth user ID prefix
-                    const codePrefix = refCode.replace('ZYRO-', '').toLowerCase();
-                    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
-                    const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
-                    const { data: authData } = await adminClient.auth.admin.listUsers();
-                    const referrer = (authData?.users || []).find(u =>
-                        u.id.toLowerCase().startsWith(codePrefix)
-                    );
+                    // FIX: Avoid using listUsers() which has a hard 50-user pagination limit.
+                    // Instead, look up the referrer via the seed row created in the referrals table.
+                    const { data: refData } = await supabase
+                        .from('referrals')
+                        .select('referrer_id, referrer_email')
+                        .eq('referral_code', refCode)
+                        .not('referrer_id', 'is', null)
+                        .limit(1)
+                        .maybeSingle();
 
                     await supabase.from('referrals').insert([{
-                        referrer_id: referrer ? referrer.id : null,
-                        referrer_email: referrer ? referrer.email : null,
+                        referrer_id: refData ? refData.referrer_id : null,
+                        referrer_email: refData ? refData.referrer_email : null,
                         referred_email: safeEmail,
                         referral_code: refCode
                     }]);
-                    console.log(`[chat] Referral recorded: ${refCode} → ${safeEmail} (referrer: ${referrer?.email || 'unknown'})`);
+                    console.log(`[chat] Referral recorded: ${refCode} → ${safeEmail} (referrer: ${refData?.referrer_email || 'unknown'})`);
                 } catch (refErr) {
                     // Non-fatal: don't block order creation if referral tracking fails
                     console.error('[chat] Referral insert failed:', refErr.message);
