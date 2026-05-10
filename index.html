@@ -3045,51 +3045,71 @@
             function initHeroIntro() {
                 var isMobile = window.innerWidth < 768;
                 if (!window.gsap) return;
-                
-                // hero rack-in
-                var homeContent = document.querySelector('#home > div');
-                if (homeContent) {
-                    if (isMobile) {
-                        gsap.set(homeContent, { scale: 1.04, opacity: 0.6, transformOrigin: 'top center' });
-                        gsap.to(homeContent, {
-                            scale: 1, opacity: 1,
-                            duration: 1.1, ease: 'power3.out', delay: 0.1
-                        });
-                    } else {
-                        gsap.set(homeContent, { scale: 1.07, filter: 'blur(10px)', opacity: 0.5, transformOrigin: 'top center' });
-                        gsap.to(homeContent, {
-                            scale: 1, filter: 'blur(0px)', opacity: 1,
-                            duration: 1.3, ease: 'power3.out', delay: 0.1
-                        });
+
+                // Wait for hero background video's first frame so text
+                // never appears over a solid-black box.
+                var heroVideo = document.querySelector('#home video');
+                var _heroFired = false;
+
+                function runHeroAnimations() {
+                    if (_heroFired) return;   // guard against double-fire
+                    _heroFired = true;
+
+                    // hero rack-in
+                    var homeContent = document.querySelector('#home > div');
+                    if (homeContent) {
+                        if (isMobile) {
+                            gsap.set(homeContent, { scale: 1.04, opacity: 0.6, transformOrigin: 'top center' });
+                            gsap.to(homeContent, {
+                                scale: 1, opacity: 1,
+                                duration: 1.1, ease: 'power3.out', delay: 0.1
+                            });
+                        } else {
+                            gsap.set(homeContent, { scale: 1.07, filter: 'blur(10px)', opacity: 0.5, transformOrigin: 'top center' });
+                            gsap.to(homeContent, {
+                                scale: 1, filter: 'blur(0px)', opacity: 1,
+                                duration: 1.3, ease: 'power3.out', delay: 0.1
+                            });
+                        }
                     }
+
+                    gsap.set('nav', { y: -45, opacity: 0 });
+                    gsap.to('nav', {
+                        y: 0, opacity: 1,
+                        duration: 0.7, ease: 'power3.out', delay: 0.3
+                    });
+
+                    // Hero text reveal — fires after the container rack-in
+                    gsap.to('.hw-word', {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.8,
+                        stagger: 0.1,
+                        ease: "power3.out",
+                        delay: 0.2
+                    });
+
+                    gsap.to('.hero-desc, .hero-cta', {
+                        y: 0,
+                        opacity: 1,
+                        duration: 1,
+                        stagger: 0.2,
+                        ease: "power3.out",
+                        delay: 0.6
+                    });
                 }
-                
-                gsap.set('nav', { y: -45, opacity: 0 });
-                gsap.to('nav', {
-                    y: 0, opacity: 1,
-                    duration: 0.7, ease: 'power3.out', delay: 0.3
-                });
 
-                // Hero text reveal — previously gated behind a 3s setTimeout
-                // for a preloader that no longer exists. Now fires immediately
-                // after the hero container rack-in animation.
-                gsap.to('.hw-word', {
-                    y: 0,
-                    opacity: 1,
-                    duration: 0.8,
-                    stagger: 0.1,
-                    ease: "power3.out",
-                    delay: 0.2
-                });
-
-                gsap.to('.hero-desc, .hero-cta', {
-                    y: 0,
-                    opacity: 1,
-                    duration: 1,
-                    stagger: 0.2,
-                    ease: "power3.out",
-                    delay: 0.6
-                });
+                // Fast-path: video already buffered (cached/repeat visit)
+                if (heroVideo && heroVideo.readyState >= 3) {
+                    runHeroAnimations();
+                } else if (heroVideo) {
+                    heroVideo.addEventListener('canplay', runHeroAnimations, { once: true });
+                    // Fallback: don't wait more than 2.5s on slow connections
+                    setTimeout(runHeroAnimations, 2500);
+                } else {
+                    // No video element — run immediately
+                    runHeroAnimations();
+                }
             }
 
             // ==================== CANVAS BACKGROUND LOGIC ====================
