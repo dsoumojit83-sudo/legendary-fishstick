@@ -45,32 +45,23 @@ const _defaultDeadlineMap = {
     "Coloring": 1
 };
 
-// Fetch live services from DB — returns { name → delivery_hours_int }
+// Fetch live services from DB — returns { name → delivery_days_int }
 async function fetchDeadlineMap() {
     try {
         const { data, error } = await supabase
             .from('services')
-            .select('name, delivery_days, price')
+            .select('name, delivery_days')
             .eq('is_active', true);
         if (error || !data || !data.length) return _defaultDeadlineMap;
         const map = {};
         data.forEach(s => {
             const raw = String(s.delivery_days || '').toLowerCase();
             const numMatch = raw.match(/\d+/);
-            let val = parseInt(numMatch?.[0] || '3', 10);
-
-            // If the string contains 'hr' or 'hour', treat it as hours. Otherwise, days.
-            if (!raw.includes('hr') && !raw.includes('hour')) {
-                val *= 24; // convert days to hours
-            }
-            map[s.name] = val;
+            map[s.name] = parseInt(numMatch?.[0] || '3', 10);
         });
         return map;
     } catch {
-        // Convert defaults to hours
-        const hrMap = {};
-        for (const [k, v] of Object.entries(_defaultDeadlineMap)) hrMap[k] = v * 24;
-        return hrMap;
+        return _defaultDeadlineMap;
     }
 }
 
@@ -400,26 +391,9 @@ module.exports = async function (req, res) {
         let _usedCouponId = null; // Track coupon ID for times_used increment
 
         // ── Helper Function for Dynamic Price Validation ──
-        function getSingleItemPrice(itemName, servicesList, calcConfig) {
+        function getSingleItemPrice(itemName, servicesList) {
             const svc = servicesList.find(s => s.name === itemName && s.is_active);
             if (svc) return parseFloat(svc.price);
-
-            if (calcConfig && calcConfig.is_active) {
-                const calcBase = calcConfig.service_types.find(s => itemName.startsWith(s.label));
-                if (calcBase) {
-                    const vidsMatch = itemName.match(/- (\d+) Videos/);
-                    const cv = vidsMatch ? parseInt(vidsMatch[1]) : 1;
-
-                    const tl = calcConfig.timelines.find(t => itemName.includes(`(${t.label})`));
-                    const addons = calcConfig.addons.filter(a => itemName.includes(a.label));
-
-                    let total = Math.max(calcBase.base, calcBase.base + (cv - 1) * calcBase.perVid);
-                    addons.forEach(a => { total += cv * a.price; });
-                    if (tl && tl.price) { total += cv * tl.price; }
-
-                    return total;
-                }
-            }
             return null;
         }
 
@@ -432,31 +406,7 @@ module.exports = async function (req, res) {
 
             if (svcsErr || !servicesList) throw new Error("Failed to load services list");
 
-            const { data: calcData } = await supabase
-                .from('calculator_config')
-                .select('*')
-                .eq('id', 1)
-                .maybeSingle();
 
-            const defaultCalcConfig = {
-                service_types: [
-                    { key: 'short', label: 'Short Form (Reels / Shorts)', base: 200, perVid: 200 },
-                    { key: 'long', label: 'Long Form (YouTube / Vlogs)', base: 500, perVid: 500 },
-                    { key: 'both', label: 'Full Package (Short + Long)', base: 600, perVid: 650 }
-                ],
-                addons: [
-                    { key: 'needThumbnails', label: 'Custom thumbnails for each video', price: 100 },
-                    { key: 'needSound', label: 'Sound design & SFX', price: 150 },
-                    { key: 'needColor', label: 'Cinematic color grading', price: 175 }
-                ],
-                timelines: [
-                    { key: 'rush', label: 'Rush (2-3 days)', price: 200 },
-                    { key: 'fast', label: 'Priority (4-5 days)', price: 75 },
-                    { key: 'regular', label: 'Standard (Based on discussion)', price: 0 }
-                ],
-                is_active: true
-            };
-            const calcConfig = calcData || defaultCalcConfig;
 
             let expectedPrice = 0;
             let isValid = false;
@@ -465,7 +415,7 @@ module.exports = async function (req, res) {
                 try {
                     const items = typeof req.body.cart_json === 'string' ? JSON.parse(req.body.cart_json) : req.body.cart_json;
                     for (const item of items) {
-                        let itemValidPrice = getSingleItemPrice(item.name, servicesList, calcConfig);
+                        let itemValidPrice = getSingleItemPrice(item.name, servicesList);
                         if (itemValidPrice === null || Math.abs(itemValidPrice - parseFloat(item.price)) > 1.01) {
                             return res.status(400).json({ reply: `Price validation failed for item: ${item.name}` });
                         }
@@ -476,7 +426,7 @@ module.exports = async function (req, res) {
                     return res.status(400).json({ reply: "Invalid cart JSON payload." });
                 }
             } else {
-                let itemValidPrice = getSingleItemPrice(selectedService, servicesList, calcConfig);
+                let itemValidPrice = getSingleItemPrice(selectedService, servicesList);
                 if (itemValidPrice !== null) {
                     expectedPrice = itemValidPrice;
                     isValid = true;
@@ -564,50 +514,21 @@ module.exports = async function (req, res) {
 
         const orderId = generateOrderId();
 
-        // ── BUG FIX #9: Safer IST deadline & Dynamic Timelines (Days & Hours) ──
-        let hoursToAdd = 72; // Default 3 days
+        // ── Safer IST deadline & Dynamic Timelines (Days) ──
+        let daysToAdd = 3; // Default 3 days
         try {
             const deadlineMap = await fetchDeadlineMap();
 
-            // Attempt to dynamically resolve custom timelines from calculator config
-            let timelineHoursMap = {};
-            if (calcConfig && calcConfig.timelines) {
-                calcConfig.timelines.forEach(t => {
-                    const firstWord = t.label.split(' ')[0].toLowerCase(); // e.g. "rush", "priority"
-                    // Extract the first number from the label (e.g. "Rush (2-3 days)" -> 2)
-                    const numMatch = t.label.match(/\d+/);
-                    if (numMatch) {
-                        let amount = parseInt(numMatch[0], 10);
-                        const labelLower = t.label.toLowerCase();
-                        // If the label contains "hr" or "hour", treat it as hours. Otherwise, days.
-                        if (!labelLower.includes('hr') && !labelLower.includes('hour')) {
-                            amount *= 24;
-                        }
-                        timelineHoursMap[firstWord] = amount;
-                    }
-                });
-            }
-
             if (selectedService.startsWith('Cart Bundle') && req.body.cart_json) {
                 const items = typeof req.body.cart_json === 'string' ? JSON.parse(req.body.cart_json) : req.body.cart_json;
-                let maxHours = 0;
+                let maxDays = 0;
                 for (const item of items) {
-                    let h = deadlineMap[item.name] || 72;
-                    const nm = item.name.toLowerCase();
-                    // Match against dynamic config
-                    Object.keys(timelineHoursMap).forEach(key => {
-                        if (nm.includes(key)) h = timelineHoursMap[key];
-                    });
-                    maxHours = Math.max(maxHours, h);
+                    let d = deadlineMap[item.name] || 3;
+                    maxDays = Math.max(maxDays, d);
                 }
-                if (maxHours > 0) hoursToAdd = maxHours;
+                if (maxDays > 0) daysToAdd = maxDays;
             } else {
-                let h = deadlineMap[selectedService] || 72;
-                const nm = selectedService.toLowerCase();
-                Object.keys(timelineHoursMap).forEach(key => {
-                    if (nm.includes(key)) h = timelineHoursMap[key];
-                });
-                hoursToAdd = h;
+                daysToAdd = deadlineMap[selectedService] || 3;
             }
         } catch (e) {
             console.error('[chat] Deadline calculation error:', e.message);
@@ -615,8 +536,8 @@ module.exports = async function (req, res) {
 
         const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
         const nowIST = new Date(Date.now() + IST_OFFSET_MS);
-        // Add the required hours directly to the current IST timestamp
-        const deadlineIST = new Date(nowIST.getTime() + (hoursToAdd * 60 * 60 * 1000));
+        // Add the required days directly to the current IST timestamp
+        const deadlineIST = new Date(nowIST.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
         const formattedDeadline = deadlineIST.toISOString().split('T')[0]; // YYYY-MM-DD
 
         // S4 FIX: Free order path — skip Cashfree entirely for 100% coupons/referrals.

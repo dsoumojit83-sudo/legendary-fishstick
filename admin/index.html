@@ -57,11 +57,19 @@
             box-sizing: border-box;
         }
 
+        html {
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+
         body {
             background-color: var(--bg-dark);
             color: #fff;
             font-family: 'Outfit', sans-serif;
             overflow: hidden;
+            width: 100%;
+            max-width: 100vw;
         }
 
         /* Brand name: Roboto (same as all bold/heading text) */
@@ -2049,68 +2057,7 @@
                         </div>
                     </div>
 
-                    <!-- Calculator Config -->
-                    <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden mb-6">
-                        <div class="p-5 border-b border-white/5 flex justify-between items-center bg-black/20">
-                            <div>
-                                <h3 class="text-lg font-bold text-white">Calculator Config</h3>
-                                <p class="text-xs text-gray-400 mt-1">Manage pricing shown in the Project Estimation Calculator</p>
-                            </div>
-                            <div id="calc-cfg-status" class="flex items-center gap-2">
-                                <span class="status-badge status-completed text-[10px]">Active</span>
-                            </div>
-                        </div>
-                        <div class="p-5 space-y-5">
-                            <!-- Service Type Pricing -->
-                            <div>
-                                <div class="flex justify-between items-center mb-3">
-                                    <h4 class="text-xs uppercase tracking-widest text-gray-500">Service Packages</h4>
-                                    <button onclick="calcAdminAddSvc()" class="text-[10px] text-[#ff1a1a] hover:text-white uppercase tracking-widest font-bold">+ Add Package</button>
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="calc-cfg-svc-grid">
-                                    <!-- Dynamic Service Packages -->
-                                </div>
-                            </div>
-                            <!-- Add-on Pricing -->
-                            <div>
-                                <div class="flex justify-between items-center mb-3">
-                                    <h4 class="text-xs uppercase tracking-widest text-gray-500">Add-on Pricing (₹ per video)</h4>
-                                    <button onclick="calcAdminAddAddon()" class="text-[10px] text-[#ff1a1a] hover:text-white uppercase tracking-widest font-bold">+ Add Add-on</button>
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="calc-cfg-addon-grid">
-                                    <!-- Dynamic Add-ons -->
-                                </div>
-                            </div>
-                            <!-- Timeline Surcharges -->
-                            <div>
-                                <div class="flex justify-between items-center mb-3">
-                                    <h4 class="text-xs uppercase tracking-widest text-gray-500">Timeline Surcharges (₹ per video)</h4>
-                                    <button onclick="calcAdminAddTimeline()" class="text-[10px] text-[#ff1a1a] hover:text-white uppercase tracking-widest font-bold">+ Add Timeline</button>
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="calc-cfg-tl-grid">
-                                    <!-- Dynamic Timelines -->
-                                </div>
-                            </div>
-                            <!-- Comparison Base Costs -->
-                            <div>
 
-                            </div>
-                            <!-- Toggle + Save -->
-                            <div class="flex items-center justify-between border-t border-white/5 pt-4">
-                                <div class="flex items-center gap-3">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input id="calc-cfg-enabled" type="checkbox" checked class="sr-only peer">
-                                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                                    </label>
-                                    <span id="calc-cfg-enabled-label" class="text-sm text-green-400 font-medium">Visible on Site</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span id="calc-cfg-msg" class="text-xs text-gray-500 hidden"></span>
-                                    <button id="calc-cfg-save-btn" onclick="saveCalculatorConfig()" class="px-5 py-2.5 bg-[#ff1a1a] text-black font-bold rounded-lg hover:bg-white transition-all text-xs uppercase tracking-widest">Save Config</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Referral Manager Table -->
                     <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
@@ -5608,7 +5555,7 @@
                 updateEcommKPIs();
                 // Load referral config settings (non-blocking)
                 fetchReferralConfig();
-                fetchCalculatorConfig();
+
             } catch (e) { console.error('eComm fetch error', e); }
         }
 
@@ -5690,143 +5637,7 @@
         }
         window.saveReferralConfig = saveReferralConfig;
 
-        // ── Calculator Config Settings ─────────────────────────────────────────
-        // ── Calculator Config Settings ─────────────────────────────────────────
-        let _adminCalcConfig = { 
-            service_types: [
-                { key: 'short', label: 'Short Form (Reels / Shorts)', base: 200, perVid: 200 },
-                { key: 'long', label: 'Long Form (YouTube / Vlogs)', base: 500, perVid: 500 },
-                { key: 'both', label: 'Full Package (Short + Long)', base: 600, perVid: 650 }
-            ], 
-            addons: [
-                { key: 'needThumbnails', label: 'Custom thumbnails for each video', price: 100 },
-                { key: 'needSound', label: 'Sound design & SFX', price: 150 },
-                { key: 'needColor', label: 'Cinematic color grading', price: 175 }
-            ], 
-            timelines: [
-                { key: 'rush', label: 'Rush (2-3 days)', price: 200 },
-                { key: 'fast', label: 'Priority (4-5 days)', price: 75 },
-                { key: 'regular', label: 'Standard (Based on discussion)', price: 0 }
-            ] 
-        };
 
-        function renderAdminCalcLists() {
-            const sGrid = document.getElementById('calc-cfg-svc-grid');
-            if(sGrid) {
-                sGrid.innerHTML = _adminCalcConfig.service_types.map((s, i) => `
-                    <div class="bg-black/40 border border-white/5 rounded-xl p-4 relative group">
-                        <button onclick="calcAdminRemoveSvc(${i})" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="x" class="w-4 h-4"></i></button>
-                        <input type="text" value="${s.label}" oninput="_adminCalcConfig.service_types[${i}].label=this.value" class="w-full bg-transparent border-b border-transparent mb-3 text-sm text-white font-bold focus:outline-none focus:border-[#ff1a1a]" placeholder="Package Name">
-                        <div class="flex gap-2">
-                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1 uppercase tracking-widest">Base</label><input type="number" value="${s.base}" oninput="_adminCalcConfig.service_types[${i}].base=Number(this.value)" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a]"></div>
-                            <div class="flex-1"><label class="text-[9px] text-gray-600 block mb-1 uppercase tracking-widest">Per Vid</label><input type="number" value="${s.perVid}" oninput="_adminCalcConfig.service_types[${i}].perVid=Number(this.value)" class="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff1a1a]"></div>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            const aGrid = document.getElementById('calc-cfg-addon-grid');
-            if(aGrid) {
-                aGrid.innerHTML = _adminCalcConfig.addons.map((a, i) => `
-                    <div class="bg-black/40 border border-white/5 rounded-xl p-3 relative group flex items-center gap-3">
-                        <input type="text" value="${a.label}" oninput="_adminCalcConfig.addons[${i}].label=this.value" class="flex-1 bg-transparent border-b border-transparent text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Add-on Name">
-                        <input type="number" value="${a.price}" oninput="_adminCalcConfig.addons[${i}].price=Number(this.value)" class="w-20 bg-black border border-white/10 rounded-lg px-2 py-1.5 text-white text-sm text-center focus:outline-none focus:border-[#ff1a1a]">
-                        <button onclick="calcAdminRemoveAddon(${i})" class="text-gray-500 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
-                    </div>
-                `).join('');
-            }
-
-            const tGrid = document.getElementById('calc-cfg-tl-grid');
-            if(tGrid) {
-                tGrid.innerHTML = _adminCalcConfig.timelines.map((t, i) => `
-                    <div class="bg-black/40 border border-white/5 rounded-xl p-3 relative group flex items-center gap-3">
-                        <input type="text" value="${t.label}" oninput="_adminCalcConfig.timelines[${i}].label=this.value" class="flex-1 bg-transparent border-b border-transparent text-xs text-white focus:outline-none focus:border-[#ff1a1a]" placeholder="Timeline Name">
-                        <input type="number" value="${t.price}" oninput="_adminCalcConfig.timelines[${i}].price=Number(this.value)" class="w-20 bg-black border border-white/10 rounded-lg px-2 py-1.5 text-white text-sm text-center focus:outline-none focus:border-[#ff1a1a]">
-                        <button onclick="calcAdminRemoveTimeline(${i})" class="text-gray-500 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
-                    </div>
-                `).join('');
-            }
-            if (window.lucide) lucide.createIcons();
-        }
-
-        window.calcAdminAddSvc = () => { _adminCalcConfig.service_types.push({ key: 'svc_' + Date.now(), label: 'New Package', base: 0, perVid: 0 }); renderAdminCalcLists(); };
-        window.calcAdminRemoveSvc = (i) => { _adminCalcConfig.service_types.splice(i, 1); renderAdminCalcLists(); };
-        window.calcAdminAddAddon = () => { _adminCalcConfig.addons.push({ key: 'add_' + Date.now(), label: 'New Add-on', price: 0 }); renderAdminCalcLists(); };
-        window.calcAdminRemoveAddon = (i) => { _adminCalcConfig.addons.splice(i, 1); renderAdminCalcLists(); };
-        window.calcAdminAddTimeline = () => { _adminCalcConfig.timelines.push({ key: 'tl_' + Date.now(), label: 'New Timeline', price: 0 }); renderAdminCalcLists(); };
-        window.calcAdminRemoveTimeline = (i) => { _adminCalcConfig.timelines.splice(i, 1); renderAdminCalcLists(); };
-
-        async function fetchCalculatorConfig() {
-            try {
-                const res = await fetch('/api/admin-data?action=getCalculatorConfig', { headers: { 'Authorization': 'Bearer ' + authToken } });
-                if (!res.ok) return;
-                const cfg = await res.json();
-                
-                _adminCalcConfig.service_types = cfg.service_types || [];
-                _adminCalcConfig.addons = cfg.addons || [];
-                _adminCalcConfig.timelines = cfg.timelines || [];
-                
-                renderAdminCalcLists();
-
-                // Comparisons removed for dynamic scaling
-                // Active toggle
-                var enabled = cfg.is_active !== false;
-                var chk = document.getElementById('calc-cfg-enabled');
-                if (chk) chk.checked = enabled;
-                _updateCalcCfgLabels(enabled);
-            } catch (e) { console.warn('[eComm] Calculator config load failed:', e.message); }
-        }
-
-        function _updateCalcCfgLabels(enabled) {
-            var label = document.getElementById('calc-cfg-enabled-label');
-            var badge = document.getElementById('calc-cfg-status');
-            if (label) {
-                label.textContent = enabled ? 'Visible on Site' : 'Hidden';
-                label.className = 'text-sm font-medium ' + (enabled ? 'text-green-400' : 'text-red-400');
-            }
-            if (badge) {
-                badge.innerHTML = enabled
-                    ? '<span class="status-badge status-completed text-[10px]">Active</span>'
-                    : '<span class="status-badge status-refunded text-[10px]">Hidden</span>';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            var chk = document.getElementById('calc-cfg-enabled');
-            if (chk) chk.addEventListener('change', function () { _updateCalcCfgLabels(this.checked); });
-            renderAdminCalcLists();
-        });
-
-        async function saveCalculatorConfig() {
-            var btn = document.getElementById('calc-cfg-save-btn');
-            var msg = document.getElementById('calc-cfg-msg');
-            btn.disabled = true; btn.textContent = 'Saving…';
-            msg.classList.add('hidden');
-            try {
-                var payload = {
-                    action: 'updateCalculatorConfig',
-                    service_types: _adminCalcConfig.service_types,
-                    addons: _adminCalcConfig.addons,
-                    timelines: _adminCalcConfig.timelines,
-
-                    is_active: document.getElementById('calc-cfg-enabled').checked
-                };
-                var res = await fetch('/api/admin-data', { method: 'POST', headers: ecommHeaders(), body: JSON.stringify(payload) });
-                var data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Save failed');
-                showToast('Calculator config saved!', true);
-                _updateCalcCfgLabels(payload.is_active);
-            } catch (e) {
-                msg.textContent = e.message;
-                msg.className = 'text-xs text-red-400';
-                msg.classList.remove('hidden');
-                showToast(e.message, false);
-            } finally {
-                btn.disabled = false; btn.textContent = 'Save Config';
-            }
-        }
-        window.saveCalculatorConfig = saveCalculatorConfig;
-        window.saveCalculatorConfig = saveCalculatorConfig;
 
         function updateEcommKPIs() {
             const active = _ecommServices.filter(s => s.is_active !== false);

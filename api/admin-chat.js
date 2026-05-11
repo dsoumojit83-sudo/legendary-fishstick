@@ -130,7 +130,6 @@ module.exports = async function (req, res) {
             { data: reviews },
             { data: coupons },
             { data: referrals },
-            { data: calcCfgRow },
             { data: teamAdmins }
         ] = await Promise.all([
             supabase.from('orders').select('order_id,client_name,client_email,service,amount,status,created_at,deadline_date,completed_at').order('created_at', { ascending: false }),
@@ -138,7 +137,6 @@ module.exports = async function (req, res) {
             supabase.from('reviews').select('order_id,rating,review_text,approved,created_at'),
             supabase.from('coupons').select('code,discount_type,discount_value,times_used,is_active'),
             supabase.from('referrals').select('referrer_id,referred_email,created_at'),
-            supabase.from('calculator_config').select('*').eq('id', 1).maybeSingle(),
             supabase.from('admins').select('email, role, full_name')
         ]);
 
@@ -263,13 +261,6 @@ ${uniqueClients.length} unique clients | ${repeatClients.length} returning/repea
 
 ═══ SERVICES CATALOG ═══
 ${liveServicesBlock}
-
-═══ CALCULATOR (Project Estimation Tool on main site) ═══
-${calcCfgRow ? `Status: ${calcCfgRow.is_active ? 'ACTIVE (visible on site)' : 'HIDDEN'}
-Service types: ${(calcCfgRow.service_types||[]).map(s => s.label + ' — Base ₹' + s.base + ', ₹' + s.perVid + '/vid').join(' | ')}
-Add-ons: ${(calcCfgRow.addons||[]).map(a => a.label + ' ₹' + a.price + '/vid').join(' | ')}
-Timelines: ${(calcCfgRow.timelines||[]).map(t => t.label + (t.price ? ' +₹' + t.price + '/vid' : ' (free)')).join(' | ')}
-Comparison: Agency base ₹${calcCfgRow.agency_base||5000} | Freelancer base ₹${calcCfgRow.freelancer_base||2000}` : 'Calculator config not loaded (table may not exist yet)'}
 
 ═══ TEAM (Admins with Command Center access) ═══
 - Soumojit Das (zyroeditz.official@gmail.com) — Super Admin / Founder

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ZyroEditz&trade; | Checkout</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
@@ -24,11 +24,19 @@
             box-sizing: border-box;
         }
 
+        html {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+
         body {
             background-color: #050505;
             color: #fff;
             font-family: 'Outfit', sans-serif;
             overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
             min-height: 100vh;
             /* Flex centering removed from body to prevent mobile cut-off issues */
             padding-top: 2rem;

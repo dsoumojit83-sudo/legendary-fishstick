@@ -83,7 +83,7 @@ jobs:
             "api/sendInvoice.js"
             "admin/index.html"
             "checkout/index.html"
-            "review/index.html"
+            "portfolio/index.html"
           )
           MISSING=0
           for f in "${REQUIRED[@]}"; do
