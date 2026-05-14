@@ -128,12 +128,18 @@ module.exports = async function (req, res) {
         const refundedAmt = orders.filter(o => o.status === 'refunded').reduce((s, o) => s + (Number(o.amount) || 0), 0);
         const cancelledCt = orders.filter(o => ['cancelled','canceled'].includes(o.status)).length;
 
-        // ── Client metrics ─────────────────────────────────────────────────────
-        const uniqueClients  = [...new Set(orders.map(o => o.client_name).filter(Boolean))];
-        const arpu           = uniqueClients.length ? (totalRev / uniqueClients.length).toFixed(2) : '0';
-        const repeatClients  = uniqueClients.filter(n => orders.filter(o => o.client_name === n).length > 1);
-        const retention      = uniqueClients.length ? ((repeatClients.length / uniqueClients.length) * 100).toFixed(1) : '0';
-        const whales         = uniqueClients.map(n => ({ n, t: orders.filter(o => o.client_name === n).reduce((s, o) => s + (Number(o.amount)||0), 0) })).filter(c => c.t >= 2000).sort((a,b) => b.t - a.t);
+        // ── Client metrics — keyed by EMAIL (unique), not name (not unique) ──────
+        const uniqueEmails   = [...new Set(orders.map(o => (o.client_email || '').toLowerCase()).filter(Boolean))];
+        const uniqueClients  = uniqueEmails; // alias used in system prompt below
+        const arpu           = uniqueEmails.length ? (totalRev / uniqueEmails.length).toFixed(2) : '0';
+        const repeatClients  = uniqueEmails.filter(e => orders.filter(o => (o.client_email || '').toLowerCase() === e).length > 1);
+        const retention      = uniqueEmails.length ? ((repeatClients.length / uniqueEmails.length) * 100).toFixed(1) : '0';
+        const whales         = uniqueEmails.map(e => {
+            const clientOrders = orders.filter(o => (o.client_email || '').toLowerCase() === e);
+            const name = clientOrders[0]?.client_name || e;
+            const t    = clientOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+            return { n: name, t };
+        }).filter(c => c.t >= 2000).sort((a, b) => b.t - a.t);
 
         // ── Pipeline ───────────────────────────────────────────────────────────
         const activeOrders   = orders.filter(o => !['delivered','refunded','cancelled','canceled','completed'].includes(o.status));

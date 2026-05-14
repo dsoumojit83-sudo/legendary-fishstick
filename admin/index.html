@@ -4109,13 +4109,19 @@
             const clientsMap = {};
             globalOrdersData.forEach(order => {
                 const clientName = (!order.client || order.client.toLowerCase() === 'unknown') ? 'Zyro Client' : order.client;
-                if (!clientsMap[clientName]) {
-                    clientsMap[clientName] = { name: clientName, email: order.email, totalSpent: 0, projectCount: 0, lastActive: new Date(order.created_at || Date.now()) };
+                // KEY BY EMAIL — email is unique, name is not
+                const clientKey = order.email ? order.email.toLowerCase() : clientName.toLowerCase();
+                if (!clientsMap[clientKey]) {
+                    clientsMap[clientKey] = { name: clientName, email: order.email, totalSpent: 0, projectCount: 0, lastActive: new Date(order.created_at || Date.now()) };
                 }
-                clientsMap[clientName].projectCount += 1;
-                clientsMap[clientName].totalSpent += Number(order.amount) || 0;
+                // Update name if we have a better one than 'Zyro Client'
+                if (clientName !== 'Zyro Client' && clientsMap[clientKey].name === 'Zyro Client') {
+                    clientsMap[clientKey].name = clientName;
+                }
+                clientsMap[clientKey].projectCount += 1;
+                clientsMap[clientKey].totalSpent += Number(order.amount) || 0;
                 const orderDate = new Date(order.created_at || Date.now());
-                if (orderDate > clientsMap[clientName].lastActive) clientsMap[clientName].lastActive = orderDate;
+                if (orderDate > clientsMap[clientKey].lastActive) clientsMap[clientKey].lastActive = orderDate;
             });
 
             let clients = Object.values(clientsMap);
