@@ -80,8 +80,7 @@ module.exports = async function (req, res) {
             (dbAdmins || []).forEach(a => { adminMap[a.email.toLowerCase()] = a; });
             const adminEmails = Object.keys(adminMap);
             
-            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
-            const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
+            const adminClient = supabase;
 
             // FIX: Pagination to bypass 50-user limit
             let allUsers = [];
@@ -161,8 +160,7 @@ module.exports = async function (req, res) {
         // ── Client profiles (GET ?action=getClients) ─────────────────────────────
         // Returns user_metadata (DOB, gender, address) from Supabase Auth for admin CRM
         if (req.method === 'GET' && req.query.action === 'getClients') {
-            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
-            const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
+            const adminClient = supabase;
             
             // FIX: Pagination to bypass 50-user limit
             let allUsers = [];
@@ -378,8 +376,7 @@ module.exports = async function (req, res) {
                 if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
                 
                 // Use service role key (falls back to SUPABASE_KEY which may be the service role key)
-                const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
-                const adminClient = createClient(process.env.SUPABASE_URL, serviceKey);
+                const adminClient = supabase;
 
                 const { error: authError } = await adminClient.auth.admin.createUser({
                     email,
