@@ -79,6 +79,48 @@ module.exports = async function (req, res) {
     if (setCors(req, res)) return res.status(200).end();
 
     try {
+        // ── 🎙️ TRANSCRIPTION BRANCH (action=transcribe) ────────────────────────
+        // Separate from AI chat — no session memory, no system prompt injection.
+        // Auth required: same requireAdmin check as AI chat.
+        if (req.body?.action === 'transcribe') {
+            const user = await requireAdmin(req, res);
+            if (!user) return;
+
+            const { audioBase64, mimeType = 'audio/webm' } = req.body;
+            if (!audioBase64) return res.status(400).json({ error: 'No audio data provided.' });
+
+            // Decode base64 → Buffer → native Blob (Node 18+)
+            const audioBuffer = Buffer.from(audioBase64, 'base64');
+            const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') ? 'mp4' : 'webm';
+
+            // Native FormData + fetch (Node 18+ built-ins — no npm package needed)
+            const form = new FormData();
+            form.append('file', new Blob([audioBuffer], { type: mimeType }), `audio.${ext}`);
+            form.append('model', 'whisper-large-v3-turbo');
+            form.append('language', 'en');
+            form.append('response_format', 'json');
+
+            const whisperRes = await fetch(
+                'https://api.groq.com/openai/v1/audio/transcriptions',
+                {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY}` },
+                    body: form
+                }
+            );
+
+            if (!whisperRes.ok) {
+                const errText = await whisperRes.text();
+                console.error('[ZYRO][admin-chat][transcribe] Groq error:', errText);
+                return res.status(502).json({ error: 'Transcription service error. Try again.' });
+            }
+
+            const whisperData = await whisperRes.json();
+            const transcript = (whisperData?.text || '').trim();
+            return res.status(200).json({ transcript });
+        }
+
+        // ── AI CHAT BRANCH ───────────────────────────────────────────────────────
         const { prompt, sessionId = 'default', attachment } = req.body;
         if (!prompt && !attachment) return res.status(400).json({ error: 'No input' });
         if (prompt && String(prompt).length > 2000) return res.status(400).json({ error: 'Message too long. Max 2000 characters.' });
@@ -307,4 +349,10 @@ You are currently talking to: ${user.email}`;
         );
         return res.status(500).json({ error: 'Internal AI error. Please try again.' });
     }
+};
+
+// Increase Vercel body size limit to 5MB for base64 audio payloads (transcription action).
+// Default is 1MB — a 60s audio recording as base64 is ~2-3MB and would 413 without this.
+module.exports.config = {
+    api: { bodyParser: { sizeLimit: '5mb' } }
 };

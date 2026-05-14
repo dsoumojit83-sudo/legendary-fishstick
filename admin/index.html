@@ -2324,9 +2324,16 @@
 
                     <div class="relative w-full flex-1">
                         <input type="text" id="ai-input"
-                            class="w-full h-[42px] bg-black border border-white/20 rounded-xl py-3 pl-4 pr-12 text-[16px] sm:text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-all shadow-inner"
+                            class="w-full h-[42px] bg-black border border-white/20 rounded-xl py-3 pl-4 pr-20 text-[16px] sm:text-sm text-white focus:outline-none focus:border-[#ff1a1a] transition-all shadow-inner"
                             style="font-family:'Inter',sans-serif; letter-spacing:0.01em;"
                             placeholder="Ask anything about your studio..." autocomplete="off">
+
+                        <!-- 🎙️ Mic Button (voice input) -->
+                        <button type="button" id="ai-mic-btn"
+                            title="Hold to speak"
+                            class="absolute right-9 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#ff1a1a] hover:bg-[#ff1a1a]/10 rounded-lg transition-colors z-10">
+                            <i id="ai-mic-icon" data-lucide="mic" class="w-4 h-4"></i>
+                        </button>
 
                         <button type="submit" id="ai-submit"
                             class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#ff1a1a] hover:bg-[#ff1a1a]/10 rounded-lg transition-colors z-10">
@@ -4779,6 +4786,142 @@
                 terminalBody.scrollTop = terminalBody.scrollHeight;
             }
         });
+
+        // ==================== 🎙️ MIC / VOICE INPUT ====================
+        (function initMicButton() {
+            const micBtn     = document.getElementById('ai-mic-btn');
+            const micIcon    = document.getElementById('ai-mic-icon');
+            const aiInput    = document.getElementById('ai-input');
+            if (!micBtn || !aiInput) return;
+
+            let mediaRecorder = null;
+            let audioChunks   = [];
+            let recordingTimer = null;
+            const MAX_RECORDING_MS = 60000; // 60-second hard cap
+
+            // ── State helpers ────────────────────────────────────────────────────
+            function setState(state) {
+                micBtn.classList.remove('animate-pulse', 'opacity-50');
+                micIcon.setAttribute('data-lucide', 'mic');
+                micBtn.disabled = false;
+
+                if (state === 'recording') {
+                    micIcon.setAttribute('data-lucide', 'mic-off');
+                    micBtn.classList.add('animate-pulse');
+                    micBtn.title = 'Click to stop recording';
+                } else if (state === 'processing') {
+                    micIcon.setAttribute('data-lucide', 'loader');
+                    micBtn.classList.add('opacity-50');
+                    micBtn.disabled = true; // prevent double-tap during transcription
+                    micBtn.title = 'Transcribing...';
+                } else {
+                    micBtn.title = 'Click to speak';
+                }
+                safeCreateIcons();
+            }
+
+            // ── Stop recording and send audio ────────────────────────────────────
+            async function stopAndTranscribe() {
+                if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+                clearTimeout(recordingTimer);
+
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+
+                // Wait for ondataavailable to fire
+                await new Promise(resolve => { mediaRecorder.onstop = resolve; });
+
+                setState('processing');
+
+                const mimeType = mediaRecorder.mimeType || 'audio/webm';
+                const blob = new Blob(audioChunks, { type: mimeType });
+                audioChunks = [];
+
+                // Convert blob → base64
+                const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror  = reject;
+                    reader.readAsDataURL(blob);
+                });
+
+                try {
+                    const resp = await fetch('/api/admin-chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({ action: 'transcribe', audioBase64: base64, mimeType })
+                    });
+
+                    const data = await resp.json();
+                    if (!resp.ok) throw new Error(data.error || 'Transcription failed');
+
+                    if (data.transcript) {
+                        aiInput.value = data.transcript;
+                        aiInput.focus();
+                        // Auto-submit after a short delay so user can see what was transcribed
+                        setTimeout(() => {
+                            document.getElementById('ai-form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+                        }, 600);
+                    } else {
+                        showToast('Nothing was heard. Try again.', false);
+                    }
+                } catch (err) {
+                    console.error('[Mic] Transcription error:', err);
+                    showToast('Voice transcription failed. Try again.', false);
+                } finally {
+                    setState('idle');
+                }
+            }
+
+            // ── Click handler ────────────────────────────────────────────────────
+            micBtn.addEventListener('click', async () => {
+                // If already recording — stop
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    stopAndTranscribe();
+                    return;
+                }
+
+                // Check browser support
+                if (!navigator.mediaDevices?.getUserMedia) {
+                    showToast('Microphone not supported in this browser.', false);
+                    return;
+                }
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                    // Pick best supported MIME type
+                    const preferredMime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', ''].find(
+                        m => !m || MediaRecorder.isTypeSupported(m)
+                    );
+
+                    mediaRecorder = new MediaRecorder(stream, preferredMime ? { mimeType: preferredMime } : {});
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+                    mediaRecorder.start(250); // collect chunks every 250ms
+
+                    setState('recording');
+
+                    // Auto-stop at 60 seconds
+                    recordingTimer = setTimeout(() => {
+                        showToast('Max 60s reached — transcribing now.', true);
+                        stopAndTranscribe();
+                    }, MAX_RECORDING_MS);
+
+                } catch (err) {
+                    if (err.name === 'NotAllowedError') {
+                        showToast('Microphone access denied. Allow mic in browser settings.', false);
+                    } else {
+                        showToast('Could not start microphone.', false);
+                    }
+                    setState('idle');
+                }
+            });
+        })();
 
         // ==================== CHARTS & ANIMATIONS ====================
         let revenueChartInstance = null;
