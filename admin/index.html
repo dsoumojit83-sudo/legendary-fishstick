@@ -4949,31 +4949,34 @@
 
             const crmMap = {};
             globalOrdersData.forEach(o => {
-                const name = o.client_name || o.client || "Unknown Client";
-                if (!crmMap[name]) {
-                    crmMap[name] = {
-                        email: o.client_email || o.email || "",
-                        phone: o.client_phone || o.phone || "",
-                        dob: "",
-                        gender: "",
-                        address: "",
-                        spent: 0,
+                // KEY BY EMAIL — not name. Two clients can share a name but never an email.
+                const email = (o.client_email || o.email || '').toLowerCase();
+                const key = email || (o.client_name || o.client || 'unknown').toLowerCase();
+                if (!crmMap[key]) {
+                    crmMap[key] = {
+                        name:   o.client_name || o.client || 'Unknown Client',
+                        email:  o.client_email || o.email || '',
+                        phone:  o.client_phone || o.phone || '',
+                        dob:    '',
+                        gender: '',
+                        address:'',
+                        spent:  0,
                         orders: 0
                     };
                 }
-                crmMap[name].spent += Number(o.amount) || 0;
-                crmMap[name].orders += 1;
+                crmMap[key].spent  += Number(o.amount) || 0;
+                crmMap[key].orders += 1;
             });
 
-            // Merge Supabase Auth profile data
-            Object.keys(crmMap).forEach(name => {
-                const c = crmMap[name];
+            // Merge Supabase Auth profile data (DOB, gender, address, phone)
+            Object.keys(crmMap).forEach(key => {
+                const c = crmMap[key];
                 if (c.email) {
                     const profile = globalClientsMap[c.email.toLowerCase()];
                     if (profile) {
-                        c.dob = profile.dob || "";
-                        c.gender = profile.gender || "";
-                        c.address = profile.address || "";
+                        c.dob     = profile.dob     || '';
+                        c.gender  = profile.gender  || '';
+                        c.address = profile.address || '';
                         if (!c.phone && profile.phone) c.phone = profile.phone;
                     }
                 }
@@ -4981,13 +4984,12 @@
 
             // Standard RFC 4180 CSV Compilation
             let csv = "Client Name,Email Address,Phone Number,Date of Birth,Gender,Address,Total Spent (INR),Total Orders\n";
-            Object.keys(crmMap).forEach(name => {
-                const c = crmMap[name];
-                // Tab prefix forces Excel/Sheets to treat these as plain text — 
+            Object.values(crmMap).forEach(c => {
+                // Tab prefix forces Excel/Sheets to treat these as plain text —
                 // prevents phone 7600229800 → 7.6E+9 and DOB → #### date cell.
                 const safePhone = c.phone ? String(c.phone) : 'N/A';
-                const safeDob   = c.dob   ? c.dob            : 'N/A';
-                csv += `"${name}","${c.email || 'N/A'}","\t${safePhone}","\t${safeDob}","${c.gender || 'N/A'}","${(c.address || 'N/A').replace(/"/g, '""')}","${c.spent.toFixed(2)}","${c.orders}"\n`;
+                const safeDob   = c.dob   ? c.dob           : 'N/A';
+                csv += `"${(c.name || 'N/A').replace(/"/g, '""')}","${c.email || 'N/A'}","\t${safePhone}","\t${safeDob}","${c.gender || 'N/A'}","${(c.address || 'N/A').replace(/"/g, '""')}","${c.spent.toFixed(2)}","${c.orders}"\n`;
             });
 
             // Native Browser Buffer Download stream
