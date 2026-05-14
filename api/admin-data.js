@@ -1,27 +1,11 @@
-const { createClient } = require('@supabase/supabase-js');
-const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { getSupabase } = require('../lib/supabase');
+const { getB2, B2_BUCKET } = require('../lib/b2');
+const { setCors } = require('../lib/cors');
+const { requireAdmin, SUPER_ADMIN_EMAIL } = require('../lib/auth');
 
-// Connect to Supabase (DB only)
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
-// ── Backblaze B2 S3-compatible client ────────────────────────────────────────
-const rawEndpoint = process.env.B2_ENDPOINT || '';
-const B2_ENDPOINT = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint || 's3.us-east-005.backblazeb2.com'}`;
-const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-east-005';
-
-const b2 = new S3Client({
-    region: extractedRegion,
-    endpoint: B2_ENDPOINT,
-    credentials: {
-        accessKeyId: process.env.B2_KEY_ID,
-        secretAccessKey: process.env.B2_APPLICATION_KEY,
-    },
-    forcePathStyle: true,
-    requestChecksumCalculation: "WHEN_REQUIRED",
-    responseChecksumValidation: "WHEN_REQUIRED",
-});
-
-const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
+const supabase = getSupabase();
+const b2 = getB2();
 
 // ── B2 file-check cache (60s TTL) ────────────────────────────────────────────
 // MEDIUM FIX #5: admin-data.js was firing N concurrent ListObjectsV2 calls per
@@ -47,14 +31,7 @@ async function getCachedFilesMap(activeOrders) {
 }
 
 module.exports = async function (req, res) {
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _origin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (setCors(req, res)) return res.status(200).end();
 
     // Prevent 304 Browser/Vercel Caching
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -65,23 +42,13 @@ module.exports = async function (req, res) {
     const publicActions = [];
     const isPublicAction = req.method === 'GET' && publicActions.includes(req.query.action);
 
+
     let isSuperAdmin = false;
 
     if (!isPublicAction) {
-        // 🔒 JWT Auth: validate Supabase session token
-        const authHeader = req.headers['authorization'];
-        if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-        const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
-        if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
-
-        // 🔒 ENFORCE ADMIN ROLE: Only admins can access this API
-        isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
-        if (!isSuperAdmin) {
-            const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();
-            if (adminErr || !adminRecord) {
-                return res.status(403).json({ error: 'Forbidden. Admin access required.' });
-            }
-        }
+        const user = await requireAdmin(req, res);
+        if (!user) return;
+        isSuperAdmin = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
     }
 
     try {

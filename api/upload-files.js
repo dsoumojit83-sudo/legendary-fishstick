@@ -1,9 +1,11 @@
-const { S3Client, PutObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { PutObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { createClient } = require('@supabase/supabase-js');
+const { getSupabase } = require('../lib/supabase');
+const { getB2, B2_BUCKET } = require('../lib/b2');
+const { setCors } = require('../lib/cors');
 
-// Supabase used to verify orderId belongs to a real order before issuing upload URL
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = getSupabase();
+const b2 = getB2();
 
 // ── IP Rate limiter: 10 upload URL requests per IP per 60s ──────────────────
 const _uploadRateMap = {};
@@ -19,25 +21,7 @@ function isUploadRateLimited(ip) {
 
 const MAX_FILES_PER_ORDER = 20; // prevent bucket spam from a single order
 
-// ── Backblaze B2 S3-compatible client ────────────────────────────────────────
-const rawEndpoint = process.env.B2_ENDPOINT || '';
-const B2_ENDPOINT = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint || 's3.us-east-005.backblazeb2.com'}`;
-const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-east-005';
 
-const b2 = new S3Client({
-    region: extractedRegion,
-    endpoint: B2_ENDPOINT,
-    credentials: {
-        accessKeyId: process.env.B2_KEY_ID,
-        secretAccessKey: process.env.B2_APPLICATION_KEY,
-    },
-    forcePathStyle: true,
-    // Disable SDK v3 automatic CRC32 checksums — B2 rejects them
-    requestChecksumCalculation: "WHEN_REQUIRED",
-    responseChecksumValidation: "WHEN_REQUIRED",
-});
-
-const B2_BUCKET = process.env.B2_BUCKET_NAME;
 
 // ── CORS SETUP ───────────────────────────────────────────────────────────────
 // B2 CORS rules are bucket-level and persist after they're written — we don't
@@ -180,14 +164,7 @@ const corsReady = (async () => {
 // Returns: { uploadUrl: string, key: string }
 // ─────────────────────────────────────────────────────────────────────────────
 module.exports = async function (req, res) {
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _origin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (setCors(req, res)) return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     // ── Rate limit: 10 presign requests per IP per 60s ──────────────────────

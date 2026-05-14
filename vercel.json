@@ -37,12 +37,6 @@
       ]
     },
     {
-      "source": "/og-image.PNG",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
       "source": "/og-image.png",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
@@ -55,5 +49,8 @@
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/((?!api|_vercel|admin|checkout|portfolio).*)", "destination": "/404.html" }
   ]
 }

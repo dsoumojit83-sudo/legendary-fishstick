@@ -1,18 +1,12 @@
 const axios = require('axios');
-const { createClient } = require('@supabase/supabase-js');
+const { getSupabase } = require('../lib/supabase');
+const { setCors } = require('../lib/cors');
+const { requireAdmin } = require('../lib/auth');
 
-// Initialize Supabase
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = getSupabase();
 
 module.exports = async function(req, res) {
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _origin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (setCors(req, res)) return res.status(200).end();
 
     // Prevent 304 Browser/Vercel Caching
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -24,20 +18,8 @@ module.exports = async function(req, res) {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    // 🔒 JWT Auth
-    const authH = req.headers['authorization'];
-    if (!authH?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-    const { data: { user: u }, error: uErr } = await supabase.auth.getUser(authH.slice(7));
-    if (uErr || !u) return res.status(401).json({ error: 'Unauthorized' });
-
-    // 🔒 ENFORCE ADMIN ROLE
-    const isSuperAdmin = u.email.toLowerCase() === 'zyroeditz.official@gmail.com';
-    if (!isSuperAdmin) {
-        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('role').eq('email', u.email).maybeSingle();
-        if (adminErr || !adminRecord) {
-            return res.status(403).json({ error: 'Forbidden. Admin access required.' });
-        }
-    }
+    const u = await requireAdmin(req, res);
+    if (!u) return;
 
     try {
         // 1. Fetch the latest 30 successful/paid orders from Supabase

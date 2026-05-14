@@ -1,13 +1,16 @@
 const OpenAI = require('openai');
-const { createClient } = require('@supabase/supabase-js');
-const { S3Client, ListObjectsV2Command, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { getSupabase } = require('../lib/supabase');
+const { getB2, B2_BUCKET } = require('../lib/b2');
+const { setCors } = require('../lib/cors');
+const { requireAdmin } = require('../lib/auth');
+const { ListObjectsV2Command, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const axios = require('axios');
 const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = getSupabase();
+const b2 = getB2();
 const groq = new OpenAI({
     baseURL: 'https://api.groq.com/openai/v1',
     apiKey: process.env.GROQ_API_KEY
@@ -30,23 +33,6 @@ async function fetchServicesForPrompt() {
     } catch { return null; }
 }
 
-const rawEndpoint = process.env.B2_ENDPOINT || '';
-const B2_ENDPOINT = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint || 's3.us-east-005.backblazeb2.com'}`;
-const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-east-005';
-
-const b2 = new S3Client({
-    region: extractedRegion,
-    endpoint: B2_ENDPOINT,
-    credentials: {
-        accessKeyId: process.env.B2_KEY_ID,
-        secretAccessKey: process.env.B2_APPLICATION_KEY,
-    },
-    forcePathStyle: true,
-    requestChecksumCalculation: "WHEN_REQUIRED",
-    responseChecksumValidation: "WHEN_REQUIRED",
-});
-
-const B2_BUCKET = process.env.B2_BUCKET_NAME;
 
 // Short-term memory store — keyed per session, TTL 30 mins
 const memoryStore = {};
@@ -90,31 +76,16 @@ const formatDate = (dateStr) => {
 };
 
 module.exports = async function (req, res) {
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _origin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (setCors(req, res)) return res.status(200).end();
 
     try {
         const { prompt, sessionId = 'default', attachment } = req.body;
         if (!prompt && !attachment) return res.status(400).json({ error: 'No input' });
+        if (prompt && String(prompt).length > 2000) return res.status(400).json({ error: 'Message too long. Max 2000 characters.' });
 
-        // 🔒 JWT Auth
-        const authHeader = req.headers['authorization'];
-        if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-        const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
-        if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
-
-        // 🔒 RBAC: Only admins can access the AI Terminal
-        const isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
-        if (!isSuperAdmin) {
-            const { data: adminRecord } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();
-            if (!adminRecord) return res.status(403).json({ error: 'Forbidden. Admin access required.' });
-        }
+        // 🔒 JWT Auth + Admin RBAC
+        const user = await requireAdmin(req, res);
+        if (!user) return;
 
         const now = Date.now();
         const SESSION_TTL = 30 * 60 * 1000;
@@ -322,7 +293,12 @@ You are currently talking to: ${user.email}`;
         });
 
     } catch (err) {
-        console.error('Admin Chat Critical Error:', err);
-        return res.status(500).json({ error: 'System error in Zyro AI Terminal' });
+        // Structured log so error surfaces clearly in Vercel function logs
+        console.error('[ZYRO][admin-chat][ERROR]', new Date().toISOString(),
+            '| type:', err.constructor?.name,
+            '| message:', err.message,
+            '| body_preview:', typeof req.body === 'object' ? JSON.stringify(req.body)?.slice(0, 200) : String(req.body)?.slice(0, 200)
+        );
+        return res.status(500).json({ error: 'Internal AI error. Please try again.' });
     }
 };

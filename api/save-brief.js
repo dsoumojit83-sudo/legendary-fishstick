@@ -1,19 +1,10 @@
-const { createClient } = require('@supabase/supabase-js');
+const { getSupabase } = require('../lib/supabase');
+const { setCors } = require('../lib/cors');
 
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_KEY
-);
+const supabase = getSupabase();
 
 module.exports = async function(req, res) {
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _origin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (setCors(req, res)) return res.status(200).end();
     
     // ── PUBLIC: GET /api/save-brief → returns studio online/offline status ──
     // (No auth needed — this is read-only and public so the website can check it)
@@ -31,12 +22,14 @@ module.exports = async function(req, res) {
 
             return res.status(200).json({
                 is_online: (!error && data) ? data.is_online : true,
+                db_status: error ? 'error' : 'ok',
                 supabaseUrl: process.env.SUPABASE_URL || null,
                 supabaseAnonKey: process.env.SUPABASE_ANON_KEY || null
             });
         } catch (e) {
             return res.status(200).json({
                 is_online: true,
+                db_status: 'error',
                 supabaseUrl: process.env.SUPABASE_URL || null,
                 supabaseAnonKey: process.env.SUPABASE_ANON_KEY || null
             });
@@ -74,7 +67,7 @@ module.exports = async function(req, res) {
         }
 
         // RBAC: Admin OR Owner
-        const isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+        const isSuperAdmin = user.email.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'zyroeditz.official@gmail.com').toLowerCase();
         let isAdmin = isSuperAdmin;
         if (!isSuperAdmin) {
             const { data: adminRecord } = await supabase.from('admins').select('role').eq('email', user.email).maybeSingle();

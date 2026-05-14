@@ -81,6 +81,13 @@ jobs:
             "api/webhook.js"
             "api/upload-files.js"
             "api/sendInvoice.js"
+            "api/admin-chat.js"
+            "api/admin-data.js"
+            "api/payments.js"
+            "api/settlements.js"
+            "api/update-status.js"
+            "api/get-files.js"
+            "api/save-brief.js"
             "admin/index.html"
             "checkout/index.html"
             "portfolio/index.html"
@@ -108,6 +115,18 @@ jobs:
             exit 1
           fi
           echo "✅ Build script: $BUILD"
+
+      - name: Validate API file syntax
+        run: |
+          FAILED=0
+          for f in api/*.js; do
+            node --check "$f" && echo "  ✅ $f" || { echo "  ❌ Syntax error: $f"; FAILED=1; }
+          done
+          if [ $FAILED -eq 1 ]; then
+            echo "❌ One or more API files have syntax errors"
+            exit 1
+          fi
+          echo "✅ All API files pass syntax check"
 
   # ─────────────────────────────────────────────
   # CHECK 3: Security Scan

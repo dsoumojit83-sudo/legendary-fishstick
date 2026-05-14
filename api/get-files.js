@@ -1,39 +1,17 @@
-const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { createClient } = require('@supabase/supabase-js');
+const { getSupabase } = require('../lib/supabase');
+const { getB2, B2_BUCKET } = require('../lib/b2');
+const { setCors } = require('../lib/cors');
 
-// ── Supabase client — used for JWT auth (same pattern as all other admin APIs) ─
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = getSupabase();
+const b2 = getB2();
 
-// ── Backblaze B2 S3-compatible client ────────────────────────────────────────
-const rawEndpoint = process.env.B2_ENDPOINT || '';
-const B2_ENDPOINT = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint || 's3.us-east-005.backblazeb2.com'}`;
-const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-east-005';
-
-const b2 = new S3Client({
-    region: extractedRegion,
-    endpoint: B2_ENDPOINT,
-    credentials: {
-        accessKeyId: process.env.B2_KEY_ID,
-        secretAccessKey: process.env.B2_APPLICATION_KEY,
-    },
-    forcePathStyle: true,
-    requestChecksumCalculation: "WHEN_REQUIRED",
-    responseChecksumValidation: "WHEN_REQUIRED",
-});
-
-const B2_BUCKET = process.env.B2_BUCKET_NAME; // orders1
 const B2_PORTFOLIO_BUCKET = process.env.B2_PORTFOLIO_BUCKET || 'zyroeditz-portfolio';
 
 module.exports = async function (req, res) {
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _origin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (setCors(req, res)) return res.status(200).end();
+
 
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed.' });
@@ -127,7 +105,7 @@ module.exports = async function (req, res) {
         // 🔒 SECURITY FIX: Prevent IDOR (Insecure Direct Object Reference)
         // Ensure the authenticated user actually owns the orderId they are requesting,
         // or ensure they have Admin privileges.
-        const isSuperAdmin = user.email.toLowerCase() === 'zyroeditz.official@gmail.com';
+        const isSuperAdmin = user.email.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'zyroeditz.official@gmail.com').toLowerCase();
         let isAdmin = isSuperAdmin;
         
         if (!isSuperAdmin) {
@@ -155,10 +133,11 @@ module.exports = async function (req, res) {
         const listResp = await b2.send(new ListObjectsV2Command({
             Bucket: B2_BUCKET,
             Prefix: `${orderId}/`,
-            MaxKeys: 100,
+            MaxKeys: 1000,
         }));
 
         const objects = listResp.Contents || [];
+        const isTruncated = listResp.IsTruncated || false;
 
         if (objects.length === 0) {
             return res.status(200).json({ files: [] });
@@ -183,7 +162,7 @@ module.exports = async function (req, res) {
             })
         );
 
-        return res.status(200).json({ files });
+        return res.status(200).json({ files, isTruncated });
 
     } catch (err) {
         console.error('[get-files] B2 Storage error:', err);

@@ -1,8 +1,8 @@
 const crypto = require('crypto');
-const { createClient } = require('@supabase/supabase-js');
+const { getSupabase } = require('../lib/supabase');
 const sendInvoice = require('./sendInvoice');
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = getSupabase();
 
 // ── Retry helper with exponential backoff ─────────────────────────────────────
 // Attempts fn up to maxAttempts times; waits 2^attempt * 500ms between tries.
@@ -67,10 +67,12 @@ const _handler = async function(req, res) {
     const timestamp = req.headers['x-webhook-timestamp'];
     const receivedSig = req.headers['x-webhook-signature'];
 
-    // 🔒 Replay attack protection — reject stale webhooks older than 5 minutes.
-    // Cashfree always sends a fresh timestamp in milliseconds.
+    // 🔒 Replay window — extended to 1 hour to handle Cashfree retry delays.
+    // True idempotency is enforced by the atomic `.eq('status','created')` DB check below,
+    // not by timestamp alone. A 5-min window was causing Cashfree retries to be silently
+    // rejected after server downtime, leaving orders stuck in 'created' forever.
     const webhookAge = Math.abs((Date.now() - Number(timestamp)) / 1000);
-    if (!timestamp || isNaN(webhookAge) || webhookAge > 300) {
+    if (!timestamp || isNaN(webhookAge) || webhookAge > 3600) {
         console.warn(`[ZYRO][webhook][SECURITY] ${new Date().toISOString()} | Stale or missing timestamp (age: ${webhookAge.toFixed(3)}s). Rejecting.`);
         return res.status(401).json({ error: 'Webhook timestamp expired or missing.' });
     }
@@ -119,9 +121,10 @@ const _handler = async function(req, res) {
                 // S7 FIX: Atomic status transition — add `.eq('status', 'created')` so that
                 // if two duplicate webhooks race, only the first one matches and updates.
                 // The second webhook's UPDATE affects 0 rows and we skip invoice sending.
+                const cfPaymentId = req.body.data.payment?.cf_payment_id || null;
                 const { data: updatedRows, error: dbError } = await supabase
                     .from('orders')
-                    .update({ status: 'paid' })
+                    .update({ status: 'paid', cf_payment_id: cfPaymentId })
                     .eq('order_id', orderId)
                     .eq('status', 'created')
                     .select('order_id');

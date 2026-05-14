@@ -1,36 +1,16 @@
-const { createClient } = require('@supabase/supabase-js');
-const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { Resend } = require('resend');
 const axios = require('axios');
+const { getSupabase } = require('../lib/supabase');
+const { getB2, B2_BUCKET } = require('../lib/b2');
+const { setCors } = require('../lib/cors');
+const { requireAdmin } = require('../lib/auth');
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
-// ── Backblaze B2 Client for auto-delivery file detection ─────────────────────
-const rawEndpoint = process.env.B2_ENDPOINT || '';
-const B2_ENDPOINT = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint || 's3.us-east-005.backblazeb2.com'}`;
-const extractedRegion = (B2_ENDPOINT.match(/s3\.([^.]+)\.backblazeb2\.com/) || [])[1] || 'us-east-005';
-const b2 = new S3Client({
-    region: extractedRegion,
-    endpoint: B2_ENDPOINT,
-    credentials: {
-        accessKeyId: process.env.B2_KEY_ID,
-        secretAccessKey: process.env.B2_APPLICATION_KEY,
-    },
-    forcePathStyle: true,
-    requestChecksumCalculation: "WHEN_REQUIRED",
-    responseChecksumValidation: "WHEN_REQUIRED",
-});
-const B2_BUCKET = process.env.B2_BUCKET_NAME;
+const supabase = getSupabase();
+const b2 = getB2();
 
 module.exports = async function(req, res) {
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _origin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (setCors(req, res)) return res.status(200).end();
 
     // ── GET: Read studio online/offline status (no auth, no cache for admin) ──
     if (req.method === 'GET') {
@@ -52,20 +32,8 @@ module.exports = async function(req, res) {
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    // 🔒 JWT Auth
-    const authH = req.headers['authorization'];
-    if (!authH?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-    const { data: { user: u }, error: uErr } = await supabase.auth.getUser(authH.slice(7));
-    if (uErr || !u) return res.status(401).json({ error: 'Unauthorized' });
-
-    // 🔒 ENFORCE ADMIN ROLE
-    const isSuperAdmin = u.email.toLowerCase() === 'zyroeditz.official@gmail.com';
-    if (!isSuperAdmin) {
-        const { data: adminRecord, error: adminErr } = await supabase.from('admins').select('role').eq('email', u.email).maybeSingle();
-        if (adminErr || !adminRecord) {
-            return res.status(403).json({ error: 'Forbidden. Admin access required.' });
-        }
-    }
+    const u = await requireAdmin(req, res);
+    if (!u) return;
 
     try {
         const { action, orderId, status, is_online, deliveryFileName, deliveryMimeType, deliveryKey } = req.body;
@@ -93,8 +61,9 @@ module.exports = async function(req, res) {
         if (status === 'working') normalizedStatus = 'in_progress';
         if (status === 'completed') normalizedStatus = 'delivered';
         if (status === 'pending') normalizedStatus = 'created';
+        if (status === 'canceled') normalizedStatus = 'cancelled'; // normalize legacy spelling
         
-        const validStatuses = ['created', 'in_progress', 'paid', 'delivered', 'refunded', 'cancelled', 'canceled'];
+        const validStatuses = ['created', 'in_progress', 'paid', 'delivered', 'refunded', 'cancelled'];
         if (!validStatuses.includes(normalizedStatus)) {
             return res.status(400).json({ error: 'Invalid status value.' });
         }
@@ -102,13 +71,12 @@ module.exports = async function(req, res) {
         // S24 FIX: State-machine enforcement — prevent nonsensical status transitions
         // that would cause accounting chaos (e.g. delivered→created, refunded→paid).
         const allowedTransitions = {
-            'created':     ['paid', 'cancelled', 'canceled'],
-            'paid':        ['in_progress', 'delivered', 'refunded', 'cancelled', 'canceled'],
-            'in_progress': ['delivered', 'refunded', 'cancelled', 'canceled'],
+            'created':     ['paid', 'cancelled'],
+            'paid':        ['in_progress', 'delivered', 'refunded', 'cancelled'],
+            'in_progress': ['delivered', 'refunded', 'cancelled'],
             'delivered':   ['refunded'],
             'refunded':    [],
             'cancelled':   [],
-            'canceled':    [],
         };
         const { data: currentOrder } = await supabase.from('orders').select('status').eq('order_id', orderId).single();
         if (currentOrder) {

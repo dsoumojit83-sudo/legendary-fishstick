@@ -1,8 +1,9 @@
 const axios = require('axios');
-const { createClient } = require('@supabase/supabase-js');
+const { getSupabase } = require('../lib/supabase');
+const { setCors } = require('../lib/cors');
 const sendInvoice = require('./sendInvoice');
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = getSupabase();
 
 // ─── RATE LIMITER (Bug Fix A8) ────────────────────────────────────────────────
 // Prevents polling attacks that exhaust Cashfree API quota.
@@ -64,14 +65,7 @@ function log(level, orderId, message, extra) {
 }
 
 module.exports = async function (req, res) {
-    const _allowed = ['https://zyroeditz.xyz','https://www.zyroeditz.xyz','https://admin.zyroeditz.xyz','https://zyroeditz.vercel.app'];
-    const _origin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', _allowed.includes(_origin) ? _origin : _allowed[0]);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (setCors(req, res)) return res.status(200).end();
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
