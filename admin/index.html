@@ -4983,12 +4983,15 @@
             let csv = "Client Name,Email Address,Phone Number,Date of Birth,Gender,Address,Total Spent (INR),Total Orders\n";
             Object.keys(crmMap).forEach(name => {
                 const c = crmMap[name];
-                // Quote encapsulation prevents inner commas from destroying grid
-                csv += `"${name}","${c.email || 'N/A'}","${c.phone || 'N/A'}","${c.dob || 'N/A'}","${c.gender || 'N/A'}","${(c.address || 'N/A').replace(/"/g, '""')}","${c.spent}","${c.orders}"\n`;
+                // Tab prefix forces Excel/Sheets to treat these as plain text — 
+                // prevents phone 7600229800 → 7.6E+9 and DOB → #### date cell.
+                const safePhone = c.phone ? String(c.phone) : 'N/A';
+                const safeDob   = c.dob   ? c.dob            : 'N/A';
+                csv += `"${name}","${c.email || 'N/A'}","\t${safePhone}","\t${safeDob}","${c.gender || 'N/A'}","${(c.address || 'N/A').replace(/"/g, '""')}","${c.spent.toFixed(2)}","${c.orders}"\n`;
             });
 
             // Native Browser Buffer Download stream
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.setAttribute('href', url);
@@ -5022,11 +5025,12 @@
                 const totalFee = baseMdr + gstOnMdr;
                 const netSettlement = setAmt - totalFee;
 
-                csv += `"${dateStr}","${tx.order_id || 'N/A'}","${tx.payment_network || 'N/A'}","${ordAmt.toFixed(2)}","${totalFee.toFixed(2)}","${netSettlement.toFixed(2)}"\n`;
+                // Tab prefix forces Excel to treat date as text, not a date cell
+                csv += `"\t${dateStr}","${tx.order_id || 'N/A'}","${tx.payment_network || 'N/A'}","${ordAmt.toFixed(2)}","${totalFee.toFixed(2)}","${netSettlement.toFixed(2)}"\n`;
             });
 
             // Native Browser Buffer Download stream
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.setAttribute('href', url);
