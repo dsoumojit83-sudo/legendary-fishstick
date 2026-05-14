@@ -1,0 +1,1073 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ZyroEditz&trade; | Selected Work</title>
+    <meta name="description" content="A curated gallery of cinematic video edits. No sales. Just the work." />
+    <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
+    <link rel="apple-touch-icon" sizes="128x128" href="/favicon.png">
+    <meta name="theme-color" content="#ff1a1a">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@700;900&display=swap" rel="stylesheet" />
+
+    <!-- Tailwind CSS: pre-built at deploy time by Vercel -->
+    <link rel="stylesheet" href="/tailwind.css?v=2">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            background-color: #06060b;
+            color: #fff;
+            margin: 0;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        ::selection { background: #49c6ff; color: #06060b; }
+
+        .marquee {
+            white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+            user-select: none;
+            gap: 2rem;
+            will-change: transform;
+            transform: translateZ(0);
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        .marquee-content {
+            display: flex;
+            flex-shrink: 0;
+            gap: 2rem;
+            will-change: transform;
+            animation: scroll 30s linear infinite;
+        }
+        @keyframes scroll {
+            from { transform: translate3d(0, 0, 0); }
+            to { transform: translate3d(-100%, 0, 0); }
+        }
+
+        /* --- SIBLING DIMMING (desktop only) --- */
+        @media (hover: hover) {
+            #bento-grid:hover .bento-item:not(:hover) {
+                opacity: 0.35;
+                filter: grayscale(40%) blur(2px);
+                transform: scale(0.98);
+            }
+        }
+        .bento-item {
+            transition: opacity 0.4s ease, filter 0.4s ease, border-color 0.4s ease;
+            opacity: 0;
+            transform: translateY(40px);
+            transform-style: preserve-3d;
+        }
+        /* Vanilla-tilt glare fix */
+        .js-tilt-glare { border-radius: inherit; }
+        .js-tilt-glare-inner { mix-blend-mode: overlay; }
+
+        /* === MOBILE OPTIMIZATIONS === */
+        @media (max-width: 767px) {
+            #bento-grid { grid-template-columns: 1fr; grid-auto-rows: 220px; gap: 1rem; }
+            .bento-item { border-radius: 1rem; }
+            #portfolio-filters { gap: 0.5rem; }
+            .filter-btn { padding: 0.4rem 0.8rem; font-size: 10px; }
+            .process-step { padding: 1.25rem; }
+            .process-num { font-size: 3rem; }
+            #landing-eyebrow { font-size: 8px; letter-spacing: 0.3em; }
+            #landing-tagline-bottom { font-size: 9px; letter-spacing: 0.2em; }
+            .marquee { display: none; }
+        }
+        
+        .bg-grid-pattern {
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Hide scrollbar completely while keeping scroll functionality */
+        ::-webkit-scrollbar { display: none; }
+        html { -ms-overflow-style: none; scrollbar-width: none; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+        /* BUG-10 FIX: loading spinner keyframe */
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #mouse-spotlight {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            mix-blend-mode: screen;
+            filter: blur(80px);
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            transition: background-color 0.5s ease;
+        }
+
+        /* Color Changing Ambient Glow */
+        @keyframes ambientColorShift {
+            0% { 
+                box-shadow: 0 0 40px rgba(73,198,255,0.4); 
+                border-color: rgba(73,198,255,0.5); 
+            }
+            33% { 
+                box-shadow: 0 0 60px rgba(122,92,255,0.5); 
+                border-color: rgba(122,92,255,0.6); 
+            }
+            66% { 
+                box-shadow: 0 0 50px rgba(157,180,255,0.45); 
+                border-color: rgba(157,180,255,0.5); 
+            }
+            100% { 
+                box-shadow: 0 0 40px rgba(73,198,255,0.4); 
+                border-color: rgba(73,198,255,0.5); 
+            }
+        }
+        .animate-ambient-shift {
+            box-shadow: none;
+            border-color: rgba(255,255,255,0.1);
+        }
+        .animate-ambient-shift:hover {
+            animation: ambientColorShift 1.5s infinite alternate ease-in-out;
+        }
+        @media (pointer: fine) {
+            #mouse-spotlight { display: block; }
+            .hover-blur-bg { transition: opacity 0.5s ease; }
+            .group:hover .hover-blur-bg { opacity: 1; }
+        }
+
+        .word-reveal span {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        /* === CINEMATIC INTRO EXTRAS === */
+        #landing-eyebrow {
+            opacity: 0;
+            letter-spacing: 0.45em;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            font-weight: 500;
+            margin-bottom: 2rem;
+        }
+        #landing-line-accent {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(73,198,255,0.5), transparent);
+            width: 0%;
+            margin: 0 auto 2rem;
+            opacity: 0;
+        }
+        #landing-tagline-bottom {
+            opacity: 0;
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.2);
+            font-weight: 400;
+            margin-top: 2rem;
+        }
+        #landing-progress-wrap {
+            position: absolute;
+            bottom: 10vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        #landing-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #49c6ff;
+        }
+        .landing-vignette {
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(6,6,11,0.9) 100%);
+        }
+
+        /* === ANIMATED STAT NUMBERS === */
+        .stat-card {
+            transition: border-color 0.4s ease, transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+        .stat-num { font-variant-numeric: tabular-nums; }
+
+
+        /* ── CUSTOM VIDEO PLAYER ─────────────────────────────────────────── */
+        #vp-controls {
+            background: linear-gradient(to top, rgba(6,6,11,0.98) 0%, rgba(6,6,11,0.6) 70%, transparent 100%);
+        }
+        #vp-progress-track {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 99px;
+            cursor: pointer;
+            position: relative;
+            transition: height 0.15s ease;
+        }
+        #vp-progress-track:hover { height: 7px; }
+        #vp-progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #49c6ff, #7a5cff);
+            box-shadow: 0 0 10px rgba(73,198,255,0.6);
+            pointer-events: none;
+            transition: width 0.1s linear;
+        }
+        #vp-progress-buf {
+            position: absolute;
+            top: 0; left: 0;
+            height: 100%;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.12);
+            pointer-events: none;
+        }
+        .vp-btn {
+            background: none; border: none; cursor: pointer;
+            color: rgba(255,255,255,0.8); padding: 6px;
+            display:flex; align-items:center; justify-content:center;
+            border-radius: 8px; transition: color 0.2s, background 0.2s;
+        }
+        .vp-btn:hover { color: #49c6ff; background: rgba(73,198,255,0.1); }
+        #vp-spinner {
+            width: 52px; height: 52px;
+            border: 3px solid rgba(73,198,255,0.2);
+            border-top-color: #49c6ff;
+            border-radius: 50%;
+            animation: vp-spin 0.8s linear infinite;
+        }
+        @keyframes vp-spin { to { transform: rotate(360deg); } }
+        #vp-error {
+            color: #ff6b6b; font-size: 13px; text-align: center;
+            display: none; flex-direction: column; align-items: center; gap: 10px;
+        }
+    </style>
+</head>
+<body class="relative min-h-screen" style="background:#06060b;">
+    <div id="mouse-spotlight"></div>
+
+    <section id="landing-view" class="fixed inset-0 z-[60] flex flex-col items-center justify-center w-full h-full pointer-events-none">
+        <div id="shutter-top" class="absolute top-0 left-0 w-full h-1/2 bg-ink z-0 origin-top pointer-events-auto"></div>
+        <div id="shutter-bottom" class="absolute bottom-0 left-0 w-full h-1/2 bg-ink z-0 origin-bottom pointer-events-auto"></div>
+        <div class="absolute inset-0 landing-vignette z-[1] pointer-events-none"></div>
+        
+        <div class="flex flex-col items-center z-10 text-center px-4" id="landing-content">
+            <div id="landing-eyebrow">ZyroEditz™ — Director's Vault</div>
+            <div id="landing-line-accent"></div>
+            <h1 class="text-4xl md:text-6xl font-black mb-4 tracking-tight drop-shadow-2xl relative z-10 word-reveal" id="hero-text"></h1>
+            <div id="landing-tagline-bottom">Cinematic Edits · Unmatched Retention · Built for Impact</div>
+        </div>
+        <div id="landing-progress-wrap" class="z-10 pointer-events-none">
+            <div id="landing-progress-bar"></div>
+        </div>
+    </section>
+
+    <main id="main-website" class="relative z-10 w-full min-h-screen opacity-0">
+        
+        <nav class="fixed top-0 w-full px-6 md:px-12 py-5 flex justify-between items-center bg-ink/80 backdrop-blur-xl border-b border-white/5 z-40 transform -translate-y-full" id="navbar">
+            <div class="text-2xl font-brand font-black tracking-widest cursor-pointer interactive-element" onclick="scrollToSection('work')" data-hover-color="rgba(73,198,255,0.3)">
+                Zyro<span class="text-zyrored">Editz</span><sup style="font-size:0.4em; vertical-align:super; letter-spacing:normal; font-weight:400;">&trade;</sup>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase font-semibold text-gray-400">
+                <!-- Empty for alignment -->
+            </div>
+            
+            <a href="/" class="interactive-element px-6 py-2 border border-white/10 rounded-full text-xs tracking-[0.1em] uppercase font-bold hover:bg-white hover:text-black transition-all md:hidden" data-hover-color="rgba(255,255,255,0.3)">
+                Main Site
+            </a>
+            
+            <a href="/" class="hidden md:flex interactive-element px-6 py-2 border border-white/10 rounded-full text-xs tracking-[0.1em] uppercase font-bold hover:bg-white hover:text-black transition-all" data-hover-color="rgba(255,255,255,0.3)">
+                Return to Main
+            </a>
+        </nav>
+
+        <!-- ====== JACK 3D CREATOR LAYOUT (ZYROEDITZ BRANDED) ====== -->
+        <section id="jack-hero" class="w-full h-screen relative flex flex-col justify-between overflow-x-clip px-6 md:px-10 pt-32 pb-10 z-10 bg-[#06060b]">
+            <div class="relative w-full h-full flex flex-col justify-center">
+                <div class="w-full overflow-visible flex justify-center pb-8 pt-8 -my-4">
+                    <h1 class="text-[13vw] sm:text-[14vw] md:text-[15vw] lg:text-[16.5vw] font-black tracking-tight leading-none whitespace-nowrap flex items-start justify-center" id="jack-heading">
+                        <span class="text-white">Zyro</span><span class="text-[#ff1a1a]">Editz</span><sup style="font-size: 0.3em; vertical-align: super; color: rgba(255,255,255,0.6); margin-top: 0.2em;">&trade;</sup>
+                    </h1>
+                </div>
+
+                <div class="absolute left-1/2 -translate-x-1/2 top-1/2 sm:top-auto -translate-y-1/2 sm:translate-y-0 sm:bottom-0 z-10 w-[280px] sm:w-[360px] md:w-[440px] lg:w-[520px] opacity-0 translate-y-10 flex justify-center" id="jack-portrait">
+                    <div class="magnet-wrapper cursor-pointer w-full h-full flex justify-center">
+                        <img src="https://shrug-person-78902957.figma.site/_components/v2/d24c01ad3a56fc65e942a1f501eb73db42d7cf9a/Rectangle_40443.81459862.png" alt="Portrait" class="w-full h-auto object-contain drop-shadow-2xl pointer-events-none rounded-[2rem]">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-end w-full relative z-20 pb-7 sm:pb-8 md:pb-10">
+                <p class="text-[#D7E2EA] font-light uppercase tracking-wide leading-snug max-w-[280px] sm:max-w-[360px] md:max-w-[420px] text-[clamp(0.75rem,1.4vw,1.5rem)] opacity-0 translate-y-5" id="jack-desc">
+                    Premium Video Editing<br>Driven By Crafting Striking<br>And Unforgettable Projects
+                </p>
+                <button class="rounded-full px-8 py-3 sm:px-10 sm:py-3.5 md:px-12 md:py-4 text-xs sm:text-sm md:text-base font-bold uppercase tracking-widest text-black bg-[#ff1a1a] hover:bg-white transition-colors shadow-[0_4px_12px_rgba(255,26,26,0.5)] opacity-0 translate-y-5" id="jack-btn" onclick="window.location.href='/#contact'">
+                    Contact Us
+                </button>
+            </div>
+        </section>
+
+        <!-- Marquee Section -->
+        <section class="w-full bg-[#06060b] pt-24 sm:pt-32 md:pt-40 pb-10 overflow-hidden relative z-10">
+            <div class="flex flex-col gap-3">
+                <div class="flex gap-3 w-max will-change-transform jack-marquee-1"></div>
+                <div class="flex gap-3 w-max will-change-transform jack-marquee-2"></div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section class="min-h-screen w-full px-5 sm:px-8 md:px-10 py-20 relative flex flex-col items-center justify-center overflow-hidden z-10 bg-[#06060b]">
+            <img src="https://shrug-person-78902957.figma.site/_components/v2/ebb2b8f25d8e24d5f0a5ca8af4c950de81aa2fd7/moon_icon.11395d36.png" class="absolute top-[4%] left-[4%] w-[120px] md:w-[210px] float-icon opacity-0" data-x="-80">
+            <img src="https://shrug-person-78902957.figma.site/_components/v2/ebb2b8f25d8e24d5f0a5ca8af4c950de81aa2fd7/p59_1.4659672e.png" class="absolute bottom-[8%] left-[10%] w-[100px] md:w-[180px] float-icon opacity-0" data-x="-80">
+            <img src="https://shrug-person-78902957.figma.site/_components/v2/ebb2b8f25d8e24d5f0a5ca8af4c950de81aa2fd7/lego_icon-1.703bb594.png" class="absolute top-[4%] right-[4%] w-[120px] md:w-[210px] float-icon opacity-0" data-x="80">
+            <img src="https://shrug-person-78902957.figma.site/_components/v2/ebb2b8f25d8e24d5f0a5ca8af4c950de81aa2fd7/Group_134-1.2e04f3ce.png" class="absolute bottom-[8%] right-[10%] w-[130px] md:w-[220px] float-icon opacity-0" data-x="80">
+
+            <h2 class="text-[clamp(3rem,12vw,160px)] font-black uppercase leading-none tracking-tight text-white mb-16 opacity-0 translate-y-10" id="jack-about-heading" style="background: linear-gradient(180deg, #ffffff 0%, #aaaaaa 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">About Us</h2>
+            
+            <p class="text-[#D7E2EA] font-medium text-center leading-relaxed max-w-[560px] text-[clamp(1rem,2vw,1.35rem)] jack-char-reveal">
+                With more than five years of experience in post-production, we focus on dynamic editing, motion graphics, and narrative pacing. We truly enjoy working with brands that aim to stand out and present their best image. Let's build something incredible together!
+            </p>
+            <button class="mt-20 rounded-full px-8 py-3 sm:px-10 sm:py-3.5 md:px-12 md:py-4 text-xs sm:text-sm md:text-base font-bold uppercase tracking-widest text-black bg-[#ff1a1a] hover:bg-white transition-colors opacity-0 translate-y-10" id="jack-about-btn" onclick="window.location.href='/#contact'">
+                Contact Us
+            </button>
+        </section>
+
+        <!-- Services Section -->
+        <section class="w-full bg-white rounded-t-[40px] sm:rounded-t-[60px] px-5 sm:px-8 md:px-10 py-20 sm:py-32 z-20 relative">
+            <h2 class="text-[#06060b] font-black uppercase text-center text-[clamp(3rem,12vw,160px)] mb-16 md:mb-28">Services</h2>
+            
+            <div class="max-w-5xl mx-auto flex flex-col">
+                <div class="flex flex-col md:flex-row md:items-center gap-6 py-12 border-b border-black/15 jack-service opacity-0 translate-y-10">
+                    <div class="font-black text-[clamp(3rem,10vw,140px)] text-[#06060b] leading-none md:w-1/3">01</div>
+                    <div class="md:w-2/3">
+                        <h3 class="font-bold uppercase text-[#06060b] text-[clamp(1rem,2.2vw,2.1rem)] mb-2">Short-Form Content</h3>
+                        <p class="font-light leading-relaxed text-[#06060b]/60 text-[clamp(0.85rem,1.6vw,1.25rem)]">Reels, TikToks, and YouTube Shorts engineered for maximum viewer retention and viral growth.</p>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row md:items-center gap-6 py-12 border-b border-black/15 jack-service opacity-0 translate-y-10">
+                    <div class="font-black text-[clamp(3rem,10vw,140px)] text-[#06060b] leading-none md:w-1/3">02</div>
+                    <div class="md:w-2/3">
+                        <h3 class="font-bold uppercase text-[#06060b] text-[clamp(1rem,2.2vw,2.1rem)] mb-2">Long-Form Video</h3>
+                        <p class="font-light leading-relaxed text-[#06060b]/60 text-[clamp(0.85rem,1.6vw,1.25rem)]">Comprehensive editing for YouTube videos, vlogs, and podcasts with highly engaging narrative pacing.</p>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row md:items-center gap-6 py-12 border-b border-black/15 jack-service opacity-0 translate-y-10">
+                    <div class="font-black text-[clamp(3rem,10vw,140px)] text-[#06060b] leading-none md:w-1/3">03</div>
+                    <div class="md:w-2/3">
+                        <h3 class="font-bold uppercase text-[#06060b] text-[clamp(1rem,2.2vw,2.1rem)] mb-2">Cinematic Editing</h3>
+                        <p class="font-light leading-relaxed text-[#06060b]/60 text-[clamp(0.85rem,1.6vw,1.25rem)]">Seamless cuts and storytelling tailored specifically for brand campaigns and high-end commercials.</p>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row md:items-center gap-6 py-12 border-b border-black/15 jack-service opacity-0 translate-y-10">
+                    <div class="font-black text-[clamp(3rem,10vw,140px)] text-[#06060b] leading-none md:w-1/3">04</div>
+                    <div class="md:w-2/3">
+                        <h3 class="font-bold uppercase text-[#06060b] text-[clamp(1rem,2.2vw,2.1rem)] mb-2">Color Grading</h3>
+                        <p class="font-light leading-relaxed text-[#06060b]/60 text-[clamp(0.85rem,1.6vw,1.25rem)]">Professional color correction and cinematic grading to give your raw footage a premium, filmic look.</p>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row md:items-center gap-6 py-12 border-b border-black/15 jack-service opacity-0 translate-y-10">
+                    <div class="font-black text-[clamp(3rem,10vw,140px)] text-[#06060b] leading-none md:w-1/3">05</div>
+                    <div class="md:w-2/3">
+                        <h3 class="font-bold uppercase text-[#06060b] text-[clamp(1rem,2.2vw,2.1rem)] mb-2">Motion Graphics & VFX</h3>
+                        <p class="font-light leading-relaxed text-[#06060b]/60 text-[clamp(0.85rem,1.6vw,1.25rem)]">Dynamic animations, text tracking, and visual effects to bring your creative concepts to life.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section class="w-full bg-[#06060b] rounded-t-[40px] sm:rounded-t-[60px] -mt-10 sm:-mt-14 z-30 relative px-4 md:px-10 py-24" id="jack-projects">
+            <h2 class="font-black uppercase text-center text-[clamp(3rem,12vw,160px)] mb-6" style="background: linear-gradient(180deg, #ffffff 0%, #aaaaaa 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Work</h2>
+            
+            <div class="flex flex-wrap justify-center gap-3 mb-16" id="portfolio-filters">
+                <button class="filter-btn active px-6 py-2.5 rounded-full border border-[#ff1a1a] bg-[#ff1a1a]/10 text-[#ff1a1a] text-xs uppercase tracking-widest font-bold" data-filter="all">All</button>
+                <button class="filter-btn px-6 py-2.5 rounded-full border border-white/10 bg-white/5 text-gray-400 text-xs uppercase tracking-widest font-bold hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] transition-colors" data-filter="Reels">Reels</button>
+                <button class="filter-btn px-6 py-2.5 rounded-full border border-white/10 bg-white/5 text-gray-400 text-xs uppercase tracking-widest font-bold hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] transition-colors" data-filter="Ads">Commercials</button>
+                <button class="filter-btn px-6 py-2.5 rounded-full border border-white/10 bg-white/5 text-gray-400 text-xs uppercase tracking-widest font-bold hover:border-[#ff1a1a]/50 hover:text-[#ff1a1a] transition-colors" data-filter="Short Film">Narrative</button>
+            </div>
+
+            <div class="max-w-6xl mx-auto relative" id="sticky-cards-container">
+                <div class="flex items-center justify-center py-16 text-gray-500 w-full" id="portfolio-loading">
+                    <div style="width:32px;height:32px;border:2px solid rgba(255,26,26,0.2);border-top-color:#ff1a1a;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:12px"></div>
+                    Loading portfolio…
+                </div>
+            </div>
+        </section>
+
+        <!-- Ready for the Final Cut? — Return to Main CTA -->
+        <section class="w-full bg-[#06060b] px-5 sm:px-8 md:px-10 py-28 sm:py-36 relative z-10 flex justify-center">
+            <a href="/" class="interactive-element w-full max-w-4xl group relative px-8 py-20 md:px-16 md:py-28 rounded-[2.5rem] bg-[#0a0a12] border border-white/5 overflow-hidden flex flex-col items-center justify-center transition-all duration-700 hover:-translate-y-2 hover:border-[#ff1a1a]/30 hover:shadow-[0_0_80px_rgba(255,26,26,0.15)]" data-hover-color="rgba(255,26,26,0.3)">
+                <!-- Warm red radial glow on hover -->
+                <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none z-0" style="background: radial-gradient(circle at center, rgba(255,26,26,0.08) 0%, transparent 70%);"></div>
+                
+                <p class="text-[#ff1a1a] text-xs tracking-[0.3em] uppercase font-bold mb-6 z-10 opacity-60 group-hover:opacity-100 transition-opacity">Selected Work</p>
+
+                <h2 class="text-[clamp(2.5rem,8vw,6rem)] font-black uppercase tracking-tight z-10 text-center leading-none mb-10" style="background: linear-gradient(180deg, #ffffff 0%, #aaaaaa 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Ready for the<br class="sm:hidden"> <span style="-webkit-text-fill-color: #ff1a1a;">Final Cut?</span>
+                </h2>
+                
+                <div class="rounded-full px-10 py-4 text-xs sm:text-sm font-bold uppercase tracking-widest text-black bg-[#ff1a1a] group-hover:bg-white transition-colors duration-300 shadow-[0_4px_12px_rgba(255,26,26,0.5)] z-10 flex items-center gap-3">
+                    Return to Main <i data-lucide="arrow-right" class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"></i>
+                </div>
+            </a>
+        </section>
+
+        <footer class="mt-24 py-12 border-t border-white/5 text-center flex flex-col items-center relative z-10 bg-midnight">
+            <div class="text-2xl font-brand font-black tracking-widest mb-4 opacity-80">Zyro<span class="text-zyrored">Editz</span><sup style="font-size:0.4em; vertical-align:super; font-weight:400;">&trade;</sup></div>
+            <p class="text-xs text-gray-500 tracking-widest font-mono">&copy; 2026 ZyroEditz&trade;. All rights reserved.</p>
+        </footer>
+    </main>
+
+    <!-- ── CINEMATIC VIDEO MODAL ──────────────────────────────────────────── -->
+    <div id="video-modal" class="fixed inset-0 z-[100] bg-ink/95 backdrop-blur-xl flex flex-col items-center justify-center opacity-0 invisible transition-all duration-500">
+        <!-- Close -->
+        <button onclick="closeVideo()" class="absolute top-6 right-6 md:top-10 md:right-12 text-gray-400 hover:text-electric transition-colors flex items-center gap-2 text-xs uppercase tracking-widest group z-20">
+            <span class="hidden md:inline">Close</span>
+            <div class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:border-electric transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </div>
+        </button>
+
+        <div class="w-full max-w-6xl px-4 md:px-12 flex flex-col transform scale-95 transition-transform duration-500 max-h-[92dvh] overflow-y-auto" id="video-content">
+            <!-- Header -->
+            <div class="flex items-center gap-4 mb-4">
+                <div class="text-electric text-xs tracking-[0.3em] uppercase font-bold border border-electric/30 px-3 py-1 rounded-full" id="modal-type">Category</div>
+                <h3 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white m-0" id="modal-title">Title</h3>
+            </div>
+
+            <!-- Player shell -->
+            <div class="relative w-full aspect-video bg-black rounded-2xl border border-white/10 overflow-hidden shadow-[0_0_60px_rgba(73,198,255,0.08)] max-h-[70dvh]" id="vp-shell">
+
+                <!-- Spinner / loading state -->
+                <div id="vp-loading" class="absolute inset-0 flex items-center justify-center z-30 bg-black/60">
+                    <div id="vp-spinner"></div>
+                </div>
+
+                <!-- Error state -->
+                <div id="vp-error" class="absolute inset-0 flex items-center justify-center z-30 bg-black/80" style="display:none;flex-direction:column;gap:10px;">
+                    <i data-lucide="wifi-off" class="w-10 h-10 text-red-400"></i>
+                    <p style="color:#ff6b6b;font-size:13px;">Couldn't load video. Try again.</p>
+                    <button onclick="retryVideo()" style="padding:8px 20px;border-radius:99px;border:1px solid #49c6ff;color:#49c6ff;background:none;cursor:pointer;font-size:12px;letter-spacing:.1em;">RETRY</button>
+                </div>
+
+                <!-- Actual video element -->
+                <video id="vp-video" class="w-full h-full object-contain" preload="auto" playsinline></video>
+
+                <!-- Big play overlay (click to play) -->
+                <div id="vp-play-overlay" class="absolute inset-0 flex items-center justify-center z-20 cursor-pointer" onclick="vpTogglePlay()" style="display:none;">
+                    <div class="w-20 h-20 rounded-full bg-ink/70 backdrop-blur-md border border-electric/50 flex items-center justify-center shadow-[0_0_40px_rgba(73,198,255,0.3)] hover:scale-110 transition-transform">
+                        <i data-lucide="play" class="w-9 h-9 text-electric ml-1" id="vp-big-play-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Controls bar -->
+                <div id="vp-controls" class="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4 pt-10 opacity-0 transition-opacity duration-300" style="display:none;">
+                    <!-- Progress -->
+                    <div id="vp-progress-track" onclick="vpSeek(event)">
+                        <div id="vp-progress-buf" style="width:0%"></div>
+                        <div id="vp-progress-fill" style="width:0%"></div>
+                    </div>
+                    <!-- Buttons row -->
+                    <div class="flex items-center gap-2 mt-3">
+                        <button class="vp-btn" onclick="vpTogglePlay()" id="vp-play-btn">
+                            <i data-lucide="play" class="w-5 h-5" id="vp-play-icon"></i>
+                        </button>
+                        <button class="vp-btn" onclick="vpToggleMute()">
+                            <i data-lucide="volume-2" class="w-5 h-5" id="vp-vol-icon"></i>
+                        </button>
+                        <!-- Volume slider -->
+                        <input id="vp-vol-slider" type="range" min="0" max="1" step="0.05" value="1"
+                            style="width:70px;accent-color:#49c6ff;cursor:pointer;"
+                            oninput="vpSetVolume(this.value)">
+                        <!-- Time -->
+                        <span id="vp-time" style="font-size:11px;color:rgba(255,255,255,0.5);font-family:monospace;margin-left:4px;">0:00 / 0:00</span>
+                        <!-- Spacer -->
+                        <div class="flex-1"></div>
+                        <!-- Fullscreen -->
+                        <button class="vp-btn" onclick="vpFullscreen()">
+                            <i data-lucide="maximize-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Reveal words logic
+        const heroTextStr = "Welcome to a new era of Editing.";
+        const heroContainer = document.getElementById("hero-text");
+        heroTextStr.split(" ").forEach(word => {
+            const span = document.createElement("span");
+            span.innerText = word + "\u00A0";
+            heroContainer.appendChild(span);
+        });
+
+        // Set initial state for main-website explicitly via GSAP before animations
+        gsap.set("#main-website", { opacity: 0 });
+        gsap.set("#navbar", { y: -80 });
+        gsap.set(".gsap-reveal > *", { y: 40, opacity: 0 });
+
+        // Intro animation sequence
+        const introTL = gsap.timeline({ delay: 0.2 });
+        introTL.to("#landing-eyebrow", { opacity: 1, duration: 0.8, ease: "power2.out" });
+        introTL.to("#landing-line-accent", { width: "120px", opacity: 1, duration: 0.6, ease: "power2.out" }, "-=0.3");
+        introTL.to(".word-reveal span", { y: 0, opacity: 1, duration: 0.9, stagger: 0.07, ease: "power3.out" }, "-=0.2");
+        introTL.to("#landing-tagline-bottom", { opacity: 1, duration: 0.8, ease: "power2.out" }, "-=0.4");
+        introTL.to("#landing-progress-bar", { width: "100%", duration: 1.8, ease: "power1.inOut",
+            onComplete: () => openWebsite()
+        }, "-=0.6");
+
+        const isPC = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+        
+        if (isPC) {
+            const spotlight = document.getElementById('mouse-spotlight');
+            let defaultColor = "rgba(73, 198, 255, 0.12)";
+            
+            gsap.set(spotlight, { xPercent: -50, yPercent: -50, x: window.innerWidth/2, y: window.innerHeight/2 });
+            spotlight.style.background = `radial-gradient(circle, ${defaultColor} 0%, transparent 60%)`;
+
+            window.addEventListener('mousemove', (e) => {
+                if (spotlight.style.opacity == 0) spotlight.style.opacity = 1;
+                gsap.to(spotlight, { x: e.clientX, y: e.clientY, duration: 0.6, ease: "power2.out", overwrite: 'auto' });
+            }, { passive: true });
+
+            document.querySelectorAll('.interactive-element').forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    const hoverColor = el.getAttribute('data-hover-color') || "rgba(73, 198, 255, 0.4)";
+                    gsap.to(spotlight, { scale: 1.5, duration: 0.5, ease: "power2.out", overwrite: 'auto' });
+                    spotlight.style.background = `radial-gradient(circle, ${hoverColor} 0%, transparent 60%)`;
+                });
+                el.addEventListener('mouseleave', () => {
+                    gsap.to(spotlight, { scale: 1, duration: 0.6, ease: "power2.out", overwrite: 'auto' });
+                    spotlight.style.background = `radial-gradient(circle, ${defaultColor} 0%, transparent 60%)`;
+                });
+            });
+        }
+
+        function openWebsite() {
+            const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+            if (isPC) gsap.to("#mouse-spotlight", { opacity: 0, duration: 0.3 });
+
+            // Fade out all landing content
+            tl.to("#landing-content", { opacity: 0, scale: 0.95, duration: 0.5, ease: "power2.out" }, 0);
+            tl.to("#landing-progress-wrap", { opacity: 0, duration: 0.3 }, 0);
+            // Shutter open animation
+            tl.to("#shutter-top", { scaleY: 0, duration: 1.2, ease: "expo.inOut" }, 0.1);
+            tl.to("#shutter-bottom", { scaleY: 0, duration: 1.2, ease: "expo.inOut" }, 0.1);
+            
+            tl.to("#landing-view", {
+                duration: 0.1,
+                onComplete: () => {
+                    document.getElementById("landing-view").style.display = "none";
+                    document.body.style.overflowY = "auto";
+                    if (isPC) gsap.to("#mouse-spotlight", { opacity: 1, duration: 0.6 });
+                    // Trigger bento animations AFTER shutter opens
+                    setupScrollAnimations();
+                    initJackAnimations();
+                }
+            }, 1.0);
+
+            // Reveal main site elements in sync with shutters opening
+            tl.to("#main-website", { opacity: 1, duration: 0.8 }, 0.4);
+            tl.to("#navbar", { y: 0, duration: 0.8 }, 0.6);
+            tl.to(".gsap-reveal > *", { y: 0, opacity: 1, duration: 0.8, stagger: 0.08 }, 0.6);
+        }
+
+        function setupScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Bento items: staggered entrance as they enter viewport
+            gsap.utils.toArray('.bento-item').forEach((item) => {
+                ScrollTrigger.create({
+                    trigger: item,
+                    start: "top 92%",
+                    onEnter: () => {
+                        gsap.to(item, {
+                            y: 0,
+                            opacity: 1,
+                            duration: 0.9,
+                            ease: "power3.out",
+                            overwrite: true
+                        });
+                    },
+                    once: true
+                });
+            });
+
+            // Scroll sections: about, reviews
+            gsap.utils.toArray('.gsap-scroll').forEach(el => {
+                gsap.set(el, { y: 50, opacity: 0 });
+                ScrollTrigger.create({
+                    trigger: el,
+                    start: "top 88%",
+                    onEnter: () => {
+                        gsap.to(el, { y: 0, opacity: 1, duration: 1, ease: "power3.out", overwrite: true });
+                    },
+                    once: true
+                });
+            });
+
+
+        }
+
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                const y = element.getBoundingClientRect().top + window.scrollY - 100;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+        }
+
+        // Filters — BUG-4 FIX: query .portfolio-item inside click handler (not at parse time)
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => {
+                    b.classList.remove('active', 'border-electric', 'bg-electric/10', 'text-electric');
+                    b.classList.add('border-white/10', 'bg-white/5', 'text-gray-400');
+                });
+                
+                btn.classList.add('active', 'border-electric', 'bg-electric/10', 'text-electric');
+                btn.classList.remove('border-white/10', 'bg-white/5', 'text-gray-400');
+
+                const filterValue = btn.getAttribute('data-filter');
+                // Query live DOM here — cards are added asynchronously after page load
+                const portfolioItems = document.querySelectorAll('.portfolio-item');
+
+                portfolioItems.forEach(item => {
+                    if (filterValue === 'all' || item.getAttribute('data-category') === filterValue) {
+                        item.style.display = 'block';
+                        gsap.fromTo(item, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4 });
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // ── VIDEO PLAYER ENGINE ──────────────────────────────────────────────
+        const vpVideo     = document.getElementById('vp-video');
+        const vpLoading   = document.getElementById('vp-loading');
+        const vpErrorEl   = document.getElementById('vp-error');
+        const vpControls  = document.getElementById('vp-controls');
+        const vpOverlay   = document.getElementById('vp-play-overlay');
+        const vpFill      = document.getElementById('vp-progress-fill');
+        const vpBuf       = document.getElementById('vp-progress-buf');
+        const vpTime      = document.getElementById('vp-time');
+        const vpPlayIcon  = document.getElementById('vp-play-icon');
+        const vpBigIcon   = document.getElementById('vp-big-play-icon');
+        const vpVolIcon   = document.getElementById('vp-vol-icon');
+        let _currentFile  = null;
+        let _hideCtrlTimer = null;
+
+        function fmtTime(s) {
+            if (!isFinite(s)) return '0:00';
+            const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2,'0')}`;
+        }
+
+        vpVideo.addEventListener('timeupdate', () => {
+            if (!vpVideo.duration) return;
+            const pct = (vpVideo.currentTime / vpVideo.duration) * 100;
+            vpFill.style.width = pct + '%';
+            vpTime.textContent = `${fmtTime(vpVideo.currentTime)} / ${fmtTime(vpVideo.duration)}`;
+        });
+        vpVideo.addEventListener('progress', () => {
+            if (!vpVideo.duration || !vpVideo.buffered.length) return;
+            vpBuf.style.width = ((vpVideo.buffered.end(vpVideo.buffered.length - 1) / vpVideo.duration) * 100) + '%';
+        });
+        vpVideo.addEventListener('canplay', () => {
+            vpLoading.style.display = 'none';
+            vpControls.style.display = 'block';
+            vpOverlay.style.display  = 'flex';
+            vpVideo.play().then(() => syncPlayIcon()).catch(() => {});
+        });
+        vpVideo.addEventListener('waiting', () => { vpLoading.style.display = 'flex'; });
+        vpVideo.addEventListener('playing', () => { vpLoading.style.display = 'none'; syncPlayIcon(); });
+        vpVideo.addEventListener('play',  syncPlayIcon);
+        vpVideo.addEventListener('pause', syncPlayIcon);
+        vpVideo.addEventListener('error', () => {
+            if (!vpVideo.getAttribute('src')) return;
+            console.error('[portfolio] Video playback error. Code:', vpVideo.error ? vpVideo.error.code : 'Unknown', vpVideo.error ? vpVideo.error.message : '');
+            vpLoading.style.display = 'none';
+            vpErrorEl.style.display = 'flex';
+        });
+
+        function syncPlayIcon() {
+            const paused = vpVideo.paused;
+            vpPlayIcon.setAttribute('data-lucide', paused ? 'play' : 'pause');
+            vpBigIcon.setAttribute('data-lucide',  paused ? 'play' : 'pause');
+            vpOverlay.style.display = paused ? 'flex' : 'none';
+            lucide.createIcons();
+        }
+        function vpTogglePlay() {
+            if (vpVideo.paused) {
+                const p = vpVideo.play();
+                if (p !== undefined) p.catch(() => {});
+            } else {
+                vpVideo.pause();
+            }
+        }
+        function vpToggleMute() {
+            vpVideo.muted = !vpVideo.muted;
+            vpVolIcon.setAttribute('data-lucide', vpVideo.muted ? 'volume-x' : 'volume-2');
+            lucide.createIcons();
+        }
+        function vpSetVolume(v) {
+            vpVideo.volume = v;
+            vpVideo.muted  = (v == 0);
+            vpVolIcon.setAttribute('data-lucide', v == 0 ? 'volume-x' : 'volume-2');
+            lucide.createIcons();
+        }
+        function vpSeek(e) {
+            const track = document.getElementById('vp-progress-track');
+            const pct   = e.offsetX / track.offsetWidth;
+            vpVideo.currentTime = pct * vpVideo.duration;
+        }
+        function vpFullscreen() {
+            const shell = document.getElementById('vp-shell');
+            if (document.fullscreenElement) document.exitFullscreen();
+            else shell.requestFullscreen && shell.requestFullscreen();
+        }
+
+        // Show / hide controls on mouse move inside player
+        document.getElementById('vp-shell').addEventListener('mousemove', () => {
+            vpControls.style.opacity = '1';
+            clearTimeout(_hideCtrlTimer);
+            _hideCtrlTimer = setTimeout(() => { if (!vpVideo.paused) vpControls.style.opacity = '0'; }, 2500);
+        });
+
+        async function openVideo(title, type, filename) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-type').innerText  = type;
+            _currentFile = filename;
+
+            // Reset player state
+            vpVideo.removeAttribute('src'); vpVideo.load();
+            vpFill.style.width = '0%';
+            vpBuf.style.width  = '0%';
+            vpTime.textContent = '0:00 / 0:00';
+            vpLoading.style.display  = 'flex';
+            vpErrorEl.style.display  = 'none';
+            vpControls.style.display = 'none';
+            vpOverlay.style.display  = 'none';
+
+            // Show modal
+            const modal   = document.getElementById('video-modal');
+            const content = document.getElementById('video-content');
+            modal.style.visibility = 'visible';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'invisible');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+
+            // Fetch signed URL from backend
+            try {
+                const resp = await fetch(`/api/get-files?portfolio=true&file=${encodeURIComponent(filename)}`);
+                const data = await resp.json();
+                if (!resp.ok || !data.url) throw new Error(data.error || 'No URL');
+                vpVideo.src = data.url;
+                vpVideo.load();
+            } catch (err) {
+                console.error('[portfolio] video load error:', err);
+                vpLoading.style.display = 'none';
+                vpErrorEl.style.display = 'flex';
+            }
+        }
+
+        function retryVideo() {
+            if (_currentFile) {
+                const title = document.getElementById('modal-title').innerText;
+                const type  = document.getElementById('modal-type').innerText;
+                openVideo(title, type, _currentFile);
+            }
+        }
+
+        function closeVideo() {
+            const modal   = document.getElementById('video-modal');
+            const content = document.getElementById('video-content');
+            modal.classList.add('opacity-0', 'invisible');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.style.visibility = 'hidden';
+                document.body.style.overflow = 'auto';
+                vpVideo.pause();
+                vpVideo.removeAttribute('src'); vpVideo.load();
+            }, 500);
+        }
+
+    </script>
+
+    <script>
+    // ── Dynamic Portfolio Loader ─────────────────────────────────────────────
+    // Called once on DOMContentLoaded; re-renders bento grid from Supabase DB.
+    async function loadPortfolioItems() {
+        const grid   = document.getElementById('sticky-cards-container');
+        const loader = document.getElementById('portfolio-loading');
+        try {
+            const res  = await fetch('/api/get-files?portfolio_items=true');
+            const data = await res.json();
+            if (!res.ok || !data.items) throw new Error(data.error || 'API error');
+
+            // Remove loading spinner
+            if (loader) loader.remove();
+
+            if (!data.items.length) {
+                grid.innerHTML = '<div class="text-center text-gray-500 py-16 text-sm w-full">No portfolio items found.</div>';
+                return;
+            }
+
+            const fallbackThumbs = [
+                'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80',
+                'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=500&q=80',
+                'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
+                'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80',
+                'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=500&q=80',
+            ];
+
+            data.items.forEach((item, idx) => {
+                const thumb = item.thumbnail_url || fallbackThumbs[idx % fallbackThumbs.length];
+                const marginTop = idx * 28;
+                const numStr = (idx + 1).toString().padStart(2, '0');
+
+                const card = document.createElement('div');
+                card.dataset.title    = item.title;
+                card.dataset.category = item.category;
+                card.dataset.filename = item.filename;
+                card.className = `portfolio-item sticky top-[96px] md:top-[128px] h-[85vh] w-full rounded-[40px] md:rounded-[60px] border-2 border-[#D7E2EA] bg-[#06060b] p-4 sm:p-6 md:p-8 flex flex-col mb-[5vh] sticky-card origin-top cursor-pointer group`;
+                card.style.marginTop = `${marginTop}px`;
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-auto">
+                        <div class="flex items-center gap-4 sm:gap-6">
+                            <span class="text-4xl sm:text-6xl md:text-8xl font-black text-white leading-none">${numStr}</span>
+                            <div>
+                                <div class="text-[#ff1a1a] uppercase text-[10px] sm:text-xs tracking-widest font-bold opacity-70">${item.category}</div>
+                                <h3 class="text-xl sm:text-2xl md:text-4xl text-white font-black uppercase line-clamp-1">${item.title}</h3>
+                            </div>
+                        </div>
+                        <button class="rounded-full border-2 border-[#D7E2EA] px-4 py-2 sm:px-6 sm:py-2 text-[#D7E2EA] uppercase text-[10px] sm:text-xs tracking-widest font-bold group-hover:bg-white group-hover:text-black group-hover:border-white transition-all duration-300 shrink-0 ml-4">Play Video</button>
+                    </div>
+                    <div class="w-full h-[65%] mt-8 relative overflow-hidden rounded-[30px] md:rounded-[40px] border border-white/10 flex-shrink-0">
+                        <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                        <img src="${thumb}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" loading="lazy">
+                        
+                        <div class="absolute inset-0 flex items-center justify-center z-20">
+                            <div class="w-20 h-20 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-[#ff1a1a] group-hover:border-[#ff1a1a] transition-all duration-300">
+                                <i data-lucide="play" class="w-8 h-8 ml-1 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Reinitialize Lucide icons on new DOM nodes
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Reinitialize VanillaTilt only on non-touch devices (R-06 FIX: prevents Android card jitter)
+            if (typeof VanillaTilt !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+                VanillaTilt.init(grid.querySelectorAll('[data-tilt]'), {
+                    max: 1, speed: 1000, glare: true, 'max-glare': 0.08
+                });
+            }
+
+            // Attach delegated video-open click listener on each card (XSS-safe)
+            // Reads title/category/filename from data attributes — never from executable strings
+            grid.querySelectorAll('.portfolio-item').forEach(c => {
+                c.addEventListener('click', () => {
+                    const t = c.dataset.title;
+                    const cat = c.dataset.category;
+                    const f = c.dataset.filename;
+                    if (t && f && typeof openVideo === 'function') openVideo(t, cat, f);
+                });
+            });
+
+            // Re-attach interactive hover color listeners
+            grid.querySelectorAll('.interactive-element').forEach(el => {
+                const hoverColor = el.dataset.hoverColor;
+                if (!hoverColor) return;
+                el.addEventListener('mouseenter', () => {
+                    const cursor = document.querySelector('.custom-cursor');
+                    if (cursor) cursor.style.background = hoverColor.replace(/[\d.]+\)$/, '0.15)');
+                });
+            });
+
+            // Rerun active filter if one is selected
+            const activeFilter = document.querySelector('.filter-btn.active');
+            if (activeFilter && activeFilter.dataset.filter !== 'all') {
+                const cat = activeFilter.dataset.filter;
+                grid.querySelectorAll('.portfolio-item').forEach(card => {
+                    card.style.display = card.dataset.category === cat ? '' : 'none';
+                });
+            }
+
+            // BUG-6 FIX: Trigger GSAP scroll animations on newly added cards
+            if (typeof ScrollTrigger !== 'undefined') {
+                grid.querySelectorAll('.bento-item').forEach(item => {
+                    ScrollTrigger.create({
+                        trigger: item,
+                        start: 'top 92%',
+                        onEnter: () => gsap.to(item, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', overwrite: true }),
+                        once: true
+                    });
+                });
+                ScrollTrigger.refresh();
+            }
+
+        } catch (err) {
+            console.error('[portfolio] Failed to load items:', err);
+            if (loader) loader.innerHTML = '<span style="color:#ff6b6b">⚠ Failed to load portfolio. Please refresh.</span>';
+        }
+    }
+
+    // --- JACK 3D CREATOR GSAP ANIMATIONS ---
+    function initJackAnimations() {
+        if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+        
+        // Hero
+        gsap.to('#jack-heading', { y: 0, opacity: 1, duration: 1.2, ease: "power3.out", delay: 0.8 });
+        gsap.to('#jack-portrait', { y: 0, opacity: 1, duration: 1.2, ease: "power3.out", delay: 1.2 });
+        gsap.to('#jack-desc', { y: 0, opacity: 1, duration: 1, ease: "power3.out", delay: 1.4 });
+        gsap.to('#jack-btn', { y: 0, opacity: 1, duration: 1, ease: "power3.out", delay: 1.5 });
+
+        // Magnet effect
+        const magnet = document.querySelector('.magnet-wrapper');
+        const isPC = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+        if (magnet && isPC) {
+            magnet.addEventListener('mousemove', (e) => {
+                const rect = magnet.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                gsap.to(magnet, { x: x * 0.3, y: y * 0.3, duration: 0.3, ease: "power2.out" });
+            });
+            magnet.addEventListener('mouseleave', () => {
+                gsap.to(magnet, { x: 0, y: 0, duration: 0.6, ease: "power2.out" });
+            });
+        }
+
+        // Marquee Image Inject & Scroll
+        const m1 = document.querySelector('.jack-marquee-1');
+        const m2 = document.querySelector('.jack-marquee-2');
+        const gifs = [
+            "https://media.tenor.com/nMWroyBHmCoAAAAC/ren-editing.gif",
+            "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=400&q=60",
+            "https://media.tenor.com/XPS4tlBlpBQAAAAC/video-editing-jack-cole.gif",
+            "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=400&q=60",
+            "https://media.tenor.com/QulTWinRVKkAAAAC/videography-video-editing.gif",
+            "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&q=60",
+            "https://media.tenor.com/5_-HRYsxK3wAAAAC/lumbre-color-correction.gif",
+            "https://images.unsplash.com/photo-1626307416562-ee839676f5fc?auto=format&fit=crop&w=400&q=60",
+            "https://media.tenor.com/TV3YDJ1LEggAAAAC/video-editing.gif",
+            "https://images.unsplash.com/photo-1616423640778-28d1b53229bd?auto=format&fit=crop&w=400&q=60",
+            "https://media.tenor.com/bFEf13SNOC4AAAAC/motcha-madebymotcha.gif",
+            "https://images.unsplash.com/photo-1590212151175-e58edd96185b?auto=format&fit=crop&w=400&q=60"
+        ];
+        if(m1 && m2) {
+            const renderMedia = (g) => {
+                if(g.endsWith('.mp4')) {
+                    return `<video src="${g}" autoplay muted loop playsinline class="w-[240px] h-[150px] md:w-[420px] md:h-[270px] rounded-2xl object-cover"></video>`;
+                }
+                return `<img src="${g}" class="w-[240px] h-[150px] md:w-[420px] md:h-[270px] rounded-2xl object-cover" loading="lazy">`;
+            };
+            let r1 = gifs.slice(0, 6).map(renderMedia).join('');
+            let r2 = gifs.slice(6, 12).map(renderMedia).join('');
+            m1.innerHTML = r1 + r1 + r1;
+            m2.innerHTML = r2 + r2 + r2;
+
+            window.addEventListener('scroll', () => {
+                const offset = window.scrollY * 0.3;
+                m1.style.transform = `translate3d(-${offset % 1000}px, 0, 0)`;
+                m2.style.transform = `translate3d(-${2000 - (offset % 1000)}px, 0, 0)`;
+            }, { passive: true });
+        }
+
+        // Floating Icons
+        gsap.utils.toArray('.float-icon').forEach(icon => {
+            const x = parseFloat(icon.dataset.x) || 0;
+            gsap.fromTo(icon, { x: x, opacity: 0 }, {
+                x: 0, opacity: 1, duration: 1.2, ease: "power3.out",
+                scrollTrigger: { trigger: icon, start: "top 80%" }
+            });
+        });
+
+        // About Text Char Reveal
+        const aboutText = document.querySelector('.jack-char-reveal');
+        if(aboutText) {
+            const chars = aboutText.innerText.split('');
+            aboutText.innerHTML = '';
+            chars.forEach(c => {
+                const s = document.createElement('span');
+                s.innerText = c;
+                s.style.opacity = '0.2';
+                aboutText.appendChild(s);
+            });
+            gsap.to(aboutText.children, {
+                opacity: 1,
+                stagger: 0.02,
+                scrollTrigger: {
+                    trigger: aboutText,
+                    start: "top 80%",
+                    end: "top 20%",
+                    scrub: true
+                }
+            });
+        }
+        gsap.to('#jack-about-heading', { y: 0, opacity: 1, duration: 1, scrollTrigger: { trigger: '#jack-about-heading', start: 'top 85%' }});
+        gsap.to('#jack-about-btn', { y: 0, opacity: 1, duration: 1, scrollTrigger: { trigger: '#jack-about-btn', start: 'top 85%' }});
+
+        // Services
+        gsap.utils.toArray('.jack-service').forEach((s, i) => {
+            gsap.to(s, { y: 0, opacity: 1, duration: 0.8, delay: i * 0.1, scrollTrigger: { trigger: s, start: 'top 85%' }});
+        });
+
+        // Sticky Stacking Cards
+        const cards = gsap.utils.toArray('.sticky-card');
+        cards.forEach((card, i) => {
+            ScrollTrigger.create({
+                trigger: card,
+                start: "top " + (96 + i * 28),
+                endTrigger: "#sticky-cards-container",
+                end: "bottom bottom",
+                pinSpacing: false,
+                onUpdate: self => {
+                    const progress = self.progress;
+                    const scale = 1 - (progress * 0.05);
+                    gsap.set(card, { scale: scale, opacity: 1 - (progress * 0.2) });
+                }
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPortfolioItems);
+    </script>
+</body>
+</html>
