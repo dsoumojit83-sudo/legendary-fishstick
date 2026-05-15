@@ -289,6 +289,7 @@ YOUR PERSONALITY:
 - Be specific with numbers — don't say "a good amount", say the exact figure.
 - When asked about business health, give real talk — if revenue is low, say it. If a client is ghosting, flag it.
 - Keep responses concise but complete. Don't pad with filler.
+- Use minimal, tasteful emojis to add personality (e.g., 🚀, 📈, 💀, 🔥, 👀), but don't overdo it.
 
 BANNED WORDS & PHRASES — NEVER use these:
 "snapshot", "overview", "breakdown", "let me break this down", "here's a quick", "as of now", "based on the data", "it appears that", "I'd be happy to", "certainly", "absolutely", "great question", "let me provide", "in terms of", "with respect to", "it's worth noting", "as per", "facilitate", "leverage", "utilize", "streamline", "robust", "comprehensive", "paradigm", "synergy", "stakeholder", "actionable insights", "moving forward", "at this point in time", "circle back"
@@ -378,14 +379,98 @@ You are currently talking to: ${user.email}`;
             { role: 'user', content: userMessageContent }
         ];
 
-        let aiResponse = await groq.chat.completions.create({
+        let groqOptions = {
             model: selectedModel,
             messages: currentMessages,
             temperature: 0.55,
             max_tokens: hasImage ? 1024 : 1800
-        });
+        };
 
-        let rawContent = aiResponse.choices[0].message.content;
+        // Inject tools for Google Web Search (Text mode only)
+        if (!hasImage) {
+            groqOptions.tools = [
+                {
+                    type: "function",
+                    function: {
+                        name: "search_google",
+                        description: "Search Google for real-time information, news, stats, or competitor research. Use this whenever the user asks for external information outside the studio context.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                query: { type: "string", description: "The precise Google search query" }
+                            },
+                            required: ["query"]
+                        }
+                    }
+                }
+            ];
+            groqOptions.tool_choice = "auto";
+        }
+
+        let aiResponse = await groq.chat.completions.create(groqOptions);
+        let responseMessage = aiResponse.choices[0].message;
+
+        // ── Handle Tool Calls (Google Web Search) ──────────────────────────────
+        if (responseMessage.tool_calls) {
+            currentMessages.push(responseMessage); // Add assistant's tool call to history
+
+            for (const toolCall of responseMessage.tool_calls) {
+                if (toolCall.function.name === "search_google") {
+                    let searchResults = "SERPER_API_KEY environment variable is not set. Please add it to your Vercel settings to enable Google Search.";
+                    try {
+                        const args = JSON.parse(toolCall.function.arguments);
+                        console.log('[ZYRO][admin-chat] Executing Google Search:', args.query);
+                        
+                        if (process.env.SERPER_API_KEY) {
+                            const res = await fetch("https://google.serper.dev/search", {
+                                method: "POST",
+                                headers: {
+                                    "X-API-KEY": process.env.SERPER_API_KEY,
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({ q: args.query, num: 3 }) // Get top 3 results to save tokens
+                            });
+                            
+                            if (!res.ok) {
+                                searchResults = "Google Search API error: " + res.statusText;
+                            } else {
+                                const data = await res.json();
+                                if (data.organic && data.organic.length > 0) {
+                                    searchResults = data.organic.map(r => `Title: ${r.title}\nSnippet: ${r.snippet}\nLink: ${r.link}`).join('\n\n');
+                                    if (data.knowledgeGraph) {
+                                        searchResults = `Knowledge Graph: ${data.knowledgeGraph.description || data.knowledgeGraph.title}\n\n` + searchResults;
+                                    }
+                                } else {
+                                    searchResults = "No results found on Google for this query.";
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('[ZYRO][admin-chat] Search error:', e);
+                        searchResults = "Google Search failed due to an internal error.";
+                    }
+
+                    // Feed Google results back to the AI
+                    currentMessages.push({
+                        tool_call_id: toolCall.id,
+                        role: "tool",
+                        name: "search_google",
+                        content: searchResults
+                    });
+                }
+            }
+
+            // Call Groq again with the Google search results to generate the final answer
+            aiResponse = await groq.chat.completions.create({
+                model: selectedModel,
+                messages: currentMessages,
+                temperature: 0.55,
+                max_tokens: hasImage ? 1024 : 1800
+            });
+            responseMessage = aiResponse.choices[0].message;
+        }
+
+        let rawContent = responseMessage.content || '';
 
         // ── Update memory (Strict Read-Only) ────────────────────────────────
         sessionMemory.push({ 

@@ -4716,12 +4716,26 @@
                 </div>`);
             terminalBody.scrollTop = terminalBody.scrollHeight;
 
+            // ── Web Search Animation Trick ──────────────────────────────────
+            // Since the API isn't streaming, we elegantly transition the typing
+            // indicator into a "Searching the web..." state if it takes >2.5s
+            const searchTimer = setTimeout(() => {
+                const typingBubble = document.querySelector(`#${typingId} .bubble`);
+                if (typingBubble) {
+                    typingBubble.className = 'bubble !bg-[#0a0a0a] border border-[#ff1a1a]/20 flex items-center gap-2 py-2 px-3 shadow-[0_0_10px_rgba(255,26,26,0.05)] transition-all duration-300';
+                    typingBubble.innerHTML = `<i data-lucide="globe" class="w-3.5 h-3.5 text-[#ff1a1a] animate-[spin_3s_linear_infinite] opacity-80"></i><span class="text-[11px] font-medium text-gray-300 tracking-wide">Searching the web...</span>`;
+                    safeCreateIcons();
+                }
+            }, 2500);
+
             try {
                 const res = await fetch('/api/admin-chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
                     body: JSON.stringify({ prompt: text, attachment: payloadAttachment, sessionId: chatSessionId })
                 });
+                
+                clearTimeout(searchTimer);
 
                 const aiResponse = await res.json();
                 const typingElem = document.getElementById(typingId);
@@ -4779,6 +4793,7 @@
                     }
                 }
             } catch (error) {
+                clearTimeout(searchTimer);
                 const typingElemCatch = document.getElementById(typingId);
                 if (typingElemCatch) typingElemCatch.remove();
                 terminalBody.insertAdjacentHTML('beforeend', `<div class="terminal-msg msg-ai"><div class="avatar" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#ef4444;">!</div><div class="bubble" style="border-color:rgba(239,68,68,0.2);color:#f87171;">Couldn't reach the backend. Check your connection.</div></div>`);
