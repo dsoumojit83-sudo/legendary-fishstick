@@ -407,6 +407,11 @@ You are currently talking to: ${user.email}`;
             groqOptions.tool_choice = "auto";
         }
 
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders();
+
         let aiResponse = await groq.chat.completions.create(groqOptions);
         let responseMessage = aiResponse.choices[0].message;
 
@@ -416,6 +421,7 @@ You are currently talking to: ${user.email}`;
 
             for (const toolCall of responseMessage.tool_calls) {
                 if (toolCall.function.name === "search_google") {
+                    res.write(`data: ${JSON.stringify({ type: 'status', state: 'searching' })}\n\n`);
                     let searchResults = "SERPER_API_KEY environment variable is not set. Please add it to your Vercel settings to enable Google Search.";
                     try {
                         const args = JSON.parse(toolCall.function.arguments);
@@ -490,10 +496,8 @@ You are currently talking to: ${user.email}`;
         if (sessionMemory.length > 10) sessionMemory.splice(0, 2);
         memoryStore[sessionId] = sessionMemory;
 
-        return res.status(200).json({
-            reply: rawContent.trim(),
-            actions: [] // No actions allowed
-        });
+        res.write(`data: ${JSON.stringify({ type: 'result', reply: rawContent.trim(), actions: [] })}\n\n`);
+        return res.end();
 
     } catch (err) {
         // Structured log so error surfaces clearly in Vercel function logs
@@ -502,7 +506,12 @@ You are currently talking to: ${user.email}`;
             '| message:', err.message,
             '| body_preview:', typeof req.body === 'object' ? JSON.stringify(req.body)?.slice(0, 200) : String(req.body)?.slice(0, 200)
         );
-        return res.status(500).json({ error: 'Internal AI error. Please try again.' });
+        if (!res.headersSent) {
+            return res.status(500).json({ error: 'Internal AI error. Please try again.' });
+        } else {
+            res.write(`data: ${JSON.stringify({ type: 'error', error: 'Internal AI error. Please try again.' })}\n\n`);
+            return res.end();
+        }
     }
 };
 

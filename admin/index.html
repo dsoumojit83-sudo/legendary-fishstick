@@ -4708,34 +4708,65 @@
                 </div>`);
             terminalBody.scrollTop = terminalBody.scrollHeight;
 
-            // ── Web Search Animation Trick ──────────────────────────────────
-            // Since the API isn't streaming, we elegantly transition the typing
-            // indicator into a "Searching the web..." state if it takes >2.5s
-            const searchTimer = setTimeout(() => {
-                const typingBubble = document.querySelector(`#${typingId} .bubble`);
-                if (typingBubble) {
-                    typingBubble.className = 'bubble !bg-[#0a0a0a] border border-[#ff1a1a]/20 flex items-center gap-2 py-2 px-3 shadow-[0_0_10px_rgba(255,26,26,0.05)] transition-all duration-300';
-                    typingBubble.innerHTML = `<i data-lucide="globe" class="w-3.5 h-3.5 text-[#ff1a1a] animate-[spin_3s_linear_infinite] opacity-80"></i><span class="text-[11px] font-medium text-gray-300 tracking-wide">Searching the web...</span>`;
-                    safeCreateIcons();
-                }
-            }, 2500);
-
             try {
                 const res = await fetch('/api/admin-chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
                     body: JSON.stringify({ prompt: text, attachment: payloadAttachment, sessionId: chatSessionId })
                 });
-                
-                clearTimeout(searchTimer);
 
-                const aiResponse = await res.json();
+                if (res.status === 401) {
+                    const typingElem = document.getElementById(typingId);
+                    if (typingElem) typingElem.remove();
+                    terminalBody.insertAdjacentHTML('beforeend', `<div class="terminal-msg msg-ai"><div class="avatar" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#ef4444;">!</div><div class="bubble" style="border-color:rgba(239,68,68,0.2);color:#f87171;">Unauthorized. Please log in again.</div></div>`);
+                    return;
+                }
+                
+                if (!res.ok && res.status !== 200) {
+                    const typingElem = document.getElementById(typingId);
+                    if (typingElem) typingElem.remove();
+                    terminalBody.insertAdjacentHTML('beforeend', `<div class="terminal-msg msg-ai"><div class="avatar" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#ef4444;">!</div><div class="bubble" style="border-color:rgba(239,68,68,0.2);color:#f87171;">Error connecting to AI backend.</div></div>`);
+                    return;
+                }
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+                let aiResponse = null;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep the last incomplete chunk in the buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const eventData = JSON.parse(line.substring(6).trim());
+                                if (eventData.type === 'status' && eventData.state === 'searching') {
+                                    const typingBubble = document.querySelector(`#${typingId} .bubble`);
+                                    if (typingBubble) {
+                                        typingBubble.className = 'bubble !bg-[#0a0a0a] border border-[#ff1a1a]/20 flex items-center gap-2 py-2 px-3 shadow-[0_0_10px_rgba(255,26,26,0.05)] transition-all duration-300';
+                                        typingBubble.innerHTML = `<i data-lucide="globe" class="w-3.5 h-3.5 text-[#ff1a1a] animate-[spin_3s_linear_infinite] opacity-80"></i><span class="text-[11px] font-medium text-gray-300 tracking-wide">Searching the web...</span>`;
+                                        safeCreateIcons();
+                                    }
+                                } else if (eventData.type === 'result') {
+                                    aiResponse = eventData;
+                                } else if (eventData.type === 'error') {
+                                    throw new Error(eventData.error);
+                                }
+                            } catch (e) { /* ignore JSON parse error on incomplete payloads */ }
+                        }
+                    }
+                }
+
                 const typingElem = document.getElementById(typingId);
                 if (typingElem) typingElem.remove();
 
-                if (res.status === 401) {
-                    terminalBody.insertAdjacentHTML('beforeend', `<div class="terminal-msg msg-ai"><div class="avatar" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#ef4444;">!</div><div class="bubble" style="border-color:rgba(239,68,68,0.2);color:#f87171;">Unauthorized. Please log in again.</div></div>`);
-                } else {
+                if (aiResponse) {
                     const formattedReply = formatAIText(aiResponse.reply);
                     terminalBody.insertAdjacentHTML('beforeend', `<div class="terminal-msg msg-ai"><div class="avatar">ZC</div><div class="bubble">${formattedReply}</div></div>`);
 
@@ -4785,7 +4816,6 @@
                     }
                 }
             } catch (error) {
-                clearTimeout(searchTimer);
                 const typingElemCatch = document.getElementById(typingId);
                 if (typingElemCatch) typingElemCatch.remove();
                 terminalBody.insertAdjacentHTML('beforeend', `<div class="terminal-msg msg-ai"><div class="avatar" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#ef4444;">!</div><div class="bubble" style="border-color:rgba(239,68,68,0.2);color:#f87171;">Couldn't reach the backend. Check your connection.</div></div>`);
