@@ -303,35 +303,24 @@
             font-weight: 400;
         }
 
-        .typing-indicator.bubble span {
+        .typing-indicator span {
             display: inline-block;
-            width: 5px;
-            height: 5px;
-            background-color: rgba(255, 26, 26, 0.6);
-            border-radius: 50%;
-            margin: 0 2px;
-            animation: bounce 1.4s infinite ease-in-out both;
+            width: 3px;
+            height: 12px;
+            background-color: rgba(255, 26, 26, 0.8);
+            border-radius: 2px;
+            margin: 0 1.5px;
+            animation: zyro-wave 1s ease-in-out infinite;
         }
 
-        .typing-indicator span:nth-child(1) {
-            animation-delay: -0.32s;
-        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.4s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.3s; }
+        .typing-indicator span:nth-child(3) { animation-delay: -0.2s; }
+        .typing-indicator span:nth-child(4) { animation-delay: -0.1s; }
 
-        .typing-indicator span:nth-child(2) {
-            animation-delay: -0.16s;
-        }
-
-        @keyframes bounce {
-
-            0%,
-            80%,
-            100% {
-                transform: scale(0);
-            }
-
-            40% {
-                transform: scale(1);
-            }
+        @keyframes zyro-wave {
+            0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+            50% { transform: scaleY(1.2); opacity: 1; }
         }
 
         .skeleton {
@@ -4712,7 +4701,10 @@
             terminalBody.insertAdjacentHTML('beforeend', `
                 <div id="${typingId}" class="terminal-msg msg-ai">
                     <div class="avatar">ZC</div>
-                    <div class="bubble typing-indicator"><span></span><span></span><span></span></div>
+                    <div class="bubble !bg-[#0a0a0a] border border-[#ff1a1a]/10 flex items-center gap-2 py-2 px-3 transition-all duration-300">
+                        <div class="typing-indicator flex items-center justify-center pt-0.5"><span></span><span></span><span></span><span></span></div>
+                        <span class="text-[11px] font-medium text-gray-400 tracking-wide ml-1">Thinking...</span>
+                    </div>
                 </div>`);
             terminalBody.scrollTop = terminalBody.scrollHeight;
 

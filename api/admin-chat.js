@@ -461,12 +461,15 @@ You are currently talking to: ${user.email}`;
             }
 
             // Call Groq again with the Google search results to generate the final answer
-            aiResponse = await groq.chat.completions.create({
+            const secondOptions = {
                 model: selectedModel,
                 messages: currentMessages,
                 temperature: 0.55,
                 max_tokens: hasImage ? 1024 : 1800
-            });
+            };
+            if (groqOptions.tools) secondOptions.tools = groqOptions.tools;
+
+            aiResponse = await groq.chat.completions.create(secondOptions);
             responseMessage = aiResponse.choices[0].message;
         }
 
