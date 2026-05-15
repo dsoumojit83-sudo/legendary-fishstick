@@ -3114,6 +3114,16 @@
                         (clientsData.clients || []).forEach(c => {
                             if (c.email) globalClientsMap[c.email.toLowerCase()] = c;
                         });
+
+                        // Ensure all dashboard views reflect the latest name from the client's profile
+                        globalOrdersData.forEach(order => {
+                            if (order.email) {
+                                const profile = globalClientsMap[order.email.toLowerCase()];
+                                if (profile && profile.name) {
+                                    order.client = profile.name;
+                                }
+                            }
+                        });
                     }
                 } catch (cEx) {
                     console.warn('[admin] Client profiles fetch failed:', cEx.message);
@@ -3781,6 +3791,7 @@
                 if (client.email) {
                     const profile = globalClientsMap[client.email.toLowerCase()];
                     if (profile) {
+                        if (profile.name) client.name = profile.name;
                         client.dob = profile.dob || '';
                         client.gender = profile.gender || '';
                         client.address = profile.address || '';
