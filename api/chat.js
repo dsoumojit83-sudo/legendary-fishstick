@@ -510,17 +510,23 @@ module.exports = async function (req, res) {
 
         // ── Safer IST deadline & Dynamic Timelines (Days) ──
         let daysToAdd = 3; // Default 3 days
+        let dbService = selectedService;
         try {
             const deadlineMap = await fetchDeadlineMap();
 
             if (selectedService.startsWith('Cart Bundle') && req.body.cart_json) {
                 const items = typeof req.body.cart_json === 'string' ? JSON.parse(req.body.cart_json) : req.body.cart_json;
                 let maxDays = 0;
+                let itemStrings = [];
                 for (const item of items) {
                     let d = deadlineMap[item.name] || 3;
                     maxDays = Math.max(maxDays, d);
+                    itemStrings.push(`${item.name} (x${item.qty || 1})`);
                 }
                 if (maxDays > 0) daysToAdd = maxDays;
+                if (itemStrings.length > 0) {
+                    dbService = `Cart: ${itemStrings.join(', ')}`;
+                }
             } else {
                 daysToAdd = deadlineMap[selectedService] || 3;
             }
@@ -542,7 +548,7 @@ module.exports = async function (req, res) {
                 client_name: safeName,
                 client_email: safeEmail,
                 client_phone: safePhone,
-                service: selectedService,
+                service: dbService,
                 amount: 0,
                 status: 'paid',
                 deadline_date: formattedDeadline
@@ -644,7 +650,7 @@ module.exports = async function (req, res) {
             client_name: safeName,
             client_email: safeEmail,
             client_phone: safePhone,
-            service: selectedService,
+            service: dbService,
             amount: numericAmount || 0,
             status: 'created',
             deadline_date: formattedDeadline
