@@ -53,12 +53,15 @@ async function getFilesMap(activeOrders) {
     }
     const fileCheckResults = await Promise.allSettled(
         activeOrders.map(o =>
-            b2.send(new ListObjectsV2Command({ Bucket: B2_BUCKET, Prefix: `${o.order_id}/`, MaxKeys: 1 }))
-                .then(data => ({ order_id: o.order_id, has_files: (data.KeyCount || 0) > 0 }))
+            b2.send(new ListObjectsV2Command({ Bucket: B2_BUCKET, Prefix: `${o.order_id}/`, MaxKeys: 20 }))
+                .then(data => {
+                    const files = (data.Contents || []).map(c => c.Key.replace(`${o.order_id}/`, ''));
+                    return { order_id: o.order_id, files };
+                })
         )
     );
     const freshMap = {};
-    fileCheckResults.forEach(r => { if (r.status === 'fulfilled') freshMap[r.value.order_id] = r.value.has_files; });
+    fileCheckResults.forEach(r => { if (r.status === 'fulfilled') freshMap[r.value.order_id] = r.value.files; });
     _filesMapCache = { data: freshMap, expiresAt: now + FILES_CACHE_TTL_MS };
     return freshMap;
 }
@@ -143,15 +146,32 @@ module.exports = async function (req, res) {
             { data: reviews },
             { data: coupons },
             { data: referrals },
-            { data: teamAdmins }
+            { data: teamAdmins },
+            { data: studioConfig },
+            { data: portfolioItems },
+            { data: refConfig }
         ] = await Promise.all([
-            supabase.from('orders').select('order_id,client_name,client_email,service,amount,status,created_at,deadline_date,completed_at').order('created_at', { ascending: false }),
+            supabase.from('orders').select('order_id,client_name,client_email,service,amount,status,created_at,deadline_date,completed_at,project_notes').order('created_at', { ascending: false }),
             supabase.from('deliveries').select('order_id,file_name,created_at').order('created_at', { ascending: false }),
             supabase.from('reviews').select('order_id,rating,review_text,approved,created_at'),
-            supabase.from('coupons').select('code,discount_type,discount_value,times_used,is_active'),
-            supabase.from('referrals').select('referrer_id,referred_email,created_at'),
-            supabase.from('admins').select('email, role, full_name')
+            supabase.from('coupons').select('code,discount_type,discount_value,times_used,is_active,max_uses,expires_at,min_order_value'),
+            supabase.from('referrals').select('referrer_id,referrer_email,referred_email,referral_code,created_at,blocked'),
+            supabase.from('admins').select('email, role, full_name'),
+            supabase.from('studio_config').select('is_online').eq('id', 1).maybeSingle(),
+            supabase.from('portfolio_items').select('title,category,filename,active,display_order').order('display_order'),
+            supabase.from('referral_config').select('referral_discount_percent,referral_min_order,referral_max_uses,referral_enabled').eq('id', 1).maybeSingle()
         ]);
+
+        // ── Fetch client profiles from Supabase Auth (paginated) ─────────────────
+        let allAuthUsers = [];
+        try {
+            let page = 1, hasMore = true;
+            while (hasMore) {
+                const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+                if (authErr || !authData?.users?.length) { hasMore = false; } 
+                else { allAuthUsers = allAuthUsers.concat(authData.users); page++; }
+            }
+        } catch (_) { /* Auth listing may fail — non-fatal */ }
 
         if (fetchError) throw new Error(`Database error: ${fetchError.message}`);
 
@@ -160,6 +180,7 @@ module.exports = async function (req, res) {
         const rvws        = reviews    || [];
         const cpns        = coupons    || [];
         const refs        = referrals  || [];
+        const pItems      = portfolioItems || [];
         const todayStr    = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
         const nowIST      = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 
@@ -221,10 +242,42 @@ module.exports = async function (req, res) {
             '- Color Grading & Correction: ₹175 — Cinematic color work (1 Day)',
         ].join('\n');
 
-        // ── Active pipeline list ───────────────────────────────────────────────
-        const pipelineLines = activeOrders.map(o =>
-            `• [${(o.status||'').toUpperCase()}] ${o.client_name||'Unknown'} — ${o.service||'N/A'} — ₹${Number(o.amount)||0}${filesMap[o.order_id] ? ' 📁' : ''} — ID: ${o.order_id}${o.deadline_date ? ' — Due: '+o.deadline_date : ''}`
+        // ── Active pipeline list (now includes brief/notes and file names) ──────────────────────
+        const pipelineLines = activeOrders.map(o => {
+            const files = filesMap[o.order_id] || [];
+            const filesText = files.length > 0 ? ` 📁 Files: ${files.join(', ')}` : '';
+            let line = `• [${(o.status||'').toUpperCase()}] ${o.client_name||'Unknown'} — ${o.service||'N/A'} — ₹${Number(o.amount)||0}${filesText} — ID: ${o.order_id}${o.deadline_date ? ' — Due: '+o.deadline_date : ''}`;
+            if (o.project_notes) line += `\n  📋 Brief: "${String(o.project_notes).slice(0, 200)}${String(o.project_notes).length > 200 ? '…' : ''}"`;
+            return line;
+        });
+
+        // ── Briefs for ALL orders (recent 30) for historical lookups ─────────────
+        const ordersWithBriefs = orders.filter(o => o.project_notes && String(o.project_notes).trim()).slice(0, 30);
+        const briefLines = ordersWithBriefs.map(o =>
+            `• ${o.client_name||'Unknown'} (${o.order_id}) [${o.status}] — "${String(o.project_notes).slice(0, 300)}${String(o.project_notes).length > 300 ? '…' : ''}"`
         );
+
+        // ── Client profiles context ──────────────────────────────────────────────
+        const clientProfiles = allAuthUsers.slice(0, 50).map(u => {
+            const m = u.user_metadata || {};
+            const parts = [u.email || 'no-email'];
+            if (m.full_name || m.name) parts.push(`Name: ${m.full_name || m.name}`);
+            if (m.phone) parts.push(`Phone: ${m.phone}`);
+            if (m.dob) parts.push(`DOB: ${m.dob}`);
+            if (m.gender) parts.push(`Gender: ${m.gender}`);
+            if (m.address) parts.push(`Address: ${m.address}`);
+            return `• ${parts.join(' | ')}`;
+        });
+
+        // ── Studio status ────────────────────────────────────────────────────────
+        const studioStatus = studioConfig?.is_online === false ? '🔴 OFFLINE (not accepting orders)' : '🟢 ONLINE (accepting orders)';
+
+        // ── Portfolio context ─────────────────────────────────────────────────────
+        const portfolioLines = pItems.filter(p => p.active).map(p => `• ${p.title} [${p.category}]`);
+
+        // ── Referral program config ───────────────────────────────────────────────
+        const refCfg = refConfig?.data || refConfig || {};
+        const refProgramBlock = `Discount: ${refCfg.referral_discount_percent ?? 10}% | Min order: ₹${refCfg.referral_min_order ?? 0} | Max uses: ${refCfg.referral_max_uses ?? 'unlimited'} | Status: ${refCfg.referral_enabled !== false ? 'Active' : 'Paused'}`;
 
         const systemPrompt = `You are Zyro — the internal studio manager AI for ZyroEditz, a premium video editing studio founded by Soumojit Das. ZyroEditz specializes in cinematic-quality video editing for YouTube creators, Instagram influencers, and content brands. The studio offers services like Short Form edits (Reels/Shorts), Long Form edits (vlogs, podcasts), Motion Graphics, Thumbnails, Sound Design, and Color Grading.
 
@@ -259,8 +312,14 @@ Average revenue per client (ARPU): ₹${arpu}
 Client retention rate: ${retention}%
 Profit margin: ~97% (digital service, near-zero COGS)${whales.length ? `\nTop spending clients: ${whales.map(c => `${c.n} (₹${c.t})`).join(', ')}` : ''}
 
+═══ STUDIO STATUS ═══
+${studioStatus}
+
 ═══ ACTIVE PIPELINE (${activeOrders.length} orders) ═══
 ${pipelineLines.length ? pipelineLines.join('\n') : 'All clear — no active orders right now.'}${ghostLeads.length ? `\n⚠️ STALE LEADS: ${ghostLeads.length} unpaid order(s) sitting for 48+ hours — might be dead leads` : ''}${overdueOrders.length ? `\n🚨 OVERDUE: ${overdueOrders.map(o => `${o.order_id} (${o.client_name})`).join(', ')}` : ''}
+
+═══ PROJECT BRIEFS (${ordersWithBriefs.length} orders with notes) ═══
+${briefLines.length ? briefLines.join('\n') : 'No project briefs/notes submitted yet.'}
 
 ═══ RECENT DELIVERIES ═══
 ${recentDeliveries.length ? recentDeliveries.join('\n') : 'No deliveries recorded yet.'}
@@ -274,12 +333,20 @@ Active: ${activeCoupons.length ? activeCoupons.join(' | ') : 'None active right 
 
 ═══ REFERRALS ═══
 Total: ${totalRefs} | This month: ${thisMonthRefs}
+Program Config: ${refProgramBlock}
+${refs.slice(0, 10).map(r => `• ${r.referrer_email || 'unknown'} → ${r.referred_email || 'pending'} (${r.referral_code || 'N/A'})${r.blocked ? ' [BLOCKED]' : ''}`).join('\n') || ''}
 
-═══ CLIENTS ═══
+═══ CLIENT PROFILES (${allAuthUsers.length} registered users) ═══
+${clientProfiles.length ? clientProfiles.join('\n') : 'No client profile data available.'}
+
+═══ CLIENTS (Order History) ═══
 ${uniqueClients.length} unique clients | ${repeatClients.length} returning/repeat clients
 
 ═══ SERVICES CATALOG ═══
 ${liveServicesBlock}
+
+═══ PORTFOLIO (${portfolioLines.length} active items) ═══
+${portfolioLines.length ? portfolioLines.join('\n') : 'No portfolio items configured.'}
 
 ═══ TEAM (Admins with Command Center access) ═══
 - Soumojit Das (zyroeditz.official@gmail.com) — Super Admin / Founder
@@ -315,7 +382,7 @@ You are currently talking to: ${user.email}`;
             model: selectedModel,
             messages: currentMessages,
             temperature: 0.55,
-            max_tokens: hasImage ? 1024 : 1200
+            max_tokens: hasImage ? 1024 : 1800
         });
 
         let rawContent = aiResponse.choices[0].message.content;
