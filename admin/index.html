@@ -4698,12 +4698,26 @@
             safeCreateIcons();
 
             const typingId = 'typing-' + Date.now();
+            
+            const lowerText = text.toLowerCase();
+            const isWebSearchIntent = 
+                lowerText.includes('search the web') || 
+                lowerText.includes('search the internet') || 
+                lowerText.includes('web search') || 
+                lowerText.includes('google search') ||
+                lowerText.includes('google it');
+
+            const initialIcon = isWebSearchIntent 
+                ? `<i data-lucide="globe" class="w-3.5 h-3.5 text-[#ff1a1a] animate-[spin_3s_linear_infinite] opacity-80"></i>` 
+                : `<div class="typing-indicator flex items-center justify-center pt-0.5"><span></span><span></span><span></span><span></span></div>`;
+            const initialText = isWebSearchIntent ? 'Searching the web...' : 'Thinking...';
+
             terminalBody.insertAdjacentHTML('beforeend', `
                 <div id="${typingId}" class="terminal-msg msg-ai">
                     <div class="avatar">ZC</div>
                     <div class="bubble !bg-[#0a0a0a] border border-[#ff1a1a]/10 flex items-center gap-2 py-2 px-3 transition-all duration-300">
-                        <div class="typing-indicator flex items-center justify-center pt-0.5"><span></span><span></span><span></span><span></span></div>
-                        <span class="text-[11px] font-medium text-gray-400 tracking-wide ml-1">Thinking...</span>
+                        ${initialIcon}
+                        <span class="text-[11px] font-medium text-gray-400 tracking-wide ml-1">${initialText}</span>
                     </div>
                 </div>`);
             terminalBody.scrollTop = terminalBody.scrollHeight;
