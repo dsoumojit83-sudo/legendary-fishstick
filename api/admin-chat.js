@@ -489,7 +489,10 @@ You are currently talking to: ${user.email}`;
                 temperature: 0.55,
                 max_tokens: hasImage ? 1024 : 1800
             };
-            if (groqOptions.tools) secondOptions.tools = groqOptions.tools;
+            if (groqOptions.tools) {
+                secondOptions.tools = groqOptions.tools;
+                secondOptions.tool_choice = "none";
+            }
 
             aiResponse = await groq.chat.completions.create(secondOptions);
             responseMessage = aiResponse.choices[0].message;
