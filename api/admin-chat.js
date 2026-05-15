@@ -139,39 +139,51 @@ module.exports = async function (req, res) {
         if (!memoryStore[sessionId]) memoryStore[sessionId] = [];
         const sessionMemory = memoryStore[sessionId].filter(m => now - m.timestamp < SESSION_TTL);
 
-        // ── Fetch all data in parallel for full studio context ─────────────────
-        const [
-            { data: allOrders, error: fetchError },
-            { data: deliveries },
-            { data: reviews },
-            { data: coupons },
-            { data: referrals },
-            { data: teamAdmins },
-            { data: studioConfig },
-            { data: portfolioItems },
-            { data: refConfig }
-        ] = await Promise.all([
-            supabase.from('orders').select('order_id,client_name,client_email,service,amount,status,created_at,deadline_date,completed_at,project_notes').order('created_at', { ascending: false }),
-            supabase.from('deliveries').select('order_id,file_name,created_at').order('created_at', { ascending: false }),
-            supabase.from('reviews').select('order_id,rating,review_text,approved,created_at'),
-            supabase.from('coupons').select('code,discount_type,discount_value,times_used,is_active,max_uses,expires_at,min_order_value'),
-            supabase.from('referrals').select('referrer_id,referrer_email,referred_email,referral_code,created_at,blocked'),
-            supabase.from('admins').select('email, role, full_name'),
-            supabase.from('studio_config').select('is_online').eq('id', 1).maybeSingle(),
-            supabase.from('portfolio_items').select('title,category,filename,active,display_order').order('display_order'),
-            supabase.from('referral_config').select('referral_discount_percent,referral_min_order,referral_max_uses,referral_enabled').eq('id', 1).maybeSingle()
-        ]);
+        // ── Global Context Cache (15s TTL) to speed up rapid chats ────────────────
+        if (!global._contextCache) global._contextCache = { data: null, expiresAt: 0 };
+        
+        let allOrders, deliveries, reviews, coupons, referrals, teamAdmins, studioConfig, portfolioItems, refConfig, allAuthUsers, fetchError;
+        
+        if (now < global._contextCache.expiresAt && global._contextCache.data) {
+            ({ allOrders, deliveries, reviews, coupons, referrals, teamAdmins, studioConfig, portfolioItems, refConfig, allAuthUsers } = global._contextCache.data);
+        } else {
+            const dbData = await Promise.all([
+                supabase.from('orders').select('order_id,client_name,client_email,service,amount,status,created_at,deadline_date,completed_at,project_notes').order('created_at', { ascending: false }),
+                supabase.from('deliveries').select('order_id,file_name,created_at').order('created_at', { ascending: false }),
+                supabase.from('reviews').select('order_id,rating,review_text,approved,created_at'),
+                supabase.from('coupons').select('code,discount_type,discount_value,times_used,is_active,max_uses,expires_at,min_order_value'),
+                supabase.from('referrals').select('referrer_id,referrer_email,referred_email,referral_code,created_at,blocked'),
+                supabase.from('admins').select('email, role, full_name'),
+                supabase.from('studio_config').select('is_online').eq('id', 1).maybeSingle(),
+                supabase.from('portfolio_items').select('title,category,filename,active,display_order').order('display_order'),
+                supabase.from('referral_config').select('referral_discount_percent,referral_min_order,referral_max_uses,referral_enabled').eq('id', 1).maybeSingle()
+            ]);
 
-        // ── Fetch client profiles from Supabase Auth (paginated) ─────────────────
-        let allAuthUsers = [];
-        try {
-            let page = 1, hasMore = true;
-            while (hasMore) {
-                const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
-                if (authErr || !authData?.users?.length) { hasMore = false; } 
-                else { allAuthUsers = allAuthUsers.concat(authData.users); page++; }
+            allOrders = dbData[0].data; fetchError = dbData[0].error;
+            deliveries = dbData[1].data;
+            reviews = dbData[2].data;
+            coupons = dbData[3].data;
+            referrals = dbData[4].data;
+            teamAdmins = dbData[5].data;
+            studioConfig = dbData[6].data;
+            portfolioItems = dbData[7].data;
+            refConfig = dbData[8].data;
+
+            allAuthUsers = [];
+            try {
+                let page = 1, hasMore = true;
+                while (hasMore) {
+                    const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+                    if (authErr || !authData?.users?.length) { hasMore = false; } 
+                    else { allAuthUsers = allAuthUsers.concat(authData.users); page++; }
+                }
+            } catch (_) { /* Auth listing may fail — non-fatal */ }
+
+            if (!fetchError) {
+                global._contextCache.data = { allOrders, deliveries, reviews, coupons, referrals, teamAdmins, studioConfig, portfolioItems, refConfig, allAuthUsers };
+                global._contextCache.expiresAt = now + 15000; // 15 seconds TTL
             }
-        } catch (_) { /* Auth listing may fail — non-fatal */ }
+        }
 
         if (fetchError) throw new Error(`Database error: ${fetchError.message}`);
 
@@ -287,7 +299,7 @@ module.exports = async function (req, res) {
 TECH STACK: Orders are processed via Cashfree (payment gateway). Files are stored on Backblaze B2 cloud storage. The database runs on Supabase. The website is deployed on Vercel. Client deliveries happen through a secure file portal.
 
 YOUR PERSONALITY:
-- Address the admin you are talking to by their name (${currentAdminName}) occasionally to make the chat feel personal and friendly.
+- Address the admin by their name (${currentAdminName}) SPARINGLY (only when greeting or giving important news). Do NOT use their name in every single message, it gets annoying.
 - You talk like Soumojit's right-hand person — casual, confident, direct. Like a smart friend who runs the ops.
 - Use natural, conversational language. Say "we've made" not "the studio has generated". Say "they ordered" not "a transaction was initiated".
 - Be specific with numbers — don't say "a good amount", say the exact figure.
@@ -303,7 +315,7 @@ Instead say things naturally like: "right now we've got...", "so here's the deal
 RULES:
 - Read-only — you can see everything but can NOT modify the database. If someone asks to change something, tell them to do it from the dashboard directly.
 - Never make up data. Only reference what's provided below. If you don't have info on something, just say you don't have it.
-- ONLY use the 'search_google' tool if the admin explicitly commands you to "search the web" or look something up online. If they don't explicitly ask you to search, DO NOT use it.
+- If the admin explicitly commands you to "search the web" or look something up online, you MUST immediately trigger the 'search_google' tool call. Do NOT reply with text saying you are going to search — just execute the tool silently. If not commanded, DO NOT use it.
 - When listing orders or clients, include the actual names, amounts, and statuses — don't summarize into vague categories.
 - Format currency as ₹ (not Rs.). Example: ₹500, not Rs.500.
 
