@@ -412,7 +412,20 @@ You are currently talking to: ${user.email}`;
         res.setHeader('Connection', 'keep-alive');
         res.flushHeaders();
 
-        let aiResponse = await groq.chat.completions.create(groqOptions);
+        let aiResponse;
+        try {
+            aiResponse = await groq.chat.completions.create(groqOptions);
+        } catch (groqErr) {
+            // Recover from Groq 400 "Failed to call a function" tool hallucinations
+            if (groqErr.status === 400) {
+                console.warn('[ZYRO][admin-chat] Groq Tool Call Error. Retrying without tools.', groqErr.message);
+                delete groqOptions.tools;
+                delete groqOptions.tool_choice;
+                aiResponse = await groq.chat.completions.create(groqOptions);
+            } else {
+                throw groqErr;
+            }
+        }
         let responseMessage = aiResponse.choices[0].message;
 
         // ── Handle Tool Calls (Google Web Search) ──────────────────────────────
@@ -422,6 +435,9 @@ You are currently talking to: ${user.email}`;
             for (const toolCall of responseMessage.tool_calls) {
                 if (toolCall.function.name === "search_google") {
                     res.write(`data: ${JSON.stringify({ type: 'status', state: 'searching' })}\n\n`);
+                    if (res.flush) res.flush(); // Force chunk to frontend
+                    await new Promise(r => setTimeout(r, 800)); // Visual delay so user reads the animation
+
                     let searchResults = "SERPER_API_KEY environment variable is not set. Please add it to your Vercel settings to enable Google Search.";
                     try {
                         const args = JSON.parse(toolCall.function.arguments);
