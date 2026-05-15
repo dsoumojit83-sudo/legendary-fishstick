@@ -298,7 +298,8 @@ Instead say things naturally like: "right now we've got...", "so here's the deal
 
 RULES:
 - Read-only — you can see everything but can NOT modify the database. If someone asks to change something, tell them to do it from the dashboard directly.
-- Never make up data. Only reference what's provided below. If you don't have info on something, just say you don't have it.
+- For internal studio data (orders, clients, stats), ONLY reference the exact data provided below. Do not make up orders.
+- For general knowledge, news, or outside world questions, YOU MUST USE the 'search_google' tool. Do NOT say "I don't know" or "I don't have info" for external questions — you are required to search the internet for them.
 - When listing orders or clients, include the actual names, amounts, and statuses — don't summarize into vague categories.
 - Format currency as ₹ (not Rs.). Example: ₹500, not Rs.500.
 
@@ -393,7 +394,7 @@ You are currently talking to: ${user.email}`;
                     type: "function",
                     function: {
                         name: "search_google",
-                        description: "Search Google for real-time information, news, stats, or competitor research. Use this whenever the user asks for external information outside the studio context.",
+                        description: "Search Google for real-time information. You MUST use this tool whenever the user asks for facts, news, or external information that is not present in your system prompt.",
                         parameters: {
                             type: "object",
                             properties: {
@@ -438,7 +439,7 @@ You are currently talking to: ${user.email}`;
                     if (res.flush) res.flush(); // Force chunk to frontend
                     await new Promise(r => setTimeout(r, 800)); // Visual delay so user reads the animation
 
-                    let searchResults = "SERPER_API_KEY environment variable is not set. Please add it to your Vercel settings to enable Google Search.";
+                    let searchResults = "Tool execution failed: SERPER_API_KEY environment variable is not set. Tell the user you cannot search the web because the API key is missing.";
                     try {
                         const args = JSON.parse(toolCall.function.arguments);
                         console.log('[ZYRO][admin-chat] Executing Google Search:', args.query);
@@ -454,14 +455,15 @@ You are currently talking to: ${user.email}`;
                             });
                             
                             if (!res.ok) {
-                                searchResults = "Google Search API error: " + res.statusText;
+                                searchResults = "Tool execution failed: Google Search API error " + res.statusText;
                             } else {
                                 const data = await res.json();
                                 if (data.organic && data.organic.length > 0) {
-                                    searchResults = data.organic.map(r => `Title: ${r.title}\nSnippet: ${r.snippet}\nLink: ${r.link}`).join('\n\n');
+                                    let parsedResults = data.organic.map(r => `Title: ${r.title}\nSnippet: ${r.snippet}\nLink: ${r.link}`).join('\n\n');
                                     if (data.knowledgeGraph) {
-                                        searchResults = `Knowledge Graph: ${data.knowledgeGraph.description || data.knowledgeGraph.title}\n\n` + searchResults;
+                                        parsedResults = `Knowledge Graph: ${data.knowledgeGraph.description || data.knowledgeGraph.title}\n\n` + parsedResults;
                                     }
+                                    searchResults = `[Google Search Results]\nUse the following search results to answer the user's question accurately:\n\n${parsedResults}`;
                                 } else {
                                     searchResults = "No results found on Google for this query.";
                                 }
@@ -469,7 +471,7 @@ You are currently talking to: ${user.email}`;
                         }
                     } catch (e) {
                         console.error('[ZYRO][admin-chat] Search error:', e);
-                        searchResults = "Google Search failed due to an internal error.";
+                        searchResults = "Tool execution failed: Google Search failed due to an internal error.";
                     }
 
                     // Feed Google results back to the AI
