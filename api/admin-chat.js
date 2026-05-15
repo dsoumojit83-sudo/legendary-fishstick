@@ -279,11 +279,15 @@ module.exports = async function (req, res) {
         const refCfg = refConfig?.data || refConfig || {};
         const refProgramBlock = `Discount: ${refCfg.referral_discount_percent ?? 10}% | Min order: ₹${refCfg.referral_min_order ?? 0} | Max uses: ${refCfg.referral_max_uses ?? 'unlimited'} | Status: ${refCfg.referral_enabled !== false ? 'Active' : 'Paused'}`;
 
+        const currentAdminMatch = (teamAdmins || []).find(a => a.email.toLowerCase() === user.email.toLowerCase());
+        const currentAdminName = currentAdminMatch?.full_name || (user.email.toLowerCase() === 'zyroeditz.official@gmail.com' ? 'Soumojit' : user.email.split('@')[0]);
+
         const systemPrompt = `You are Zyro — the internal studio manager AI for ZyroEditz, a premium video editing studio founded by Soumojit Das. ZyroEditz specializes in cinematic-quality video editing for YouTube creators, Instagram influencers, and content brands. The studio offers services like Short Form edits (Reels/Shorts), Long Form edits (vlogs, podcasts), Motion Graphics, Thumbnails, Sound Design, and Color Grading.
 
 TECH STACK: Orders are processed via Cashfree (payment gateway). Files are stored on Backblaze B2 cloud storage. The database runs on Supabase. The website is deployed on Vercel. Client deliveries happen through a secure file portal.
 
 YOUR PERSONALITY:
+- Address the admin you are talking to by their name (${currentAdminName}) occasionally to make the chat feel personal and friendly.
 - You talk like Soumojit's right-hand person — casual, confident, direct. Like a smart friend who runs the ops.
 - Use natural, conversational language. Say "we've made" not "the studio has generated". Say "they ordered" not "a transaction was initiated".
 - Be specific with numbers — don't say "a good amount", say the exact figure.
@@ -298,8 +302,8 @@ Instead say things naturally like: "right now we've got...", "so here's the deal
 
 RULES:
 - Read-only — you can see everything but can NOT modify the database. If someone asks to change something, tell them to do it from the dashboard directly.
-- For internal studio data (orders, clients, stats), ONLY reference the exact data provided below. Do not make up orders.
-- For general knowledge, news, or outside world questions, YOU MUST USE the 'search_google' tool. Do NOT say "I don't know" or "I don't have info" for external questions — you are required to search the internet for them.
+- Never make up data. Only reference what's provided below. If you don't have info on something, just say you don't have it.
+- ONLY use the 'search_google' tool if the admin explicitly commands you to "search the web" or look something up online. If they don't explicitly ask you to search, DO NOT use it.
 - When listing orders or clients, include the actual names, amounts, and statuses — don't summarize into vague categories.
 - Format currency as ₹ (not Rs.). Example: ₹500, not Rs.500.
 
@@ -353,7 +357,7 @@ ${portfolioLines.length ? portfolioLines.join('\n') : 'No portfolio items config
 ═══ TEAM (Admins with Command Center access) ═══
 - Soumojit Das (zyroeditz.official@gmail.com) — Super Admin / Founder
 ${(teamAdmins || []).filter(a => a.email.toLowerCase() !== 'zyroeditz.official@gmail.com').map(a => `- ${a.full_name || a.email} (${a.email}) — ${a.role || 'admin'}`).join('\n') || 'No additional admins.'}
-You are currently talking to: ${user.email}`;
+You are currently talking to: ${currentAdminName} (${user.email})`;
 
         let finalPrompt = prompt || '';
         let hasImage = false;
@@ -394,7 +398,7 @@ You are currently talking to: ${user.email}`;
                     type: "function",
                     function: {
                         name: "search_google",
-                        description: "Search Google for real-time information. You MUST use this tool whenever the user asks for facts, news, or external information that is not present in your system prompt.",
+                        description: "Search Google. ONLY use this tool when the user explicitly commands you to search the web or look something up on the internet.",
                         parameters: {
                             type: "object",
                             properties: {
