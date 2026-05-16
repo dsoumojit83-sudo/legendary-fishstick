@@ -4709,16 +4709,6 @@
             safeCreateIcons();
 
             const typingId = 'typing-' + Date.now();
-            
-            const lowerText = text.toLowerCase();
-            const isWebSearchIntent = 
-                lowerText.includes('search the web') || 
-                lowerText.includes('search the internet') || 
-                lowerText.includes('search internet') || 
-                lowerText.includes('web search') || 
-                lowerText.includes('awebsearch') || 
-                lowerText.includes('google search') ||
-                lowerText.includes('google it');
 
             const initialIcon = `<div class="typing-indicator flex items-center justify-center pt-0.5"><span></span><span></span><span></span><span></span></div>`;
             const initialText = 'Thinking...';
@@ -4737,7 +4727,7 @@
                 const res = await fetch('/api/admin-chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-                    body: JSON.stringify({ prompt: text, attachment: payloadAttachment, sessionId: chatSessionId, isWebSearchIntent: isWebSearchIntent })
+                    body: JSON.stringify({ prompt: text, attachment: payloadAttachment, sessionId: chatSessionId })
                 });
 
                 if (res.status === 401) {
