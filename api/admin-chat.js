@@ -315,7 +315,9 @@ Instead say things naturally like: "right now we've got...", "so here's the deal
 RULES:
 - Read-only — you can see everything but can NOT modify the database. If someone asks to change something, tell them to do it from the dashboard directly.
 - Never make up data. Only reference what's provided below. If you don't have info on something, just say you don't have it.
-- If the user asks for real-time information, world news, current events, or explicitly commands you to search the web, you MUST use the 'search_google' tool. You have full autonomy to search the web if the question requires external knowledge. Do NOT reply with text saying you are going to search — just execute the tool silently.
+- CRITICAL: If the user asks about future dates (e.g. 2026), current events, news, or explicitly commands you to "search the web", you MUST immediately call the 'search_google' tool. 
+- DO NOT attempt to answer questions about recent/future events from your training data. ALWAYS call the tool first.
+- NEVER output filler text like "Let me search for that" or use emojis like 🔍 before searching. If you need to search, ONLY output the tool call.
 - When listing orders or clients, include the actual names, amounts, and statuses — don't summarize into vague categories.
 - Format currency as ₹ (not Rs.). Example: ₹500, not Rs.500.
 
@@ -410,7 +412,7 @@ You are currently talking to: ${currentAdminName} (${user.email})`;
                     type: "function",
                     function: {
                         name: "search_google",
-                        description: "Search the web to find real-time information, world news, current events, or if the user explicitly asks you to search online. Do not use this for internal studio data.",
+                        description: "Search Google for real-time information, dates, news, or factual answers. ALWAYS use this tool before answering if the user asks about future dates (like 2026), current events, or explicitly asks you to search. DO NOT answer from training data for recent events.",
                         parameters: {
                             type: "object",
                             properties: {
