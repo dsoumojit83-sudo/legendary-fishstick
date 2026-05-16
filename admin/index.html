@@ -4718,10 +4718,8 @@
                 lowerText.includes('google search') ||
                 lowerText.includes('google it');
 
-            const initialIcon = isWebSearchIntent 
-                ? `<i data-lucide="globe" class="w-3.5 h-3.5 text-[#ff1a1a] animate-[spin_3s_linear_infinite] opacity-80"></i>` 
-                : `<div class="typing-indicator flex items-center justify-center pt-0.5"><span></span><span></span><span></span><span></span></div>`;
-            const initialText = isWebSearchIntent ? 'Searching the web...' : 'Thinking...';
+            const initialIcon = `<div class="typing-indicator flex items-center justify-center pt-0.5"><span></span><span></span><span></span><span></span></div>`;
+            const initialText = 'Thinking...';
 
             terminalBody.insertAdjacentHTML('beforeend', `
                 <div id="${typingId}" class="terminal-msg msg-ai">
@@ -4737,7 +4735,7 @@
                 const res = await fetch('/api/admin-chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-                    body: JSON.stringify({ prompt: text, attachment: payloadAttachment, sessionId: chatSessionId })
+                    body: JSON.stringify({ prompt: text, attachment: payloadAttachment, sessionId: chatSessionId, isWebSearchIntent: isWebSearchIntent })
                 });
 
                 if (res.status === 401) {

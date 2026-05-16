@@ -124,7 +124,7 @@ module.exports = async function (req, res) {
         }
 
         // ── AI CHAT BRANCH ───────────────────────────────────────────────────────
-        const { prompt, sessionId = 'default', attachment } = req.body;
+        const { prompt, sessionId = 'default', attachment, isWebSearchIntent } = req.body;
         if (!prompt && !attachment) return res.status(400).json({ error: 'No input' });
         if (prompt && String(prompt).length > 2000) return res.status(400).json({ error: 'Message too long. Max 2000 characters.' });
 
@@ -141,9 +141,9 @@ module.exports = async function (req, res) {
 
         // ── Global Context Cache (15s TTL) to speed up rapid chats ────────────────
         if (!global._contextCache) global._contextCache = { data: null, expiresAt: 0 };
-        
+
         let allOrders, deliveries, reviews, coupons, referrals, teamAdmins, studioConfig, portfolioItems, refConfig, allAuthUsers, fetchError;
-        
+
         if (now < global._contextCache.expiresAt && global._contextCache.data) {
             ({ allOrders, deliveries, reviews, coupons, referrals, teamAdmins, studioConfig, portfolioItems, refConfig, allAuthUsers } = global._contextCache.data);
         } else {
@@ -174,7 +174,7 @@ module.exports = async function (req, res) {
                 let page = 1, hasMore = true;
                 while (hasMore) {
                     const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
-                    if (authErr || !authData?.users?.length) { hasMore = false; } 
+                    if (authErr || !authData?.users?.length) { hasMore = false; }
                     else { allAuthUsers = allAuthUsers.concat(authData.users); page++; }
                 }
             } catch (_) { /* Auth listing may fail — non-fatal */ }
@@ -187,61 +187,61 @@ module.exports = async function (req, res) {
 
         if (fetchError) throw new Error(`Database error: ${fetchError.message}`);
 
-        const orders      = allOrders  || [];
-        const dlvs        = deliveries || [];
-        const rvws        = reviews    || [];
-        const cpns        = coupons    || [];
-        const refs        = referrals  || [];
-        const pItems      = portfolioItems || [];
-        const todayStr    = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
-        const nowIST      = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        const orders = allOrders || [];
+        const dlvs = deliveries || [];
+        const rvws = reviews || [];
+        const cpns = coupons || [];
+        const refs = referrals || [];
+        const pItems = portfolioItems || [];
+        const todayStr = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
+        const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 
         // ── Revenue metrics ────────────────────────────────────────────────────
-        const paidOrders  = orders.filter(o => ['paid','delivered','in_progress'].includes(o.status));
-        const totalRev    = paidOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
-        const monthRev    = paidOrders.filter(o => o.created_at && new Date(o.created_at).getMonth() === nowIST.getMonth() && new Date(o.created_at).getFullYear() === nowIST.getFullYear()).reduce((s, o) => s + (Number(o.amount) || 0), 0);
+        const paidOrders = orders.filter(o => ['paid', 'delivered', 'in_progress'].includes(o.status));
+        const totalRev = paidOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+        const monthRev = paidOrders.filter(o => o.created_at && new Date(o.created_at).getMonth() === nowIST.getMonth() && new Date(o.created_at).getFullYear() === nowIST.getFullYear()).reduce((s, o) => s + (Number(o.amount) || 0), 0);
         const refundedAmt = orders.filter(o => o.status === 'refunded').reduce((s, o) => s + (Number(o.amount) || 0), 0);
-        const cancelledCt = orders.filter(o => ['cancelled','canceled'].includes(o.status)).length;
+        const cancelledCt = orders.filter(o => ['cancelled', 'canceled'].includes(o.status)).length;
 
         // ── Client metrics — keyed by EMAIL (unique), not name (not unique) ──────
-        const uniqueEmails   = [...new Set(orders.map(o => (o.client_email || '').toLowerCase()).filter(Boolean))];
-        const uniqueClients  = uniqueEmails; // alias used in system prompt below
-        const arpu           = uniqueEmails.length ? (totalRev / uniqueEmails.length).toFixed(2) : '0';
-        const repeatClients  = uniqueEmails.filter(e => orders.filter(o => (o.client_email || '').toLowerCase() === e).length > 1);
-        const retention      = uniqueEmails.length ? ((repeatClients.length / uniqueEmails.length) * 100).toFixed(1) : '0';
-        const whales         = uniqueEmails.map(e => {
+        const uniqueEmails = [...new Set(orders.map(o => (o.client_email || '').toLowerCase()).filter(Boolean))];
+        const uniqueClients = uniqueEmails; // alias used in system prompt below
+        const arpu = uniqueEmails.length ? (totalRev / uniqueEmails.length).toFixed(2) : '0';
+        const repeatClients = uniqueEmails.filter(e => orders.filter(o => (o.client_email || '').toLowerCase() === e).length > 1);
+        const retention = uniqueEmails.length ? ((repeatClients.length / uniqueEmails.length) * 100).toFixed(1) : '0';
+        const whales = uniqueEmails.map(e => {
             const clientOrders = orders.filter(o => (o.client_email || '').toLowerCase() === e);
             const name = clientOrders[0]?.client_name || e;
-            const t    = clientOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+            const t = clientOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
             return { n: name, t };
         }).filter(c => c.t >= 2000).sort((a, b) => b.t - a.t);
 
         // ── Pipeline ───────────────────────────────────────────────────────────
-        const activeOrders   = orders.filter(o => !['delivered','refunded','cancelled','canceled','completed'].includes(o.status));
-        const filesMap       = await getFilesMap(activeOrders);
-        const ghostLeads     = activeOrders.filter(o => o.status === 'created' && o.created_at && (Date.now() - new Date(o.created_at).getTime()) > 48*3600*1000);
+        const activeOrders = orders.filter(o => !['delivered', 'refunded', 'cancelled', 'canceled', 'completed'].includes(o.status));
+        const filesMap = await getFilesMap(activeOrders);
+        const ghostLeads = activeOrders.filter(o => o.status === 'created' && o.created_at && (Date.now() - new Date(o.created_at).getTime()) > 48 * 3600 * 1000);
 
         // ── Overdue check ──────────────────────────────────────────────────────
-        const overdueOrders  = activeOrders.filter(o => {
+        const overdueOrders = activeOrders.filter(o => {
             if (!o.deadline_date) return false;
-            const [dy,dm,dd] = o.deadline_date.split('-').map(Number);
-            return new Date(dy, dm-1, dd) < nowIST;
+            const [dy, dm, dd] = o.deadline_date.split('-').map(Number);
+            return new Date(dy, dm - 1, dd) < nowIST;
         });
 
         // ── Deliveries context ─────────────────────────────────────────────────
         const deliveredOrderIds = new Set(orders.filter(o => o.status === 'delivered').map(o => o.order_id));
-        const recentDeliveries  = dlvs.slice(0, 10).map(d => `• ${d.file_name} (Order: ${d.order_id}) — ${formatDate(d.created_at)}`);
+        const recentDeliveries = dlvs.slice(0, 10).map(d => `• ${d.file_name} (Order: ${d.order_id}) — ${formatDate(d.created_at)}`);
 
         // ── Reviews context ────────────────────────────────────────────────────
-        const avgRating    = rvws.length ? (rvws.reduce((s,r) => s + (r.rating||0), 0) / rvws.length).toFixed(1) : 'N/A';
-        const pendingRevs  = rvws.filter(r => !r.approved).length;
-        const recentRevs   = rvws.slice(0,5).map(r => `• ${r.rating}★ — "${(r.review_text||'').slice(0,60)}…" [${r.approved ? 'approved' : 'pending'}]`);
+        const avgRating = rvws.length ? (rvws.reduce((s, r) => s + (r.rating || 0), 0) / rvws.length).toFixed(1) : 'N/A';
+        const pendingRevs = rvws.filter(r => !r.approved).length;
+        const recentRevs = rvws.slice(0, 5).map(r => `• ${r.rating}★ — "${(r.review_text || '').slice(0, 60)}…" [${r.approved ? 'approved' : 'pending'}]`);
 
         // ── Coupons context ────────────────────────────────────────────────────
-        const activeCoupons = cpns.filter(c => c.is_active).map(c => `${c.code} (${c.discount_type === 'percent' ? c.discount_value+'%' : 'Rs.'+c.discount_value} off, used ${c.times_used}x)`);
+        const activeCoupons = cpns.filter(c => c.is_active).map(c => `${c.code} (${c.discount_type === 'percent' ? c.discount_value + '%' : 'Rs.' + c.discount_value} off, used ${c.times_used}x)`);
 
         // ── Referrals context ──────────────────────────────────────────────────
-        const totalRefs     = refs.length;
+        const totalRefs = refs.length;
         const thisMonthRefs = refs.filter(r => r.created_at && new Date(r.created_at).getMonth() === nowIST.getMonth()).length;
 
         // ── Services ──────────────────────────────────────────────────────────
@@ -258,7 +258,7 @@ module.exports = async function (req, res) {
         const pipelineLines = activeOrders.map(o => {
             const files = filesMap[o.order_id] || [];
             const filesText = files.length > 0 ? ` 📁 Files: ${files.join(', ')}` : '';
-            let line = `• [${(o.status||'').toUpperCase()}] ${o.client_name||'Unknown'} — ${o.service||'N/A'} — ₹${Number(o.amount)||0}${filesText} — ID: ${o.order_id}${o.deadline_date ? ' — Due: '+o.deadline_date : ''}`;
+            let line = `• [${(o.status || '').toUpperCase()}] ${o.client_name || 'Unknown'} — ${o.service || 'N/A'} — ₹${Number(o.amount) || 0}${filesText} — ID: ${o.order_id}${o.deadline_date ? ' — Due: ' + o.deadline_date : ''}`;
             if (o.project_notes) line += `\n  📋 Brief: "${String(o.project_notes).slice(0, 200)}${String(o.project_notes).length > 200 ? '…' : ''}"`;
             return line;
         });
@@ -266,7 +266,7 @@ module.exports = async function (req, res) {
         // ── Briefs for ALL orders (recent 30) for historical lookups ─────────────
         const ordersWithBriefs = orders.filter(o => o.project_notes && String(o.project_notes).trim()).slice(0, 30);
         const briefLines = ordersWithBriefs.map(o =>
-            `• ${o.client_name||'Unknown'} (${o.order_id}) [${o.status}] — "${String(o.project_notes).slice(0, 300)}${String(o.project_notes).length > 300 ? '…' : ''}"`
+            `• ${o.client_name || 'Unknown'} (${o.order_id}) [${o.status}] — "${String(o.project_notes).slice(0, 300)}${String(o.project_notes).length > 300 ? '…' : ''}"`
         );
 
         // ── Client profiles context ──────────────────────────────────────────────
@@ -315,7 +315,7 @@ Instead say things naturally like: "right now we've got...", "so here's the deal
 RULES:
 - Read-only — you can see everything but can NOT modify the database. If someone asks to change something, tell them to do it from the dashboard directly.
 - Never make up data. Only reference what's provided below. If you don't have info on something, just say you don't have it.
-- If the admin explicitly commands you to "search the web" or look something up online, you MUST immediately trigger the 'search_google' tool call. Do NOT reply with text saying you are going to search — just execute the tool silently. If not commanded, DO NOT use it.
+- If the user asks for real-time information, world news, current events, or explicitly commands you to search the web, you MUST use the 'search_google' tool. You have full autonomy to search the web if the question requires external knowledge. Do NOT reply with text saying you are going to search — just execute the tool silently.
 - When listing orders or clients, include the actual names, amounts, and statuses — don't summarize into vague categories.
 - Format currency as ₹ (not Rs.). Example: ₹500, not Rs.500.
 
@@ -410,7 +410,7 @@ You are currently talking to: ${currentAdminName} (${user.email})`;
                     type: "function",
                     function: {
                         name: "search_google",
-                        description: "Search Google. ONLY use this tool when the user explicitly commands you to search the web or look something up on the internet.",
+                        description: "Search the web to find real-time information, world news, current events, or if the user explicitly asks you to search online. Do not use this for internal studio data.",
                         parameters: {
                             type: "object",
                             properties: {
@@ -421,7 +421,8 @@ You are currently talking to: ${currentAdminName} (${user.email})`;
                     }
                 }
             ];
-            groqOptions.tool_choice = "auto";
+            // Force tool call if explicit intent detected, otherwise let the model decide.
+            groqOptions.tool_choice = isWebSearchIntent ? { type: "function", function: { name: "search_google" } } : "auto";
         }
 
         res.setHeader('Content-Type', 'text/event-stream');
@@ -459,7 +460,7 @@ You are currently talking to: ${currentAdminName} (${user.email})`;
                     try {
                         const args = JSON.parse(toolCall.function.arguments);
                         console.log('[ZYRO][admin-chat] Executing Google Search:', args.query);
-                        
+
                         if (process.env.SERPER_API_KEY) {
                             const res = await fetch("https://google.serper.dev/search", {
                                 method: "POST",
@@ -469,7 +470,7 @@ You are currently talking to: ${currentAdminName} (${user.email})`;
                                 },
                                 body: JSON.stringify({ q: args.query, num: 3 }) // Get top 3 results to save tokens
                             });
-                            
+
                             if (!res.ok) {
                                 searchResults = "Tool execution failed: Google Search API error " + res.statusText;
                             } else {
@@ -519,17 +520,17 @@ You are currently talking to: ${currentAdminName} (${user.email})`;
         let rawContent = responseMessage.content || '';
 
         // ── Update memory (Strict Read-Only) ────────────────────────────────
-        sessionMemory.push({ 
-            role: 'user', 
-            content: finalPrompt + (hasImage ? ` [Attached Image]` : ''), 
-            timestamp: now 
+        sessionMemory.push({
+            role: 'user',
+            content: finalPrompt + (hasImage ? ` [Attached Image]` : ''),
+            timestamp: now
         });
-        sessionMemory.push({ 
-            role: 'assistant', 
-            content: rawContent, 
-            timestamp: now 
+        sessionMemory.push({
+            role: 'assistant',
+            content: rawContent,
+            timestamp: now
         });
-        
+
         if (sessionMemory.length > 10) sessionMemory.splice(0, 2);
         memoryStore[sessionId] = sessionMemory;
 
