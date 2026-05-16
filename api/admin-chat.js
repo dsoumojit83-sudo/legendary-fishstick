@@ -102,6 +102,8 @@ module.exports = async function (req, res) {
             form.append('model', 'whisper-large-v3-turbo');
             form.append('language', 'en');
             form.append('response_format', 'json');
+            form.append('temperature', '0');
+            form.append('prompt', 'ZyroEditz, Soumojit, Premiere Pro, After Effects, ARPU, CRM, studio, edits, portfolio.');
 
             const whisperRes = await fetch(
                 'https://api.groq.com/openai/v1/audio/transcriptions',

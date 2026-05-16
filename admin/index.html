@@ -4943,7 +4943,9 @@
                 }
 
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: { channelCount: 1, sampleRate: 16000 } 
+                    });
 
                     // Pick best supported MIME type
                     const preferredMime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', ''].find(
